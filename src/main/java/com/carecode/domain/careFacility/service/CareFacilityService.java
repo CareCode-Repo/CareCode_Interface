@@ -7,6 +7,7 @@ import com.carecode.core.exception.CareFacilityNotFoundException;
 import com.carecode.domain.careFacility.dto.CareFacilityDto;
 import com.carecode.domain.careFacility.dto.CareFacilitySearchRequestDto;
 import com.carecode.domain.careFacility.dto.CareFacilitySearchResponseDto;
+import com.carecode.domain.careFacility.dto.TypeStats;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import com.carecode.core.util.LocationUtil;
@@ -68,21 +69,18 @@ public class CareFacilityService {
     @ValidateLocation
     public CareFacilitySearchResponseDto searchCareFacilities(CareFacilitySearchRequestDto request) {
         log.info("돌봄 시설 검색: 키워드={}, 시설유형={}, 지역={}", 
-                request.getKeyword(), request.getFacilityType(), request.getLocation());
+                request.getKeyword(), request.getFacilityType(), request.getRegion());
         
         Pageable pageable = PageRequest.of(
-                request.getPage(), 
-                request.getSize(), 
-                Sort.by(Sort.Direction.ASC, "distance")
+                request.getPage() != null ? request.getPage() : 0, 
+                request.getSize() != null ? request.getSize() : 10, 
+                Sort.by(Sort.Direction.ASC, "name")
         );
         
         Page<CareFacility> facilityPage = careFacilityRepository.findBySearchCriteria(
                 request.getKeyword(),
                 request.getFacilityType(),
-                request.getLocation(),
-                request.getLatitude(),
-                request.getLongitude(),
-                request.getRadius(),
+                request.getRegion(),
                 pageable
         );
         
@@ -95,7 +93,9 @@ public class CareFacilityService {
                 .totalElements(facilityPage.getTotalElements())
                 .totalPages(facilityPage.getTotalPages())
                 .currentPage(facilityPage.getNumber())
-                .size(facilityPage.getSize())
+                .pageSize(facilityPage.getSize())
+                .hasNext(facilityPage.hasNext())
+                .hasPrevious(facilityPage.hasPrevious())
                 .build();
     }
 
@@ -120,7 +120,7 @@ public class CareFacilityService {
     public List<CareFacilityDto> getCareFacilitiesByLocation(String location) {
         log.info("지역별 돌봄 시설 조회: 지역={}", location);
         
-        List<CareFacility> facilities = careFacilityRepository.findByLocation(location);
+        List<CareFacility> facilities = careFacilityRepository.findByAddressContaining(location);
         return facilities.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -174,7 +174,7 @@ public class CareFacilityService {
     public List<CareFacilityDto> getPopularCareFacilities(int limit) {
         log.info("인기 돌봄 시설 조회: 제한={}", limit);
         
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        Pageable pageable = PageRequest.of(0, limit);
         List<CareFacility> facilities = careFacilityRepository.findPopularFacilities(pageable);
         return facilities.stream()
                 .map(this::convertToDto)
@@ -188,7 +188,7 @@ public class CareFacilityService {
     public List<CareFacilityDto> getNewCareFacilities(int limit) {
         log.info("신규 돌봄 시설 조회: 제한={}", limit);
         
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        Pageable pageable = PageRequest.of(0, limit);
         List<CareFacility> facilities = careFacilityRepository.findNewFacilities(pageable);
         return facilities.stream()
                 .map(this::convertToDto)
@@ -196,17 +196,15 @@ public class CareFacilityService {
     }
 
     /**
-     * 돌봄 시설 조회수 증가
+     * 돌봄 시설 조회수 증가 (현재는 구현하지 않음 - viewCount 필드가 없음)
      */
     @Transactional
     public void incrementViewCount(Long facilityId) {
         log.info("돌봄 시설 조회수 증가: 시설ID={}", facilityId);
         
-        CareFacility facility = careFacilityRepository.findById(facilityId)
-                .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
-        
-        facility.setViewCount(facility.getViewCount() + 1);
-        careFacilityRepository.save(facility);
+        // viewCount 필드가 엔티티에 없으므로 현재는 로그만 출력
+        // 추후 viewCount 필드 추가 시 구현
+        log.warn("viewCount 필드가 엔티티에 없어 조회수 증가 기능이 구현되지 않았습니다.");
     }
 
     /**
@@ -220,8 +218,8 @@ public class CareFacilityService {
                 .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
         
         // 평점 계산 로직 (기존 평점과 새로운 평점의 가중 평균)
-        double currentRating = facility.getRating();
-        int reviewCount = facility.getReviewCount();
+        double currentRating = facility.getRating() != null ? facility.getRating() : 0.0;
+        int reviewCount = facility.getReviewCount() != null ? facility.getReviewCount() : 0;
         
         double newRating = ((currentRating * reviewCount) + rating) / (reviewCount + 1);
         
@@ -239,7 +237,7 @@ public class CareFacilityService {
         
         long totalFacilities = careFacilityRepository.count();
         long totalViews = careFacilityRepository.getTotalViewCount();
-        List<CareFacilitySearchResponseDto.TypeStats> typeStats = careFacilityRepository.getTypeStats();
+        List<TypeStats> typeStats = careFacilityRepository.getTypeStats();
         
         return CareFacilitySearchResponseDto.FacilityStats.builder()
                 .totalFacilities(totalFacilities)
@@ -256,22 +254,22 @@ public class CareFacilityService {
                 .id(facility.getId())
                 .name(facility.getName())
                 .facilityType(facility.getFacilityType())
-                .description(facility.getDescription())
+                .description(null) // description 필드가 엔티티에 없으므로 null로 설정
                 .address(facility.getAddress())
-                .location(facility.getLocation())
+                .location(facility.getAddress())
                 .latitude(facility.getLatitude())
                 .longitude(facility.getLongitude())
-                .phoneNumber(facility.getPhoneNumber())
+                .phoneNumber(facility.getPhone())
                 .email(facility.getEmail())
-                .websiteUrl(facility.getWebsiteUrl())
+                .websiteUrl(facility.getWebsite())
                 .operatingHours(facility.getOperatingHours())
                 .capacity(facility.getCapacity())
                 .currentEnrollment(facility.getCurrentEnrollment())
-                .minAge(facility.getMinAge())
-                .maxAge(facility.getMaxAge())
+                .minAge(facility.getAgeRangeMin())
+                .maxAge(facility.getAgeRangeMax())
                 .rating(facility.getRating())
                 .reviewCount(facility.getReviewCount())
-                .viewCount(facility.getViewCount())
+                .viewCount(0)
                 .isActive(facility.getIsActive())
                 .createdAt(facility.getCreatedAt())
                 .updatedAt(facility.getUpdatedAt())

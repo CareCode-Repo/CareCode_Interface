@@ -6,6 +6,7 @@ import com.carecode.core.exception.PolicyNotFoundException;
 import com.carecode.domain.policy.dto.PolicyDto;
 import com.carecode.domain.policy.dto.PolicySearchRequestDto;
 import com.carecode.domain.policy.dto.PolicySearchResponseDto;
+import com.carecode.domain.policy.dto.CategoryStats;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.core.util.PolicyUtil;
@@ -70,8 +71,8 @@ public class PolicyService {
                 request.getKeyword(), request.getCategory(), request.getLocation());
         
         Pageable pageable = PageRequest.of(
-                request.getPage(), 
-                request.getSize(), 
+                request.getPage() != null ? request.getPage() : 0, 
+                request.getSize() != null ? request.getSize() : 10, 
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
         
@@ -93,7 +94,9 @@ public class PolicyService {
                 .totalElements(policyPage.getTotalElements())
                 .totalPages(policyPage.getTotalPages())
                 .currentPage(policyPage.getNumber())
-                .size(policyPage.getSize())
+                .pageSize(policyPage.getSize())
+                .hasNext(policyPage.hasNext())
+                .hasPrevious(policyPage.hasPrevious())
                 .build();
     }
 
@@ -104,7 +107,7 @@ public class PolicyService {
     public List<PolicyDto> getPoliciesByCategory(String category) {
         log.info("카테고리별 정책 조회: 카테고리={}", category);
         
-        List<Policy> policies = policyRepository.findByCategory(category);
+        List<Policy> policies = policyRepository.findByPolicyType(category);
         return policies.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -117,7 +120,7 @@ public class PolicyService {
     public List<PolicyDto> getPoliciesByLocation(String location) {
         log.info("지역별 정책 조회: 지역={}", location);
         
-        List<Policy> policies = policyRepository.findByLocation(location);
+        List<Policy> policies = policyRepository.findByTargetRegion(location);
         return policies.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -137,13 +140,13 @@ public class PolicyService {
     }
 
     /**
-     * 인기 정책 조회 (조회수 기준)
+     * 인기 정책 조회 (우선순위 기준)
      */
     @LogExecutionTime
     public List<PolicyDto> getPopularPolicies(int limit) {
         log.info("인기 정책 조회: 제한={}", limit);
         
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        Pageable pageable = PageRequest.of(0, limit);
         List<Policy> policies = policyRepository.findPopularPolicies(pageable);
         return policies.stream()
                 .map(this::convertToDto)
@@ -157,7 +160,7 @@ public class PolicyService {
     public List<PolicyDto> getLatestPolicies(int limit) {
         log.info("최신 정책 조회: 제한={}", limit);
         
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        Pageable pageable = PageRequest.of(0, limit);
         List<Policy> policies = policyRepository.findLatestPolicies(pageable);
         return policies.stream()
                 .map(this::convertToDto)
@@ -165,17 +168,15 @@ public class PolicyService {
     }
 
     /**
-     * 정책 조회수 증가
+     * 정책 조회수 증가 (현재는 구현하지 않음 - viewCount 필드가 없음)
      */
     @Transactional
     public void incrementViewCount(Long policyId) {
         log.info("정책 조회수 증가: 정책ID={}", policyId);
         
-        Policy policy = policyRepository.findById(policyId)
-                .orElseThrow(() -> new PolicyNotFoundException("정책을 찾을 수 없습니다: " + policyId));
-        
-        policy.setViewCount(policy.getViewCount() + 1);
-        policyRepository.save(policy);
+        // viewCount 필드가 엔티티에 없으므로 현재는 로그만 출력
+        // 추후 viewCount 필드 추가 시 구현
+        log.warn("viewCount 필드가 엔티티에 없어 조회수 증가 기능이 구현되지 않았습니다.");
     }
 
     /**
@@ -187,7 +188,7 @@ public class PolicyService {
         
         long totalPolicies = policyRepository.count();
         long totalViews = policyRepository.getTotalViewCount();
-        List<PolicySearchResponseDto.CategoryStats> categoryStats = policyRepository.getCategoryStats();
+        List<CategoryStats> categoryStats = policyRepository.getCategoryStats();
         
         return PolicySearchResponseDto.PolicyStats.builder()
                 .totalPolicies(totalPolicies)
@@ -204,21 +205,21 @@ public class PolicyService {
                 .id(policy.getId())
                 .title(policy.getTitle())
                 .description(policy.getDescription())
-                .category(policy.getCategory())
-                .location(policy.getLocation())
-                .minAge(policy.getMinAge())
-                .maxAge(policy.getMaxAge())
-                .supportAmount(policy.getSupportAmount())
-                .applicationPeriod(policy.getApplicationPeriod())
-                .eligibilityCriteria(policy.getEligibilityCriteria())
-                .applicationMethod(policy.getApplicationMethod())
+                .category(policy.getPolicyType()) // category 필드가 없으므로 policyType 사용
+                .location(policy.getTargetRegion()) // location 필드가 없으므로 targetRegion 사용
+                .minAge(policy.getTargetAgeMin()) // minAge 필드가 없으므로 targetAgeMin 사용
+                .maxAge(policy.getTargetAgeMax()) // maxAge 필드가 없으므로 targetAgeMax 사용
+                .supportAmount(policy.getBenefitAmount()) // supportAmount 필드가 없으므로 benefitAmount 사용
+                .applicationPeriod(policy.getApplicationStartDate() + " ~ " + policy.getApplicationEndDate())
+                .eligibilityCriteria(null) // eligibilityCriteria 필드가 엔티티에 없음
+                .applicationMethod(policy.getApplicationUrl()) // applicationMethod 필드가 없으므로 applicationUrl 사용
                 .requiredDocuments(policy.getRequiredDocuments())
                 .contactInfo(policy.getContactInfo())
-                .websiteUrl(policy.getWebsiteUrl())
-                .viewCount(policy.getViewCount())
+                .websiteUrl(policy.getApplicationUrl()) // websiteUrl 필드가 없으므로 applicationUrl 사용
+                .viewCount(0) // viewCount 필드가 엔티티에 없으므로 0으로 설정
                 .isActive(policy.getIsActive())
                 .createdAt(policy.getCreatedAt())
                 .updatedAt(policy.getUpdatedAt())
                 .build();
     }
-} 
+}

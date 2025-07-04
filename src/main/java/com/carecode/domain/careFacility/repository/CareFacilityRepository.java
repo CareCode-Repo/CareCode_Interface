@@ -1,6 +1,7 @@
 package com.carecode.domain.careFacility.repository;
 
 import com.carecode.domain.careFacility.dto.CareFacilitySearchResponseDto;
+import com.carecode.domain.careFacility.dto.TypeStats;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -119,25 +120,25 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
                                        @Param("childAge") Integer childAge);
     
     /**
-     * 전체 조회수 합계 조회
+     * 전체 조회수 합계 조회 (현재는 0으로 반환, 추후 viewCount 필드 추가 시 수정)
      */
-    @Query("SELECT COALESCE(SUM(cf.viewCount), 0) FROM CareFacility cf WHERE cf.isActive = true")
+    @Query("SELECT 0 FROM CareFacility cf WHERE cf.isActive = true")
     long getTotalViewCount();
     
     /**
      * 시설 유형별 통계 조회
      */
-    @Query("SELECT new com.carecode.domain.careFacility.dto.CareFacilitySearchResponseDto$TypeStats(" +
-           "cf.facilityType, COUNT(cf), AVG(cf.rating), SUM(cf.viewCount)) " +
+    @Query("SELECT new com.carecode.domain.careFacility.dto.TypeStats(" +
+           "cf.facilityType, COUNT(cf), AVG(cf.rating), 0) " +
            "FROM CareFacility cf WHERE cf.isActive = true " +
            "GROUP BY cf.facilityType")
-    List<CareFacilitySearchResponseDto.TypeStats> getTypeStats();
+    List<TypeStats> getTypeStats();
     
     /**
      * 연령대별 시설 조회
      */
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true AND " +
-           "cf.minAge <= :maxAge AND cf.maxAge >= :minAge")
+           "cf.ageRangeMin <= :maxAge AND cf.ageRangeMax >= :minAge")
     List<CareFacility> findByAgeRange(@Param("minAge") int minAge, @Param("maxAge") int maxAge);
     
     /**
@@ -182,13 +183,10 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true " +
            "AND (:keyword IS NULL OR cf.name LIKE %:keyword% OR cf.address LIKE %:keyword%) " +
            "AND (:facilityType IS NULL OR cf.facilityType = :facilityType) " +
-           "AND (:location IS NULL OR cf.location = :location)")
+           "AND (:address IS NULL OR cf.address LIKE %:address%)")
     org.springframework.data.domain.Page<CareFacility> findBySearchCriteria(
             @Param("keyword") String keyword,
             @Param("facilityType") String facilityType,
-            @Param("location") String location,
-            @Param("latitude") Double latitude,
-            @Param("longitude") Double longitude,
-            @Param("radius") Double radius,
+            @Param("address") String address,
             org.springframework.data.domain.Pageable pageable);
 } 

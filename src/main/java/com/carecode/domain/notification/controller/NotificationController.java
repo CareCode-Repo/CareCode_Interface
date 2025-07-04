@@ -1,4 +1,4 @@
-package com.carecode.notification.controller;
+package com.carecode.domain.notification.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;

@@ -48,8 +48,7 @@ public class PolicyDto {
     @Max(value = 18, message = "최대 연령은 18 이하여야 합니다")
     private Integer maxAge;
     
-    @Size(max = 500, message = "지원 금액 설명은 500자를 초과할 수 없습니다")
-    private String supportAmount;
+    private Integer supportAmount;
     
     @Size(max = 200, message = "신청 기간은 200자를 초과할 수 없습니다")
     private String applicationPeriod;
@@ -76,23 +75,6 @@ public class PolicyDto {
     @NotNull(message = "활성화 상태는 필수입니다")
     private Boolean isActive;
     
-    private LocalDateTime createdAt;
-    
-    private String policyType;
-    private Integer targetAgeMin;
-    private Integer targetAgeMax;
-    private String targetRegion;
-    private Integer benefitAmount;
-    private String benefitType;
-    private LocalDate applicationStartDate;
-    private LocalDate applicationEndDate;
-    private LocalDate policyStartDate;
-    private LocalDate policyEndDate;
-    private String applicationUrl;
-    private String contactInfo;
-    private String requiredDocuments;
-    private Boolean isActive;
-    private Integer priority;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 } 

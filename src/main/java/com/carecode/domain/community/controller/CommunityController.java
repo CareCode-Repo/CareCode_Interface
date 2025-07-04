@@ -68,7 +68,7 @@ public class CommunityController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     public ResponseEntity<CommunityResponseDto.PostResponse> createPost(@RequestBody CommunityRequestDto.CreatePostRequest request) {
-        log.info("게시글 작성: 제목={}, 작성자={}", request.getTitle(), request.getAuthorId());
+        log.info("게시글 작성: 제목={}", request.getTitle());
         
         try {
             CommunityResponseDto.PostResponse post = communityService.createPost(request);
@@ -143,7 +143,7 @@ public class CommunityController extends BaseController {
     public ResponseEntity<CommunityResponseDto.CommentResponse> createComment(
             @PathVariable Long postId,
             @RequestBody CommunityRequestDto.CreateCommentRequest request) {
-        log.info("댓글 작성: 게시글ID={}, 작성자={}", postId, request.getAuthorId());
+        log.info("댓글 작성: 게시글ID={}", postId);
         
         try {
             CommunityResponseDto.CommentResponse comment = communityService.createComment(postId, request);
