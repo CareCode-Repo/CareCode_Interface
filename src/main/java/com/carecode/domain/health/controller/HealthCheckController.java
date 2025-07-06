@@ -1,4 +1,4 @@
-package com.carecode.health.controller;
+package com.carecode.domain.health.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import lombok.RequiredArgsConstructor;

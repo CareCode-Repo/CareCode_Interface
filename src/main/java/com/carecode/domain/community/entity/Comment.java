@@ -12,47 +12,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 커뮤니티 게시글 엔티티
+ * 커뮤니티 댓글 엔티티
  */
 @Entity
-@Table(name = "community_posts")
+@Table(name = "community_comments")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Post {
+public class Comment {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "title", nullable = false)
-    private String title;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
     
-    @Column(name = "content", columnDefinition = "TEXT")
+    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
     
-    @Column(name = "author_id")
+    @Column(name = "author_id", nullable = false)
     private String authorId;
     
     @Column(name = "author_name")
     private String authorName;
     
-    @Column(name = "category")
-    private String category;
-    
-    @Column(name = "is_anonymous")
-    private Boolean isAnonymous;
-    
-    @Column(name = "view_count")
-    private Integer viewCount;
-    
     @Column(name = "like_count")
     private Integer likeCount;
-    
-    @Column(name = "comment_count")
-    private Integer commentCount;
     
     @Column(name = "is_active")
     private Boolean isActive;
@@ -63,18 +52,19 @@ public class Post {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Comment> comments = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_comment_id")
+    private Comment parentComment;
+    
+    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> replies = new ArrayList<>();
     
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (viewCount == null) viewCount = 0;
         if (likeCount == null) likeCount = 0;
-        if (commentCount == null) commentCount = 0;
         if (isActive == null) isActive = true;
-        if (isAnonymous == null) isAnonymous = false;
     }
     
     @PreUpdate
@@ -83,20 +73,18 @@ public class Post {
     }
     
     /**
-     * 게시글에 댓글 추가
+     * 댓글에 답글 추가
      */
-    public void addComment(Comment comment) {
-        comments.add(comment);
-        comment.setPost(this);
-        this.commentCount = comments.size();
+    public void addReply(Comment reply) {
+        replies.add(reply);
+        reply.setParentComment(this);
     }
     
     /**
-     * 게시글에서 댓글 제거
+     * 댓글에서 답글 제거
      */
-    public void removeComment(Comment comment) {
-        comments.remove(comment);
-        comment.setPost(null);
-        this.commentCount = comments.size();
+    public void removeReply(Comment reply) {
+        replies.remove(reply);
+        reply.setParentComment(null);
     }
 } 

@@ -1,6 +1,7 @@
 package com.carecode.domain.policy.repository;
 
 import com.carecode.domain.policy.dto.PolicySearchResponseDto;
+import com.carecode.domain.policy.dto.CategoryStats;
 import com.carecode.domain.policy.entity.Policy;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -76,27 +77,17 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
                                @Param("childAge") Integer childAge);
     
     /**
-     * 카테고리별 정책 조회
-     */
-    List<Policy> findByCategory(String category);
-    
-    /**
-     * 지역별 정책 조회
-     */
-    List<Policy> findByLocation(String location);
-    
-    /**
      * 연령대별 정책 조회
      */
     @Query("SELECT p FROM Policy p WHERE p.isActive = true AND " +
-           "p.minAge <= :maxAge AND p.maxAge >= :minAge")
+           "p.targetAgeMin <= :maxAge AND p.targetAgeMax >= :minAge")
     List<Policy> findByAgeRange(@Param("minAge") int minAge, @Param("maxAge") int maxAge);
     
     /**
-     * 인기 정책 조회 (조회수 기준)
+     * 인기 정책 조회 (우선순위 기준)
      */
     @Query("SELECT p FROM Policy p WHERE p.isActive = true " +
-           "ORDER BY p.viewCount DESC, p.rating DESC")
+           "ORDER BY p.priority DESC, p.createdAt DESC")
     List<Policy> findPopularPolicies(org.springframework.data.domain.Pageable pageable);
     
     /**
@@ -111,8 +102,8 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
      */
     @Query("SELECT p FROM Policy p WHERE p.isActive = true " +
            "AND (:keyword IS NULL OR p.title LIKE %:keyword% OR p.description LIKE %:keyword%) " +
-           "AND (:category IS NULL OR p.category = :category) " +
-           "AND (:location IS NULL OR p.location = :location)")
+           "AND (:category IS NULL OR p.policyType = :category) " +
+           "AND (:location IS NULL OR p.targetRegion LIKE %:location%)")
     org.springframework.data.domain.Page<Policy> findBySearchCriteria(
             @Param("keyword") String keyword,
             @Param("category") String category,
@@ -122,17 +113,17 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
             org.springframework.data.domain.Pageable pageable);
     
     /**
-     * 전체 조회수 합계 조회
+     * 전체 조회수 합계 조회 (현재는 0으로 반환, 추후 viewCount 필드 추가 시 수정)
      */
-    @Query("SELECT COALESCE(SUM(p.viewCount), 0) FROM Policy p WHERE p.isActive = true")
+    @Query("SELECT 0 FROM Policy p WHERE p.isActive = true")
     long getTotalViewCount();
     
     /**
      * 카테고리별 통계 조회
      */
-    @Query("SELECT new com.carecode.domain.policy.dto.PolicySearchResponseDto$CategoryStats(" +
-           "p.category, COUNT(p), AVG(p.rating), SUM(p.viewCount)) " +
+    @Query("SELECT new com.carecode.domain.policy.dto.CategoryStats(" +
+           "p.policyType, COUNT(p), 0.0, 0) " +
            "FROM Policy p WHERE p.isActive = true " +
-           "GROUP BY p.category")
-    List<PolicySearchResponseDto.CategoryStats> getCategoryStats();
+           "GROUP BY p.policyType")
+    List<CategoryStats> getCategoryStats();
 } 
