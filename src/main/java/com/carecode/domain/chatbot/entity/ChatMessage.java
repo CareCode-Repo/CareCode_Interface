@@ -1,5 +1,6 @@
 package com.carecode.domain.chatbot.entity;
 
+import com.carecode.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,8 +29,9 @@ public class ChatMessage {
     @Column(name = "session_id")
     private String sessionId;
     
-    @Column(name = "user_id")
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
     
     @Column(name = "message_type")
     private String messageType; // USER, BOT
