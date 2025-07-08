@@ -9,13 +9,15 @@ import lombok.Builder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 육아 정책 엔티티
  * 정부에서 제공하는 육아 관련 정책 정보를 관리
  */
 @Entity
-@Table(name = "policies")
+@Table(name = "TBL_POLICIES")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -86,6 +88,16 @@ public class Policy {
     
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private PolicyCategory policyCategory;
+    
+    @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PolicyDocument> policyDocuments = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserPolicy> userPolicies = new ArrayList<>();
     
     @PrePersist
     protected void onCreate() {

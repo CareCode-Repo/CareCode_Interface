@@ -29,7 +29,7 @@ public class ChatMessage {
     private String sessionId;
     
     @Column(name = "user_id")
-    private String userId;
+    private Long userId;
     
     @Column(name = "message_type")
     private String messageType; // USER, BOT
