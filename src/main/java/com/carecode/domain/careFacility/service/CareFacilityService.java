@@ -254,7 +254,7 @@ public class CareFacilityService {
                 .id(facility.getId())
                 .name(facility.getName())
                 .facilityType(facility.getFacilityType())
-                .description(null) // description 필드가 엔티티에 없으므로 null로 설정
+                .description(null)
                 .address(facility.getAddress())
                 .location(facility.getAddress())
                 .latitude(facility.getLatitude())
