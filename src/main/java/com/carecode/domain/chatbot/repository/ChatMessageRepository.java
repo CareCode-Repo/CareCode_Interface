@@ -22,12 +22,12 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     /**
      * 사용자별 메시지 목록 조회
      */
-    List<ChatMessage> findByUserIdOrderByTimestampDesc(String userId);
+    List<ChatMessage> findByUserIdOrderByTimestampDesc(Long userId);
     
     /**
      * 읽지 않은 메시지 조회
      */
-    List<ChatMessage> findByUserIdAndIsReadFalse(String userId);
+    List<ChatMessage> findByUserIdAndIsReadFalse(Long userId);
     
     /**
      * 세션별 메시지 개수 조회
@@ -37,5 +37,5 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     /**
      * 사용자별 메시지 개수 조회
      */
-    long countByUserId(String userId);
+    long countByUserId(Long userId);
 } 
