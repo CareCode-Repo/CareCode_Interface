@@ -36,7 +36,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     /**
      * 작성자 ID로 댓글 목록 조회
      */
-    List<Comment> findByAuthorIdAndIsActiveTrueOrderByCreatedAtDesc(String authorId);
+    List<Comment> findByAuthorIdAndIsActiveTrueOrderByCreatedAtDesc(Long authorId);
     
     /**
      * 댓글 존재 여부 확인
