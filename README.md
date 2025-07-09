@@ -43,7 +43,7 @@
   <tbody>
     <tr>
       <td align="center"><a href="https://github.com/RosieOh"><img src="https://github.com/SP0F0/.github/assets/62829894/89996fac-c626-44e8-ba10-3dcc17252079" width="100px;" alt=""/><br /><sub><b>오태훈</b></sub></a><br /><small>Backend Developer</small></td>
-      <td align="center"><a href="https://github.com/kej613"><img src="https://github.com/SP0F0/.github/assets/62829894/fc0c73b5-3bdc-4edf-8c7f-b7b8eff9bf67" width="100px;" alt=""/><br /><sub><b>김은정</b></sub></a><br /><small>Frontend Developer</small></td>
+      <td align="center"><a href="https://github.com/kej613"><img src="https://github.com/SP0F0/.github/assets/62829894/fc0c73b5-3bdc-4edf-8c7f-b7b8eff9bf67" width="100px;" alt=""/><br /><sub><b>김은정</b></sub></a><br /><small>Backend Developer</small></td>
     </tr>
   </tbody>
 </table>
