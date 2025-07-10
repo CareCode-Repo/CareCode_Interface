@@ -47,7 +47,6 @@ public class CommunityResponseDto {
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
-    @Builder
     public static class PostDetailResponse extends PostResponse {
         private List<CommentResponse> comments;
         private List<RelatedPostResponse> relatedPosts;
@@ -103,5 +102,20 @@ public class CommunityResponseDto {
         private Integer totalUsers;
         private Map<String, Integer> categoryDistribution;
         private Map<String, Integer> dailyPostCount;
+    }
+    
+    /**
+     * 태그 응답 DTO
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class TagResponse {
+        private Long id;
+        private String name;
+        private String description;
+        private String createdAt;
     }
 } 
