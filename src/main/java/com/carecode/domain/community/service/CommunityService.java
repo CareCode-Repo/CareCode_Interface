@@ -6,14 +6,20 @@ import com.carecode.domain.community.dto.CommunityRequestDto;
 import com.carecode.domain.community.dto.CommunityResponseDto;
 import com.carecode.domain.community.entity.Comment;
 import com.carecode.domain.community.entity.Post;
+import com.carecode.domain.community.entity.Tag;
+import com.carecode.domain.community.entity.PostTag;
 import com.carecode.domain.community.repository.CommentRepository;
 import com.carecode.domain.community.repository.PostRepository;
+import com.carecode.domain.community.repository.TagRepository;
+import com.carecode.domain.community.repository.PostTagRepository;
+import com.carecode.domain.community.mapper.CommunityMapper;
+import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,8 +34,10 @@ public class CommunityService {
     
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
-    
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final TagRepository tagRepository;
+    private final PostTagRepository postTagRepository;
+    private final UserRepository userRepository;
+    private final CommunityMapper communityMapper;
     
     /**
      * 게시글 목록 조회
@@ -38,9 +46,7 @@ public class CommunityService {
         log.info("게시글 목록 조회");
         try {
             List<Post> posts = postRepository.findAll();
-            return posts.stream()
-                    .map(this::convertToPostResponse)
-                    .collect(Collectors.toList());
+            return communityMapper.toPostResponseList(posts);
         } catch (Exception e) {
             log.error("게시글 목록 조회 중 오류 발생: {}", e.getMessage());
             throw new CareServiceException("게시글 목록을 조회하는 중 오류가 발생했습니다.");
@@ -60,7 +66,7 @@ public class CommunityService {
             post.setViewCount(post.getViewCount() + 1);
             postRepository.save(post);
             
-            return convertToPostDetailResponse(post);
+            return communityMapper.toPostDetailResponse(post);
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -75,17 +81,27 @@ public class CommunityService {
     public CommunityResponseDto.PostResponse createPost(CommunityRequestDto.CreatePostRequest request) {
         log.info("게시글 작성 - 제목: {}", request.getTitle());
         try {
+            // TODO: 실제 인증된 사용자 ID로 변경
+            User author = userRepository.findById(1L) // 임시로 ID 1 사용
+                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+            
             Post post = Post.builder()
                     .title(request.getTitle())
                     .content(request.getContent())
-                    .category(request.getCategory())
-                    .authorId("current-user-id") // TODO: 실제 인증된 사용자 ID로 변경
-                    .authorName("작성자") // TODO: 실제 사용자 이름으로 변경
+                    .category(Post.PostCategory.valueOf(request.getCategory()))
+                    .author(author)
+                    .authorName(author.getName())
                     .isAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false)
                     .build();
             
             Post savedPost = postRepository.save(post);
-            return convertToPostResponse(savedPost);
+            
+            // 태그 처리
+            if (request.getTags() != null && !request.getTags().isEmpty()) {
+                addTagsToPost(savedPost, request.getTags());
+            }
+            
+            return communityMapper.toPostResponse(savedPost);
         } catch (Exception e) {
             log.error("게시글 작성 중 오류 발생: {}", e.getMessage());
             throw new CareServiceException("게시글을 작성하는 중 오류가 발생했습니다.");
@@ -103,10 +119,10 @@ public class CommunityService {
             
             post.setTitle(request.getTitle());
             post.setContent(request.getContent());
-            post.setCategory(request.getCategory());
+            post.setCategory(Post.PostCategory.valueOf(request.getCategory()));
             
             Post updatedPost = postRepository.save(post);
-            return convertToPostResponse(updatedPost);
+            return communityMapper.toPostResponse(updatedPost);
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -143,7 +159,7 @@ public class CommunityService {
             List<Post> posts = postRepository.findAll();
             return posts.stream()
                     .filter(post -> post.getTitle().contains(keyword) || post.getContent().contains(keyword))
-                    .map(this::convertToPostResponse)
+                    .map(communityMapper::toPostResponse)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("게시글 검색 중 오류 발생: {}", e.getMessage());
@@ -165,9 +181,7 @@ public class CommunityService {
             }
             
             List<Comment> comments = commentRepository.findByPostIdAndParentCommentIsNull(postId);
-            return comments.stream()
-                    .map(this::convertToCommentResponse)
-                    .collect(Collectors.toList());
+            return communityMapper.toCommentResponseList(comments);
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -185,6 +199,10 @@ public class CommunityService {
             Post post = postRepository.findById(postId)
                     .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
             
+            // TODO: 실제 인증된 사용자 ID로 변경
+            User author = userRepository.findById(1L) // 임시로 ID 1 사용
+                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+            
             Comment parentComment = null;
             if (request.getParentCommentId() != null) {
                 parentComment = commentRepository.findById(request.getParentCommentId())
@@ -194,8 +212,8 @@ public class CommunityService {
             Comment comment = Comment.builder()
                     .post(post)
                     .content(request.getContent())
-                    .authorId("current-user-id") // TODO: 실제 인증된 사용자 ID로 변경
-                    .authorName("댓글 작성자") // TODO: 실제 사용자 이름으로 변경
+                    .author(author)
+                    .authorName(author.getName())
                     .parentComment(parentComment)
                     .build();
             
@@ -205,7 +223,7 @@ public class CommunityService {
             post.setCommentCount((int) commentRepository.countByPostId(postId));
             postRepository.save(post);
             
-            return convertToCommentResponse(savedComment);
+            return communityMapper.toCommentResponse(savedComment);
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -226,7 +244,7 @@ public class CommunityService {
             comment.setContent(request.getContent());
             Comment updatedComment = commentRepository.save(comment);
             
-            return convertToCommentResponse(updatedComment);
+            return communityMapper.toCommentResponse(updatedComment);
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -261,74 +279,114 @@ public class CommunityService {
         }
     }
     
-    // ========== DTO 변환 메서드 ==========
+    // ========== 태그 관련 메서드 ==========
     
     /**
-     * Post 엔티티를 PostResponse DTO로 변환
+     * 태그 목록 조회
      */
-    private CommunityResponseDto.PostResponse convertToPostResponse(Post post) {
-        return CommunityResponseDto.PostResponse.builder()
-                .postId(post.getId())
-                .title(post.getTitle())
-                .content(post.getContent())
-                .category(post.getCategory())
-                .authorName(post.getAuthorName())
-                .authorId(post.getAuthorId())
-                .isAnonymous(post.getIsAnonymous())
-                .createdAt(post.getCreatedAt().format(DATE_FORMATTER))
-                .viewCount(post.getViewCount())
-                .likeCount(post.getLikeCount())
-                .commentCount(post.getCommentCount())
-                .isLiked(false) // TODO: 실제 좋아요 상태 확인
-                .isBookmarked(false) // TODO: 실제 북마크 상태 확인
-                .build();
+    public List<CommunityResponseDto.TagResponse> getAllTags() {
+        log.info("태그 목록 조회");
+        try {
+            List<Tag> tags = tagRepository.findByIsActiveTrue();
+            return communityMapper.toTagResponseList(tags);
+        } catch (Exception e) {
+            log.error("태그 목록 조회 중 오류 발생: {}", e.getMessage());
+            throw new CareServiceException("태그 목록을 조회하는 중 오류가 발생했습니다.");
+        }
     }
     
     /**
-     * Post 엔티티를 PostDetailResponse DTO로 변환
+     * 태그 검색
      */
-    private CommunityResponseDto.PostDetailResponse convertToPostDetailResponse(Post post) {
-        List<Comment> comments = commentRepository.findByPostIdAndParentCommentIsNull(post.getId());
-        List<CommunityResponseDto.CommentResponse> commentResponses = comments.stream()
-                .map(this::convertToCommentResponse)
-                .collect(Collectors.toList());
-        
-        return CommunityResponseDto.PostDetailResponse.builder()
-                .postId(post.getId())
-                .title(post.getTitle())
-                .content(post.getContent())
-                .category(post.getCategory())
-                .authorName(post.getAuthorName())
-                .authorId(post.getAuthorId())
-                .isAnonymous(post.getIsAnonymous())
-                .createdAt(post.getCreatedAt().format(DATE_FORMATTER))
-                .viewCount(post.getViewCount())
-                .likeCount(post.getLikeCount())
-                .commentCount(post.getCommentCount())
-                .isLiked(false) // TODO: 실제 좋아요 상태 확인
-                .isBookmarked(false) // TODO: 실제 북마크 상태 확인
-                .comments(commentResponses)
-                .build();
+    public List<CommunityResponseDto.TagResponse> searchTags(String keyword) {
+        log.info("태그 검색 - 키워드: {}", keyword);
+        try {
+            List<Tag> tags = tagRepository.findByNameContainingAndIsActiveTrue(keyword);
+            return communityMapper.toTagResponseList(tags);
+        } catch (Exception e) {
+            log.error("태그 검색 중 오류 발생: {}", e.getMessage());
+            throw new CareServiceException("태그를 검색하는 중 오류가 발생했습니다.");
+        }
     }
     
     /**
-     * Comment 엔티티를 CommentResponse DTO로 변환
+     * 태그 생성
      */
-    private CommunityResponseDto.CommentResponse convertToCommentResponse(Comment comment) {
-        List<CommunityResponseDto.CommentResponse> replies = comment.getReplies().stream()
-                .map(this::convertToCommentResponse)
-                .collect(Collectors.toList());
-        
-        return CommunityResponseDto.CommentResponse.builder()
-                .commentId(comment.getId())
-                .content(comment.getContent())
-                .authorName(comment.getAuthorName())
-                .authorId(comment.getAuthorId())
-                .createdAt(comment.getCreatedAt().format(DATE_FORMATTER))
-                .likeCount(comment.getLikeCount())
-                .isLiked(false) // TODO: 실제 좋아요 상태 확인
-                .parentCommentId(comment.getParentComment() != null ? comment.getParentComment().getId() : null)
-                .replies(replies)
+    public CommunityResponseDto.TagResponse createTag(CommunityRequestDto.CreateTagRequest request) {
+        log.info("태그 생성 - 이름: {}", request.getName());
+        try {
+            if (tagRepository.existsByName(request.getName())) {
+                throw new CareServiceException("이미 존재하는 태그입니다: " + request.getName());
+            }
+            
+            Tag tag = Tag.builder()
+                    .name(request.getName())
+                    .description(request.getDescription())
+                    .build();
+            
+            Tag savedTag = tagRepository.save(tag);
+            return communityMapper.toTagResponse(savedTag);
+        } catch (CareServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("태그 생성 중 오류 발생: {}", e.getMessage());
+            throw new CareServiceException("태그를 생성하는 중 오류가 발생했습니다.");
+        }
+    }
+    
+    /**
+     * 게시글에 태그 추가
+     */
+    private void addTagsToPost(Post post, List<String> tagNames) {
+        for (String tagName : tagNames) {
+            Tag tag = tagRepository.findByName(tagName)
+                    .orElseGet(() -> createTagIfNotExists(tagName));
+            
+            if (!postTagRepository.existsByPostIdAndTagId(post.getId(), tag.getId())) {
+                PostTag postTag = PostTag.createPostTag(post, tag);
+                postTagRepository.save(postTag);
+            }
+        }
+    }
+    
+    /**
+     * 태그가 없으면 생성
+     */
+    private Tag createTagIfNotExists(String tagName) {
+        Tag tag = Tag.builder()
+                .name(tagName)
+                .description("자동 생성된 태그")
                 .build();
+        return tagRepository.save(tag);
+    }
+    
+    /**
+     * 게시글의 태그 목록 조회
+     */
+    public List<CommunityResponseDto.TagResponse> getTagsByPostId(Long postId) {
+        log.info("게시글 태그 목록 조회 - 게시글 ID: {}", postId);
+        try {
+            List<PostTag> postTags = postTagRepository.findByPostIdWithTag(postId);
+            return communityMapper.toTagResponseListFromPostTags(postTags);
+        } catch (Exception e) {
+            log.error("게시글 태그 목록 조회 중 오류 발생: {}", e.getMessage());
+            throw new CareServiceException("게시글 태그 목록을 조회하는 중 오류가 발생했습니다.");
+        }
+    }
+    
+    /**
+     * 태그별 게시글 목록 조회
+     */
+    public List<CommunityResponseDto.PostResponse> getPostsByTagId(Long tagId) {
+        log.info("태그별 게시글 목록 조회 - 태그 ID: {}", tagId);
+        try {
+            List<PostTag> postTags = postTagRepository.findByTagIdWithPost(tagId);
+            return postTags.stream()
+                    .map(postTag -> communityMapper.toPostResponse(postTag.getPost()))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("태그별 게시글 목록 조회 중 오류 발생: {}", e.getMessage());
+            throw new CareServiceException("태그별 게시글 목록을 조회하는 중 오류가 발생했습니다.");
+        }
     }
 } 
