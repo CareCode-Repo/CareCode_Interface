@@ -33,17 +33,7 @@ public class CommunityMapper {
      * Post 엔티티를 PostResponse DTO로 변환
      */
     public CommunityResponseDto.PostResponse toPostResponse(Post post) {
-        // 게시글의 태그 목록 조회
-        List<String> tagNames = new ArrayList<>();
-        try {
-            List<PostTag> postTags = postTagRepository.findByPostIdWithTag(post.getId());
-            tagNames = postTags.stream()
-                    .map(postTag -> postTag.getTag().getName())
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.warn("게시글 태그 조회 중 오류: {}", e.getMessage());
-        }
-        
+        List<String> tagNames = post.getTags() != null ? post.getTags().stream().map(Tag::getName).toList() : List.of();
         return CommunityResponseDto.PostResponse.builder()
                 .postId(post.getId())
                 .title(post.getTitle())
@@ -52,13 +42,13 @@ public class CommunityMapper {
                 .authorName(post.getAuthorName())
                 .authorId(post.getAuthor().getId().toString())
                 .isAnonymous(post.getIsAnonymous())
-                .createdAt(post.getCreatedAt().format(DATE_FORMATTER))
+                .createdAt(post.getCreatedAt().toString())
                 .viewCount(post.getViewCount())
                 .likeCount(post.getLikeCount())
                 .commentCount(post.getCommentCount())
                 .tags(tagNames)
-                .isLiked(false) // TODO: 실제 좋아요 상태 확인
-                .isBookmarked(false) // TODO: 실제 북마크 상태 확인
+                .isLiked(false)
+                .isBookmarked(false)
                 .build();
     }
     

@@ -1,7 +1,6 @@
 package com.carecode.domain.user.entity;
 
 import com.carecode.domain.careFacility.entity.Review;
-import com.carecode.domain.chatbot.entity.ChatMessage;
 import com.carecode.domain.community.entity.Post;
 import com.carecode.domain.health.entity.HealthRecord;
 import com.carecode.domain.notification.entity.Notification;
@@ -88,9 +87,6 @@ public class User {
     private LocalDateTime updatedAt;
     
     // JPA 관계 매핑
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ChatMessage> chatMessages = new ArrayList<>();
-    
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Post> posts = new ArrayList<>();
     
@@ -102,12 +98,6 @@ public class User {
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Notification> notifications = new ArrayList<>();
-    
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Like> likes = new ArrayList<>();
-    
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Bookmark> bookmarks = new ArrayList<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Child> children = new ArrayList<>();

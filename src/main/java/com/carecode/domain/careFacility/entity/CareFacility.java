@@ -118,12 +118,6 @@ public class CareFacility {
     @OneToMany(mappedBy = "careFacility", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Review> reviews = new ArrayList<>();
     
-    @OneToMany(mappedBy = "careFacility", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FacilityImage> facilityImages = new ArrayList<>();
-    
-    @OneToMany(mappedBy = "careFacility", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FacilitySchedule> facilitySchedules = new ArrayList<>();
-    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

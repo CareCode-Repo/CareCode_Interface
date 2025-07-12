@@ -41,8 +41,8 @@ public class Tag {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostTag> postTags = new ArrayList<>();
+    @ManyToMany(mappedBy = "tags")
+    private List<Post> posts = new ArrayList<>();
 
     @Builder
     public Tag(String name, String description) {

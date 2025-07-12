@@ -73,8 +73,13 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
     
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostTag> postTags = new ArrayList<>();
+    @ManyToMany
+    @JoinTable(
+        name = "TBL_POST_TAGS",
+        joinColumns = @JoinColumn(name = "POST_ID"),
+        inverseJoinColumns = @JoinColumn(name = "TAG_ID")
+    )
+    private List<Tag> tags = new ArrayList<>();
     
     @PrePersist
     protected void onCreate() {
@@ -142,6 +147,29 @@ public class Post {
         if (status == PostStatus.DELETED) {
             this.isActive = false;
         }
+    }
+    
+    /**
+     * 태그 추가
+     */
+    public void addTag(Tag tag) {
+        if (!tags.contains(tag)) {
+            tags.add(tag);
+        }
+    }
+    
+    /**
+     * 태그 제거
+     */
+    public void removeTag(Tag tag) {
+        tags.remove(tag);
+    }
+    
+    /**
+     * 모든 태그 제거
+     */
+    public void clearTags() {
+        tags.clear();
     }
     
     /**

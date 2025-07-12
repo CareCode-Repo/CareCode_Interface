@@ -35,7 +35,6 @@ public class CommunityService {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final TagRepository tagRepository;
-    private final PostTagRepository postTagRepository;
     private final UserRepository userRepository;
     private final CommunityMapper communityMapper;
     
@@ -341,12 +340,9 @@ public class CommunityService {
         for (String tagName : tagNames) {
             Tag tag = tagRepository.findByName(tagName)
                     .orElseGet(() -> createTagIfNotExists(tagName));
-            
-            if (!postTagRepository.existsByPostIdAndTagId(post.getId(), tag.getId())) {
-                PostTag postTag = PostTag.createPostTag(post, tag);
-                postTagRepository.save(postTag);
-            }
+            post.addTag(tag);
         }
+        postRepository.save(post);
     }
     
     /**
@@ -366,8 +362,11 @@ public class CommunityService {
     public List<CommunityResponseDto.TagResponse> getTagsByPostId(Long postId) {
         log.info("게시글 태그 목록 조회 - 게시글 ID: {}", postId);
         try {
-            List<PostTag> postTags = postTagRepository.findByPostIdWithTag(postId);
-            return communityMapper.toTagResponseListFromPostTags(postTags);
+            Post post = postRepository.findById(postId)
+                    .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
+            return communityMapper.toTagResponseList(post.getTags());
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             log.error("게시글 태그 목록 조회 중 오류 발생: {}", e.getMessage());
             throw new CareServiceException("게시글 태그 목록을 조회하는 중 오류가 발생했습니다.");
@@ -380,10 +379,11 @@ public class CommunityService {
     public List<CommunityResponseDto.PostResponse> getPostsByTagId(Long tagId) {
         log.info("태그별 게시글 목록 조회 - 태그 ID: {}", tagId);
         try {
-            List<PostTag> postTags = postTagRepository.findByTagIdWithPost(tagId);
-            return postTags.stream()
-                    .map(postTag -> communityMapper.toPostResponse(postTag.getPost()))
-                    .collect(Collectors.toList());
+            Tag tag = tagRepository.findById(tagId)
+                    .orElseThrow(() -> new ResourceNotFoundException("태그를 찾을 수 없습니다. ID: " + tagId));
+            return communityMapper.toPostResponseList(postRepository.findByTagsContaining(tag));
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             log.error("태그별 게시글 목록 조회 중 오류 발생: {}", e.getMessage());
             throw new CareServiceException("태그별 게시글 목록을 조회하는 중 오류가 발생했습니다.");
