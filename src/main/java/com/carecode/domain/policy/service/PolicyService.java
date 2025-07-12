@@ -3,13 +3,11 @@ package com.carecode.domain.policy.service;
 import com.carecode.core.annotation.CacheableResult;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.PolicyNotFoundException;
-import com.carecode.domain.policy.dto.PolicyDto;
-import com.carecode.domain.policy.dto.PolicySearchRequestDto;
-import com.carecode.domain.policy.dto.PolicySearchResponseDto;
-import com.carecode.domain.policy.dto.CategoryStats;
+import com.carecode.domain.policy.dto.*;
 import com.carecode.domain.policy.entity.Policy;
+import com.carecode.domain.policy.entity.PolicyCategory;
 import com.carecode.domain.policy.repository.PolicyRepository;
-import com.carecode.core.util.PolicyUtil;
+import com.carecode.domain.policy.repository.PolicyCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -19,7 +17,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +31,7 @@ import java.util.stream.Collectors;
 public class PolicyService {
 
     private final PolicyRepository policyRepository;
+    private final PolicyCategoryRepository policyCategoryRepository;
 
     /**
      * 정책 목록 조회
@@ -205,7 +203,7 @@ public class PolicyService {
                 .id(policy.getId())
                 .title(policy.getTitle())
                 .description(policy.getDescription())
-                .category(policy.getPolicyType()) // category 필드가 없으므로 policyType 사용
+                .category(policy.getPolicyCategory() != null ? policy.getPolicyCategory().getName() : policy.getPolicyType())
                 .location(policy.getTargetRegion()) // location 필드가 없으므로 targetRegion 사용
                 .minAge(policy.getTargetAgeMin()) // minAge 필드가 없으므로 targetAgeMin 사용
                 .maxAge(policy.getTargetAgeMax()) // maxAge 필드가 없으므로 targetAgeMax 사용
@@ -220,6 +218,116 @@ public class PolicyService {
                 .isActive(policy.getIsActive())
                 .createdAt(policy.getCreatedAt())
                 .updatedAt(policy.getUpdatedAt())
+                .build();
+    }
+    
+    // ========== 정책 카테고리 관련 메서드 ==========
+    
+    /**
+     * 정책 카테고리 목록 조회
+     */
+    @LogExecutionTime
+    public List<PolicyCategoryDto> getAllPolicyCategories() {
+        log.info("정책 카테고리 목록 조회");
+        
+        List<PolicyCategory> categories = policyCategoryRepository.findByIsActiveTrueOrderByDisplayOrderAsc();
+        return categories.stream()
+                .map(this::convertToCategoryDto)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 정책 카테고리 상세 조회
+     */
+    @LogExecutionTime
+    public PolicyCategoryDto getPolicyCategoryById(Long categoryId) {
+        log.info("정책 카테고리 상세 조회: 카테고리ID={}", categoryId);
+        
+        PolicyCategory category = policyCategoryRepository.findById(categoryId)
+                .orElseThrow(() -> new PolicyNotFoundException("정책 카테고리를 찾을 수 없습니다: " + categoryId));
+        
+        return convertToCategoryDto(category);
+    }
+    
+    /**
+     * 정책 카테고리 생성
+     */
+    @Transactional
+    public PolicyCategoryDto createPolicyCategory(PolicyCategoryDto request) {
+        log.info("정책 카테고리 생성: 이름={}", request.getName());
+        
+        if (policyCategoryRepository.existsByName(request.getName())) {
+            throw new IllegalArgumentException("이미 존재하는 카테고리입니다: " + request.getName());
+        }
+        
+        PolicyCategory category = PolicyCategory.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .displayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0)
+                .build();
+        
+        PolicyCategory savedCategory = policyCategoryRepository.save(category);
+        return convertToCategoryDto(savedCategory);
+    }
+    
+    /**
+     * 정책 카테고리 수정
+     */
+    @Transactional
+    public PolicyCategoryDto updatePolicyCategory(Long categoryId, PolicyCategoryDto request) {
+        log.info("정책 카테고리 수정: 카테고리ID={}", categoryId);
+        
+        PolicyCategory category = policyCategoryRepository.findById(categoryId)
+                .orElseThrow(() -> new PolicyNotFoundException("정책 카테고리를 찾을 수 없습니다: " + categoryId));
+        
+        category.updateCategory(request.getName(), request.getDescription(), request.getDisplayOrder());
+        PolicyCategory updatedCategory = policyCategoryRepository.save(category);
+        
+        return convertToCategoryDto(updatedCategory);
+    }
+    
+    /**
+     * 정책 카테고리 삭제
+     */
+    @Transactional
+    public void deletePolicyCategory(Long categoryId) {
+        log.info("정책 카테고리 삭제: 카테고리ID={}", categoryId);
+        
+        PolicyCategory category = policyCategoryRepository.findById(categoryId)
+                .orElseThrow(() -> new PolicyNotFoundException("정책 카테고리를 찾을 수 없습니다: " + categoryId));
+        
+        category.deactivate();
+        policyCategoryRepository.save(category);
+    }
+    
+    /**
+     * 카테고리별 정책 조회 (정규화된 구조)
+     */
+    @LogExecutionTime
+    public List<PolicyDto> getPoliciesByCategoryId(Long categoryId) {
+        log.info("카테고리별 정책 조회: 카테고리ID={}", categoryId);
+        
+        PolicyCategory category = policyCategoryRepository.findById(categoryId)
+                .orElseThrow(() -> new PolicyNotFoundException("정책 카테고리를 찾을 수 없습니다: " + categoryId));
+        
+        List<Policy> policies = category.getPolicies();
+        return policies.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * PolicyCategory를 DTO로 변환
+     */
+    private PolicyCategoryDto convertToCategoryDto(PolicyCategory category) {
+        return PolicyCategoryDto.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .description(category.getDescription())
+                .displayOrder(category.getDisplayOrder())
+                .isActive(category.getIsActive())
+                .createdAt(category.getCreatedAt())
+                .updatedAt(category.getUpdatedAt())
                 .build();
     }
 }
