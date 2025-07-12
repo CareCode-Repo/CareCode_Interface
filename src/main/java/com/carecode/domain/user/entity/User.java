@@ -21,7 +21,7 @@ import java.util.List;
  * 사용자 엔티티
  */
 @Entity
-@Table(name = "users")
+@Table(name = "TBL_USER")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,59 +31,60 @@ public class User {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
     private Long id; // PK
     
-    @Column(name = "user_id", nullable = false, unique = true)
+    @Column(name = "USER_ID", nullable = false)
     private String userId; // UK
     
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "EMAIL", nullable = false)
     private String email; // UK
     
-    @Column(name = "password")
+    @Column(name = "PASSWORD", nullable = false)
     private String password;
     
-    @Column(name = "name", nullable = false)
+    @Column(name = "NAME", nullable = false)
     private String name;
     
-    @Column(name = "phone_number")
+    @Column(name = "PHONE_NUMBER")
     private String phoneNumber;
     
-    @Column(name = "birth_date")
+    @Column(name = "BIRTH_DATE")
     private LocalDate birthDate;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "gender")
+    @Column(name = "GENDER")
     private Gender gender;
     
-    @Column(name = "address")
+    @Column(name = "ADDRESS")
     private String address;
     
-    @Column(name = "latitude")
+    @Column(name = "LATITUDE")
     private Double latitude;
     
-    @Column(name = "longitude")
+    @Column(name = "LONGITUDE")
     private Double longitude;
     
-    @Column(name = "profile_image_url")
+    @Column(name = "PROFILE_IMAGE_URL")
     private String profileImageUrl;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
+    @Column(name = "ROLE", nullable = false)
     private UserRole role; // PARENT, CAREGIVER, ADMIN 등
     
-    @Column(name = "is_active")
+    @Column(name = "IS_ACTIVE", nullable = false)
     private Boolean isActive;
     
-    @Column(name = "email_verified")
+    @Column(name = "EMAIL_VERIFIED", nullable = false)
     private Boolean emailVerified;
     
-    @Column(name = "last_login_at")
+    @Column(name = "LAST_LOGIN_AT")
     private LocalDateTime lastLoginAt;
     
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
     
     // JPA 관계 매핑

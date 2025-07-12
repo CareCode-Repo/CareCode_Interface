@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 알림 엔티티
  */
 @Entity
-@Table(name = "notifications")
+@Table(name = "TBL_NOTIFICATION")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,53 +24,54 @@ public class Notification {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
     private Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "USER_ID", nullable = false)
     private User user;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "notification_type", nullable = false)
+    @Column(name = "NOTIFICATION_TYPE", nullable = false)
     private NotificationType notificationType; // POLICY, HEALTH, COMMUNITY, SYSTEM
     
-    @Column(name = "title", nullable = false)
+    @Column(name = "TITLE", nullable = false)
     private String title;
     
-    @Column(name = "message", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "MESSAGE", columnDefinition = "TEXT", nullable = false)
     private String message;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "priority")
+    @Column(name = "PRIORITY")
     private NotificationPriority priority; // HIGH, MEDIUM, LOW
     
-    @Column(name = "is_read")
+    @Column(name = "IS_READ")
     private Boolean isRead;
     
-    @Column(name = "is_sent")
+    @Column(name = "IS_SENT")
     private Boolean isSent;
     
-    @Column(name = "scheduled_at")
+    @Column(name = "SCHEDULED_AT")
     private LocalDateTime scheduledAt;
     
-    @Column(name = "sent_at")
+    @Column(name = "SENT_AT")
     private LocalDateTime sentAt;
     
-    @Column(name = "read_at")
+    @Column(name = "READ_AT")
     private LocalDateTime readAt;
     
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_id")
+    @JoinColumn(name = "TEMPLATE_ID")
     private NotificationTemplate notificationTemplate;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "channel_id")
+    @JoinColumn(name = "CHANNEL_ID")
     private NotificationChannel notificationChannel;
     
     @PrePersist
