@@ -12,7 +12,6 @@ import lombok.Builder;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class CategoryStats {
     private String category;

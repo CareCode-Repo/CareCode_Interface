@@ -77,4 +77,52 @@ public class NotificationRequestDto {
         private List<Long> notificationIds;
         private Boolean markAllAsRead;
     }
+
+    /**
+     * 푸시 알림 토큰 등록 요청 DTO
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class RegisterPushTokenRequest {
+        private String token;
+        private String deviceType; // "ANDROID", "IOS", "WEB"
+        private String deviceId;
+    }
+
+    /**
+     * 알림 설정 수정 요청 DTO
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class UpdateNotificationSettingsRequest {
+        private boolean policyNotification;
+        private boolean facilityNotification;
+        private boolean communityNotification;
+        private boolean chatbotNotification;
+        private boolean emailNotification;
+        private boolean pushNotification;
+        private boolean smsNotification;
+        private String quietHoursStart;
+        private String quietHoursEnd;
+    }
+
+    /**
+     * 테스트 알림 발송 요청 DTO
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class SendTestNotificationRequest {
+        private String type; // "PUSH", "EMAIL", "SMS"
+        private String title;
+        private String message;
+    }
 } 

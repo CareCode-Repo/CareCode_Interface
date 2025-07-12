@@ -68,4 +68,17 @@ public class CommunityRequestDto {
     public static class UpdateCommentRequest {
         private String content;
     }
+    
+    /**
+     * 태그 생성 요청 DTO
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CreateTagRequest {
+        private String name;
+        private String description;
+    }
 } 

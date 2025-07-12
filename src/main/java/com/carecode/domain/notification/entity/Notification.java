@@ -1,5 +1,6 @@
 package com.carecode.domain.notification.entity;
 
+import com.carecode.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,9 +12,12 @@ import java.time.LocalDateTime;
 
 /**
  * 알림 엔티티
+ * 
+ * <p>사용자에게 전송되는 알림을 관리합니다.
+ * 단순한 구조로 필수 기능만 포함합니다.</p>
  */
 @Entity
-@Table(name = "notifications")
+@Table(name = "TBL_NOTIFICATION")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,57 +27,58 @@ public class Notification {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
     private Long id;
     
-    @Column(name = "user_id", nullable = false)
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "USER_ID", nullable = false)
+    private User user;
     
-    @Column(name = "notification_type", nullable = false)
-    private String notificationType; // POLICY, HEALTH, COMMUNITY, SYSTEM
+    @Enumerated(EnumType.STRING)
+    @Column(name = "NOTIFICATION_TYPE", nullable = false)
+    private NotificationType notificationType;
     
-    @Column(name = "title", nullable = false)
+    @Column(name = "TITLE", nullable = false)
     private String title;
     
-    @Column(name = "message", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "MESSAGE", columnDefinition = "TEXT", nullable = false)
     private String message;
     
-    @Column(name = "priority")
-    private String priority; // HIGH, MEDIUM, LOW
+    @Column(name = "IS_READ", nullable = false)
+    private Boolean isRead = false;
     
-    @Column(name = "is_read")
-    private Boolean isRead;
-    
-    @Column(name = "is_sent")
-    private Boolean isSent;
-    
-    @Column(name = "scheduled_at")
-    private LocalDateTime scheduledAt;
-    
-    @Column(name = "sent_at")
-    private LocalDateTime sentAt;
-    
-    @Column(name = "read_at")
-    private LocalDateTime readAt;
-    
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
     
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        if (isRead == null) {
-            isRead = false;
-        }
-        if (isSent == null) {
-            isSent = false;
-        }
     }
     
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    /**
+     * 알림 읽음 처리
+     */
+    public void markAsRead() {
+        this.isRead = true;
+    }
+    
+    /**
+     * 알림 타입 Enum
+     */
+    public enum NotificationType {
+        POLICY("정책"),
+        HEALTH("건강"),
+        COMMUNITY("커뮤니티"),
+        SYSTEM("시스템");
+        
+        private final String displayName;
+        
+        NotificationType(String displayName) {
+            this.displayName = displayName;
+        }
+        
+        public String getDisplayName() {
+            return displayName;
+        }
     }
 } 

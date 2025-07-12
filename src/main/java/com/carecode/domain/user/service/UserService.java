@@ -120,10 +120,10 @@ public class UserService {
                 .name(userDto.getName())
                 .phoneNumber(userDto.getPhoneNumber())
                 .birthDate(userDto.getBirthDate())
-                .gender(userDto.getGender())
+                .gender(User.Gender.valueOf(userDto.getGender()))
                 .address(userDto.getAddress())
                 .profileImageUrl(userDto.getProfileImageUrl())
-                .role(userDto.getRole())
+                .role(User.UserRole.valueOf(userDto.getRole()))
                 .isActive(true)
                 .emailVerified(false)
                 .createdAt(LocalDateTime.now())
@@ -305,7 +305,7 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         
-        user.setRole(newRole);
+        user.setRole(User.UserRole.valueOf(newRole));
         user.setUpdatedAt(LocalDateTime.now());
         
         userRepository.save(user);
@@ -387,10 +387,10 @@ public class UserService {
                 .name(user.getName())
                 .phoneNumber(user.getPhoneNumber())
                 .birthDate(user.getBirthDate())
-                .gender(user.getGender())
+                .gender(String.valueOf(user.getGender()))
                 .address(user.getAddress())
                 .profileImageUrl(user.getProfileImageUrl())
-                .role(user.getRole())
+                .role(String.valueOf(user.getRole()))
                 .isActive(user.getIsActive())
                 .emailVerified(user.getEmailVerified())
                 .createdAt(user.getCreatedAt())

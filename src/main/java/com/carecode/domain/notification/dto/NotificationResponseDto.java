@@ -106,4 +106,66 @@ public class NotificationResponseDto {
         private String deliveredAt;
         private String errorMessage;
     }
+
+    /**
+     * 알림 상세 응답 DTO
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class NotificationDetailResponse extends NotificationResponse {
+        private String readAt;
+        private String deliveredAt;
+        private String failureReason;
+    }
+
+    /**
+     * 읽지 않은 알림 개수 응답 DTO
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class UnreadCountResponse {
+        private int unreadCount;
+        private Map<String, Integer> unreadCountByCategory;
+    }
+
+    /**
+     * 알림 통계 응답 DTO (확장)
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class NotificationStatsResponseExtended {
+        private int totalNotifications;
+        private int readNotifications;
+        private int unreadNotifications;
+        private Map<String, Integer> notificationsByType;
+        private Map<String, Integer> notificationsByCategory;
+        private Map<String, Integer> dailyNotificationCount;
+    }
+
+    /**
+     * 알림 템플릿 응답 DTO (확장)
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class NotificationTemplateResponseExtended {
+        private String templateId;
+        private String name;
+        private String description;
+        private String type;
+        private String titleTemplate;
+        private String messageTemplate;
+        private Map<String, String> variables;
+        private boolean isActive;
+    }
 } 
