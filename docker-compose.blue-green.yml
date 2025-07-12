@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: carecode-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - carecode-blue
+      - carecode-green
+    networks:
+      - carecode-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Blue Environment (Production)
+  carecode-blue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carecode-blue
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/carecode?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=carecode
+      - SPRING_DATASOURCE_PASSWORD=carecode123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+      - SPRING_JPA_SHOW_SQL=false
+      - SERVER_PORT=8080
+      - APP_ENVIRONMENT=blue
+    depends_on:
+      - mariadb
+    networks:
+      - carecode-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Green Environment (Staging)
+  carecode-green:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carecode-green
+    environment:
+      - SPRING_PROFILES_ACTIVE=staging
+      - SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/carecode?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=carecode
+      - SPRING_DATASOURCE_PASSWORD=carecode123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+      - SPRING_JPA_SHOW_SQL=false
+      - SERVER_PORT=8080
+      - APP_ENVIRONMENT=green
+    depends_on:
+      - mariadb
+    networks:
+      - carecode-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MariaDB Database
+  mariadb:
+    image: mariadb:10.11
+    container_name: carecode-mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: carecode
+      MYSQL_USER: carecode
+      MYSQL_PASSWORD: carecode123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./docker/mariadb/init:/docker-entrypoint-initdb.d
+    networks:
+      - carecode-network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Redis Cache (선택사항)
+  redis:
+    image: redis:7-alpine
+    container_name: carecode-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - carecode-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+volumes:
+  mariadb_data:
+    driver: local
+  redis_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+networks:
+  carecode-network:
+    driver: bridge 
