@@ -30,7 +30,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     /**
      * 사용자별 게시글 목록 조회
      */
-    Page<Post> findByAuthorIdAndIsActiveTrue(String authorId, Pageable pageable);
+    Page<Post> findByAuthorIdAndIsActiveTrue(Long authorId, Pageable pageable);
     
     /**
      * 인기 게시글 조회 (좋아요 순)
@@ -52,5 +52,5 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     /**
      * 사용자별 게시글 개수 조회
      */
-    long countByAuthorIdAndIsActiveTrue(String authorId);
+    long countByAuthorIdAndIsActiveTrue(Long authorId);
 } 
