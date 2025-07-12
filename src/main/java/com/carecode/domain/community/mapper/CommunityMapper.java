@@ -4,16 +4,13 @@ import com.carecode.domain.community.dto.CommunityResponseDto;
 import com.carecode.domain.community.entity.Comment;
 import com.carecode.domain.community.entity.Post;
 import com.carecode.domain.community.entity.Tag;
-import com.carecode.domain.community.entity.PostTag;
 import com.carecode.domain.community.repository.CommentRepository;
-import com.carecode.domain.community.repository.PostTagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -25,7 +22,6 @@ import java.util.stream.Collectors;
 public class CommunityMapper {
     
     private final CommentRepository commentRepository;
-    private final PostTagRepository postTagRepository;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
@@ -117,13 +113,6 @@ public class CommunityMapper {
     }
     
     /**
-     * PostTag 엔티티를 TagResponse DTO로 변환
-     */
-    public CommunityResponseDto.TagResponse toTagResponse(PostTag postTag) {
-        return toTagResponse(postTag.getTag());
-    }
-    
-    /**
      * Post 엔티티 리스트를 PostResponse DTO 리스트로 변환
      */
     public List<CommunityResponseDto.PostResponse> toPostResponseList(List<Post> posts) {
@@ -146,15 +135,6 @@ public class CommunityMapper {
      */
     public List<CommunityResponseDto.TagResponse> toTagResponseList(List<Tag> tags) {
         return tags.stream()
-                .map(this::toTagResponse)
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * PostTag 엔티티 리스트를 TagResponse DTO 리스트로 변환
-     */
-    public List<CommunityResponseDto.TagResponse> toTagResponseListFromPostTags(List<PostTag> postTags) {
-        return postTags.stream()
                 .map(this::toTagResponse)
                 .collect(Collectors.toList());
     }

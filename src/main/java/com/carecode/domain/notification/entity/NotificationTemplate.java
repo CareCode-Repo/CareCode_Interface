@@ -10,8 +10,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 알림 템플릿 엔티티
@@ -21,7 +19,6 @@ import java.util.List;
  * 주요 기능:
  * - 알림 템플릿 정보 관리 (제목, 내용, 타입, 설명)
  * - 템플릿 활성화/비활성화 상태 관리
- * - 해당 템플릿을 사용한 알림들 추적
  * - 템플릿별 알림 발송 통계 및 모니터링
  * 
  * @author CareCode Team
@@ -29,7 +26,7 @@ import java.util.List;
  * @version 1.0.0
  */
 @Entity
-@Table(name = "notification_templates")
+@Table(name = "TBL_NOTIFICATION_TEMPLATES")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
@@ -41,34 +38,35 @@ public class NotificationTemplate {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
     private Long id;
 
     /**
      * 템플릿 코드
      * @since 1.0.0
      */
-    @Column(name = "template_code", nullable = false, unique = true, length = 50)
+    @Column(name = "TEMPLATE_CODE", nullable = false, unique = true, length = 50)
     private String templateCode;
 
     /**
      * 알림 제목 템플릿
      * @since 1.0.0
      */
-    @Column(name = "title", nullable = false, length = 200)
+    @Column(name = "TITLE", nullable = false, length = 200)
     private String title;
 
     /**
      * 알림 내용 템플릿
      * @since 1.0.0
      */
-    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "CONTENT", columnDefinition = "TEXT", nullable = false)
     private String content;
 
     /**
      * 템플릿 타입
      * @since 1.0.0
      */
-    @Column(name = "template_type", length = 50)
+    @Column(name = "TEMPLATE_TYPE", length = 50)
     private String templateType;
 
     /**
@@ -78,7 +76,7 @@ public class NotificationTemplate {
      * 
      * @since 1.0.0
      */
-    @Column(name = "description", length = 500)
+    @Column(name = "DESCRIPTION", length = 500)
     private String description;
 
     /**
@@ -90,7 +88,7 @@ public class NotificationTemplate {
      * 
      * @since 1.0.0
      */
-    @Column(name = "is_active", nullable = false)
+    @Column(name = "IS_ACTIVE", nullable = false)
     private Boolean isActive = true;
 
     /**
@@ -101,7 +99,7 @@ public class NotificationTemplate {
      * @since 1.0.0
      */
     @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     /**
@@ -112,25 +110,8 @@ public class NotificationTemplate {
      * @since 1.0.0
      */
     @LastModifiedDate
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
-
-    /**
-     * 이 템플릿을 사용하여 발송된 알림들
-     * 
-     * One-to-Many 관계: 하나의 템플릿은 여러 알림에서 사용될 수 있음
-     * 
-     * cascade = CascadeType.ALL: 템플릿 삭제 시 관련 알림도 함께 삭제
-     * orphanRemoval = true: 알림이 템플릿에서 제거되면 DB에서도 삭제
-     * 
-     * 예시:
-     * - WELCOME_EMAIL 템플릿: 환영 이메일로 발송된 모든 알림들
-     * - PASSWORD_RESET 템플릿: 비밀번호 재설정으로 발송된 모든 알림들
-     * 
-     * @since 1.0.0
-     */
-    @OneToMany(mappedBy = "notificationTemplate", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Notification> notifications = new ArrayList<>();
 
     /**
      * 알림 템플릿 생성자
@@ -190,16 +171,6 @@ public class NotificationTemplate {
      */
     public void activate() {
         this.isActive = true;
-    }
-
-    /**
-     * 이 템플릿을 사용하여 발송된 알림 개수 조회
-     * 
-     * @return 알림 개수
-     * @since 1.0.0
-     */
-    public int getNotificationCount() {
-        return notifications.size();
     }
 
     /**

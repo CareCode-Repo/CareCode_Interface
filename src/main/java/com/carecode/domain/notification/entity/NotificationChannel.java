@@ -8,13 +8,16 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 알림 채널 엔티티
  * 
- * 알림을 전송할 수 있는 다양한 채널 정보를 관리
+ * 알림을 전송할 수 있는 다양한 채널 정보를 관리.
+ * 
+ * 주요 기능:
+ * - 알림 채널 정보 관리 (이름, 설명)
+ * - 채널별 알림 전송 통계 및 모니터링
+ * 
  * @author CareCode Team
  * @since 1.0.0
  */
@@ -25,9 +28,6 @@ import java.util.List;
 @EntityListeners(AuditingEntityListener.class)
 public class NotificationChannel {
 
-    /**
-     * 알림 채널 고유 식별자 (Primary Key)
-     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
@@ -58,12 +58,6 @@ public class NotificationChannel {
     private LocalDateTime updatedAt;
 
     /**
-     * 이 채널을 통해 전송된 알림들
-     */
-    @OneToMany(mappedBy = "notificationChannel", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Notification> notifications = new ArrayList<>();
-
-    /**
      * 알림 채널 생성자
      * 
      * @param name 채널 이름 (예: "EMAIL", "PUSH", "SMS")
@@ -84,15 +78,6 @@ public class NotificationChannel {
     public void updateChannel(String name, String description) {
         this.name = name;
         this.description = description;
-    }
-
-    /**
-     * 이 채널을 통해 전송된 알림 개수 조회
-     * 
-     * @return 알림 개수
-     */
-    public int getNotificationCount() {
-        return notifications.size();
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.carecode.domain.community.repository;
 
 import com.carecode.domain.community.entity.Post;
+import com.carecode.domain.community.entity.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -53,4 +54,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      * 사용자별 게시글 개수 조회
      */
     long countByAuthorIdAndIsActiveTrue(Long authorId);
+    
+    /**
+     * 태그별 게시글 목록 조회
+     */
+    @Query("SELECT p FROM Post p JOIN p.tags t WHERE t = :tag AND p.isActive = true")
+    List<Post> findByTagsContaining(@Param("tag") Tag tag);
 } 
