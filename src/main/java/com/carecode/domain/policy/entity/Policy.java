@@ -96,9 +96,6 @@ public class Policy {
     @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PolicyDocument> policyDocuments = new ArrayList<>();
     
-    @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserPolicy> userPolicies = new ArrayList<>();
-    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

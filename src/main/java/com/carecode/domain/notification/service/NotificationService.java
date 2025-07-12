@@ -160,7 +160,6 @@ public class NotificationService {
                 .type(notification.getNotificationType().name())
                 .isRead(notification.getIsRead())
                 .createdAt(notification.getCreatedAt())
-                .updatedAt(notification.getUpdatedAt())
                 .build();
     }
 } 
