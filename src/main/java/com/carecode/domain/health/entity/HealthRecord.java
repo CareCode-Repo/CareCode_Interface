@@ -1,5 +1,6 @@
 package com.carecode.domain.health.entity;
 
+import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -155,10 +156,9 @@ public class HealthRecord {
     /**
      * 기록 내용 업데이트
      */
-    public void updateRecord(String title, String description, LocalDate recordDate, 
-                           String location, String doctorName, String hospitalName,
-                           Double height, Double weight, Double temperature,
-                           String bloodPressure, Integer pulseRate, String notes) {
+    public void updateRecord(LocalDate recordDate,
+                             Double height, Double weight, Double temperature,
+                             String bloodPressure, Integer pulseRate, String notes) {
         this.title = title;
         this.description = description;
         this.recordDate = recordDate;
