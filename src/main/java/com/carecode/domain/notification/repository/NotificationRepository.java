@@ -23,6 +23,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     Page<Notification> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
     
     /**
+     * 사용자별 알림 목록 조회 (전체)
+     */
+    List<Notification> findByUserIdOrderByCreatedAtDesc(Long userId);
+    
+    /**
      * 읽지 않은 알림 조회
      */
     List<Notification> findByUserIdAndIsReadFalse(Long userId);

@@ -34,9 +34,9 @@ public class User {
     private Long id; // PK
     
     @Column(name = "USER_ID", nullable = false)
-    private String userId; // UK
+    private String userId; // UK - 자동 생성
     
-    @Column(name = "EMAIL", nullable = false)
+    @Column(name = "EMAIL", nullable = false, unique = true)
     private String email; // UK
     
     @Column(name = "PASSWORD", nullable = false)
@@ -111,6 +111,9 @@ public class User {
         updatedAt = LocalDateTime.now();
         if (isActive == null) isActive = true;
         if (emailVerified == null) emailVerified = false;
+        if (userId == null) {
+            userId = "user_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 1000);
+        }
     }
     
     @PreUpdate

@@ -387,4 +387,34 @@ public class CommunityService {
             throw new CareServiceException("태그별 게시글 목록을 조회하는 중 오류가 발생했습니다.");
         }
     }
+
+    /**
+     * 인기 게시글 조회
+     */
+    public List<CommunityResponseDto.PostResponse> getPopularPosts(Integer limit) {
+        log.info("인기 게시글 조회 - 제한: {}", limit);
+        try {
+            List<Post> posts = postRepository.findAll();
+            // 임시로 모든 게시글을 반환 (실제로는 좋아요 수, 조회수로 정렬)
+            return communityMapper.toPostResponseList(posts.stream().limit(limit).collect(Collectors.toList()));
+        } catch (Exception e) {
+            log.error("인기 게시글 조회 중 오류 발생: {}", e.getMessage());
+            throw new CareServiceException("인기 게시글을 조회하는 중 오류가 발생했습니다.");
+        }
+    }
+
+    /**
+     * 최신 게시글 조회
+     */
+    public List<CommunityResponseDto.PostResponse> getLatestPosts(Integer limit) {
+        log.info("최신 게시글 조회 - 제한: {}", limit);
+        try {
+            List<Post> posts = postRepository.findAll();
+            // 임시로 모든 게시글을 반환 (실제로는 생성일시로 정렬)
+            return communityMapper.toPostResponseList(posts.stream().limit(limit).collect(Collectors.toList()));
+        } catch (Exception e) {
+            log.error("최신 게시글 조회 중 오류 발생: {}", e.getMessage());
+            throw new CareServiceException("최신 게시글을 조회하는 중 오류가 발생했습니다.");
+        }
+    }
 } 

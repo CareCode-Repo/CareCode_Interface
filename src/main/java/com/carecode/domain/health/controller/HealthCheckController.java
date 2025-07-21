@@ -1,319 +1,328 @@
 package com.carecode.domain.health.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.annotation.RequireAuthentication;
+import com.carecode.core.controller.BaseController;
+import com.carecode.core.exception.CareServiceException;
+import com.carecode.domain.health.dto.HealthRequestDto;
+import com.carecode.domain.health.dto.HealthResponseDto;
+import com.carecode.domain.health.service.HealthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
- * 헬스 체크 API 컨트롤러
- * 시스템 상태 모니터링 및 진단
+ * 건강 관리 API 컨트롤러
+ * 육아 관련 건강 정보 관리 서비스
  */
 @RestController
-@RequestMapping("/api/v1/health")
+@RequestMapping("/health")
 @RequiredArgsConstructor
 @Slf4j
-public class HealthCheckController {
+@Tag(name = "건강 관리", description = "육아 관련 건강 정보 관리 API")
+public class HealthCheckController extends BaseController {
+
+    private final HealthService healthService;
 
     /**
-     * 기본 헬스 체크
+     * 건강 정보 등록
      */
-    @GetMapping
+    @PostMapping("/records")
     @LogExecutionTime
-    public ResponseEntity<HealthResponse> healthCheck() {
-        log.info("기본 헬스 체크 요청");
+    @RequireAuthentication
+    @Operation(summary = "건강 정보 등록", description = "새로운 건강 정보를 등록합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "등록 성공",
+            content = @Content(schema = @Schema(implementation = HealthResponseDto.HealthRecordResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<HealthResponseDto.HealthRecordResponse> createHealthRecord(
+            @Parameter(description = "건강 정보", required = true) @RequestBody HealthRequestDto.CreateHealthRecordRequest request) {
+        log.info("건강 정보 등록: 아이ID={}, 제목={}", request.getChildId(), request.getTitle());
         
-        HealthResponse response = new HealthResponse();
-        response.setStatus("UP");
-        response.setTimestamp(java.time.LocalDateTime.now().toString());
-        
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * 상세 헬스 체크
-     */
-    @GetMapping("/detailed")
-    @LogExecutionTime
-    public ResponseEntity<DetailedHealthResponse> detailedHealthCheck() {
-        log.info("상세 헬스 체크 요청");
-        
-        DetailedHealthResponse response = new DetailedHealthResponse();
-        response.setStatus("UP");
-        response.setTimestamp(java.time.LocalDateTime.now().toString());
-        
-        // 각 컴포넌트 상태 확인
-        Map<String, ComponentHealth> components = Map.of(
-            "database", new ComponentHealth("UP", "Database connection is healthy"),
-            "cache", new ComponentHealth("UP", "Cache service is operational"),
-            "external-api", new ComponentHealth("UP", "External APIs are accessible"),
-            "file-system", new ComponentHealth("UP", "File system is accessible")
-        );
-        response.setComponents(components);
-        
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * 데이터베이스 연결 상태 확인
-     */
-    @GetMapping("/database")
-    @LogExecutionTime
-    public ResponseEntity<ComponentHealth> databaseHealthCheck() {
-        log.info("데이터베이스 헬스 체크 요청");
-        
-        // 데이터베이스 연결 상태 확인 로직
-        ComponentHealth health = new ComponentHealth("UP", "Database connection is healthy");
-        return ResponseEntity.ok(health);
-    }
-
-    /**
-     * 캐시 서비스 상태 확인
-     */
-    @GetMapping("/cache")
-    @LogExecutionTime
-    public ResponseEntity<ComponentHealth> cacheHealthCheck() {
-        log.info("캐시 서비스 헬스 체크 요청");
-        
-        // 캐시 서비스 상태 확인 로직
-        ComponentHealth health = new ComponentHealth("UP", "Cache service is operational");
-        return ResponseEntity.ok(health);
-    }
-
-    /**
-     * 외부 API 연결 상태 확인
-     */
-    @GetMapping("/external-apis")
-    @LogExecutionTime
-    public ResponseEntity<Map<String, ComponentHealth>> externalApisHealthCheck() {
-        log.info("외부 API 헬스 체크 요청");
-        
-        // 외부 API 연결 상태 확인 로직
-        Map<String, ComponentHealth> apis = Map.of(
-            "policy-api", new ComponentHealth("UP", "Policy API is accessible"),
-            "facility-api", new ComponentHealth("UP", "Facility API is accessible"),
-            "notification-api", new ComponentHealth("UP", "Notification API is accessible")
-        );
-        
-        return ResponseEntity.ok(apis);
-    }
-
-    /**
-     * 시스템 정보 조회
-     */
-    @GetMapping("/info")
-    @LogExecutionTime
-    public ResponseEntity<SystemInfoResponse> getSystemInfo() {
-        log.info("시스템 정보 조회 요청");
-        
-        SystemInfoResponse info = new SystemInfoResponse();
-        info.setApplicationName("CareCode");
-        info.setVersion("1.0.0");
-        info.setEnvironment("development");
-        info.setJavaVersion(System.getProperty("java.version"));
-        info.setStartTime(java.time.LocalDateTime.now().toString());
-        
-        // 메모리 정보
-        Runtime runtime = Runtime.getRuntime();
-        info.setTotalMemory(runtime.totalMemory());
-        info.setFreeMemory(runtime.freeMemory());
-        info.setUsedMemory(runtime.totalMemory() - runtime.freeMemory());
-        
-        return ResponseEntity.ok(info);
-    }
-
-    /**
-     * 메트릭 정보 조회
-     */
-    @GetMapping("/metrics")
-    @LogExecutionTime
-    public ResponseEntity<MetricsResponse> getMetrics() {
-        log.info("메트릭 정보 조회 요청");
-        
-        MetricsResponse metrics = new MetricsResponse();
-        metrics.setTimestamp(java.time.LocalDateTime.now().toString());
-        
-        // 시스템 메트릭 수집
-        Runtime runtime = Runtime.getRuntime();
-        metrics.setCpuUsage(0.15); // 임시 값
-        metrics.setMemoryUsage((double) (runtime.totalMemory() - runtime.freeMemory()) / runtime.totalMemory());
-        metrics.setActiveConnections(10);
-        metrics.setRequestCount(1000);
-        metrics.setErrorRate(0.01);
-        
-        return ResponseEntity.ok(metrics);
-    }
-
-    /**
-     * 핑 테스트
-     */
-    @GetMapping("/ping")
-    @LogExecutionTime
-    public ResponseEntity<Map<String, String>> ping() {
-        log.info("핑 테스트 요청");
-        
-        return ResponseEntity.ok(Map.of(
-            "message", "pong",
-            "timestamp", java.time.LocalDateTime.now().toString()
-        ));
-    }
-
-    /**
-     * 준비 상태 확인 (Readiness Probe)
-     */
-    @GetMapping("/ready")
-    @LogExecutionTime
-    public ResponseEntity<ReadinessResponse> readinessCheck() {
-        log.info("준비 상태 확인 요청");
-        
-        ReadinessResponse response = new ReadinessResponse();
-        response.setReady(true);
-        response.setTimestamp(java.time.LocalDateTime.now().toString());
-        
-        // 애플리케이션이 요청을 처리할 준비가 되었는지 확인
-        // 데이터베이스 연결, 캐시 연결, 필수 서비스 등 확인
-        
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * 활성 상태 확인 (Liveness Probe)
-     */
-    @GetMapping("/live")
-    @LogExecutionTime
-    public ResponseEntity<LivenessResponse> livenessCheck() {
-        log.info("활성 상태 확인 요청");
-        
-        LivenessResponse response = new LivenessResponse();
-        response.setAlive(true);
-        response.setTimestamp(java.time.LocalDateTime.now().toString());
-        
-        // 애플리케이션이 정상적으로 동작하고 있는지 확인
-        
-        return ResponseEntity.ok(response);
-    }
-
-    // DTO 클래스들
-    public static class HealthResponse {
-        private String status;
-        private String timestamp;
-        
-        // getters and setters
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-        public String getTimestamp() { return timestamp; }
-        public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
-    }
-
-    public static class DetailedHealthResponse {
-        private String status;
-        private String timestamp;
-        private Map<String, ComponentHealth> components;
-        
-        // getters and setters
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-        public String getTimestamp() { return timestamp; }
-        public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
-        public Map<String, ComponentHealth> getComponents() { return components; }
-        public void setComponents(Map<String, ComponentHealth> components) { this.components = components; }
-    }
-
-    public static class ComponentHealth {
-        private String status;
-        private String message;
-        private String details;
-        
-        public ComponentHealth(String status, String message) {
-            this.status = status;
-            this.message = message;
+        try {
+            HealthResponseDto.HealthRecordResponse record = healthService.createHealthRecord(request);
+            return ResponseEntity.ok(record);
+        } catch (CareServiceException e) {
+            log.error("건강 정보 등록 오류: {}", e.getMessage());
+            throw e;
         }
-        
-        // getters and setters
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-        public String getDetails() { return details; }
-        public void setDetails(String details) { this.details = details; }
     }
 
-    public static class SystemInfoResponse {
-        private String applicationName;
-        private String version;
-        private String environment;
-        private String javaVersion;
-        private String startTime;
-        private long totalMemory;
-        private long freeMemory;
-        private long usedMemory;
+    /**
+     * 건강 정보 조회
+     */
+    @GetMapping("/records/{recordId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 정보 조회", description = "특정 건강 정보를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = HealthResponseDto.HealthRecordResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "건강 정보를 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<HealthResponseDto.HealthRecordResponse> getHealthRecord(
+            @Parameter(description = "건강 정보 ID", required = true) @PathVariable Long recordId) {
+        log.info("건강 정보 조회: 기록ID={}", recordId);
         
-        // getters and setters
-        public String getApplicationName() { return applicationName; }
-        public void setApplicationName(String applicationName) { this.applicationName = applicationName; }
-        public String getVersion() { return version; }
-        public void setVersion(String version) { this.version = version; }
-        public String getEnvironment() { return environment; }
-        public void setEnvironment(String environment) { this.environment = environment; }
-        public String getJavaVersion() { return javaVersion; }
-        public void setJavaVersion(String javaVersion) { this.javaVersion = javaVersion; }
-        public String getStartTime() { return startTime; }
-        public void setStartTime(String startTime) { this.startTime = startTime; }
-        public long getTotalMemory() { return totalMemory; }
-        public void setTotalMemory(long totalMemory) { this.totalMemory = totalMemory; }
-        public long getFreeMemory() { return freeMemory; }
-        public void setFreeMemory(long freeMemory) { this.freeMemory = freeMemory; }
-        public long getUsedMemory() { return usedMemory; }
-        public void setUsedMemory(long usedMemory) { this.usedMemory = usedMemory; }
+        try {
+            HealthResponseDto.HealthRecordResponse record = healthService.getHealthRecordById(recordId);
+            return ResponseEntity.ok(record);
+        } catch (CareServiceException e) {
+            log.error("건강 정보 조회 오류: {}", e.getMessage());
+            throw e;
+        }
     }
 
-    public static class MetricsResponse {
-        private String timestamp;
-        private double cpuUsage;
-        private double memoryUsage;
-        private int activeConnections;
-        private int requestCount;
-        private double errorRate;
+    /**
+     * 사용자별 건강 정보 조회
+     */
+    @GetMapping("/records/user/{userId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "사용자별 건강 정보 조회", description = "특정 사용자의 건강 정보 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = HealthResponseDto.HealthRecordResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<HealthResponseDto.HealthRecordResponse>> getUserHealthRecords(
+            @Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
+        log.info("사용자별 건강 정보 조회: 사용자ID={}", userId);
         
-        // getters and setters
-        public String getTimestamp() { return timestamp; }
-        public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
-        public double getCpuUsage() { return cpuUsage; }
-        public void setCpuUsage(double cpuUsage) { this.cpuUsage = cpuUsage; }
-        public double getMemoryUsage() { return memoryUsage; }
-        public void setMemoryUsage(double memoryUsage) { this.memoryUsage = memoryUsage; }
-        public int getActiveConnections() { return activeConnections; }
-        public void setActiveConnections(int activeConnections) { this.activeConnections = activeConnections; }
-        public int getRequestCount() { return requestCount; }
-        public void setRequestCount(int requestCount) { this.requestCount = requestCount; }
-        public double getErrorRate() { return errorRate; }
-        public void setErrorRate(double errorRate) { this.errorRate = errorRate; }
+        try {
+            List<HealthResponseDto.HealthRecordResponse> records = healthService.getHealthRecordsByUserId(userId);
+            return ResponseEntity.ok(records);
+        } catch (CareServiceException e) {
+            log.error("사용자별 건강 정보 조회 오류: {}", e.getMessage());
+            throw e;
+        }
     }
 
-    public static class ReadinessResponse {
-        private boolean ready;
-        private String timestamp;
+    /**
+     * 건강 정보 수정
+     */
+    @PutMapping("/records/{recordId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 정보 수정", description = "기존 건강 정보를 수정합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "수정 성공",
+            content = @Content(schema = @Schema(implementation = HealthResponseDto.HealthRecordResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "건강 정보를 찾을 수 없음"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<HealthResponseDto.HealthRecordResponse> updateHealthRecord(
+            @Parameter(description = "건강 정보 ID", required = true) @PathVariable Long recordId,
+            @Parameter(description = "수정할 건강 정보", required = true) @RequestBody HealthRequestDto.UpdateHealthRecordRequest request) {
+        log.info("건강 정보 수정: 기록ID={}", recordId);
         
-        // getters and setters
-        public boolean isReady() { return ready; }
-        public void setReady(boolean ready) { this.ready = ready; }
-        public String getTimestamp() { return timestamp; }
-        public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+        try {
+            HealthResponseDto.HealthRecordResponse record = healthService.updateHealthRecord(recordId, request);
+            return ResponseEntity.ok(record);
+        } catch (CareServiceException e) {
+            log.error("건강 정보 수정 오류: {}", e.getMessage());
+            throw e;
+        }
     }
 
-    public static class LivenessResponse {
-        private boolean alive;
-        private String timestamp;
+    /**
+     * 건강 정보 삭제
+     */
+    @DeleteMapping("/records/{recordId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 정보 삭제", description = "건강 정보를 삭제합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "삭제 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "건강 정보를 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, String>> deleteHealthRecord(
+            @Parameter(description = "건강 정보 ID", required = true) @PathVariable Long recordId) {
+        log.info("건강 정보 삭제: 기록ID={}", recordId);
         
-        // getters and setters
-        public boolean isAlive() { return alive; }
-        public void setAlive(boolean alive) { this.alive = alive; }
-        public String getTimestamp() { return timestamp; }
-        public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+        try {
+            healthService.deleteHealthRecord(recordId);
+            return ResponseEntity.ok(Map.of("message", "건강 정보가 삭제되었습니다."));
+        } catch (CareServiceException e) {
+            log.error("건강 정보 삭제 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 건강 상태 분석
+     */
+    @PostMapping("/analysis")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 상태 분석", description = "사용자의 건강 상태를 분석합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "분석 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, Object>> analyzeHealthStatus(
+            @Parameter(description = "분석 요청 정보", required = true) @RequestBody HealthRequestDto.CreateHealthRecordRequest request) {
+        log.info("건강 상태 분석: 아이ID={}", request.getChildId());
+        
+        try {
+            Map<String, Object> analysis = healthService.analyzeHealthStatus(request);
+            return ResponseEntity.ok(analysis);
+        } catch (CareServiceException e) {
+            log.error("건강 상태 분석 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 건강 알림 설정
+     */
+    @PostMapping("/alerts")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 알림 설정", description = "건강 관련 알림을 설정합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "설정 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, String>> setHealthAlert(
+            @Parameter(description = "알림 설정 정보", required = true) @RequestBody HealthRequestDto.CreateHealthRecordRequest request) {
+        log.info("건강 알림 설정: 아이ID={}", request.getChildId());
+        
+        try {
+            healthService.setHealthAlert(request);
+            return ResponseEntity.ok(Map.of("message", "건강 알림이 설정되었습니다."));
+        } catch (CareServiceException e) {
+            log.error("건강 알림 설정 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 건강 통계 조회
+     */
+    @GetMapping("/statistics/{userId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 통계 조회", description = "사용자의 건강 관련 통계를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, Object>> getHealthStatistics(
+            @Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
+        log.info("건강 통계 조회: 사용자ID={}", userId);
+        
+        try {
+            Map<String, Object> statistics = healthService.getHealthStatistics(userId);
+            return ResponseEntity.ok(statistics);
+        } catch (CareServiceException e) {
+            log.error("건강 통계 조회 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 건강 리포트 생성
+     */
+    @PostMapping("/reports")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 리포트 생성", description = "건강 관련 리포트를 생성합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "생성 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, Object>> generateHealthReport(
+            @Parameter(description = "리포트 생성 요청", required = true) @RequestBody HealthRequestDto.CreateHealthRecordRequest request) {
+        log.info("건강 리포트 생성: 아이ID={}", request.getChildId());
+        
+        try {
+            Map<String, Object> report = healthService.generateHealthReport(request);
+            return ResponseEntity.ok(report);
+        } catch (CareServiceException e) {
+            log.error("건강 리포트 생성 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 건강 목표 설정
+     */
+    @PostMapping("/goals")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 목표 설정", description = "건강 관련 목표를 설정합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "설정 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, String>> setHealthGoal(
+            @Parameter(description = "건강 목표 정보", required = true) @RequestBody HealthRequestDto.CreateHealthRecordRequest request) {
+        log.info("건강 목표 설정: 아이ID={}", request.getChildId());
+        
+        try {
+            healthService.setHealthGoal(request);
+            return ResponseEntity.ok(Map.of("message", "건강 목표가 설정되었습니다."));
+        } catch (CareServiceException e) {
+            log.error("건강 목표 설정 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 건강 목표 조회
+     */
+    @GetMapping("/goals/{userId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 목표 조회", description = "사용자의 건강 목표를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, Object>> getHealthGoals(
+            @Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
+        log.info("건강 목표 조회: 사용자ID={}", userId);
+        
+        try {
+            Map<String, Object> goals = healthService.getHealthGoals(userId);
+            return ResponseEntity.ok(goals);
+        } catch (CareServiceException e) {
+            log.error("건강 목표 조회 오류: {}", e.getMessage());
+            throw e;
+        }
     }
 } 

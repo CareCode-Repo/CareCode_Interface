@@ -3,6 +3,8 @@ package com.carecode.domain.user.service;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.exception.UserNotFoundException;
+import com.carecode.domain.user.dto.LoginRequestDto;
+import com.carecode.domain.user.dto.PasswordChangeRequestDto;
 import com.carecode.domain.user.dto.UserDto;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.UserRepository;
@@ -65,12 +67,20 @@ public class UserService {
         log.info("사용자 상세 조회: 사용자ID={}", userId);
         
         try {
+            // 먼저 userId로 조회 시도
+            Optional<User> userByUserId = userRepository.findByUserId(userId);
+            if (userByUserId.isPresent()) {
+                return convertToDto(userByUserId.get());
+            }
+            
+            // userId로 찾지 못한 경우 Long ID로 시도
             Long id = Long.parseLong(userId);
             User user = userRepository.findById(id)
                     .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
             
             return convertToDto(user);
         } catch (NumberFormatException e) {
+            // Long ID로도 변환할 수 없는 경우
             throw new IllegalArgumentException("잘못된 사용자 ID 형식입니다: " + userId);
         }
     }
@@ -100,6 +110,17 @@ public class UserService {
     }
 
     /**
+     * 이메일로 User 엔티티 조회 (비밀번호 포함)
+     */
+    @LogExecutionTime
+    public User getUserEntityByEmail(String email) {
+        log.info("이메일로 User 엔티티 조회: 이메일={}", email);
+        
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
+    }
+
+    /**
      * 사용자 생성
      */
     @Transactional
@@ -114,6 +135,12 @@ public class UserService {
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(userDto.getPassword());
         
+        // role이 USER인 경우 PARENT로 변경
+        String role = userDto.getRole();
+        if ("USER".equals(role)) {
+            role = "PARENT";
+        }
+        
         User user = User.builder()
                 .email(userDto.getEmail())
                 .password(encodedPassword)
@@ -123,7 +150,7 @@ public class UserService {
                 .gender(User.Gender.valueOf(userDto.getGender()))
                 .address(userDto.getAddress())
                 .profileImageUrl(userDto.getProfileImageUrl())
-                .role(User.UserRole.valueOf(userDto.getRole()))
+                .role(User.UserRole.valueOf(role))
                 .isActive(true)
                 .emailVerified(false)
                 .createdAt(LocalDateTime.now())
@@ -207,6 +234,34 @@ public class UserService {
         try {
             Long id = Long.parseLong(userId);
             changePassword(id, currentPassword, newPassword);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("잘못된 사용자 ID 형식입니다: " + userId);
+        }
+    }
+
+    /**
+     * 비밀번호 변경 (PasswordChangeRequestDto)
+     */
+    @Transactional
+    @RequireAuthentication
+    public void changePassword(String userId, PasswordChangeRequestDto request) {
+        log.info("비밀번호 변경: 사용자ID={}", userId);
+        
+        try {
+            Long id = Long.parseLong(userId);
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+            
+            // 현재 비밀번호 확인
+            if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+                throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+            }
+            
+            // 새 비밀번호로 변경
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
+            
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("잘못된 사용자 ID 형식입니다: " + userId);
         }
@@ -383,6 +438,7 @@ public class UserService {
     private UserDto convertToDto(User user) {
         return UserDto.builder()
                 .id(user.getId())
+                .userId(user.getUserId())
                 .email(user.getEmail())
                 .name(user.getName())
                 .phoneNumber(user.getPhoneNumber())
@@ -393,6 +449,7 @@ public class UserService {
                 .role(String.valueOf(user.getRole()))
                 .isActive(user.getIsActive())
                 .emailVerified(user.getEmailVerified())
+                .lastLoginAt(user.getLastLoginAt())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
@@ -524,7 +581,7 @@ public class UserService {
     }
 
     /**
-     * 사용자 로그인
+     * 사용자 로그인 (String 파라미터)
      */
     @LogExecutionTime
     public UserDto login(String email, String password) {
@@ -544,10 +601,58 @@ public class UserService {
         }
         
         // 마지막 로그인 시간 업데이트
+        user.setLastLoginAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
         
         return convertToDto(user);
+    }
+
+    /**
+     * 사용자 로그인 (LoginRequestDto)
+     */
+    @LogExecutionTime
+    public UserDto login(LoginRequestDto request) {
+        log.info("사용자 로그인: 이메일={}", request.getEmail());
+        
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + request.getEmail()));
+        
+        // 비밀번호 확인
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+        
+        // 활성화 상태 확인
+        if (!user.getIsActive()) {
+            throw new IllegalArgumentException("비활성화된 사용자입니다.");
+        }
+        
+        // 마지막 로그인 시간 업데이트
+        user.setLastLoginAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+        
+        return convertToDto(user);
+    }
+
+    /**
+     * 사용자 통계 조회
+     */
+    @LogExecutionTime
+    @RequireAuthentication
+    public UserDto.UserStats getUserStatistics() {
+        log.info("사용자 통계 조회");
+        
+        long totalUsers = userRepository.count();
+        long activeUsers = userRepository.countByIsActiveTrue();
+        long verifiedUsers = userRepository.countByEmailVerifiedTrue();
+        
+        return UserDto.UserStats.builder()
+                .totalUsers(totalUsers)
+                .activeUsers(activeUsers)
+                .verifiedUsers(verifiedUsers)
+                .build();
     }
 
     /**

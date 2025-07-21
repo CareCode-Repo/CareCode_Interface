@@ -103,7 +103,9 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
     @Query("SELECT p FROM Policy p WHERE p.isActive = true " +
            "AND (:keyword IS NULL OR p.title LIKE %:keyword% OR p.description LIKE %:keyword%) " +
            "AND (:category IS NULL OR p.policyType = :category) " +
-           "AND (:location IS NULL OR p.targetRegion LIKE %:location%)")
+           "AND (:location IS NULL OR p.targetRegion LIKE %:location%) " +
+           "AND (:minAge IS NULL OR p.targetAgeMin IS NULL OR p.targetAgeMin <= :minAge) " +
+           "AND (:maxAge IS NULL OR p.targetAgeMax IS NULL OR p.targetAgeMax >= :maxAge)")
     org.springframework.data.domain.Page<Policy> findBySearchCriteria(
             @Param("keyword") String keyword,
             @Param("category") String category,

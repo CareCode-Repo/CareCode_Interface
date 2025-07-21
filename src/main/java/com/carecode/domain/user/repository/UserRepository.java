@@ -70,19 +70,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> searchByKeyword(@Param("keyword") String keyword);
     
     /**
-     * 이메일과 비밀번호로 사용자 조회 (로그인용)
+     * 이메일 존재 여부 확인
      */
-    Optional<User> findByEmailAndPassword(String email, String password);
+    boolean existsByEmail(String email);
     
     /**
      * 사용자 ID 존재 여부 확인
      */
     boolean existsByUserId(String userId);
-    
-    /**
-     * 이메일 존재 여부 확인
-     */
-    boolean existsByEmail(String email);
     
     /**
      * 활성화된 사용자 수 조회

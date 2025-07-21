@@ -6,13 +6,25 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 /**
  * 챗봇 응답 DTO들
  */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ChatbotResponseDto {
+    
+    private String messageId;
+    private String sessionId;
+    private String sender;
+    private String content;
+    private LocalDateTime timestamp;
     
     /**
      * 챗봇 응답 DTO
