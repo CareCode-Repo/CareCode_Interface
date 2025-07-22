@@ -16,7 +16,7 @@ import java.util.List;
  * 어린이집, 유치원 등 육아 관련 시설 정보를 관리
  */
 @Entity
-@Table(name = "care_facilities")
+@Table(name = "TBL_CARE_FACILITIES")
 @Getter
 @Setter
 @NoArgsConstructor

@@ -17,7 +17,7 @@ import java.util.List;
  * 계층형 댓글 구조를 지원 (답글/대댓글 기능)
  */
 @Entity
-@Table(name = "community_comments")
+@Table(name = "TBL_COMMENT")
 @Getter
 @Setter
 @NoArgsConstructor

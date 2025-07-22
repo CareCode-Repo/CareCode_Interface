@@ -21,7 +21,7 @@ import java.util.List;
  * @see HealthRecord
  */
 @Entity
-@Table(name = "health_record_types")
+@Table(name = "TBL_HEALTH_RECORD_TYPES")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)

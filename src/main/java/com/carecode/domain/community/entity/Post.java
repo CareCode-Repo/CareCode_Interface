@@ -16,7 +16,7 @@ import java.util.List;
  * 커뮤니티 게시글 엔티티
  */
 @Entity
-@Table(name = "community_posts")
+@Table(name = "TBL_POST")
 @Getter
 @Setter
 @NoArgsConstructor
