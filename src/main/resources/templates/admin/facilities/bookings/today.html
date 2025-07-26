@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>오늘의 예약</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <!-- 상단 헤더 -->
+    <header class="bg-gray-800 shadow flex items-center justify-between px-8 py-4 fixed w-full z-10">
+        <div class="flex items-center space-x-4">
+            <span class="text-2xl font-bold text-blue-400">CareCode Admin</span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-gray-300">admin@carecode.com</span>
+            <a href="/admin/logout" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded flex items-center"><i class="fas fa-sign-out-alt mr-2"></i>로그아웃</a>
+        </div>
+    </header>
+    <div class="flex pt-20 min-h-screen">
+        <!-- 사이드바 -->
+        <aside class="w-64 bg-gray-800 flex flex-col p-6 min-h-screen fixed top-16 left-0 h-full z-0">
+            <nav class="flex-1">
+                <ul class="space-y-4">
+                    <li><a href="/admin/dashboard" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-chart-pie mr-2"></i>대시보드</a></li>
+                    <li><a href="/admin/users" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-users mr-2"></i>사용자 관리</a></li>
+                    <li><a href="/admin/hospitals" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-hospital mr-2"></i>병원 관리</a></li>
+                    <li><a href="/admin/facilities/bookings" class="block py-2 px-4 rounded bg-gray-700 font-semibold text-blue-400"><i class="fas fa-calendar-check mr-2"></i>육아 시설 예약</a></li>
+                    <li><a href="/admin/policies" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-file-alt mr-2"></i>정책 관리</a></li>
+                    <li><a href="/admin/community" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-comments mr-2"></i>커뮤니티 관리</a></li>
+                    <li><a href="/admin/health" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-heartbeat mr-2"></i>건강 관리</a></li>
+                    <li><a href="/admin/notifications" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-bell mr-2"></i>알림 관리</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <!-- 메인 컨텐츠 -->
+        <main class="flex-1 p-10 ml-64 bg-gray-900 min-h-screen">
+            <div class="max-w-7xl mx-auto">
+                <!-- 헤더 -->
+                <div class="flex items-center mb-8 justify-between">
+                    <div class="flex items-center">
+                        <a href="/admin/facilities/bookings" class="text-blue-400 hover:text-blue-300 mr-4">
+                            <i class="fas fa-arrow-left text-xl"></i>
+                        </a>
+                        <i class="fas fa-calendar-day text-3xl text-orange-400 mr-4"></i>
+                        <h1 class="text-3xl font-bold text-blue-300">오늘의 예약</h1>
+                        <span class="ml-4 text-lg text-gray-400" th:text="${#temporals.format(#temporals.createToday(), 'yyyy년 MM월 dd일')}"></span>
+                    </div>
+                    <div class="flex space-x-4">
+                        <a href="/admin/facilities/bookings" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded font-semibold flex items-center">
+                            <i class="fas fa-list mr-2"></i>전체 목록
+                        </a>
+                        <a href="/admin/facilities/bookings/statistics" class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded font-semibold flex items-center">
+                            <i class="fas fa-chart-bar mr-2"></i>통계
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 요약 카드 -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-orange-700 to-orange-500 rounded-xl p-6 shadow text-center">
+                        <div class="flex justify-center mb-2"><i class="fas fa-calendar-day text-3xl text-white"></i></div>
+                        <div class="text-lg font-semibold text-gray-200">오늘 예약</div>
+                        <div class="text-4xl font-bold text-white" th:text="${pagination.totalElements}">0</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-yellow-700 to-yellow-500 rounded-xl p-6 shadow text-center">
+                        <div class="flex justify-center mb-2"><i class="fas fa-clock text-3xl text-white"></i></div>
+                        <div class="text-lg font-semibold text-gray-200">대기중</div>
+                        <div class="text-4xl font-bold text-white" th:text="${bookings.?[status == 'PENDING'].size()}">0</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-6 shadow text-center">
+                        <div class="flex justify-center mb-2"><i class="fas fa-check text-3xl text-white"></i></div>
+                        <div class="text-lg font-semibold text-gray-200">확정</div>
+                        <div class="text-4xl font-bold text-white" th:text="${bookings.?[status == 'CONFIRMED'].size()}">0</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-700 to-green-500 rounded-xl p-6 shadow text-center">
+                        <div class="flex justify-center mb-2"><i class="fas fa-check-circle text-3xl text-white"></i></div>
+                        <div class="text-lg font-semibold text-gray-200">완료</div>
+                        <div class="text-4xl font-bold text-white" th:text="${bookings.?[status == 'COMPLETED'].size()}">0</div>
+                    </div>
+                </div>
+
+                <!-- 시간대별 예약 -->
+                <div class="bg-gray-800 rounded-lg p-6 mb-8">
+                    <h2 class="text-xl font-bold text-blue-300 mb-4 flex items-center">
+                        <i class="fas fa-clock mr-2"></i>시간대별 예약 현황
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                        <div class="text-center p-4 bg-gray-700 rounded-lg">
+                            <div class="text-2xl font-bold text-blue-400" th:text="${bookings.?[#temporals.format(startTime, 'HH') >= '09' and #temporals.format(startTime, 'HH') < '12'].size()}">0</div>
+                            <div class="text-sm text-gray-400">오전 (9-12시)</div>
+                        </div>
+                        <div class="text-center p-4 bg-gray-700 rounded-lg">
+                            <div class="text-2xl font-bold text-green-400" th:text="${bookings.?[#temporals.format(startTime, 'HH') >= '12' and #temporals.format(startTime, 'HH') < '15'].size()}">0</div>
+                            <div class="text-sm text-gray-400">오후 (12-15시)</div>
+                        </div>
+                        <div class="text-center p-4 bg-gray-700 rounded-lg">
+                            <div class="text-2xl font-bold text-yellow-400" th:text="${bookings.?[#temporals.format(startTime, 'HH') >= '15' and #temporals.format(startTime, 'HH') < '18'].size()}">0</div>
+                            <div class="text-sm text-gray-400">저녁 (15-18시)</div>
+                        </div>
+                        <div class="text-center p-4 bg-gray-700 rounded-lg">
+                            <div class="text-2xl font-bold text-purple-400" th:text="${bookings.?[#temporals.format(startTime, 'HH') >= '18' and #temporals.format(startTime, 'HH') < '21'].size()}">0</div>
+                            <div class="text-sm text-gray-400">밤 (18-21시)</div>
+                        </div>
+                        <div class="text-center p-4 bg-gray-700 rounded-lg">
+                            <div class="text-2xl font-bold text-red-400" th:text="${bookings.?[#temporals.format(startTime, 'HH') >= '21' or #temporals.format(startTime, 'HH') < '09'].size()}">0</div>
+                            <div class="text-sm text-gray-400">기타 시간</div>
+                        </div>
+                        <div class="text-center p-4 bg-gray-700 rounded-lg">
+                            <div class="text-2xl font-bold text-orange-400" th:text="${bookings.size()}">0</div>
+                            <div class="text-sm text-gray-400">전체</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 예약 목록 -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-xl font-bold text-blue-300 mb-4 flex items-center">
+                        <i class="fas fa-list mr-2"></i>오늘의 예약 목록
+                    </h2>
+                    
+                    <div th:if="${#lists.isEmpty(bookings)}" class="text-center py-12">
+                        <i class="fas fa-calendar-times text-6xl text-gray-600 mb-4"></i>
+                        <p class="text-xl text-gray-400 mb-2">오늘 예정된 예약이 없습니다.</p>
+                        <p class="text-gray-500">새로운 예약을 확인해보세요.</p>
+                    </div>
+
+                    <div th:if="${!#lists.isEmpty(bookings)}" class="space-y-4">
+                        <div th:each="booking : ${bookings}" class="bg-gray-700 rounded-lg p-6 hover:bg-gray-600 transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-blue-400" th:text="${#temporals.format(booking.startTime, 'HH:mm')}"></div>
+                                        <div class="text-sm text-gray-400" th:text="${#temporals.format(booking.endTime, 'HH:mm')}"></div>
+                                    </div>
+                                    <div class="border-l border-gray-600 pl-4">
+                                        <div class="font-semibold text-lg" th:text="${booking.facilityName}"></div>
+                                        <div class="text-gray-400" th:text="${booking.childName} + ' (' + ${booking.childAge} + '세)'"></div>
+                                        <div class="text-sm text-gray-500" th:text="${booking.userName} + ' - ' + ${booking.parentPhone}"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <div class="text-right">
+                                        <span th:switch="${booking.bookingType}" class="px-3 py-1 rounded text-xs font-semibold">
+                                            <span th:case="'VISIT'" class="bg-blue-100 text-blue-800">방문</span>
+                                            <span th:case="'REGULAR'" class="bg-green-100 text-green-800">정기</span>
+                                            <span th:case="'TEMPORARY'" class="bg-yellow-100 text-yellow-800">임시</span>
+                                            <span th:case="*" class="bg-gray-100 text-gray-800" th:text="${booking.bookingType}"></span>
+                                        </span>
+                                        <div class="mt-2">
+                                            <span th:switch="${booking.status}" class="px-3 py-1 rounded text-xs font-semibold">
+                                                <span th:case="'PENDING'" class="bg-yellow-100 text-yellow-800">대기중</span>
+                                                <span th:case="'CONFIRMED'" class="bg-blue-100 text-blue-800">확정</span>
+                                                <span th:case="'COMPLETED'" class="bg-green-100 text-green-800">완료</span>
+                                                <span th:case="'CANCELLED'" class="bg-red-100 text-red-800">취소됨</span>
+                                                <span th:case="*" class="bg-gray-100 text-gray-800" th:text="${booking.status}"></span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <a th:href="@{'/admin/facilities/bookings/' + ${booking.id}}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                            <i class="fas fa-eye mr-1"></i>상세
+                                        </a>
+                                        <a th:href="@{'/admin/facilities/bookings/' + ${booking.id} + '/edit'}" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                                            <i class="fas fa-edit mr-1"></i>수정
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div th:if="${booking.specialRequirements != null}" class="mt-4 p-3 bg-gray-600 rounded">
+                                <div class="text-sm text-gray-300 font-semibold mb-1">특별 요구사항:</div>
+                                <div class="text-sm text-gray-400" th:text="${booking.specialRequirements}"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 페이징 -->
+                    <div th:if="${pagination != null and pagination.totalPages > 1}" class="mt-6 flex justify-center">
+                        <nav class="flex items-center space-x-2">
+                            <a th:if="${pagination.hasPrevious}" th:href="@{/admin/facilities/bookings/today(page=${pagination.currentPage - 1}, size=${pagination.pageSize})}" 
+                               class="px-3 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                            
+                            <span th:each="pageNum : ${#numbers.sequence(0, pagination.totalPages - 1)}" 
+                                  th:if="${pageNum >= pagination.currentPage - 2 and pageNum <= pagination.currentPage + 2}">
+                            <a th:href="@{/admin/facilities/bookings/today(page=${pageNum}, size=${pagination.pageSize})}" 
+                               th:text="${pageNum + 1}"
+                               th:class="${pageNum == pagination.currentPage ? 'px-3 py-2 bg-blue-600 text-white rounded' : 'px-3 py-2 bg-gray-700 text-white rounded hover:bg-gray-600'}">
+                            </a>
+                            </span>
+                            
+                            <a th:if="${pagination.hasNext}" th:href="@{/admin/facilities/bookings/today(page=${pagination.currentPage + 1}, size=${pagination.pageSize})}" 
+                               class="px-3 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html> 

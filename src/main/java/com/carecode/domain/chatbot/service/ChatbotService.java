@@ -1,50 +1,140 @@
 package com.carecode.domain.chatbot.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.domain.chatbot.dto.ChatbotRequestDto;
 import com.carecode.domain.chatbot.dto.ChatbotResponseDto;
-import com.carecode.domain.chatbot.dto.ChatMessageDto;
+import com.carecode.domain.chatbot.entity.ChatMessage;
+import com.carecode.domain.chatbot.entity.ChatSession;
+import com.carecode.domain.chatbot.repository.ChatMessageRepository;
+import com.carecode.domain.chatbot.repository.ChatSessionRepository;
+import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
- * 육아 챗봇 서비스 UseCase
- * AI 기반 육아 상담 및 질문-답변 서비스
+ * 챗봇 서비스 클래스
+ * 육아 관련 챗봇 기능을 제공
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
+@Transactional(readOnly = true)
 public class ChatbotService {
+
+    private final ChatMessageRepository chatMessageRepository;
+    private final ChatSessionRepository chatSessionRepository;
+    private final UserRepository userRepository;
+
+    // 의도 분석을 위한 키워드 패턴
+    private static final Map<ChatMessage.IntentType, List<Pattern>> INTENT_PATTERNS = new HashMap<>();
+    
+    static {
+        // 인사 패턴
+        INTENT_PATTERNS.put(ChatMessage.IntentType.GREETING, Arrays.asList(
+            Pattern.compile("안녕|하이|헬로|반가워|만나서"),
+            Pattern.compile("안녕하세요|안녕하신가요|반갑습니다")
+        ));
+        
+        // 질문 패턴
+        INTENT_PATTERNS.put(ChatMessage.IntentType.QUESTION, Arrays.asList(
+            Pattern.compile("무엇|뭐|어떻게|언제|어디서|왜|어떤"),
+            Pattern.compile("\\?|\\?\\?|물어보고|궁금해|알려줘")
+        ));
+        
+        // 불만/문의 패턴
+        INTENT_PATTERNS.put(ChatMessage.IntentType.COMPLAINT, Arrays.asList(
+            Pattern.compile("문제|불만|어려워|힘들어|도와줘|해결"),
+            Pattern.compile("안되|안돼|오류|에러|버그")
+        ));
+        
+        // 감사 패턴
+        INTENT_PATTERNS.put(ChatMessage.IntentType.THANKS, Arrays.asList(
+            Pattern.compile("감사|고마워|고맙습니다|감사합니다|thank"),
+            Pattern.compile("도움|도움이|좋아|좋은")
+        ));
+        
+        // 작별인사 패턴
+        INTENT_PATTERNS.put(ChatMessage.IntentType.GOODBYE, Arrays.asList(
+            Pattern.compile("안녕|잘가|바이|goodbye|bye"),
+            Pattern.compile("다음에|나중에|끝|종료")
+        ));
+        
+        // 건강 정보 패턴
+        INTENT_PATTERNS.put(ChatMessage.IntentType.HEALTH_INFO, Arrays.asList(
+            Pattern.compile("건강|병원|의사|약|증상|아프|열|기침"),
+            Pattern.compile("예방접종|백신|검진|진찰|치료")
+        ));
+        
+        // 정책 정보 패턴
+        INTENT_PATTERNS.put(ChatMessage.IntentType.POLICY_INFO, Arrays.asList(
+            Pattern.compile("정책|지원|보조금|혜택|혜택|도움"),
+            Pattern.compile("신청|지원금|수당|급여|복지")
+        ));
+        
+        // 시설 정보 패턴
+        INTENT_PATTERNS.put(ChatMessage.IntentType.FACILITY_INFO, Arrays.asList(
+            Pattern.compile("어린이집|유치원|보육|시설|원"),
+            Pattern.compile("위치|주소|전화|연락처|운영시간")
+        ));
+        
+        // 교육 정보 패턴
+        INTENT_PATTERNS.put(ChatMessage.IntentType.EDUCATION_INFO, Arrays.asList(
+            Pattern.compile("교육|학습|공부|프로그램|강의"),
+            Pattern.compile("육아|양육|부모|아이|아동")
+        ));
+    }
 
     /**
      * 챗봇 메시지 처리
      */
     @LogExecutionTime
+    @Transactional
     public ChatbotResponseDto processMessage(ChatbotRequestDto.ChatbotRequest request) {
         log.info("챗봇 메시지 처리: 사용자ID={}, 메시지={}", request.getUserId(), request.getMessage());
         
         try {
-            // 기본 응답 생성
-            String response = generateBasicResponse(request.getMessage());
+            // 사용자 조회
+            User user = userRepository.findByUserId(request.getUserId())
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다."));
+            
+            // 세션 관리
+            ChatSession session = getOrCreateSession(user, request.getSessionId());
+            
+            // 의도 분석
+            ChatMessage.IntentType intentType = analyzeIntent(request.getMessage());
+            double confidence = calculateConfidence(request.getMessage(), intentType);
+            
+            // 응답 생성
+            String response = generateResponse(request.getMessage(), intentType, user);
+            
+            // 메시지 저장
+            ChatMessage chatMessage = saveChatMessage(user, session, request.getMessage(), response, intentType, confidence);
+            
+            // 세션 업데이트
+            updateSession(session, request.getMessage());
             
             return ChatbotResponseDto.builder()
-                    .messageId(generateMessageId())
-                    .sessionId(generateSessionId())
-                    .sender("BOT")
-                    .content(response)
+                    .messageId(chatMessage.getId())
+                    .response(response)
+                    .intentType(intentType.name())
+                    .confidence(confidence)
+                    .sessionId(session.getSessionId())
                     .timestamp(LocalDateTime.now())
                     .build();
                     
         } catch (Exception e) {
-            log.error("챗봇 메시지 처리 실패: {}", e.getMessage());
+            log.error("챗봇 메시지 처리 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("챗봇 메시지 처리 중 오류가 발생했습니다.", e);
         }
     }
@@ -53,775 +143,335 @@ public class ChatbotService {
      * 대화 기록 조회
      */
     @LogExecutionTime
-    public List<ChatMessageDto> getChatHistory(String userId) {
-        log.info("대화 기록 조회: 사용자ID={}", userId);
+    public List<ChatbotResponseDto.ChatHistoryResponse> getChatHistory(String userId, String sessionId, int page, int size) {
+        log.info("대화 기록 조회: 사용자ID={}, 세션ID={}", userId, sessionId);
         
         try {
-            // 임시로 빈 리스트 반환 (실제로는 데이터베이스에서 조회)
-            return List.of();
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다."));
+            
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ChatMessage> messages;
+            
+            if (sessionId != null && !sessionId.isEmpty()) {
+                messages = chatMessageRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+            } else {
+                messages = chatMessageRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+            }
+            
+            return messages.getContent().stream()
+                    .map(this::convertToHistoryResponse)
+                    .toList();
+                    
         } catch (Exception e) {
-            log.error("대화 기록 조회 실패: {}", e.getMessage());
+            log.error("대화 기록 조회 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("대화 기록 조회 중 오류가 발생했습니다.", e);
         }
     }
 
     /**
-     * 대화 기록 삭제
+     * 세션 목록 조회
      */
     @LogExecutionTime
-    public void deleteChatHistory(String userId) {
-        log.info("대화 기록 삭제: 사용자ID={}", userId);
+    public List<ChatbotResponseDto.SessionResponse> getSessions(String userId, int page, int size) {
+        log.info("세션 목록 조회: 사용자ID={}", userId);
         
         try {
-            // 실제로는 데이터베이스에서 삭제
-            log.info("대화 기록이 삭제되었습니다: 사용자ID={}", userId);
-        } catch (Exception e) {
-            log.error("대화 기록 삭제 실패: {}", e.getMessage());
-            throw new CareServiceException("대화 기록 삭제 중 오류가 발생했습니다.", e);
-        }
-    }
-
-    /**
-     * 특정 메시지 조회
-     */
-    @LogExecutionTime
-    public ChatMessageDto getMessageById(Long messageId) {
-        log.info("메시지 조회: 메시지ID={}", messageId);
-        
-        try {
-            // 임시 응답 (실제로는 데이터베이스에서 조회)
-            return ChatMessageDto.builder()
-                    .messageId(messageId.toString())
-                    .sessionId("session_" + messageId)
-                    .sender("BOT")
-                    .content("임시 메시지 내용")
-                    .timestamp(LocalDateTime.now())
-                    .build();
-        } catch (Exception e) {
-            log.error("메시지 조회 실패: {}", e.getMessage());
-            throw new CareServiceException("메시지 조회 중 오류가 발생했습니다.", e);
-        }
-    }
-
-    /**
-     * 메시지 삭제
-     */
-    @LogExecutionTime
-    public void deleteMessage(Long messageId) {
-        log.info("메시지 삭제: 메시지ID={}", messageId);
-        
-        try {
-            // 실제로는 데이터베이스에서 삭제
-            log.info("메시지가 삭제되었습니다: 메시지ID={}", messageId);
-        } catch (Exception e) {
-            log.error("메시지 삭제 실패: {}", e.getMessage());
-            throw new CareServiceException("메시지 삭제 중 오류가 발생했습니다.", e);
-        }
-    }
-
-    /**
-     * 챗봇 통계 조회
-     */
-    @LogExecutionTime
-    public Map<String, Object> getChatbotStatistics() {
-        log.info("챗봇 통계 조회");
-        
-        try {
-            Map<String, Object> statistics = new HashMap<>();
-            statistics.put("totalSessions", 0);
-            statistics.put("activeSessions", 0);
-            statistics.put("totalMessages", 0);
-            statistics.put("averageResponseTime", 0.5);
-            statistics.put("userSatisfaction", 4.2);
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다."));
             
-            return statistics;
-        } catch (Exception e) {
-            log.error("챗봇 통계 조회 실패: {}", e.getMessage());
-            throw new CareServiceException("챗봇 통계 조회 중 오류가 발생했습니다.", e);
-        }
-    }
-
-    /**
-     * 사용자별 챗봇 통계 조회
-     */
-    @LogExecutionTime
-    public Map<String, Object> getUserChatbotStatistics(String userId) {
-        log.info("사용자별 챗봇 통계 조회: 사용자ID={}", userId);
-        
-        try {
-            Map<String, Object> statistics = new HashMap<>();
-            statistics.put("userId", userId);
-            statistics.put("totalSessions", 0);
-            statistics.put("totalMessages", 0);
-            statistics.put("lastInteraction", LocalDateTime.now());
-            statistics.put("preferredTopics", List.of("육아", "건강", "교육"));
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ChatSession> sessions = chatSessionRepository.findByUserOrderByCreatedAtDesc(user, pageable);
             
-            return statistics;
+            return sessions.getContent().stream()
+                    .map(this::convertToSessionResponse)
+                    .toList();
+                    
         } catch (Exception e) {
-            log.error("사용자별 챗봇 통계 조회 실패: {}", e.getMessage());
-            throw new CareServiceException("사용자별 챗봇 통계 조회 중 오류가 발생했습니다.", e);
+            log.error("세션 목록 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("세션 목록 조회 중 오류가 발생했습니다.", e);
         }
     }
 
     /**
-     * 챗봇 설정 조회
+     * 메시지 피드백 처리
      */
     @LogExecutionTime
-    public Map<String, Object> getChatbotSettings() {
-        log.info("챗봇 설정 조회");
+    @Transactional
+    public void processFeedback(Long messageId, boolean isHelpful) {
+        log.info("메시지 피드백 처리: 메시지ID={}, 도움됨={}", messageId, isHelpful);
         
         try {
-            Map<String, Object> settings = new HashMap<>();
-            settings.put("aiModel", "GPT-4");
-            settings.put("responseLanguage", "ko");
-            settings.put("maxResponseLength", 500);
-            settings.put("enableContextMemory", true);
-            settings.put("enablePersonalization", true);
+            ChatMessage message = chatMessageRepository.findById(messageId)
+                    .orElseThrow(() -> new CareServiceException("메시지를 찾을 수 없습니다."));
             
-            return settings;
+            message.setIsHelpful(isHelpful);
+            chatMessageRepository.save(message);
+            
         } catch (Exception e) {
-            log.error("챗봇 설정 조회 실패: {}", e.getMessage());
-            throw new CareServiceException("챗봇 설정 조회 중 오류가 발생했습니다.", e);
+            log.error("메시지 피드백 처리 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("메시지 피드백 처리 중 오류가 발생했습니다.", e);
         }
     }
 
     /**
-     * 챗봇 설정 업데이트
+     * 세션 생성 또는 조회
      */
-    @LogExecutionTime
-    public Map<String, Object> updateChatbotSettings(Map<String, Object> settings) {
-        log.info("챗봇 설정 업데이트");
-        
-        try {
-            // 실제로는 설정을 저장
-            return settings;
-        } catch (Exception e) {
-            log.error("챗봇 설정 업데이트 실패: {}", e.getMessage());
-            throw new CareServiceException("챗봇 설정 업데이트 중 오류가 발생했습니다.", e);
+    private ChatSession getOrCreateSession(User user, String sessionId) {
+        if (sessionId != null && !sessionId.isEmpty()) {
+            return chatSessionRepository.findBySessionId(sessionId)
+                    .orElseGet(() -> createNewSession(user, sessionId));
+        } else {
+            return createNewSession(user, generateSessionId());
         }
     }
 
     /**
-     * 챗봇 상태 확인
+     * 새 세션 생성
      */
-    @LogExecutionTime
-    public boolean checkChatbotHealth() {
-        log.info("챗봇 상태 확인");
+    private ChatSession createNewSession(User user, String sessionId) {
+        ChatSession session = ChatSession.builder()
+                .sessionId(sessionId)
+                .user(user)
+                .title("새로운 대화")
+                .status(ChatSession.SessionStatus.ACTIVE)
+                .messageCount(0)
+                .lastActivityAt(LocalDateTime.now())
+                .build();
         
-        try {
-            // 실제로는 다양한 서비스 상태를 확인
-            return true;
-        } catch (Exception e) {
-            log.error("챗봇 상태 확인 실패: {}", e.getMessage());
-            return false;
+        return chatSessionRepository.save(session);
+    }
+
+    /**
+     * 세션 ID 생성
+     */
+    private String generateSessionId() {
+        return "session_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    /**
+     * 의도 분석
+     */
+    private ChatMessage.IntentType analyzeIntent(String message) {
+        String lowerMessage = message.toLowerCase();
+        
+        for (Map.Entry<ChatMessage.IntentType, List<Pattern>> entry : INTENT_PATTERNS.entrySet()) {
+            for (Pattern pattern : entry.getValue()) {
+                if (pattern.matcher(lowerMessage).find()) {
+                    return entry.getKey();
+                }
+            }
+        }
+        
+        return ChatMessage.IntentType.UNKNOWN;
+    }
+
+    /**
+     * 신뢰도 계산
+     */
+    private double calculateConfidence(String message, ChatMessage.IntentType intentType) {
+        if (intentType == ChatMessage.IntentType.UNKNOWN) {
+            return 0.1;
+        }
+        
+        String lowerMessage = message.toLowerCase();
+        int matchCount = 0;
+        
+        List<Pattern> patterns = INTENT_PATTERNS.get(intentType);
+        for (Pattern pattern : patterns) {
+            if (pattern.matcher(lowerMessage).find()) {
+                matchCount++;
+            }
+        }
+        
+        return Math.min(0.9, 0.3 + (matchCount * 0.2));
+    }
+
+    /**
+     * 응답 생성
+     */
+    private String generateResponse(String message, ChatMessage.IntentType intentType, User user) {
+        switch (intentType) {
+            case GREETING:
+                return generateGreetingResponse(user);
+            case QUESTION:
+                return generateQuestionResponse(message);
+            case COMPLAINT:
+                return generateComplaintResponse();
+            case THANKS:
+                return generateThanksResponse();
+            case GOODBYE:
+                return generateGoodbyeResponse();
+            case HEALTH_INFO:
+                return generateHealthInfoResponse(message);
+            case POLICY_INFO:
+                return generatePolicyInfoResponse(message);
+            case FACILITY_INFO:
+                return generateFacilityInfoResponse(message);
+            case EDUCATION_INFO:
+                return generateEducationInfoResponse(message);
+            default:
+                return generateDefaultResponse();
+        }
+    }
+
+    /**
+     * 인사 응답 생성
+     */
+    private String generateGreetingResponse(User user) {
+        return String.format("안녕하세요, %s님! 육아에 관한 궁금한 점이 있으시면 언제든 물어보세요. 건강, 정책, 시설, 교육 등 다양한 정보를 제공해드릴 수 있습니다.", user.getName());
+    }
+
+    /**
+     * 질문 응답 생성
+     */
+    private String generateQuestionResponse(String message) {
+        return "좋은 질문이네요! 구체적으로 어떤 부분에 대해 알고 싶으신지 말씀해 주시면 더 자세히 답변해드릴 수 있습니다.";
+    }
+
+    /**
+     * 불만/문의 응답 생성
+     */
+    private String generateComplaintResponse() {
+        return "불편하신 점이 있으시군요. 구체적인 상황을 말씀해 주시면 해결 방법을 찾아보겠습니다. 필요하시면 고객센터로 연결해드릴 수도 있습니다.";
+    }
+
+    /**
+     * 감사 응답 생성
+     */
+    private String generateThanksResponse() {
+        return "도움이 되었다니 기쁩니다! 앞으로도 육아에 관한 궁금한 점이 있으시면 언제든 찾아주세요.";
+    }
+
+    /**
+     * 작별인사 응답 생성
+     */
+    private String generateGoodbyeResponse() {
+        return "안녕히 가세요! 언제든 다시 찾아주세요. 육아에 관한 궁금한 점이 생기시면 언제든 도움을 드릴 준비가 되어 있습니다.";
+    }
+
+    /**
+     * 건강 정보 응답 생성
+     */
+    private String generateHealthInfoResponse(String message) {
+        if (message.contains("예방접종") || message.contains("백신")) {
+            return "예방접종은 아이의 건강을 지키는 중요한 방법입니다. 연령별 예방접종 일정과 주의사항을 확인해보세요. 구체적인 질문이 있으시면 더 자세히 답변해드릴 수 있습니다.";
+        } else if (message.contains("병원") || message.contains("의사")) {
+            return "아이가 아프거나 건강상 문제가 있을 때는 소아과 전문의와 상담하는 것이 좋습니다. 주변 소아과 병원 정보를 찾아보시겠어요?";
+        } else {
+            return "아이의 건강에 관한 궁금한 점이 있으시군요. 예방접종, 건강검진, 질병 관리 등 다양한 건강 정보를 제공해드릴 수 있습니다. 구체적으로 어떤 부분에 대해 알고 싶으신가요?";
+        }
+    }
+
+    /**
+     * 정책 정보 응답 생성
+     */
+    private String generatePolicyInfoResponse(String message) {
+        if (message.contains("보조금") || message.contains("지원금")) {
+            return "육아 지원금과 보조금에 관한 정보를 제공해드릴 수 있습니다. 연령, 소득, 지역에 따라 지원 내용이 다를 수 있으니 구체적인 상황을 알려주시면 더 정확한 정보를 제공해드릴 수 있습니다.";
+        } else if (message.contains("신청") || message.contains("혜택")) {
+            return "다양한 육아 지원 정책과 혜택이 있습니다. 어린이집 지원, 양육수당, 교육비 지원 등이 있으니 구체적으로 어떤 혜택에 대해 알고 싶으신지 말씀해 주세요.";
+        } else {
+            return "육아 관련 정책과 지원 제도에 관한 정보를 제공해드릴 수 있습니다. 보조금, 지원금, 혜택 등 어떤 부분에 대해 알고 싶으신가요?";
+        }
+    }
+
+    /**
+     * 시설 정보 응답 생성
+     */
+    private String generateFacilityInfoResponse(String message) {
+        if (message.contains("어린이집") || message.contains("유치원")) {
+            return "어린이집과 유치원 정보를 제공해드릴 수 있습니다. 위치, 운영시간, 정원, 특별활동 등 구체적으로 어떤 정보가 필요하신가요?";
+        } else if (message.contains("위치") || message.contains("주소")) {
+            return "주변 육아 시설의 위치와 주소 정보를 찾아드릴 수 있습니다. 어느 지역의 시설을 찾고 계신가요?";
+        } else {
+            return "육아 관련 시설 정보를 제공해드릴 수 있습니다. 어린이집, 유치원, 놀이터, 도서관 등 어떤 시설에 대해 알고 싶으신가요?";
+        }
+    }
+
+    /**
+     * 교육 정보 응답 생성
+     */
+    private String generateEducationInfoResponse(String message) {
+        if (message.contains("육아") || message.contains("양육")) {
+            return "육아와 양육에 관한 다양한 교육 프로그램과 정보를 제공해드릴 수 있습니다. 부모 교육, 양육 스킬, 발달 단계별 놀이 등 어떤 부분에 관심이 있으신가요?";
+        } else if (message.contains("프로그램") || message.contains("강의")) {
+            return "다양한 육아 교육 프로그램과 강의 정보를 제공해드릴 수 있습니다. 온라인 강의, 오프라인 프로그램, 워크샵 등 어떤 형태의 교육을 찾고 계신가요?";
+        } else {
+            return "육아 교육에 관한 정보를 제공해드릴 수 있습니다. 부모 교육, 아이 발달, 놀이 방법 등 어떤 부분에 대해 알고 싶으신가요?";
         }
     }
 
     /**
      * 기본 응답 생성
      */
-    private String generateBasicResponse(String message) {
-        if (message == null || message.trim().isEmpty()) {
-            return "안녕하세요! 육아에 대해 궁금한 점이 있으시면 언제든 물어보세요.";
-        }
-        
-        String lowerMessage = message.toLowerCase();
-        
-        if (lowerMessage.contains("안녕") || lowerMessage.contains("hello")) {
-            return "안녕하세요! 육아 도우미입니다. 무엇을 도와드릴까요?";
-        } else if (lowerMessage.contains("먹이") || lowerMessage.contains("식사")) {
-            return "아기의 식사는 연령에 따라 다릅니다. 구체적인 연령을 알려주시면 더 자세한 정보를 제공해드릴 수 있어요.";
-        } else if (lowerMessage.contains("잠") || lowerMessage.contains("수면")) {
-            return "아기의 수면 패턴은 성장 단계에 따라 달라집니다. 연령별 수면 가이드를 제공해드릴 수 있어요.";
-        } else if (lowerMessage.contains("놀이") || lowerMessage.contains("놀기")) {
-            return "아기와의 놀이는 발달에 매우 중요합니다. 연령에 맞는 놀이 방법을 추천해드릴 수 있어요.";
-        } else {
-            return "좋은 질문이네요! 육아에 대해 더 구체적으로 알려주시면 더 정확한 답변을 드릴 수 있어요.";
-        }
+    private String generateDefaultResponse() {
+        return "죄송합니다. 질문을 정확히 이해하지 못했습니다. 육아에 관한 건강, 정책, 시설, 교육 등 어떤 부분에 대해 궁금하신지 다시 말씀해 주세요.";
     }
 
     /**
-     * 메시지 ID 생성
+     * 메시지 저장
      */
-    private String generateMessageId() {
-        return "msg_" + System.currentTimeMillis();
-    }
-
-
-
-    /**
-     * 육아 질문에 대한 AI 응답 생성
-     */
-    @LogExecutionTime
-    public ChatbotResponse generateResponse(String question, int childAge, String context) {
-        log.info("챗봇 응답 생성: 질문={}, 자녀연령={}", question, childAge);
-        
-        try {
-            // 1. 질문 분석 및 분류
-            QuestionCategory category = analyzeQuestion(question);
-            
-            // 2. 연령별 맞춤 정보 검색
-            List<String> ageSpecificInfo = searchAgeSpecificInfo(childAge, category);
-            
-            // 3. AI 모델을 통한 응답 생성
-            String aiResponse = generateAIResponse(question, ageSpecificInfo, context);
-            
-            // 4. 관련 정보 및 링크 추가
-            List<RelatedInfo> relatedInfo = findRelatedInfo(category, childAge);
-            
-            return ChatbotResponse.builder()
-                    .response(aiResponse)
-                    .category(category)
-                    .confidence(calculateConfidence(question, aiResponse))
-                    .relatedInfo(relatedInfo)
-                    .suggestedQuestions(generateSuggestedQuestions(category, childAge))
-                    .build();
-                    
-        } catch (Exception e) {
-            log.error("챗봇 응답 생성 실패: {}", e.getMessage());
-            throw new CareServiceException("CHATBOT_ERROR", "챗봇 응답 생성 중 오류가 발생했습니다.");
-        }
-    }
-
-    /**
-     * 육아 상담 세션 시작
-     */
-    @LogExecutionTime
-    @RequireAuthentication
-    public ChatSession startChatSession(String userId, int childAge, String childGender, 
-                                      String parentType, String concerns) {
-        log.info("챗봇 세션 시작: 사용자ID={}, 자녀연령={}, 관심사={}", userId, childAge, concerns);
-        
-        // 1. 사용자 프로필 생성
-        UserProfile profile = createUserProfile(userId, childAge, childGender, parentType);
-        
-        // 2. 초기 상담 질문 생성
-        List<String> initialQuestions = generateInitialQuestions(profile, concerns);
-        
-        // 3. 세션 정보 저장
-        ChatSession session = ChatSession.builder()
-                .sessionId(generateSessionId())
-                .userId(userId)
-                .profile(profile)
-                .status("ACTIVE")
-                .startTime(java.time.LocalDateTime.now())
-                .initialQuestions(initialQuestions)
+    private ChatMessage saveChatMessage(User user, ChatSession session, String message, String response, 
+                                      ChatMessage.IntentType intentType, double confidence) {
+        ChatMessage chatMessage = ChatMessage.builder()
+                .user(user)
+                .message(message)
+                .response(response)
+                .messageType(ChatMessage.MessageType.USER)
+                .intentType(intentType)
+                .confidence(confidence)
+                .sessionId(session.getSessionId())
                 .build();
         
-        saveChatSession(session);
-        
-        return session;
+        return chatMessageRepository.save(chatMessage);
     }
 
     /**
-     * 대화 히스토리 기반 맞춤 응답
+     * 세션 업데이트
      */
-    @LogExecutionTime
-    @RequireAuthentication
-    public ChatbotResponse generateContextualResponse(String sessionId, String question, 
-                                                    List<ChatMessage> conversationHistory) {
-        log.info("맥락 기반 응답 생성: 세션ID={}, 질문={}", sessionId, question);
+    private void updateSession(ChatSession session, String message) {
+        session.setMessageCount(session.getMessageCount() + 1);
+        session.setLastActivityAt(LocalDateTime.now());
         
-        // 1. 대화 히스토리 분석
-        ConversationContext context = analyzeConversationContext(conversationHistory);
+        // 첫 번째 메시지인 경우 제목 설정
+        if (session.getMessageCount() == 1) {
+            String title = message.length() > 20 ? message.substring(0, 20) + "..." : message;
+            session.setTitle(title);
+        }
         
-        // 2. 사용자 패턴 파악
-        UserPattern pattern = analyzeUserPattern(conversationHistory);
-        
-        // 3. 맥락을 고려한 응답 생성
-        String contextualResponse = generateContextualAIResponse(question, context, pattern);
-        
-        // 4. 후속 질문 생성
-        List<String> followUpQuestions = generateFollowUpQuestions(context, pattern);
-        
-        return ChatbotResponse.builder()
-                .response(contextualResponse)
-                .category(analyzeQuestion(question))
-                .confidence(calculateContextualConfidence(question, context))
-                .followUpQuestions(followUpQuestions)
+        chatSessionRepository.save(session);
+    }
+
+    /**
+     * 대화 기록 응답 변환
+     */
+    private ChatbotResponseDto.ChatHistoryResponse convertToHistoryResponse(ChatMessage message) {
+        return ChatbotResponseDto.ChatHistoryResponse.builder()
+                .messageId(message.getId())
+                .message(message.getMessage())
+                .response(message.getResponse())
+                .messageType(message.getMessageType().name())
+                .intentType(message.getIntentType().name())
+                .confidence(message.getConfidence())
+                .sessionId(message.getSessionId())
+                .isHelpful(message.getIsHelpful())
+                .createdAt(message.getCreatedAt())
                 .build();
     }
 
     /**
-     * 육아 지식 베이스 검색
+     * 세션 응답 변환
      */
-    @LogExecutionTime
-    public List<KnowledgeBaseEntry> searchKnowledgeBase(String query, int childAge, 
-                                                       String category, int limit) {
-        log.info("지식 베이스 검색: 쿼리={}, 자녀연령={}, 카테고리={}", query, childAge, category);
-        
-        try {
-            // 1. 키워드 추출
-            List<String> keywords = extractKeywords(query);
-            
-            // 2. 연령 관련 지식 검색
-            List<KnowledgeBaseEntry> ageRelevantEntries = searchAgeRelevantKnowledge(childAge, keywords);
-            
-            // 3. 카테고리 필터링
-            List<KnowledgeBaseEntry> categoryFiltered = filterByCategory(ageRelevantEntries, category);
-            
-            // 4. 관련성 순으로 정렬
-            List<KnowledgeBaseEntry> rankedEntries = rankByRelevance(categoryFiltered, query);
-            
-            // 5. 제한된 수만 반환
-            return rankedEntries.subList(0, Math.min(limit, rankedEntries.size()));
-            
-        } catch (Exception e) {
-            log.error("지식 베이스 검색 실패: {}", e.getMessage());
-            throw new CareServiceException("지식 베이스 검색 중 오류가 발생했습니다.", e);
-        }
-    }
-
-    /**
-     * 육아 상담 피드백 수집
-     */
-    @LogExecutionTime
-    public void collectFeedback(String sessionId, String responseId, int rating, 
-                              String feedback, String improvement) {
-        log.info("피드백 수집: 세션ID={}, 응답ID={}, 평점={}", sessionId, responseId, rating);
-        
-        try {
-            // 1. 피드백 데이터 저장
-            FeedbackData feedbackData = FeedbackData.builder()
-                    .sessionId(sessionId)
-                    .responseId(responseId)
-                    .rating(rating)
-                    .feedback(feedback)
-                    .improvement(improvement)
-                    .timestamp(java.time.LocalDateTime.now())
-                    .build();
-            
-            saveFeedback(feedbackData);
-            
-            // 2. 모델 훈련 데이터 업데이트
-            updateModelTrainingData(responseId, rating, feedback);
-            
-        } catch (Exception e) {
-            log.error("피드백 수집 실패: {}", e.getMessage());
-            throw new CareServiceException("피드백 수집 중 오류가 발생했습니다.", e);
-        }
-    }
-
-    /**
-     * 사용자 메시지 처리 (기존 메서드)
-     */
-    @LogExecutionTime
-    public String processUserMessage(String userId, String message) {
-        log.info("사용자 메시지 처리: 사용자ID={}, 메시지={}", userId, message);
-        
-        try {
-            // 간단한 응답 생성
-            return generateBasicResponse(message);
-        } catch (Exception e) {
-            log.error("사용자 메시지 처리 실패: {}", e.getMessage());
-            return "죄송합니다. 메시지 처리 중 오류가 발생했습니다.";
-        }
-    }
-
-    // 기존 private 메서드들...
-    private QuestionCategory analyzeQuestion(String question) {
-        // 질문 분석 로직
-        return QuestionCategory.GENERAL;
-    }
-    
-    private List<String> searchAgeSpecificInfo(int childAge, QuestionCategory category) {
-        // 연령별 정보 검색 로직
-        return List.of("연령별 정보");
-    }
-    
-    private String generateAIResponse(String question, List<String> ageSpecificInfo, String context) {
-        // AI 응답 생성 로직
-        return "AI 응답";
-    }
-    
-    private List<RelatedInfo> findRelatedInfo(QuestionCategory category, int childAge) {
-        // 관련 정보 검색 로직
-        return List.of();
-    }
-    
-    private double calculateConfidence(String question, String response) {
-        // 신뢰도 계산 로직
-        return 0.8;
-    }
-    
-    private List<String> generateSuggestedQuestions(QuestionCategory category, int childAge) {
-        // 제안 질문 생성 로직
-        return List.of("추천 질문");
-    }
-    
-    private UserProfile createUserProfile(String userId, int childAge, String childGender, String parentType) {
-        return UserProfile.builder()
-                .userId(userId)
-                .childAge(childAge)
-                .childGender(childGender)
-                .parentType(parentType)
+    private ChatbotResponseDto.SessionResponse convertToSessionResponse(ChatSession session) {
+        return ChatbotResponseDto.SessionResponse.builder()
+                .sessionId(session.getSessionId())
+                .title(session.getTitle())
+                .description(session.getDescription())
+                .status(session.getStatus().name())
+                .messageCount(session.getMessageCount())
+                .lastActivityAt(session.getLastActivityAt())
+                .createdAt(session.getCreatedAt())
                 .build();
-    }
-    
-    private List<String> generateInitialQuestions(UserProfile profile, String concerns) {
-        // 초기 질문 생성 로직
-        return List.of("초기 질문");
-    }
-    
-    /**
-     * 세션 ID 생성
-     */
-    private String generateSessionId() {
-        return "session_" + System.currentTimeMillis();
-    }
-    
-    private void saveChatSession(ChatSession session) {
-        // 세션 저장 로직
-    }
-    
-    private ConversationContext analyzeConversationContext(List<ChatMessage> conversationHistory) {
-        // 대화 맥락 분석 로직
-        return new ConversationContext();
-    }
-    
-    private UserPattern analyzeUserPattern(List<ChatMessage> conversationHistory) {
-        // 사용자 패턴 분석 로직
-        return new UserPattern();
-    }
-    
-    private String generateContextualAIResponse(String question, ConversationContext context, UserPattern pattern) {
-        // 맥락 기반 AI 응답 생성 로직
-        return "맥락 기반 응답";
-    }
-    
-    private List<String> generateFollowUpQuestions(ConversationContext context, UserPattern pattern) {
-        // 후속 질문 생성 로직
-        return List.of("후속 질문");
-    }
-    
-    private double calculateContextualConfidence(String question, ConversationContext context) {
-        // 맥락 기반 신뢰도 계산 로직
-        return 0.9;
-    }
-    
-    private List<String> extractKeywords(String query) {
-        // 키워드 추출 로직
-        return List.of("키워드");
-    }
-    
-    private List<KnowledgeBaseEntry> searchAgeRelevantKnowledge(int childAge, List<String> keywords) {
-        // 연령 관련 지식 검색 로직
-        return List.of();
-    }
-    
-    private List<KnowledgeBaseEntry> filterByCategory(List<KnowledgeBaseEntry> entries, String category) {
-        // 카테고리 필터링 로직
-        return entries;
-    }
-    
-    private List<KnowledgeBaseEntry> rankByRelevance(List<KnowledgeBaseEntry> entries, String query) {
-        // 관련성 순 정렬 로직
-        return entries;
-    }
-    
-    private void saveFeedback(FeedbackData feedbackData) {
-        // 피드백 저장 로직
-    }
-    
-    private void updateModelTrainingData(String responseId, int rating, String feedback) {
-        // 모델 훈련 데이터 업데이트 로직
-    }
-
-    public enum QuestionCategory {
-        MEDICAL, CARE_FACILITY, POLICY, DEVELOPMENT, GENERAL
-    }
-
-    public static class ChatbotResponse {
-        private String response;
-        private QuestionCategory category;
-        private double confidence;
-        private List<RelatedInfo> relatedInfo;
-        private List<String> suggestedQuestions;
-        private List<String> followUpQuestions;
-
-        // Getters
-        public String getResponse() { return response; }
-        public QuestionCategory getCategory() { return category; }
-        public double getConfidence() { return confidence; }
-        public List<RelatedInfo> getRelatedInfo() { return relatedInfo; }
-        public List<String> getSuggestedQuestions() { return suggestedQuestions; }
-        public List<String> getFollowUpQuestions() { return followUpQuestions; }
-
-        // Builder
-        public static ChatbotResponseBuilder builder() {
-            return new ChatbotResponseBuilder();
-        }
-
-        public static class ChatbotResponseBuilder {
-            private ChatbotResponse result = new ChatbotResponse();
-
-            public ChatbotResponseBuilder response(String response) {
-                result.response = response;
-                return this;
-            }
-
-            public ChatbotResponseBuilder category(QuestionCategory category) {
-                result.category = category;
-                return this;
-            }
-
-            public ChatbotResponseBuilder confidence(double confidence) {
-                result.confidence = confidence;
-                return this;
-            }
-
-            public ChatbotResponseBuilder relatedInfo(List<RelatedInfo> relatedInfo) {
-                result.relatedInfo = relatedInfo;
-                return this;
-            }
-
-            public ChatbotResponseBuilder suggestedQuestions(List<String> suggestedQuestions) {
-                result.suggestedQuestions = suggestedQuestions;
-                return this;
-            }
-
-            public ChatbotResponseBuilder followUpQuestions(List<String> followUpQuestions) {
-                result.followUpQuestions = followUpQuestions;
-                return this;
-            }
-
-            public ChatbotResponse build() {
-                return result;
-            }
-        }
-    }
-
-    public static class ChatSession {
-        private String sessionId;
-        private String userId;
-        private UserProfile profile;
-        private String status;
-        private java.time.LocalDateTime startTime;
-        private List<String> initialQuestions;
-
-        // Getters
-        public String getSessionId() { return sessionId; }
-        public String getUserId() { return userId; }
-        public UserProfile getProfile() { return profile; }
-        public String getStatus() { return status; }
-        public java.time.LocalDateTime getStartTime() { return startTime; }
-        public List<String> getInitialQuestions() { return initialQuestions; }
-
-        // Builder
-        public static ChatSessionBuilder builder() {
-            return new ChatSessionBuilder();
-        }
-
-        public static class ChatSessionBuilder {
-            private ChatSession result = new ChatSession();
-
-            public ChatSessionBuilder sessionId(String sessionId) {
-                result.sessionId = sessionId;
-                return this;
-            }
-
-            public ChatSessionBuilder userId(String userId) {
-                result.userId = userId;
-                return this;
-            }
-
-            public ChatSessionBuilder profile(UserProfile profile) {
-                result.profile = profile;
-                return this;
-            }
-
-            public ChatSessionBuilder status(String status) {
-                result.status = status;
-                return this;
-            }
-
-            public ChatSessionBuilder startTime(java.time.LocalDateTime startTime) {
-                result.startTime = startTime;
-                return this;
-            }
-
-            public ChatSessionBuilder initialQuestions(List<String> initialQuestions) {
-                result.initialQuestions = initialQuestions;
-                return this;
-            }
-
-            public ChatSession build() {
-                return result;
-            }
-        }
-    }
-
-    public static class UserProfile {
-        private String userId;
-        private int childAge;
-        private String childGender;
-        private String parentType;
-
-        // Getters
-        public String getUserId() { return userId; }
-        public int getChildAge() { return childAge; }
-        public String getChildGender() { return childGender; }
-        public String getParentType() { return parentType; }
-
-        // Builder
-        public static UserProfileBuilder builder() {
-            return new UserProfileBuilder();
-        }
-
-        public static class UserProfileBuilder {
-            private UserProfile result = new UserProfile();
-
-            public UserProfileBuilder userId(String userId) {
-                result.userId = userId;
-                return this;
-            }
-
-            public UserProfileBuilder childAge(int childAge) {
-                result.childAge = childAge;
-                return this;
-            }
-
-            public UserProfileBuilder childGender(String childGender) {
-                result.childGender = childGender;
-                return this;
-            }
-
-            public UserProfileBuilder parentType(String parentType) {
-                result.parentType = parentType;
-                return this;
-            }
-
-            public UserProfile build() {
-                return result;
-            }
-        }
-    }
-
-    public static class ChatMessage {
-        private String messageId;
-        private String sessionId;
-        private String sender; // "USER" or "BOT"
-        private String content;
-        private java.time.LocalDateTime timestamp;
-
-        // Getters and Setters
-        public String getMessageId() { return messageId; }
-        public void setMessageId(String messageId) { this.messageId = messageId; }
-        public String getSessionId() { return sessionId; }
-        public void setSessionId(String sessionId) { this.sessionId = sessionId; }
-        public String getSender() { return sender; }
-        public void setSender(String sender) { this.sender = sender; }
-        public String getContent() { return content; }
-        public void setContent(String content) { this.content = content; }
-        public java.time.LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(java.time.LocalDateTime timestamp) { this.timestamp = timestamp; }
-    }
-
-    public static class ConversationContext {
-        private String mainTopic;
-        private List<String> discussedTopics;
-        private int conversationLength;
-        private String userMood;
-    }
-
-    public static class UserPattern {
-        private String preferredCategory;
-        private String communicationStyle;
-        private List<String> frequentConcerns;
-    }
-
-    public static class RelatedInfo {
-        private String title;
-        private String description;
-        private String url;
-        private String category;
-
-        // Getters and Setters
-        public String getTitle() { return title; }
-        public void setTitle(String title) { this.title = title; }
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-        public String getUrl() { return url; }
-        public void setUrl(String url) { this.url = url; }
-        public String getCategory() { return category; }
-        public void setCategory(String category) { this.category = category; }
-    }
-
-    public static class KnowledgeBaseEntry {
-        private String entryId;
-        private String title;
-        private String content;
-        private String category;
-        private int minAge;
-        private int maxAge;
-        private double relevanceScore;
-
-        // Getters and Setters
-        public String getEntryId() { return entryId; }
-        public void setEntryId(String entryId) { this.entryId = entryId; }
-        public String getTitle() { return title; }
-        public void setTitle(String title) { this.title = title; }
-        public String getContent() { return content; }
-        public void setContent(String content) { this.content = content; }
-        public String getCategory() { return category; }
-        public void setCategory(String category) { this.category = category; }
-        public int getMinAge() { return minAge; }
-        public void setMinAge(int minAge) { this.minAge = minAge; }
-        public int getMaxAge() { return maxAge; }
-        public void setMaxAge(int maxAge) { this.maxAge = maxAge; }
-        public double getRelevanceScore() { return relevanceScore; }
-        public void setRelevanceScore(double relevanceScore) { this.relevanceScore = relevanceScore; }
-    }
-
-    public static class FeedbackData {
-        private String sessionId;
-        private String responseId;
-        private int rating;
-        private String feedback;
-        private String improvement;
-        private java.time.LocalDateTime timestamp;
-
-        // Builder
-        public static FeedbackDataBuilder builder() {
-            return new FeedbackDataBuilder();
-        }
-
-        public static class FeedbackDataBuilder {
-            private FeedbackData result = new FeedbackData();
-
-            public FeedbackDataBuilder sessionId(String sessionId) {
-                result.sessionId = sessionId;
-                return this;
-            }
-
-            public FeedbackDataBuilder responseId(String responseId) {
-                result.responseId = responseId;
-                return this;
-            }
-
-            public FeedbackDataBuilder rating(int rating) {
-                result.rating = rating;
-                return this;
-            }
-
-            public FeedbackDataBuilder feedback(String feedback) {
-                result.feedback = feedback;
-                return this;
-            }
-
-            public FeedbackDataBuilder improvement(String improvement) {
-                result.improvement = improvement;
-                return this;
-            }
-
-            public FeedbackDataBuilder timestamp(java.time.LocalDateTime timestamp) {
-                result.timestamp = timestamp;
-                return this;
-            }
-
-            public FeedbackData build() {
-                return result;
-            }
-        }
     }
 } 

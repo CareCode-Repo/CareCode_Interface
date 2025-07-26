@@ -10,6 +10,7 @@ import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -671,5 +672,13 @@ public class UserService {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("잘못된 사용자 ID 형식입니다: " + userId);
         }
+    }
+
+    public Long getUserIdFromUserDetails(UserDetails userDetails) {
+        // 예시: username에 email이 들어있다고 가정
+        String email = userDetails.getUsername();
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email));
     }
 } 

@@ -20,59 +20,64 @@ import java.util.Map;
 @Builder
 public class ChatbotResponseDto {
     
-    private String messageId;
+    private Long messageId;
+    private String response;
+    private String intentType;
+    private Double confidence;
     private String sessionId;
-    private String sender;
-    private String content;
     private LocalDateTime timestamp;
     
     /**
-     * 챗봇 응답 DTO
+     * 대화 기록 응답 DTO
      */
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class ChatbotResponse {
+    public static class ChatHistoryResponse {
+        private Long messageId;
+        private String message;
         private String response;
-        private String category;
+        private String messageType;
+        private String intentType;
         private Double confidence;
-        private List<RelatedInfoDto> relatedInfo;
-        private List<String> suggestedQuestions;
-        private List<String> followUpQuestions;
-    }
-    
-    /**
-     * 채팅 세션 응답 DTO
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class ChatSessionResponse {
         private String sessionId;
-        private String userId;
-        private UserProfileDto profile;
-        private String status;
-        private String startTime;
-        private List<String> initialQuestions;
+        private Boolean isHelpful;
+        private LocalDateTime createdAt;
     }
     
     /**
-     * 사용자 프로필 DTO
+     * 세션 응답 DTO
      */
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class UserProfileDto {
-        private String userId;
-        private Integer childAge;
-        private String childGender;
-        private String parentType;
+    public static class SessionResponse {
+        private String sessionId;
+        private String title;
+        private String description;
+        private String status;
+        private Integer messageCount;
+        private LocalDateTime lastActivityAt;
+        private LocalDateTime createdAt;
+    }
+    
+    /**
+     * 피드백 응답 DTO
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class FeedbackResponse {
+        private Long messageId;
+        private Boolean isHelpful;
+        private String message;
+        private LocalDateTime updatedAt;
     }
     
     /**

@@ -15,10 +15,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -94,13 +96,23 @@ public class HealthService {
     @LogExecutionTime
     public List<HealthResponseDto.HealthRecordResponse> getHealthRecordsByUserId(String userId) {
         log.info("사용자별 건강 기록 조회: 사용자ID={}", userId);
-        
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
-            
+            // userId(문자열)로 먼저 조회
+            Optional<User> userOpt = userRepository.findByUserId(userId);
+            User user;
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+            } else {
+                // userId가 숫자라면 PK(id)로도 조회 시도
+                try {
+                    Long id = Long.parseLong(userId);
+                    user = userRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId);
+                }
+            }
             List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
-            
             return records.stream()
                     .map(this::convertToResponseDto)
                     .collect(Collectors.toList());
@@ -209,13 +221,23 @@ public class HealthService {
     @LogExecutionTime
     public Map<String, Object> getHealthStatistics(String userId) {
         log.info("건강 통계 조회: 사용자ID={}", userId);
-        
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
-            
+            // userId(문자열)로 먼저 조회
+            Optional<User> userOpt = userRepository.findByUserId(userId);
+            User user;
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+            } else {
+                // userId가 숫자라면 PK(id)로도 조회 시도
+                try {
+                    Long id = Long.parseLong(userId);
+                    user = userRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId);
+                }
+            }
             List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
-            
             Map<String, Object> statistics = new HashMap<>();
             statistics.put("userId", userId);
             statistics.put("totalRecords", records.size());
@@ -225,7 +247,6 @@ public class HealthService {
             statistics.put("pendingCheckups", countPendingCheckups(records));
             statistics.put("recordTypeDistribution", calculateRecordTypeDistribution(records));
             statistics.put("upcomingEvents", generateUpcomingEvents(records));
-            
             return statistics;
         } catch (Exception e) {
             log.error("건강 통계 조회 실패: {}", e.getMessage());
@@ -316,6 +337,33 @@ public class HealthService {
         healthStatus.put("version", "1.0.0");
         
         return healthStatus;
+    }
+
+    public List<Map<String, Object>> getHealthChart(String userId, String type, LocalDate from, LocalDate to) {
+        User user = userRepository.findByUserId(userId).orElseThrow();
+        List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
+        return records.stream()
+                .filter(r -> {
+                    LocalDate localDate = r.getRecordDate();
+                    return (from == null || !localDate.isBefore(from)) && (to == null || !localDate.isAfter(to));
+                })
+                .map(r -> {
+                    Object value = null;
+                    switch (type) {
+                        case "weight": value = r.getWeight(); break;
+                        case "height": value = r.getHeight(); break;
+                        case "temperature": value = r.getTemperature(); break;
+                        case "pulseRate": value = r.getPulseRate(); break;
+                        case "bloodPressure": value = r.getBloodPressure(); break;
+                        // 필요시 추가
+                        default: value = null;
+                    }
+                    return Map.of(
+                        "date", r.getRecordDate().toString(),
+                        "value", value
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
     // Helper methods

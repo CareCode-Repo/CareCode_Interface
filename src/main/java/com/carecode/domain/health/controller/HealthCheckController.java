@@ -6,6 +6,7 @@ import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.domain.health.dto.HealthRequestDto;
 import com.carecode.domain.health.dto.HealthResponseDto;
+import com.carecode.domain.health.entity.HealthRecord;
 import com.carecode.domain.health.service.HealthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,9 +19,34 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import com.carecode.core.annotation.RequireAuthentication;
+import com.carecode.core.controller.BaseController;
+import com.carecode.core.exception.CareServiceException;
+import com.carecode.domain.health.dto.HealthRequestDto;
+import com.carecode.domain.health.dto.HealthResponseDto;
+import com.carecode.domain.health.entity.HealthRecord;
+import com.carecode.domain.health.service.HealthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 건강 관리 API 컨트롤러
@@ -324,5 +350,14 @@ public class HealthCheckController extends BaseController {
             log.error("건강 목표 조회 오류: {}", e.getMessage());
             throw e;
         }
+    }
+
+    @GetMapping("/records/user/{userId}/chart")
+    public List<Map<String, Object>> getHealthChart(
+            @PathVariable String userId,
+            @RequestParam String type,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return healthService.getHealthChart(userId, type, from, to);
     }
 } 

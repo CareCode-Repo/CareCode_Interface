@@ -6,7 +6,9 @@ import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.domain.notification.dto.NotificationRequestDto;
 import com.carecode.domain.notification.dto.NotificationResponseDto;
+import com.carecode.domain.notification.dto.NotificationPreferenceDto;
 import com.carecode.domain.notification.service.NotificationService;
+import com.carecode.domain.notification.service.NotificationPreferenceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,6 +36,7 @@ import java.util.Map;
 public class NotificationController extends BaseController {
 
     private final NotificationService notificationService;
+    private final NotificationPreferenceService preferenceService;
 
     /**
      * 알림 목록 조회
@@ -323,6 +326,164 @@ public class NotificationController extends BaseController {
             return ResponseEntity.ok(statistics);
         } catch (CareServiceException e) {
             log.error("알림 통계 조회 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 알림 설정 목록 조회
+     */
+    @GetMapping("/preferences")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "알림 설정 목록 조회", description = "사용자의 알림 설정 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<NotificationPreferenceDto>> getNotificationPreferences(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        log.info("알림 설정 목록 조회: 사용자ID={}", userId);
+        
+        try {
+            List<NotificationPreferenceDto> preferences = preferenceService.getUserPreferences(userId);
+            return ResponseEntity.ok(preferences);
+        } catch (CareServiceException e) {
+            log.error("알림 설정 목록 조회 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 특정 알림 타입 설정 조회
+     */
+    @GetMapping("/preferences/{notificationType}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "특정 알림 타입 설정 조회", description = "사용자의 특정 알림 타입 설정을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<NotificationPreferenceDto> getNotificationPreferenceByType(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "알림 타입", required = true) @PathVariable String notificationType) {
+        log.info("특정 알림 타입 설정 조회: 사용자ID={}, 타입={}", userId, notificationType);
+        
+        try {
+            NotificationPreferenceDto preference = preferenceService.getPreferenceByType(userId, 
+                com.carecode.domain.notification.entity.Notification.NotificationType.valueOf(notificationType));
+            return ResponseEntity.ok(preference);
+        } catch (CareServiceException e) {
+            log.error("특정 알림 타입 설정 조회 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 알림 설정 저장
+     */
+    @PostMapping("/preferences")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "알림 설정 저장", description = "사용자의 알림 설정을 저장합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "저장 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<NotificationPreferenceDto> saveNotificationPreference(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "알림 설정", required = true) @RequestBody NotificationPreferenceDto preferenceDto) {
+        log.info("알림 설정 저장: 사용자ID={}, 타입={}", userId, preferenceDto.getNotificationType());
+        
+        try {
+            NotificationPreferenceDto savedPreference = preferenceService.savePreference(userId, preferenceDto);
+            return ResponseEntity.ok(savedPreference);
+        } catch (CareServiceException e) {
+            log.error("알림 설정 저장 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 채널별 설정 업데이트
+     */
+    @PutMapping("/preferences/{notificationType}/channels/{channel}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "채널별 설정 업데이트", description = "사용자의 특정 알림 타입의 채널별 설정을 업데이트합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "업데이트 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<NotificationPreferenceDto> updateChannelPreference(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "알림 타입", required = true) @PathVariable String notificationType,
+            @Parameter(description = "채널", required = true) @PathVariable String channel,
+            @Parameter(description = "활성화 여부", required = true) @RequestParam boolean enabled) {
+        log.info("채널별 설정 업데이트: 사용자ID={}, 타입={}, 채널={}, 활성화={}", userId, notificationType, channel, enabled);
+        
+        try {
+            NotificationPreferenceDto updatedPreference = preferenceService.updateChannelPreference(userId, notificationType, channel, enabled);
+            return ResponseEntity.ok(updatedPreference);
+        } catch (CareServiceException e) {
+            log.error("채널별 설정 업데이트 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 모든 알림 설정 비활성화
+     */
+    @PutMapping("/preferences/disable-all")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "모든 알림 설정 비활성화", description = "사용자의 모든 알림 설정을 비활성화합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "비활성화 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, String>> disableAllNotifications(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        log.info("모든 알림 설정 비활성화: 사용자ID={}", userId);
+        
+        try {
+            preferenceService.disableAllNotifications(userId);
+            return ResponseEntity.ok(Map.of("message", "모든 알림 설정이 비활성화되었습니다."));
+        } catch (CareServiceException e) {
+            log.error("모든 알림 설정 비활성화 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 알림 설정 기본값으로 초기화
+     */
+    @PutMapping("/preferences/reset")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "알림 설정 초기화", description = "사용자의 알림 설정을 기본값으로 초기화합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "초기화 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, String>> resetNotificationPreferences(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        log.info("알림 설정 초기화: 사용자ID={}", userId);
+        
+        try {
+            preferenceService.resetToDefault(userId);
+            return ResponseEntity.ok(Map.of("message", "알림 설정이 기본값으로 초기화되었습니다."));
+        } catch (CareServiceException e) {
+            log.error("알림 설정 초기화 오류: {}", e.getMessage());
             throw e;
         }
     }

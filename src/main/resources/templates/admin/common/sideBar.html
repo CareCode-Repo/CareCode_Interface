@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- 사이드바 -->
+    <aside th:fragment="sidebar(activeMenu)" class="w-64 bg-gray-800 flex flex-col p-6 fixed h-full">
+        <h2 class="text-2xl font-bold mb-8 text-blue-400">CareCode Admin</h2>
+        <nav class="flex-1">
+            <ul class="space-y-4">
+                <li>
+                    <a href="/admin/dashboard" th:class="${activeMenu == 'dashboard'} ? 'block py-2 px-4 rounded bg-gray-700' : 'block py-2 px-4 rounded hover:bg-gray-700'">
+                        <i class="fas fa-chart-pie mr-2"></i>대시보드
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users" th:class="${activeMenu == 'users'} ? 'block py-2 px-4 rounded bg-gray-700' : 'block py-2 px-4 rounded hover:bg-gray-700'">
+                        <i class="fas fa-users mr-2"></i>사용자 관리
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/hospitals" th:class="${activeMenu == 'hospitals'} ? 'block py-2 px-4 rounded bg-gray-700' : 'block py-2 px-4 rounded hover:bg-gray-700'">
+                        <i class="fas fa-hospital mr-2"></i>병원 관리
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/policies" th:class="${activeMenu == 'policies'} ? 'block py-2 px-4 rounded bg-gray-700' : 'block py-2 px-4 rounded hover:bg-gray-700'">
+                        <i class="fas fa-file-alt mr-2"></i>정책 관리
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/community" th:class="${activeMenu == 'community'} ? 'block py-2 px-4 rounded bg-gray-700' : 'block py-2 px-4 rounded hover:bg-gray-700'">
+                        <i class="fas fa-comments mr-2"></i>커뮤니티 관리
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/health" th:class="${activeMenu == 'health'} ? 'block py-2 px-4 rounded bg-gray-700' : 'block py-2 px-4 rounded hover:bg-gray-700'">
+                        <i class="fas fa-heartbeat mr-2"></i>건강 관리
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/notifications" th:class="${activeMenu == 'notifications'} ? 'block py-2 px-4 rounded bg-gray-700' : 'block py-2 px-4 rounded hover:bg-gray-700'">
+                        <i class="fas fa-bell mr-2"></i>알림 관리
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/facilities/bookings" th:class="${activeMenu == 'facilities'} ? 'block py-2 px-4 rounded bg-gray-700' : 'block py-2 px-4 rounded hover:bg-gray-700'">
+                        <i class="fas fa-calendar-check mr-2"></i>육아 시설 예약
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>예약 통계</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <!-- 상단 헤더 -->
+    <header class="bg-gray-800 shadow flex items-center justify-between px-8 py-4 fixed w-full z-10">
+        <div class="flex items-center space-x-4">
+            <span class="text-2xl font-bold text-blue-400">CareCode Admin</span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-gray-300">admin@carecode.com</span>
+            <a href="/admin/logout" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded flex items-center"><i class="fas fa-sign-out-alt mr-2"></i>로그아웃</a>
+        </div>
+    </header>
+    <div class="flex pt-20 min-h-screen">
+        <!-- 사이드바 -->
+        <aside class="w-64 bg-gray-800 flex flex-col p-6 min-h-screen fixed top-16 left-0 h-full z-0">
+            <nav class="flex-1">
+                <ul class="space-y-4">
+                    <li><a href="/admin/dashboard" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-chart-pie mr-2"></i>대시보드</a></li>
+                    <li><a href="/admin/users" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-users mr-2"></i>사용자 관리</a></li>
+                    <li><a href="/admin/hospitals" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-hospital mr-2"></i>병원 관리</a></li>
+                    <li><a href="/admin/facilities/bookings" class="block py-2 px-4 rounded bg-gray-700 font-semibold text-blue-400"><i class="fas fa-calendar-check mr-2"></i>육아 시설 예약</a></li>
+                    <li><a href="/admin/policies" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-file-alt mr-2"></i>정책 관리</a></li>
+                    <li><a href="/admin/community" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-comments mr-2"></i>커뮤니티 관리</a></li>
+                    <li><a href="/admin/health" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-heartbeat mr-2"></i>건강 관리</a></li>
+                    <li><a href="/admin/notifications" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-bell mr-2"></i>알림 관리</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <!-- 메인 컨텐츠 -->
+        <main class="flex-1 p-10 ml-64 bg-gray-900 min-h-screen">
+            <div class="max-w-7xl mx-auto">
+                <!-- 헤더 -->
+                <div class="flex items-center mb-8 justify-between">
+                    <div class="flex items-center">
+                        <a href="/admin/facilities/bookings" class="text-blue-400 hover:text-blue-300 mr-4">
+                            <i class="fas fa-arrow-left text-xl"></i>
+                        </a>
+                        <i class="fas fa-chart-bar text-3xl text-purple-400 mr-4"></i>
+                        <h1 class="text-3xl font-bold text-blue-300">예약 통계</h1>
+                    </div>
+                    <div class="flex space-x-4">
+                        <a href="/admin/facilities/bookings" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded font-semibold flex items-center">
+                            <i class="fas fa-list mr-2"></i>목록 보기
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 통계 카드 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-6 shadow text-center transform hover:scale-105 transition duration-200">
+                        <div class="flex justify-center mb-2"><i class="fas fa-calendar-check text-3xl text-white"></i></div>
+                        <div class="text-lg font-semibold text-gray-200">전체 예약</div>
+                        <div class="text-4xl font-bold text-white animate-pulse" th:text="${stats.totalBookings}">0</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-yellow-700 to-yellow-500 rounded-xl p-6 shadow text-center transform hover:scale-105 transition duration-200">
+                        <div class="flex justify-center mb-2"><i class="fas fa-clock text-3xl text-white"></i></div>
+                        <div class="text-lg font-semibold text-gray-200">대기중</div>
+                        <div class="text-4xl font-bold text-white animate-pulse" th:text="${stats.pendingBookings}">0</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-700 to-green-500 rounded-xl p-6 shadow text-center transform hover:scale-105 transition duration-200">
+                        <div class="flex justify-center mb-2"><i class="fas fa-check-circle text-3xl text-white"></i></div>
+                        <div class="text-lg font-semibold text-gray-200">완료</div>
+                        <div class="text-4xl font-bold text-white animate-pulse" th:text="${stats.completedBookings}">0</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-700 to-red-500 rounded-xl p-6 shadow text-center transform hover:scale-105 transition duration-200">
+                        <div class="flex justify-center mb-2"><i class="fas fa-times-circle text-3xl text-white"></i></div>
+                        <div class="text-lg font-semibold text-gray-200">취소</div>
+                        <div class="text-4xl font-bold text-white animate-pulse" th:text="${stats.cancelledBookings}">0</div>
+                    </div>
+                </div>
+
+                <!-- 기간별 통계 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gray-800 rounded-lg p-6 shadow">
+                        <div class="flex items-center mb-4">
+                            <i class="fas fa-calendar-day text-orange-400 mr-2"></i>
+                            <span class="text-lg font-bold">오늘</span>
+                        </div>
+                        <div class="text-3xl font-bold text-orange-400" th:text="${stats.todayBookings}">0</div>
+                        <div class="text-sm text-gray-400">예약 건수</div>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-6 shadow">
+                        <div class="flex items-center mb-4">
+                            <i class="fas fa-calendar-week text-blue-400 mr-2"></i>
+                            <span class="text-lg font-bold">이번 주</span>
+                        </div>
+                        <div class="text-3xl font-bold text-blue-400" th:text="${stats.thisWeekBookings}">0</div>
+                        <div class="text-sm text-gray-400">예약 건수</div>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-6 shadow">
+                        <div class="flex items-center mb-4">
+                            <i class="fas fa-calendar-alt text-purple-400 mr-2"></i>
+                            <span class="text-lg font-bold">이번 달</span>
+                        </div>
+                        <div class="text-3xl font-bold text-purple-400" th:text="${stats.thisMonthBookings}">0</div>
+                        <div class="text-sm text-gray-400">예약 건수</div>
+                    </div>
+                </div>
+
+                <!-- 차트 섹션 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- 상태별 분포 -->
+                    <div class="bg-gray-800 rounded-lg p-6 shadow">
+                        <h3 class="text-xl font-bold text-blue-300 mb-4 flex items-center">
+                            <i class="fas fa-pie-chart mr-2"></i>상태별 분포
+                        </h3>
+                        <canvas id="statusChart" height="300"></canvas>
+                    </div>
+
+                    <!-- 타입별 분포 -->
+                    <div class="bg-gray-800 rounded-lg p-6 shadow">
+                        <h3 class="text-xl font-bold text-green-300 mb-4 flex items-center">
+                            <i class="fas fa-chart-pie mr-2"></i>예약 타입별 분포
+                        </h3>
+                        <canvas id="typeChart" height="300"></canvas>
+                    </div>
+                </div>
+
+                <!-- 시설별 분포 -->
+                <div class="bg-gray-800 rounded-lg p-6 shadow mb-8">
+                    <h3 class="text-xl font-bold text-purple-300 mb-4 flex items-center">
+                        <i class="fas fa-building mr-2"></i>시설별 예약 분포
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr>
+                                    <th class="py-2 px-4 text-left text-gray-400">시설명</th>
+                                    <th class="py-2 px-4 text-left text-gray-400">예약 수</th>
+                                    <th class="py-2 px-4 text-left text-gray-400">비율</th>
+                                    <th class="py-2 px-4 text-left text-gray-400">차트</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="facility : ${stats.facilityDistribution}" class="border-t border-gray-700">
+                                    <td class="py-3 px-4 font-semibold" th:text="${facility.facilityName}"></td>
+                                    <td class="py-3 px-4" th:text="${facility.count}"></td>
+                                    <td class="py-3 px-4" th:text="${#numbers.formatDecimal(facility.percentage, 1, 1)} + '%'"></td>
+                                    <td class="py-3 px-4">
+                                        <div class="w-full bg-gray-700 rounded-full h-2">
+                                            <div class="bg-blue-500 h-2 rounded-full" 
+                                                 th:style="'width: ' + ${facility.percentage} + '%'"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 일별 예약 추이 -->
+                <div class="bg-gray-800 rounded-lg p-6 shadow">
+                    <h3 class="text-xl font-bold text-yellow-300 mb-4 flex items-center">
+                        <i class="fas fa-chart-line mr-2"></i>일별 예약 추이 (최근 30일)
+                    </h3>
+                    <canvas id="dailyChart" height="200"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        
+        // 상태별 분포 차트
+        const statusData = [[${stats.statusDistribution}]];
+        const statusLabels = statusData.map(item => item.statusDisplay);
+        const statusCounts = statusData.map(item => item.count);
+        const statusColors = ['#fbbf24', '#3b82f6', '#10b981', '#ef4444'];
+        
+        new Chart(document.getElementById('statusChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: statusColors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#fff',
+                            padding: 20
+                        }
+                    }
+                }
+            }
+        });
+
+        // 타입별 분포 차트
+        const typeData = [[${stats.typeDistribution}]];
+        const typeLabels = typeData.map(item => item.bookingTypeDisplay);
+        const typeCounts = typeData.map(item => item.count);
+        const typeColors = ['#8b5cf6', '#06b6d4', '#f59e0b'];
+        
+        new Chart(document.getElementById('typeChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    data: typeCounts,
+                    backgroundColor: typeColors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#fff',
+                            padding: 20
+                        }
+                    }
+                }
+            }
+        });
+
+        // 일별 예약 추이 차트
+        const dailyData = [[${stats.dailyBookingCounts}]];
+        const dailyLabels = dailyData.map(item => item.date);
+        const dailyCounts = dailyData.map(item => item.count);
+        
+        new Chart(document.getElementById('dailyChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: '예약 수',
+                    data: dailyCounts,
+                    borderColor: '#fbbf24',
+                    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#fbbf24',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: '#fff'
+                        },
+                        grid: {
+                            color: '#374151'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#fff'
+                        },
+                        grid: {
+                            color: '#374151'
+                        }
+                    }
+                }
+            }
+        });
+        
+        /*]]>*/
+    </script>
+</body>
+</html> 

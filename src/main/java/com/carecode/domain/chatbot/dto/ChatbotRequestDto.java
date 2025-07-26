@@ -24,6 +24,7 @@ public class ChatbotRequestDto {
     public static class ChatbotRequest {
         private String userId;
         private String message;
+        private String sessionId;
         private Integer childAge;
         private String context;
     }

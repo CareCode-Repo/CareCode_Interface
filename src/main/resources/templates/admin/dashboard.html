@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>관리자 대시보드</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <!-- 상단 헤더 -->
+    <header class="bg-gray-800 shadow flex items-center justify-between px-8 py-4 fixed w-full z-10">
+        <div class="flex items-center space-x-4">
+            <span class="text-2xl font-bold text-blue-400">CareCode Admin</span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-gray-300">admin@carecode.com</span>
+            <a href="/admin/logout" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded flex items-center"><i class="fas fa-sign-out-alt mr-2"></i>로그아웃</a>
+        </div>
+    </header>
+    <div class="flex pt-20 min-h-screen">
+        <!-- 사이드바 -->
+        <aside class="w-64 bg-gray-800 flex flex-col p-6 min-h-screen fixed top-16 left-0 h-full z-0">
+            <nav class="flex-1">
+                <ul class="space-y-4">
+                    <li><a href="/admin/dashboard" class="block py-2 px-4 rounded hover:bg-gray-700 font-semibold text-blue-400"><i class="fas fa-chart-pie mr-2"></i>대시보드</a></li>
+                    <li><a href="/admin/users" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-users mr-2"></i>사용자 관리</a></li>
+                    <li><a href="/admin/hospitals" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-hospital mr-2"></i>병원 관리</a></li>
+                    <li><a href="/admin/facilities/bookings" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-calendar-check mr-2"></i>육아 시설 예약</a></li>
+                    <li><a href="/admin/policies" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-file-alt mr-2"></i>정책 관리</a></li>
+                    <li><a href="/admin/community" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-comments mr-2"></i>커뮤니티 관리</a></li>
+                    <li><a href="/admin/health" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-heartbeat mr-2"></i>건강 관리</a></li>
+                    <li><a href="/admin/notifications" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-bell mr-2"></i>알림 관리</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <!-- 메인 컨텐츠 -->
+        <main class="flex-1 p-10 ml-64 bg-gray-900 min-h-screen">
+            <h1 class="text-4xl font-bold mb-10 text-blue-300 flex items-center"><i class="fas fa-chart-pie mr-3"></i>관리자 대시보드</h1>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                <div class="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-6 shadow text-center transform hover:scale-105 transition duration-200">
+                    <div class="flex justify-center mb-2"><i class="fas fa-users text-3xl text-white"></i></div>
+                    <div class="text-lg font-semibold text-gray-200">사용자</div>
+                    <div class="text-4xl font-bold text-white animate-pulse" th:text="${dashboard.userCount}">0</div>
+                </div>
+                <div class="bg-gradient-to-br from-green-700 to-green-500 rounded-xl p-6 shadow text-center transform hover:scale-105 transition duration-200">
+                    <div class="flex justify-center mb-2"><i class="fas fa-hospital text-3xl text-white"></i></div>
+                    <div class="text-lg font-semibold text-gray-200">병원</div>
+                    <div class="text-4xl font-bold text-white animate-pulse" th:text="${dashboard.hospitalCount}">0</div>
+                </div>
+                <div class="bg-gradient-to-br from-purple-700 to-purple-500 rounded-xl p-6 shadow text-center transform hover:scale-105 transition duration-200">
+                    <div class="flex justify-center mb-2"><i class="fas fa-file-alt text-3xl text-white"></i></div>
+                    <div class="text-lg font-semibold text-gray-200">정책</div>
+                    <div class="text-4xl font-bold text-white animate-pulse" th:text="${dashboard.policyCount}">0</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- 최근 활동 -->
+                <div class="bg-gray-800 rounded-lg p-6 shadow">
+                    <div class="flex items-center mb-4"><i class="fas fa-history text-blue-400 mr-2"></i><span class="text-lg font-bold">최근 활동</span></div>
+                    <ul class="divide-y divide-gray-700">
+                        <li th:each="activity : ${dashboard.recentActivities}" class="py-2 flex items-center">
+                            <span th:switch="${activity.type}">
+                                <i th:case="'user'" class="fas fa-user-plus text-green-400 mr-2"></i>
+                                <i th:case="'hospital'" class="fas fa-hospital text-blue-400 mr-2"></i>
+                                <i th:case="'policy'" class="fas fa-file-alt text-purple-400 mr-2"></i>
+                                <i th:case="*" class="fas fa-bolt text-yellow-400 mr-2"></i>
+                            </span>
+                            <span th:text="${activity.desc}"></span>
+                            <span class="ml-auto text-xs text-gray-400" th:text="${activity.time}"></span>
+                        </li>
+                        <li th:if="${#lists.isEmpty(dashboard.recentActivities)}" class="py-2 text-gray-400">최근 활동 내역이 없습니다.</li>
+                    </ul>
+                </div>
+                <!-- 통계/그래프 예시 -->
+                <div class="bg-gray-800 rounded-lg p-6 shadow">
+                    <div class="flex items-center mb-4"><i class="fas fa-chart-line text-green-400 mr-2"></i><span class="text-lg font-bold">가입자 추이</span></div>
+                    <canvas id="userChart" height="120"></canvas>
+                </div>
+            </div>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script th:inline="javascript">
+                /*<![CDATA[*/
+                const userTrendLabelsArr = [[${dashboard.userTrendLabels}]];
+                const userTrendDataArr = [[${dashboard.userTrendData}]];
+                const ctx = document.getElementById('userChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: userTrendLabelsArr,
+                        datasets: [{
+                            label: '신규 가입자',
+                            data: userTrendDataArr,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56,189,248,0.2)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { labels: { color: '#fff' } } },
+                        scales: {
+                            x: { ticks: { color: '#fff' }, grid: { color: '#374151' } },
+                            y: { ticks: { color: '#fff' }, grid: { color: '#374151' } }
+                        }
+                    }
+                });
+                /*]]>*/
+            </script>
+        </main>
+    </div>
+</body>
+</html> 

@@ -107,7 +107,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.equals("/error") ||
                path.equals("/favicon.ico") ||
                path.startsWith("/auth/login") ||
-               path.startsWith("/auth/register");
+               path.startsWith("/auth/register") ||
+               path.startsWith("/admin");
         
         log.debug("JWT 필터 건너뛰기: {} = {}", path, shouldNotFilter);
         return shouldNotFilter;

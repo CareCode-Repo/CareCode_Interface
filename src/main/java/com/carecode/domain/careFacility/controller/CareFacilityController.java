@@ -8,7 +8,9 @@ import com.carecode.core.controller.BaseController;
 import com.carecode.domain.careFacility.dto.CareFacilityDto;
 import com.carecode.domain.careFacility.dto.CareFacilitySearchRequestDto;
 import com.carecode.domain.careFacility.dto.CareFacilitySearchResponseDto;
+import com.carecode.domain.careFacility.dto.CareFacilityBookingDto;
 import com.carecode.domain.careFacility.service.CareFacilityService;
+import com.carecode.domain.careFacility.service.CareFacilityBookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,6 +21,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,6 +40,7 @@ import java.util.Map;
 public class CareFacilityController extends BaseController {
     
     private final CareFacilityService careFacilityService;
+    private final CareFacilityBookingService bookingService;
     
     /**
      * 전체 시설 목록 조회
@@ -283,5 +288,203 @@ public class CareFacilityController extends BaseController {
         log.info("시설 통계 조회 요청");
         CareFacilitySearchResponseDto.FacilityStats stats = careFacilityService.getFacilityStats();
         return ResponseEntity.ok(stats);
+    }
+    
+    /**
+     * 예약 생성
+     */
+    @PostMapping("/{facilityId}/bookings")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "시설 예약 생성", description = "특정 육아 시설에 예약을 생성합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "예약 생성 성공",
+            content = @Content(schema = @Schema(implementation = CareFacilityBookingDto.BookingResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 예약 정보"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "시설을 찾을 수 없음"),
+        @ApiResponse(responseCode = "409", description = "예약 시간 중복"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<CareFacilityBookingDto.BookingResponse> createBooking(
+            @Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId,
+            @Parameter(description = "예약 정보", required = true) @RequestBody CareFacilityBookingDto.CreateBookingRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("시설 예약 생성 요청 - 시설ID: {}, 사용자: {}", facilityId, userDetails.getUsername());
+        CareFacilityBookingDto.BookingResponse booking = bookingService.createBooking(facilityId, request, userDetails);
+        return ResponseEntity.ok(booking);
+    }
+    
+    /**
+     * 예약 상세 조회
+     */
+    @GetMapping("/bookings/{bookingId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "예약 상세 조회", description = "특정 예약의 상세 정보를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = CareFacilityBookingDto.BookingResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "예약을 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<CareFacilityBookingDto.BookingResponse> getBookingById(
+            @Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("예약 상세 조회 요청 - 예약ID: {}, 사용자: {}", bookingId, userDetails.getUsername());
+        CareFacilityBookingDto.BookingResponse booking = bookingService.getBookingById(bookingId, userDetails);
+        return ResponseEntity.ok(booking);
+    }
+    
+    /**
+     * 사용자별 예약 목록 조회
+     */
+    @GetMapping("/bookings/user")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "사용자별 예약 목록 조회", description = "현재 로그인한 사용자의 예약 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = CareFacilityBookingDto.BookingResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<CareFacilityBookingDto.BookingResponse>> getUserBookings(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("사용자별 예약 목록 조회 요청 - 사용자: {}", userDetails.getUsername());
+        List<CareFacilityBookingDto.BookingResponse> bookings = bookingService.getUserBookings(userDetails);
+        return ResponseEntity.ok(bookings);
+    }
+    
+    /**
+     * 시설별 예약 목록 조회
+     */
+    @GetMapping("/{facilityId}/bookings")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "시설별 예약 목록 조회", description = "특정 시설의 예약 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = CareFacilityBookingDto.BookingResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "시설을 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<CareFacilityBookingDto.BookingResponse>> getFacilityBookings(
+            @Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId) {
+        log.info("시설별 예약 목록 조회 요청 - 시설ID: {}", facilityId);
+        List<CareFacilityBookingDto.BookingResponse> bookings = bookingService.getFacilityBookings(facilityId);
+        return ResponseEntity.ok(bookings);
+    }
+    
+    /**
+     * 예약 상태 업데이트
+     */
+    @PutMapping("/bookings/{bookingId}/status")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "예약 상태 업데이트", description = "예약의 상태를 업데이트합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "상태 업데이트 성공",
+            content = @Content(schema = @Schema(implementation = CareFacilityBookingDto.BookingResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 상태 정보"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "예약을 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<CareFacilityBookingDto.BookingResponse> updateBookingStatus(
+            @Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
+            @Parameter(description = "새로운 상태", required = true) @RequestParam String status,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("예약 상태 업데이트 요청 - 예약ID: {}, 상태: {}, 사용자: {}", bookingId, status, userDetails.getUsername());
+        CareFacilityBookingDto.BookingResponse booking = bookingService.updateBookingStatus(bookingId, status, userDetails);
+        return ResponseEntity.ok(booking);
+    }
+    
+    /**
+     * 예약 취소
+     */
+    @DeleteMapping("/bookings/{bookingId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "예약 취소", description = "예약을 취소합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "예약 취소 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "예약을 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, String>> cancelBooking(
+            @Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("예약 취소 요청 - 예약ID: {}, 사용자: {}", bookingId, userDetails.getUsername());
+        bookingService.cancelBooking(bookingId, userDetails);
+        return ResponseEntity.ok(Map.of("message", "예약이 성공적으로 취소되었습니다."));
+    }
+    
+    /**
+     * 예약 수정
+     */
+    @PutMapping("/bookings/{bookingId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "예약 수정", description = "기존 예약 정보를 수정합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "예약 수정 성공",
+            content = @Content(schema = @Schema(implementation = CareFacilityBookingDto.BookingResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 예약 정보"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "예약을 찾을 수 없음"),
+        @ApiResponse(responseCode = "409", description = "예약 시간 중복"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<CareFacilityBookingDto.BookingResponse> updateBooking(
+            @Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
+            @Parameter(description = "수정할 예약 정보", required = true) @RequestBody CareFacilityBookingDto.UpdateBookingRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("예약 수정 요청 - 예약ID: {}, 사용자: {}", bookingId, userDetails.getUsername());
+        CareFacilityBookingDto.BookingResponse booking = bookingService.updateBooking(bookingId, request, userDetails);
+        return ResponseEntity.ok(booking);
+    }
+    
+    /**
+     * 오늘의 예약 조회
+     */
+    @GetMapping("/bookings/today")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "오늘의 예약 조회", description = "오늘 날짜의 예약 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = CareFacilityBookingDto.BookingResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<CareFacilityBookingDto.BookingResponse>> getTodayBookings() {
+        log.info("오늘의 예약 조회 요청");
+        List<CareFacilityBookingDto.BookingResponse> bookings = bookingService.getTodayBookings();
+        return ResponseEntity.ok(bookings);
+    }
+    
+    /**
+     * 시설별 오늘의 예약 조회
+     */
+    @GetMapping("/{facilityId}/bookings/today")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "시설별 오늘의 예약 조회", description = "특정 시설의 오늘 예약 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = CareFacilityBookingDto.BookingResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "404", description = "시설을 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<CareFacilityBookingDto.BookingResponse>> getTodayBookingsByFacility(
+            @Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId) {
+        log.info("시설별 오늘의 예약 조회 요청 - 시설ID: {}", facilityId);
+        List<CareFacilityBookingDto.BookingResponse> bookings = bookingService.getTodayBookingsByFacility(facilityId);
+        return ResponseEntity.ok(bookings);
     }
 } 

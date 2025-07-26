@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>건강 관리</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- 사이드바 -->
+        <aside class="w-64 bg-gray-800 flex flex-col p-6">
+            <h2 class="text-2xl font-bold mb-8 text-blue-400">CareCode Admin</h2>
+            <nav class="flex-1">
+                <ul class="space-y-4">
+                    <li><a href="/admin/dashboard" class="block py-2 px-4 rounded hover:bg-gray-700">대시보드</a></li>
+                    <li><a href="/admin/users" class="block py-2 px-4 rounded hover:bg-gray-700">사용자 관리</a></li>
+                    <li><a href="/admin/hospitals" class="block py-2 px-4 rounded hover:bg-gray-700">병원 관리</a></li>
+                    <li><a href="/admin/policies" class="block py-2 px-4 rounded hover:bg-gray-700">정책 관리</a></li>
+                    <li><a href="/admin/community" class="block py-2 px-4 rounded hover:bg-gray-700">커뮤니티 관리</a></li>
+                    <li><a href="/admin/health" class="block py-2 px-4 rounded bg-gray-700">건강 관리</a></li>
+                    <li><a href="/admin/notifications" class="block py-2 px-4 rounded hover:bg-gray-700">알림 관리</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <!-- 메인 컨텐츠 -->
+        <main class="flex-1 p-10">
+            <h1 class="text-3xl font-bold mb-8 text-blue-300">건강 기록 관리</h1>
+            <div class="mb-6">
+                <a href="/admin/health/add" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded font-semibold">건강 기록 추가</a>
+            </div>
+            <table class="min-w-full bg-gray-800 rounded-lg overflow-hidden">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2">ID</th>
+                        <th class="px-4 py-2">사용자</th>
+                        <th class="px-4 py-2">제목</th>
+                        <th class="px-4 py-2">날짜</th>
+                        <th class="px-4 py-2">관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="record : ${records}">
+                        <td th:text="${record.id}" class="px-4 py-2"></td>
+                        <td th:text="${record.user.name}" class="px-4 py-2"></td>
+                        <td th:text="${record.title}" class="px-4 py-2"></td>
+                        <td th:text="${record.recordDate}" class="px-4 py-2"></td>
+                        <td class="px-4 py-2 space-x-2">
+                            <a th:href="@{'/admin/health/' + ${record.id}}" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded">상세</a>
+                            <a th:href="@{'/admin/health/' + ${record.id} + '/edit'}" class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded">수정</a>
+                            <form th:action="@{'/admin/health/' + ${record.id} + '/delete'}" method="post" class="inline">
+                                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded" onclick="return confirm('정말 삭제하시겠습니까?');">삭제</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </main>
+    </div>
+</body>
+</html> 
