@@ -1,53 +1,65 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>정책 관리</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<head th:replace="admin/common/head :: head('정책 관리')">
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
-    <div class="flex min-h-screen">
+    <!-- 상단 헤더 -->
+    <div th:replace="admin/common/header :: header"></div>
+
+    <div class="flex min-h-screen pt-16">
         <!-- 사이드바 -->
-        <aside class="w-64 bg-gray-800 flex flex-col p-6">
-            <h2 class="text-2xl font-bold mb-8 text-blue-400">CareCode Admin</h2>
-            <nav class="flex-1">
-                <ul class="space-y-4">
-                    <li><a href="/admin/dashboard" class="block py-2 px-4 rounded hover:bg-gray-700">대시보드</a></li>
-                    <li><a href="/admin/users" class="block py-2 px-4 rounded hover:bg-gray-700">사용자 관리</a></li>
-                    <li><a href="/admin/hospitals" class="block py-2 px-4 rounded hover:bg-gray-700">병원 관리</a></li>
-                    <li><a href="/admin/policies" class="block py-2 px-4 rounded bg-gray-700">정책 관리</a></li>
-                    <li><a href="/admin/community" class="block py-2 px-4 rounded hover:bg-gray-700">커뮤니티 관리</a></li>
-                    <li><a href="/admin/health" class="block py-2 px-4 rounded hover:bg-gray-700">건강 관리</a></li>
-                    <li><a href="/admin/notifications" class="block py-2 px-4 rounded hover:bg-gray-700">알림 관리</a></li>
-                </ul>
-            </nav>
-        </aside>
+        <div th:replace="admin/common/sideBar :: sidebar('policies')"></div>
+
         <!-- 메인 컨텐츠 -->
-        <main class="flex-1 p-10">
-            <h1 class="text-2xl font-bold mb-6 text-blue-300">정책 관리</h1>
-            <a href="/admin/policies/add" class="bg-blue-600 text-white px-4 py-2 rounded mb-4 inline-block hover:bg-blue-700">정책 추가</a>
+        <main class="flex-1 p-10 ml-64 bg-gray-900 min-h-screen">
+            <div class="flex items-center mb-8">
+                <i class="fas fa-file-alt text-3xl text-blue-400 mr-4"></i>
+                <h1 class="text-3xl font-bold text-blue-300">정책 관리</h1>
+            </div>
+            
+            <div class="mb-6">
+                <a href="/admin/policies/add" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded font-semibold flex items-center inline-block">
+                    <i class="fas fa-plus mr-2"></i>정책 추가
+                </a>
+            </div>
+            
             <div class="overflow-x-auto">
-                <table class="min-w-full bg-gray-800 rounded shadow">
+                <table class="min-w-full bg-gray-800 rounded-lg shadow">
                     <thead>
-                        <tr>
-                            <th class="py-2 px-4">ID</th>
-                            <th class="py-2 px-4">제목</th>
-                            <th class="py-2 px-4">카테고리</th>
-                            <th class="py-2 px-4">지역</th>
-                            <th class="py-2 px-4">관리</th>
+                        <tr class="bg-gray-700">
+                            <th class="py-3 px-4 text-left font-semibold">ID</th>
+                            <th class="py-3 px-4 text-left font-semibold">제목</th>
+                            <th class="py-3 px-4 text-left font-semibold">카테고리</th>
+                            <th class="py-3 px-4 text-left font-semibold">등록일</th>
+                            <th class="py-3 px-4 text-left font-semibold">관리</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr th:each="policy : ${policies}" class="hover:bg-gray-700">
-                            <td th:text="${policy.id}" class="py-2 px-4"></td>
-                            <td th:text="${policy.title}" class="py-2 px-4"></td>
-                            <td th:text="${policy.category}" class="py-2 px-4"></td>
-                            <td th:text="${policy.location}" class="py-2 px-4"></td>
-                            <td class="py-2 px-4">
-                                <a th:href="@{'/admin/policies/' + ${policy.id}}" class="text-blue-400 mr-2 hover:underline">상세</a>
-                                <a th:href="@{'/admin/policies/' + ${policy.id} + '/edit'}" class="text-green-400 mr-2 hover:underline">수정</a>
-                                <form th:action="@{'/admin/policies/' + ${policy.id} + '/delete'}" method="post" style="display:inline;">
-                                    <button type="submit" class="text-red-400 hover:underline">삭제</button>
+                    <tbody class="divide-y divide-gray-700">
+                        <tr th:each="policy : ${policies}" class="hover:bg-gray-700 transition-colors">
+                            <td th:text="${policy.id}" class="py-3 px-4"></td>
+                            <td class="py-3 px-4">
+                                <a th:href="@{'/admin/policies/' + ${policy.id}}" th:text="${policy.title}" class="text-blue-400 hover:text-blue-300 hover:underline font-medium"></a>
+                            </td>
+                            <td th:text="${policy.category}" class="py-3 px-4"></td>
+                            <td th:text="${policy.createdAt != null ? #temporals.format(policy.createdAt, 'yyyy-MM-dd HH:mm') : '-'}" class="py-3 px-4 text-sm text-gray-400"></td>
+                            <td class="py-3 px-4 space-x-2">
+                                <a th:href="@{'/admin/policies/' + ${policy.id}}" class="text-blue-400 hover:text-blue-300 hover:underline">
+                                    <i class="fas fa-eye mr-1"></i>상세
+                                </a>
+                                <a th:href="@{'/admin/policies/' + ${policy.id} + '/edit'}" class="text-green-400 hover:text-green-300 hover:underline">
+                                    <i class="fas fa-edit mr-1"></i>수정
+                                </a>
+                                <form th:action="@{'/admin/policies/' + ${policy.id} + '/delete'}" method="post" class="inline" th:onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                    <button type="submit" class="text-red-400 hover:text-red-300 hover:underline">
+                                        <i class="fas fa-trash mr-1"></i>삭제
+                                    </button>
                                 </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(policies)}">
+                            <td colspan="5" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-file-alt text-4xl mb-4 block"></i>
+                                등록된 정책이 없습니다.
                             </td>
                         </tr>
                     </tbody>

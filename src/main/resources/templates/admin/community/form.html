@@ -9,30 +9,10 @@
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
     <!-- 상단 헤더 -->
-    <header class="bg-gray-800 shadow flex items-center justify-between px-8 py-4 fixed w-full z-10">
-        <div class="flex items-center space-x-4">
-            <span class="text-2xl font-bold text-blue-400">CareCode Admin</span>
-        </div>
-        <div class="flex items-center space-x-4">
-            <span class="text-gray-300">admin@carecode.com</span>
-            <a href="/admin/logout" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded flex items-center"><i class="fas fa-sign-out-alt mr-2"></i>로그아웃</a>
-        </div>
-    </header>
+    <div th:replace="admin/common/header :: header"></div>
     <div class="flex pt-20 min-h-screen">
         <!-- 사이드바 -->
-        <aside class="w-64 bg-gray-800 flex flex-col p-6 min-h-screen fixed top-16 left-0 h-full z-0">
-            <nav class="flex-1">
-                <ul class="space-y-4">
-                    <li><a href="/admin/dashboard" class="block py-2 px-4 rounded hover:bg-gray-700 font-semibold text-blue-400"><i class="fas fa-chart-pie mr-2"></i>대시보드</a></li>
-                    <li><a href="/admin/users" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-users mr-2"></i>사용자 관리</a></li>
-                    <li><a href="/admin/hospitals" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-hospital mr-2"></i>병원 관리</a></li>
-                    <li><a href="/admin/policies" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-file-alt mr-2"></i>정책 관리</a></li>
-                    <li><a href="/admin/community" class="block py-2 px-4 rounded bg-gray-700"><i class="fas fa-comments mr-2"></i>커뮤니티 관리</a></li>
-                    <li><a href="/admin/health" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-heartbeat mr-2"></i>건강 관리</a></li>
-                    <li><a href="/admin/notifications" class="block py-2 px-4 rounded hover:bg-gray-700"><i class="fas fa-bell mr-2"></i>알림 관리</a></li>
-                </ul>
-            </nav>
-        </aside>
+        <div th:replace="admin/common/sideBar :: sidebar('community')"></div>
         <!-- 메인 컨텐츠 -->
         <main class="flex-1 p-10 ml-64 bg-gray-900 min-h-screen">
             <div class="max-w-2xl mx-auto">
