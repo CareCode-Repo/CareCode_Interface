@@ -24,8 +24,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 인증 API 컨트롤러
@@ -168,6 +170,173 @@ public class AuthController extends BaseController {
         } catch (Exception e) {
             log.error("회원가입 처리 오류: {}", e.getMessage());
             throw new CareServiceException("회원가입 처리 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 카카오 토큰으로 로그인
+     */
+    @PostMapping("/kakao/login")
+    @LogExecutionTime
+    @Operation(summary = "카카오 토큰 로그인", description = "카카오 액세스 토큰을 사용하여 로그인합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "로그인 성공 (기존 회원)",
+            content = @Content(schema = @Schema(implementation = TokenDto.class))),
+        @ApiResponse(responseCode = "404", description = "신규 회원 - 회원가입 필요"),
+        @ApiResponse(responseCode = "400", description = "잘못된 카카오 토큰"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<?> kakaoLogin(
+            @Parameter(description = "카카오 로그인 정보", required = true) 
+            @RequestBody Map<String, String> request) {
+        String kakaoAccessToken = request.get("kakaoAccessToken");
+        log.info("카카오 토큰 로그인 요청");
+        
+        try {
+            // 카카오 API를 통해 사용자 정보 조회
+            Map<String, Object> kakaoUserInfo = userService.getKakaoUserInfo(kakaoAccessToken);
+            String kakaoId = kakaoUserInfo.get("id").toString();
+            String uniqueUserName = kakaoUserInfo.get("nickname") + "_" + kakaoId;
+            
+            // 기존 사용자 조회
+            Optional<User> existingUser = userService.findByName(uniqueUserName);
+            
+            if (existingUser.isPresent()) {
+                // 기존 회원 - 로그인 처리
+                User user = existingUser.get();
+                
+                // 마지막 로그인 시간 업데이트
+                user.setLastLoginAt(LocalDateTime.now());
+                user.setUpdatedAt(LocalDateTime.now());
+                userService.saveUser(user);
+                
+                // JWT 토큰 생성
+                String accessToken = jwtService.generateAccessToken(
+                    user.getUserId(), 
+                    user.getEmail(), 
+                    user.getRole().name()
+                );
+                String refreshToken = jwtService.generateRefreshToken(
+                    user.getUserId(), 
+                    user.getEmail()
+                );
+                
+                TokenDto tokenResponse = TokenDto.builder()
+                        .accessToken(accessToken)
+                        .refreshToken(refreshToken)
+                        .tokenType("Bearer")
+                        .expiresIn(3600000L) // 1시간
+                        .userId(user.getUserId())
+                        .email(user.getEmail())
+                        .role(user.getRole().name())
+                        .success(true)
+                        .message("로그인 성공")
+                        .build();
+                
+                log.info("카카오 로그인 성공: 사용자={}", user.getName());
+                return ResponseEntity.ok(tokenResponse);
+                
+            } else {
+                // 신규 회원 - 회원가입 필요
+                Map<String, Object> errorResponse = Map.of(
+                    "success", false,
+                    "message", "신규 회원입니다. 회원가입이 필요합니다.",
+                    "errorCode", "USER_NOT_FOUND",
+                    "kakaoProfile", Map.of(
+                        "kakaoId", kakaoId,
+                        "nickname", kakaoUserInfo.get("nickname"),
+                        "profileImageUrl", kakaoUserInfo.getOrDefault("profileImageUrl", "")
+                    )
+                );
+                
+                log.info("신규 카카오 사용자: kakaoId={}", kakaoId);
+                return ResponseEntity.status(404).body(errorResponse);
+            }
+            
+        } catch (Exception e) {
+            log.error("카카오 로그인 처리 오류: {}", e.getMessage());
+            return ResponseEntity.status(400).body(Map.of(
+                "success", false,
+                "message", "카카오 토큰 처리 중 오류가 발생했습니다."
+            ));
+        }
+    }
+
+    /**
+     * 카카오 토큰으로 회원가입
+     */
+    @PostMapping("/kakao/register")
+    @LogExecutionTime
+    @Operation(summary = "카카오 토큰 회원가입", description = "카카오 액세스 토큰과 사용자 정보로 회원가입합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "회원가입 성공",
+            content = @Content(schema = @Schema(implementation = UserDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "409", description = "이미 존재하는 사용자"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<?> kakaoRegister(
+            @Parameter(description = "카카오 회원가입 정보", required = true) 
+            @RequestBody Map<String, Object> request) {
+        String kakaoAccessToken = (String) request.get("kakaoAccessToken");
+        log.info("카카오 회원가입 요청");
+        
+        try {
+            // 카카오 API를 통해 사용자 정보 조회
+            Map<String, Object> kakaoUserInfo = userService.getKakaoUserInfo(kakaoAccessToken);
+            String kakaoId = kakaoUserInfo.get("id").toString();
+            String kakaoNickname = (String) kakaoUserInfo.get("nickname");
+            String profileImageUrl = (String) kakaoUserInfo.getOrDefault("profileImageUrl", "");
+            
+            // 고유한 사용자명 생성
+            String uniqueUserName = kakaoNickname + "_" + kakaoId;
+            
+            // 중복 체크
+            if (userService.findByName(uniqueUserName).isPresent()) {
+                return ResponseEntity.status(409).body(Map.of(
+                    "success", false,
+                    "message", "이미 가입된 카카오 계정입니다."
+                ));
+            }
+            
+            // 사용자 생성
+            User user = User.builder()
+                    .email((String) request.get("email"))
+                    .password("") // 소셜 로그인 사용자는 비밀번호 없음
+                    .name(uniqueUserName)
+                    .phoneNumber((String) request.get("phoneNumber"))
+                    .birthDate(request.get("birthDate") != null ? 
+                        LocalDate.parse((String) request.get("birthDate")) : null)
+                    .gender(request.get("gender") != null ? 
+                        User.Gender.valueOf((String) request.get("gender")) : null)
+                    .address((String) request.get("address"))
+                    .profileImageUrl(profileImageUrl)
+                    .role(User.UserRole.PARENT)
+                    .isActive(true)
+                    .emailVerified(true)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+            
+            User savedUser = userService.saveUser(user);
+            
+            // UserDto로 변환하여 응답
+            UserDto userDto = userService.convertToDto(savedUser);
+            userDto.setPassword(null); // 비밀번호는 응답에서 제거
+            
+            log.info("카카오 회원가입 성공: 사용자={}", savedUser.getName());
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "회원가입 성공",
+                "user", userDto
+            ));
+            
+        } catch (Exception e) {
+            log.error("카카오 회원가입 처리 오류: {}", e.getMessage());
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "message", "회원가입 처리 중 오류가 발생했습니다."
+            ));
         }
     }
 

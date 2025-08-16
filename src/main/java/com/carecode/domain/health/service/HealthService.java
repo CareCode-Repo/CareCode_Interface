@@ -306,8 +306,21 @@ public class HealthService {
         log.info("건강 목표 조회: 사용자ID={}", userId);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+            // userId(문자열)로 먼저 조회
+            Optional<User> userOpt = userRepository.findByUserId(userId);
+            User user;
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+            } else {
+                // userId가 숫자라면 PK(id)로도 조회 시도
+                try {
+                    Long id = Long.parseLong(userId);
+                    user = userRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId);
+                }
+            }
             
             List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
             

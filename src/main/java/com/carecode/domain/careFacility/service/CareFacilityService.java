@@ -196,15 +196,18 @@ public class CareFacilityService {
     }
 
     /**
-     * 돌봄 시설 조회수 증가 (현재는 구현하지 않음 - viewCount 필드가 없음)
+     * 돌봄 시설 조회수 증가
      */
     @Transactional
     public void incrementViewCount(Long facilityId) {
         log.info("돌봄 시설 조회수 증가: 시설ID={}", facilityId);
         
-        // viewCount 필드가 엔티티에 없으므로 현재는 로그만 출력
-        // 추후 viewCount 필드 추가 시 구현
-        log.warn("viewCount 필드가 엔티티에 없어 조회수 증가 기능이 구현되지 않았습니다.");
+        CareFacility facility = careFacilityRepository.findById(facilityId)
+                .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
+        
+        Integer currentViewCount = facility.getViewCount() != null ? facility.getViewCount() : 0;
+        facility.setViewCount(currentViewCount + 1);
+        careFacilityRepository.save(facility);
     }
 
     /**
@@ -269,7 +272,7 @@ public class CareFacilityService {
                 .maxAge(facility.getAgeRangeMax())
                 .rating(facility.getRating())
                 .reviewCount(facility.getReviewCount())
-                .viewCount(0)
+                .viewCount(facility.getViewCount())
                 .isActive(facility.getIsActive())
                 .createdAt(facility.getCreatedAt())
                 .updatedAt(facility.getUpdatedAt())

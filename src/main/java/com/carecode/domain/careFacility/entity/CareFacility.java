@@ -37,6 +37,12 @@ public class CareFacility {
     @Column(name = "facility_type")
     private String facilityType; // 어린이집, 유치원, 놀이방 등
     
+    @Column(name = "city")
+    private String city;
+    
+    @Column(name = "district")
+    private String district;
+    
     @Column(name = "address")
     private String address;
     
@@ -99,6 +105,15 @@ public class CareFacility {
     
     @Column(name = "review_count")
     private Integer reviewCount;
+    
+    @Column(name = "view_count")
+    private Integer viewCount;
+    
+    @Column(name = "description")
+    private String description;
+    
+    @Column(name = "age_range")
+    private String ageRange;
     
     @Column(name = "is_active")
     private Boolean isActive;

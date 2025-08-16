@@ -1,60 +1,58 @@
-version: '3.8'
-
 services:
-  # CareCode Backend Application
-  carecode-backend:
+  carecode-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: carecode-backend
+    container_name: carecode-api
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
-      # Spring Boot 프로파일 설정
       - SPRING_PROFILES_ACTIVE=docker
-      # 데이터베이스 설정 (개발용)
-      - SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/carecode?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      - SPRING_DATASOURCE_USERNAME=carecode
-      - SPRING_DATASOURCE_PASSWORD=carecode123
-      # JPA 설정
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_JPA_SHOW_SQL=false
-      # 서버 포트
-      - SERVER_PORT=8080
+      - JWT_SECRET=careCodeSecretKey123456789012345678901234567890
+      - DB_USERNAME=carecode
+      - DB_PASSWORD=carecode!123
     depends_on:
-      - mariadb
+      - carecode-mariadb
+      - carecode-redis
+    restart: unless-stopped
     networks:
       - carecode-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
-  # MariaDB Database
-  mariadb:
+  carecode-mariadb:
     image: mariadb:10.11
     container_name: carecode-mariadb
-    environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: carecode
-      MYSQL_USER: carecode
-      MYSQL_PASSWORD: carecode123
     ports:
-      - "3306:3306"
+      - "3307:3306"  # tripcut과 다른 포트
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123
+      - MYSQL_DATABASE=carecode
+      - MYSQL_USER=carecode
+      - MYSQL_PASSWORD=carecode!123
+      - MYSQL_CHARACTER_SET_SERVER=utf8mb4
+      - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
     volumes:
-      - mariadb_data:/var/lib/mysql
-      - ./docker/mariadb/init:/docker-entrypoint-initdb.d
+      - carecode-mariadb-data:/var/lib/mysql
+      - ./init-care-facilities.sql:/docker-entrypoint-initdb.d/init-care-facilities.sql
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     networks:
       - carecode-network
+
+  carecode-redis:
+    image: redis:7-alpine
+    container_name: carecode-redis
+    ports:
+      - "6380:6379"  # tripcut과 다른 포트
+    volumes:
+      - carecode-redis-data:/data
     restart: unless-stopped
-    command: --default-authentication-plugin=mysql_native_password
+    command: redis-server --appendonly yes
+    networks:
+      - carecode-network
 
 volumes:
-  mariadb_data:
-    driver: local
+  carecode-mariadb-data:
+  carecode-redis-data:
 
 networks:
   carecode-network:

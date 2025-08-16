@@ -117,7 +117,7 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
     /**
      * 전체 조회수 합계 조회 (현재는 0으로 반환, 추후 viewCount 필드 추가 시 수정)
      */
-    @Query("SELECT 0 FROM Policy p WHERE p.isActive = true")
+    @Query("SELECT COUNT(p) FROM Policy p WHERE p.isActive = true")
     long getTotalViewCount();
     
     /**

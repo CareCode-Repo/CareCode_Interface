@@ -120,16 +120,16 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
                                        @Param("childAge") Integer childAge);
     
     /**
-     * 전체 조회수 합계 조회 (현재는 0으로 반환, 추후 viewCount 필드 추가 시 수정)
+     * 전체 조회수 합계 조회
      */
-    @Query("SELECT 0 FROM CareFacility cf WHERE cf.isActive = true")
+    @Query("SELECT COALESCE(SUM(cf.viewCount), 0) FROM CareFacility cf WHERE cf.isActive = true")
     long getTotalViewCount();
     
     /**
      * 시설 유형별 통계 조회
      */
     @Query("SELECT new com.carecode.domain.careFacility.dto.TypeStats(" +
-           "cf.facilityType, COUNT(cf), AVG(cf.rating), 0) " +
+           "cf.facilityType, COUNT(cf), AVG(cf.rating), COALESCE(SUM(cf.viewCount), 0)) " +
            "FROM CareFacility cf WHERE cf.isActive = true " +
            "GROUP BY cf.facilityType")
     List<TypeStats> getTypeStats();

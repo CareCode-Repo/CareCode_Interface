@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용자 프로필 관리 테스트</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .kakao-btn {
+            background-color: #FEE500;
+            color: #000;
+        }
+        .kakao-btn:hover {
+            background-color: #FFD700;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .token-info {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .api-endpoint {
+            background-color: #f8f9fa;
+            color: #495057;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            border: 1px solid #dee2e6;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 사용자 프로필 관리 테스트</h1>
+        
+        <!-- 토큰 정보 -->
+        <div class="token-info">
+            <h3>🎫 JWT 토큰 정보</h3>
+            <div id="tokenDisplay">저장된 토큰이 없습니다. 먼저 카카오 로그인을 해주세요.</div>
+            <br>
+            <button class="kakao-btn" onclick="goToKakaoLogin()">카카오 로그인</button>
+            <button onclick="clearTokens()">토큰 삭제</button>
+            <button onclick="showTokenInfo()">토큰 새로고침</button>
+        </div>
+
+        <!-- API 정보 -->
+        <div class="section">
+            <h3>📋 사용 가능한 API 엔드포인트</h3>
+            <div class="api-endpoint">GET /api/user/profile - 프로필 조회</div>
+            <div class="api-endpoint">GET /api/user/profile/completion - 완성도 체크</div>
+            <div class="api-endpoint">PUT /api/user/profile - 프로필 업데이트</div>
+            <div class="api-endpoint">PATCH /api/user/profile/nickname - 닉네임 변경</div>
+        </div>
+
+        <!-- 프로필 완성도 체크 -->
+        <div class="section">
+            <h3>📊 프로필 완성도 체크</h3>
+            <button onclick="checkProfileCompletion()">완성도 확인</button>
+            <div id="completionResult" class="result">완성도를 확인해보세요.</div>
+        </div>
+
+        <!-- 현재 프로필 조회 -->
+        <div class="section">
+            <h3>👤 현재 프로필 조회</h3>
+            <button onclick="getCurrentProfile()">프로필 조회</button>
+            <div id="profileResult" class="result">프로필을 조회해보세요.</div>
+        </div>
+
+        <!-- 프로필 업데이트 -->
+        <div class="section">
+            <h3>✏️ 프로필 업데이트</h3>
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="realName">실제 이름:</label>
+                    <input type="text" id="realName" placeholder="홍길동">
+                </div>
+                <div class="form-group">
+                    <label for="phoneNumber">휴대폰 번호:</label>
+                    <input type="text" id="phoneNumber" placeholder="010-1234-5678" pattern="^01[0-9]-[0-9]{3,4}-[0-9]{4}$">
+                </div>
+                <div class="form-group">
+                    <label for="birthDate">생년월일:</label>
+                    <input type="date" id="birthDate">
+                </div>
+                <div class="form-group">
+                    <label for="gender">성별:</label>
+                    <select id="gender">
+                        <option value="">선택하세요</option>
+                        <option value="MALE">남성</option>
+                        <option value="FEMALE">여성</option>
+                        <option value="OTHER">기타</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="address">주소:</label>
+                    <input type="text" id="address" placeholder="서울시 강남구">
+                </div>
+                <div class="form-group">
+                    <label for="latitude">위도:</label>
+                    <input type="number" id="latitude" step="0.000001" placeholder="37.123456">
+                </div>
+                <div class="form-group">
+                    <label for="longitude">경도:</label>
+                    <input type="number" id="longitude" step="0.000001" placeholder="127.123456">
+                </div>
+                <button type="button" onclick="updateProfile()">프로필 업데이트</button>
+                <button type="button" onclick="clearForm()">폼 초기화</button>
+            </form>
+            <div id="updateResult" class="result">프로필 업데이트 결과가 여기에 표시됩니다.</div>
+        </div>
+
+        <!-- 닉네임 업데이트 -->
+        <div class="section">
+            <h3>🏷️ 닉네임 업데이트</h3>
+            <div class="form-group">
+                <label for="nickname">새 닉네임:</label>
+                <input type="text" id="nickname" placeholder="새로운 닉네임">
+            </div>
+            <button onclick="updateNickname()">닉네임 변경</button>
+            <div id="nicknameResult" class="result">닉네임 변경 결과가 여기에 표시됩니다.</div>
+        </div>
+
+        <!-- 디버그 정보 -->
+        <div class="section">
+            <h3>🐛 디버그 정보</h3>
+            <button onclick="showDebugInfo()">요청 정보 확인</button>
+            <div id="debugResult" class="result">디버그 정보가 여기에 표시됩니다.</div>
+        </div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 토큰 정보 표시
+        window.onload = function() {
+            showTokenInfo();
+            
+            // URL에서 토큰 정보 추출 (카카오 로그인 후 리다이렉트된 경우)
+            const urlParams = new URLSearchParams(window.location.search);
+            const accessToken = urlParams.get('accessToken');
+            if (accessToken) {
+                localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('refreshToken', urlParams.get('refreshToken') || '');
+                localStorage.setItem('userInfo', JSON.stringify({
+                    userId: urlParams.get('userId'),
+                    email: urlParams.get('email'),
+                    role: urlParams.get('role')
+                }));
+                showTokenInfo();
+                
+                // URL 파라미터 제거
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        };
+
+        // 토큰 정보 표시
+        function showTokenInfo() {
+            const accessToken = localStorage.getItem('accessToken');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            let tokenDisplay = '';
+            if (accessToken) {
+                tokenDisplay += `Access Token: ${accessToken.substring(0, 50)}...\n`;
+                if (userInfo) {
+                    tokenDisplay += `User Info: ${userInfo}\n`;
+                }
+                tokenDisplay += '\n✅ 인증 상태: 로그인됨';
+            } else {
+                tokenDisplay = '❌ 인증 상태: 로그인 필요';
+            }
+            
+            document.getElementById('tokenDisplay').textContent = tokenDisplay;
+        }
+
+        // 카카오 로그인 페이지로 이동
+        function goToKakaoLogin() {
+            window.location.href = 'http://localhost:8080/oauth2/authorization/kakao';
+        }
+
+        // 토큰 삭제
+        function clearTokens() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('userInfo');
+            showTokenInfo();
+            showResult('모든 토큰이 삭제되었습니다.', 'info', 'tokenDisplay');
+        }
+
+        // 프로필 완성도 체크
+        async function checkProfileCompletion() {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                showResult('로그인이 필요합니다.', 'error', 'completionResult');
+                return;
+            }
+
+            try {
+                showResult('요청 중...', 'info', 'completionResult');
+                
+                const response = await fetch('http://localhost:8080/api/user/profile/completion', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const responseText = await response.text();
+                
+                if (response.ok) {
+                    const data = JSON.parse(responseText);
+                    let result = `완성도: ${data.completionPercentage}%\n`;
+                    result += `메시지: ${data.message}\n\n`;
+                    result += `필요한 정보:\n`;
+                    if (data.missingFields.needsRealName) result += '- 실제 이름\n';
+                    if (data.missingFields.needsPhoneNumber) result += '- 휴대폰 번호\n';
+                    if (data.missingFields.needsBirthDate) result += '- 생년월일\n';
+                    if (data.missingFields.needsGender) result += '- 성별\n';
+                    if (data.missingFields.needsAddress) result += '- 주소\n';
+                    
+                    showResult(result, data.isComplete ? 'success' : 'info', 'completionResult');
+                } else {
+                    showResult(`API 호출 실패: ${response.status}\n응답: ${responseText}`, 'error', 'completionResult');
+                }
+            } catch (error) {
+                showResult(`오류 발생: ${error.message}`, 'error', 'completionResult');
+            }
+        }
+
+        // 현재 프로필 조회
+        async function getCurrentProfile() {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                showResult('로그인이 필요합니다.', 'error', 'profileResult');
+                return;
+            }
+
+            try {
+                showResult('요청 중...', 'info', 'profileResult');
+                
+                const response = await fetch('http://localhost:8080/api/user/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const responseText = await response.text();
+
+                if (response.ok) {
+                    const data = JSON.parse(responseText);
+                    showResult('현재 프로필:\n' + JSON.stringify(data, null, 2), 'success', 'profileResult');
+                    
+                    // 폼에 기존 데이터 채우기
+                    fillFormWithProfile(data);
+                } else {
+                    showResult(`API 호출 실패: ${response.status}\n응답: ${responseText}`, 'error', 'profileResult');
+                }
+            } catch (error) {
+                showResult(`오류 발생: ${error.message}`, 'error', 'profileResult');
+            }
+        }
+
+        // 폼에 프로필 데이터 채우기
+        function fillFormWithProfile(profile) {
+            if (profile.name && !profile.name.includes('_')) {
+                document.getElementById('realName').value = profile.name || '';
+            }
+            document.getElementById('phoneNumber').value = profile.phoneNumber || '';
+            document.getElementById('birthDate').value = profile.birthDate || '';
+            document.getElementById('gender').value = profile.gender || '';
+            document.getElementById('address').value = profile.address || '';
+            document.getElementById('latitude').value = profile.latitude || '';
+            document.getElementById('longitude').value = profile.longitude || '';
+        }
+
+        // 프로필 업데이트
+        async function updateProfile() {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                showResult('로그인이 필요합니다.', 'error', 'updateResult');
+                return;
+            }
+
+            const profileData = {
+                realName: document.getElementById('realName').value,
+                phoneNumber: document.getElementById('phoneNumber').value,
+                birthDate: document.getElementById('birthDate').value || null,
+                gender: document.getElementById('gender').value || null,
+                address: document.getElementById('address').value,
+                latitude: parseFloat(document.getElementById('latitude').value) || null,
+                longitude: parseFloat(document.getElementById('longitude').value) || null
+            };
+
+            try {
+                showResult('요청 중...', 'info', 'updateResult');
+                
+                console.log('요청 URL: http://localhost:8080/api/user/profile');
+                console.log('요청 데이터:', profileData);
+                
+                const response = await fetch('http://localhost:8080/api/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(profileData)
+                });
+
+                const responseText = await response.text();
+                console.log('응답 상태:', response.status);
+                console.log('응답 내용:', responseText);
+
+                if (response.ok) {
+                    const data = JSON.parse(responseText);
+                    showResult('프로필 업데이트 성공!\n' + JSON.stringify(data, null, 2), 'success', 'updateResult');
+                } else {
+                    showResult(`프로필 업데이트 실패: ${response.status}\n응답: ${responseText}`, 'error', 'updateResult');
+                }
+            } catch (error) {
+                console.error('요청 오류:', error);
+                showResult(`오류 발생: ${error.message}`, 'error', 'updateResult');
+            }
+        }
+
+        // 닉네임 업데이트
+        async function updateNickname() {
+            const accessToken = localStorage.getItem('accessToken');
+            const nickname = document.getElementById('nickname').value;
+            
+            if (!accessToken) {
+                showResult('로그인이 필요합니다.', 'error', 'nicknameResult');
+                return;
+            }
+
+            if (!nickname.trim()) {
+                showResult('닉네임을 입력해주세요.', 'error', 'nicknameResult');
+                return;
+            }
+
+            try {
+                showResult('요청 중...', 'info', 'nicknameResult');
+                
+                const response = await fetch('http://localhost:8080/api/user/profile/nickname', {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nickname: nickname })
+                });
+
+                const responseText = await response.text();
+
+                if (response.ok) {
+                    const data = JSON.parse(responseText);
+                    showResult(`닉네임 변경 성공!\n${JSON.stringify(data, null, 2)}`, 'success', 'nicknameResult');
+                    document.getElementById('nickname').value = '';
+                } else {
+                    showResult(`닉네임 변경 실패: ${response.status}\n응답: ${responseText}`, 'error', 'nicknameResult');
+                }
+            } catch (error) {
+                showResult(`오류 발생: ${error.message}`, 'error', 'nicknameResult');
+            }
+        }
+
+        // 디버그 정보 표시
+        function showDebugInfo() {
+            const accessToken = localStorage.getItem('accessToken');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            let debugInfo = '=== 디버그 정보 ===\n';
+            debugInfo += `현재 시간: ${new Date().toLocaleString()}\n`;
+            debugInfo += `페이지 URL: ${window.location.href}\n`;
+            debugInfo += `토큰 존재 여부: ${accessToken ? 'YES' : 'NO'}\n`;
+            if (accessToken) {
+                debugInfo += `토큰 길이: ${accessToken.length}\n`;
+                debugInfo += `토큰 시작: ${accessToken.substring(0, 20)}...\n`;
+            }
+            debugInfo += `사용자 정보: ${userInfo || 'None'}\n`;
+            debugInfo += `\n=== API 엔드포인트 ===\n`;
+            debugInfo += `프로필 조회: GET http://localhost:8080/api/user/profile\n`;
+            debugInfo += `완성도 체크: GET http://localhost:8080/api/user/profile/completion\n`;
+            debugInfo += `프로필 업데이트: PUT http://localhost:8080/api/user/profile\n`;
+            debugInfo += `닉네임 변경: PATCH http://localhost:8080/api/user/profile/nickname\n`;
+            
+            showResult(debugInfo, 'info', 'debugResult');
+        }
+
+        // 폼 초기화
+        function clearForm() {
+            document.getElementById('profileForm').reset();
+        }
+
+        // 결과 표시
+        function showResult(message, type, elementId) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = 'result ' + type;
+        }
+    </script>
+</body>
+</html>

@@ -24,29 +24,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import com.carecode.core.annotation.RequireAuthentication;
-import com.carecode.core.controller.BaseController;
-import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.health.dto.HealthRequestDto;
-import com.carecode.domain.health.dto.HealthResponseDto;
-import com.carecode.domain.health.entity.HealthRecord;
-import com.carecode.domain.health.service.HealthService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.format.annotation.DateTimeFormat;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 건강 관리 API 컨트롤러
@@ -137,6 +114,29 @@ public class HealthCheckController extends BaseController {
             return ResponseEntity.ok(records);
         } catch (CareServiceException e) {
             log.error("사용자별 건강 정보 조회 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 건강 정보 조회 (Query Parameter)
+     */
+    @GetMapping("/records")
+    @LogExecutionTime
+    @Operation(summary = "건강 정보 조회", description = "사용자 ID로 건강 정보 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<HealthResponseDto.HealthRecordResponse>> getHealthRecords(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        log.info("건강 정보 조회: 사용자ID={}", userId);
+        
+        try {
+            List<HealthResponseDto.HealthRecordResponse> records = healthService.getHealthRecordsByUserId(userId);
+            return ResponseEntity.ok(records);
+        } catch (CareServiceException e) {
+            log.error("건강 정보 조회 오류: {}", e.getMessage());
             throw e;
         }
     }
@@ -275,6 +275,29 @@ public class HealthCheckController extends BaseController {
     }
 
     /**
+     * 건강 통계 조회 (Query Parameter)
+     */
+    @GetMapping("/statistics")
+    @LogExecutionTime
+    @Operation(summary = "건강 통계 조회", description = "사용자 ID로 건강 통계를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, Object>> getHealthStatisticsByQuery(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        log.info("건강 통계 조회: 사용자ID={}", userId);
+        
+        try {
+            Map<String, Object> statistics = healthService.getHealthStatistics(userId);
+            return ResponseEntity.ok(statistics);
+        } catch (CareServiceException e) {
+            log.error("건강 통계 조회 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
      * 건강 리포트 생성
      */
     @PostMapping("/reports")
@@ -341,6 +364,29 @@ public class HealthCheckController extends BaseController {
     })
     public ResponseEntity<Map<String, Object>> getHealthGoals(
             @Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
+        log.info("건강 목표 조회: 사용자ID={}", userId);
+        
+        try {
+            Map<String, Object> goals = healthService.getHealthGoals(userId);
+            return ResponseEntity.ok(goals);
+        } catch (CareServiceException e) {
+            log.error("건강 목표 조회 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 건강 목표 조회 (Query Parameter)
+     */
+    @GetMapping("/goals")
+    @LogExecutionTime
+    @Operation(summary = "건강 목표 조회", description = "사용자 ID로 건강 목표를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<Map<String, Object>> getHealthGoalsByQuery(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
         log.info("건강 목표 조회: 사용자ID={}", userId);
         
         try {

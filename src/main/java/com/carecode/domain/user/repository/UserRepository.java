@@ -27,6 +27,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     
     /**
+     * 이름으로 사용자 조회 (카카오 닉네임용)
+     */
+    Optional<User> findByName(String name);
+    
+    /**
      * 활성화된 사용자 목록 조회
      */
     List<User> findByIsActiveTrue();
@@ -80,7 +85,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUserId(String userId);
     
     /**
-     * 활성화된 사용자 수 조회
+     * 활성 사용자 수 조회
      */
     long countByIsActiveTrue();
     

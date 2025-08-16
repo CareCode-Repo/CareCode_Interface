@@ -273,4 +273,21 @@ public class CommunityController extends BaseController {
         List<CommunityResponseDto.PostResponse> posts = communityService.getLatestPosts(limit);
         return ResponseEntity.ok(posts);
     }
+
+    /**
+     * 태그 목록 조회
+     */
+    @GetMapping("/tags")
+    @LogExecutionTime
+    @Operation(summary = "태그 목록 조회", description = "커뮤니티 태그 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = CommunityResponseDto.TagResponse.class))),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<CommunityResponseDto.TagResponse>> getAllTags() {
+        log.info("태그 목록 조회");
+        List<CommunityResponseDto.TagResponse> tags = communityService.getAllTags();
+        return ResponseEntity.ok(tags);
+    }
 } 

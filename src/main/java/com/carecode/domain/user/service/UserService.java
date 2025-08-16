@@ -16,9 +16,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * 사용자 서비스 클래스
@@ -119,6 +126,65 @@ public class UserService {
         
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
+    }
+
+    /**
+     * User 엔티티 저장
+     */
+    @Transactional
+    public User saveUser(User user) {
+        log.info("User 엔티티 저장: 이메일={}", user.getEmail());
+        return userRepository.save(user);
+    }
+
+    /**
+     * 이름으로 사용자 조회
+     */
+    public Optional<User> findByName(String name) {
+        log.info("이름으로 사용자 조회: name={}", name);
+        return userRepository.findByName(name);
+    }
+
+    /**
+     * 카카오 API를 통해 사용자 정보 조회
+     */
+    public Map<String, Object> getKakaoUserInfo(String accessToken) {
+        log.info("카카오 사용자 정보 조회 시작");
+        
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            
+            ResponseEntity<Map> response = restTemplate.exchange(
+                "https://kapi.kakao.com/v2/user/me",
+                HttpMethod.GET,
+                entity,
+                Map.class
+            );
+            
+            Map<String, Object> body = response.getBody();
+            Map<String, Object> userInfo = new HashMap<>();
+            
+            if (body != null) {
+                userInfo.put("id", body.get("id"));
+                
+                Map<String, Object> kakaoAccount = (Map<String, Object>) body.get("kakao_account");
+                if (kakaoAccount != null && kakaoAccount.containsKey("profile")) {
+                    Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
+                    userInfo.put("nickname", profile.get("nickname"));
+                    userInfo.put("profileImageUrl", profile.get("profile_image_url"));
+                }
+            }
+            
+            log.info("카카오 사용자 정보 조회 성공: id={}", userInfo.get("id"));
+            return userInfo;
+            
+        } catch (Exception e) {
+            log.error("카카오 사용자 정보 조회 실패: {}", e.getMessage());
+            throw new RuntimeException("카카오 사용자 정보를 가져올 수 없습니다.", e);
+        }
     }
 
     /**
@@ -436,7 +502,7 @@ public class UserService {
     /**
      * Entity를 DTO로 변환
      */
-    private UserDto convertToDto(User user) {
+    public UserDto convertToDto(User user) {
         return UserDto.builder()
                 .id(user.getId())
                 .userId(user.getUserId())

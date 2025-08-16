@@ -178,6 +178,21 @@ public class PolicyService {
     }
 
     /**
+     * 정책 카테고리 목록 조회
+     */
+    @LogExecutionTime
+    public List<String> getPolicyCategories() {
+        log.info("정책 카테고리 목록 조회");
+        
+        return policyRepository.findAll().stream()
+                .map(Policy::getPolicyType)
+                .distinct()
+                .filter(type -> type != null && !type.trim().isEmpty())
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 정책 통계 조회
      */
     @LogExecutionTime

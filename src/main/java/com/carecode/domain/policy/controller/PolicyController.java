@@ -254,6 +254,28 @@ public class PolicyController extends BaseController {
     }
 
     /**
+     * 정책 카테고리 목록 조회
+     */
+    @GetMapping("/categories")
+    @LogExecutionTime
+    @Operation(summary = "정책 카테고리 목록 조회", description = "사용 가능한 정책 카테고리 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "카테고리 목록 조회 성공"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<String>> getPolicyCategories() {
+        log.info("정책 카테고리 목록 조회");
+        
+        try {
+            List<String> categories = policyService.getPolicyCategories();
+            return ResponseEntity.ok(categories);
+        } catch (CareServiceException e) {
+            log.error("정책 카테고리 목록 조회 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
      * 정책 통계 조회
      */
     @GetMapping("/statistics")

@@ -21,6 +21,8 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
+    maven { url 'https://repo1.maven.org/maven2/' }
 }
 
 dependencies {
@@ -55,10 +57,485 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    // Thymeleaf 템플릿 엔진
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    
+    // AsciiDoctor for documentation generation
+    implementation 'org.asciidoctor:asciidoctorj:2.5.7'
+    implementation 'org.asciidoctor:asciidoctorj-pdf:2.3.4'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// JAR 빌드 최적화
+jar {
+    enabled = false
+    archiveClassifier = ''
+}
+
+// Spring Boot JAR 설정
+springBoot {
+    buildInfo()
+}
+
+// 프로덕션 빌드 최적화
+tasks.named('bootJar') {
+    archiveFileName = 'carecode-app.jar'
+    
+    // 중복 파일 처리 전략 설정
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    // 메타데이터 추가
+    manifest {
+        attributes(
+            'Implementation-Title': 'CareCode Application',
+            'Implementation-Version': version,
+            'Built-By': System.getProperty('user.name'),
+            'Built-Date': new Date(),
+            'Built-JDK': System.getProperty('java.version')
+        )
+    }
+    
+    // 리소스 최적화
+    from('src/main/resources') {
+        include '**/*'
+        into 'BOOT-INF/classes'
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+}
+
+// 프로파일별 빌드 태스크
+task buildRelease {
+    dependsOn bootJar
+    doLast {
+        println "✅ 프로덕션 JAR 빌드 완료: ${bootJar.archiveFile.get()}"
+        println "📦 파일 크기: ${bootJar.archiveFile.get().asFile.length() / 1024 / 1024} MB"
+    }
+}
+
+// Docker 빌드용 태스크
+task buildDocker {
+    dependsOn bootJar
+    doLast {
+        copy {
+            from bootJar
+            into 'build/docker'
+            rename { String fileName ->
+                'app.jar'
+            }
+        }
+        println "✅ Docker 빌드용 JAR 준비 완료"
+    }
+}
+
+// API 문서 생성 태스크
+task generateApiDocs {
+    doLast {
+        def outputDir = file('src/docs/asciidoc')
+        outputDir.mkdirs()
+        
+        // Swagger JSON 다운로드
+        def swaggerUrl = 'http://localhost:8080/v3/api-docs'
+        def swaggerFile = file('swagger.json')
+        
+        new URL(swaggerUrl).withInputStream { input ->
+            swaggerFile.withOutputStream { output ->
+                output << input
+            }
+        }
+        
+        println "✅ Swagger JSON 다운로드 완료"
+        println "📁 출력 디렉토리: ${outputDir.absolutePath}"
+        println "📄 Swagger JSON: ${swaggerFile.absolutePath}"
+    }
+}
+
+// 상세 API 문서 생성
+task generateDetailedApiDocs {
+    doLast {
+        def outputDir = file('src/docs/asciidoc')
+        outputDir.mkdirs()
+        
+        println "🚀 상세 API 문서 생성을 시작합니다..."
+        println "📁 출력 디렉토리: ${outputDir.absolutePath}"
+        
+        // API 문서 생성기 실행
+        def detailedDocFile = file('src/docs/asciidoc/api-docs-detailed.adoc')
+        
+        javaexec {
+            classpath = sourceSets.main.runtimeClasspath
+            mainClass = 'com.carecode.docs.ApiDocumentationGenerator'
+            args = ['http://localhost:8080/api-docs', detailedDocFile.absolutePath]
+        }
+        
+        println "✅ 상세 API 문서 생성 완료: ${detailedDocFile.absolutePath}"
+    }
+}
+
+// 간단한 API 목록 생성
+task generateApiList {
+    doLast {
+        def outputDir = file('src/docs/asciidoc')
+        outputDir.mkdirs()
+        
+        println "🚀 API 목록 생성을 시작합니다..."
+        println "📁 출력 디렉토리: ${outputDir.absolutePath}"
+        
+        // 간단한 API 목록 생성
+        def apiListFile = file('src/docs/asciidoc/api-list.adoc')
+        def apiListContent = generateApiListContent()
+        apiListFile.text = apiListContent
+        
+        println "✅ API 목록 생성 완료: ${apiListFile.absolutePath}"
+    }
+}
+
+// API 목록 생성 함수
+def generateApiListContent() {
+    def asciiDoc = new StringBuilder()
+    
+    // 기본 헤더
+    asciiDoc.append("= CareCode API 목록\n")
+    asciiDoc.append(":toc: left\n")
+    asciiDoc.append(":toclevels: 2\n")
+    asciiDoc.append(":sectnums:\n")
+    asciiDoc.append(":icons: font\n\n")
+    
+    asciiDoc.append("== 개요\n\n")
+    asciiDoc.append("CareCode API의 주요 엔드포인트 목록입니다.\n\n")
+    
+    // API 그룹별 목록
+    def apiGroups = [
+        "인증": [
+            ["POST /auth/login", "로그인"],
+            ["POST /auth/register", "회원가입"],
+            ["POST /auth/logout", "로그아웃"],
+            ["GET /auth/me", "현재 사용자 정보 조회"]
+        ],
+        "육아시설": [
+            ["GET /facilities", "시설 목록 조회"],
+            ["GET /facilities/{id}", "시설 상세 조회"],
+            ["POST /facilities/search", "시설 검색"],
+            ["POST /facilities/{id}/bookings", "예약 생성"]
+        ],
+        "커뮤니티": [
+            ["GET /community/posts", "게시글 목록 조회"],
+            ["POST /community/posts", "게시글 작성"],
+            ["GET /community/posts/{id}", "게시글 상세 조회"]
+        ],
+        "건강관리": [
+            ["GET /health/records", "건강기록 조회"],
+            ["POST /health/records", "건강기록 등록"],
+            ["GET /health/statistics", "건강 통계 조회"]
+        ],
+        "정책정보": [
+            ["GET /policies", "정책 목록 조회"],
+            ["GET /policies/{id}", "정책 상세 조회"],
+            ["POST /policies/search", "정책 검색"]
+        ],
+        "챗봇": [
+            ["POST /chatbot/chat", "챗봇 대화"],
+            ["GET /chatbot/sessions", "세션 목록 조회"]
+        ],
+        "알림": [
+            ["GET /notifications", "알림 목록 조회"],
+            ["POST /notifications", "알림 생성"]
+        ]
+    ]
+    
+    apiGroups.each { tag, apis ->
+        asciiDoc.append("== ${tag}\n\n")
+        apis.each { api ->
+            asciiDoc.append("* `${api[0]}` - ${api[1]}\n")
+        }
+        asciiDoc.append("\n")
+    }
+    
+    return asciiDoc.toString()
+}
+
+// AsciiDoc 템플릿 생성
+task createAsciiDocTemplate {
+    doLast {
+        def templateDir = file('src/docs/templates')
+        templateDir.mkdirs()
+        
+        def template = file('src/docs/templates/api-docs.adoc')
+        template.text = '''= CareCode API 문서
+:toc: left
+:toclevels: 3
+:sectnums:
+:source-highlighter: highlightjs
+:icons: font
+
+== 개요
+
+CareCode API는 육아 정보 플랫폼을 위한 RESTful API입니다.
+
+=== 기본 정보
+
+* **Base URL**: `http://localhost:8080`
+* **API 버전**: v1
+* **인증**: JWT Bearer Token
+
+== 인증
+
+=== JWT 토큰
+
+API 요청 시 Authorization 헤더에 JWT 토큰을 포함해야 합니다:
+
+[source,http]
+----
+Authorization: Bearer <your-jwt-token>
+----
+
+== API 엔드포인트
+
+=== 사용자 관리
+
+==== 로그인
+[source,http]
+----
+POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+----
+
+==== 회원가입
+[source,http]
+----
+POST /auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password",
+  "name": "사용자명"
+}
+----
+
+=== 육아시설
+
+==== 시설 목록 조회
+[source,http]
+----
+GET /api/facilities?page=0&size=10
+Authorization: Bearer <token>
+----
+
+==== 시설 상세 조회
+[source,http]
+----
+GET /api/facilities/{id}
+Authorization: Bearer <token>
+----
+
+=== 커뮤니티
+
+==== 게시글 목록
+[source,http]
+----
+GET /api/community/posts?page=0&size=10
+Authorization: Bearer <token>
+----
+
+==== 게시글 작성
+[source,http]
+----
+POST /api/community/posts
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "제목",
+  "content": "내용",
+  "category": "GENERAL"
+}
+----
+
+=== 건강관리
+
+==== 건강기록 조회
+[source,http]
+----
+GET /api/health/records?childId={childId}
+Authorization: Bearer <token>
+----
+
+==== 건강기록 등록
+[source,http]
+----
+POST /api/health/records
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+{
+  "childId": 1,
+  "recordType": "VACCINATION",
+  "title": "예방접종",
+  "description": "접종 내용",
+  "recordDate": "2024-01-15"
+}
+----
+
+=== 정책정보
+
+==== 정책 목록
+[source,http]
+----
+GET /api/policies?category=EDUCATION&page=0&size=10
+Authorization: Bearer <token>
+----
+
+==== 정책 상세
+[source,http]
+----
+GET /api/policies/{id}
+Authorization: Bearer <token>
+----
+
+=== 챗봇
+
+==== 채팅 시작
+[source,http]
+----
+POST /api/chatbot/sessions
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "message": "안녕하세요"
+}
+----
+
+==== 메시지 전송
+[source,http]
+----
+POST /api/chatbot/sessions/{sessionId}/messages
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "message": "육아 시설 추천해주세요"
+}
+----
+
+== 응답 코드
+
+|코드|설명|
+|---|---|
+|200|성공|
+|201|생성됨|
+|400|잘못된 요청|
+|401|인증 실패|
+|403|권한 없음|
+|404|찾을 수 없음|
+|500|서버 오류|
+
+== 에러 응답
+
+[source,json]
+----
+{
+  "timestamp": "2024-01-15T10:30:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "잘못된 요청입니다",
+  "path": "/api/facilities"
+}
+----
+
+== 데이터 모델
+
+=== 사용자 (User)
+
+[source,json]
+----
+{
+  "id": 1,
+  "email": "user@example.com",
+  "name": "사용자명",
+  "role": "USER",
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T10:30:00"
+}
+----
+
+=== 육아시설 (CareFacility)
+
+[source,json]
+----
+{
+  "id": 1,
+  "name": "행복한 어린이집",
+  "address": "서울시 강남구",
+  "phone": "02-1234-5678",
+  "capacity": 50,
+  "currentCount": 30,
+  "rating": 4.5,
+  "facilityType": "KINDERGARTEN"
+}
+----
+
+=== 게시글 (Post)
+
+[source,json]
+----
+{
+  "id": 1,
+  "title": "육아 팁 공유",
+  "content": "육아에 도움이 되는 팁입니다",
+  "author": {
+    "id": 1,
+    "name": "사용자명"
+  },
+  "category": "GENERAL",
+  "createdAt": "2024-01-15T10:30:00",
+  "viewCount": 10,
+  "likeCount": 5
+}
+----
+
+== 개발 환경 설정
+
+=== 로컬 개발
+
+1. 애플리케이션 실행:
+   ```bash
+   ./gradlew bootRun
+   ```
+
+2. Swagger UI 접속:
+   ```
+   http://localhost:8080/swagger-ui.html
+   ```
+
+3. API 문서 생성:
+   ```bash
+   ./gradlew generateApiDocs
+   ```
+
+=== 테스트
+
+API 테스트는 Postman이나 curl을 사용할 수 있습니다:
+
+[source,bash]
+----
+# 로그인
+curl -X POST http://localhost:8080/auth/login \\
+  -H "Content-Type: application/json" \\
+  -d '{"email":"user@example.com","password":"password"}'
+
+# 토큰으로 API 호출
+curl -X GET http://localhost:8080/api/facilities \\
+  -H "Authorization: Bearer <your-token>"
+----
+'''
+        
+        println "✅ AsciiDoc 템플릿 생성 완료: ${template.absolutePath}"
+    }
 }

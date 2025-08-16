@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카카오 로그인 테스트</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .login-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .kakao-login-btn {
+            background-color: #FEE500;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            transition: background-color 0.2s;
+        }
+        .kakao-login-btn:hover {
+            background-color: #FFD700;
+        }
+        .google-login-btn {
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            transition: background-color 0.2s;
+        }
+        .google-login-btn:hover {
+            background-color: #357ae8;
+        }
+        .api-test {
+            margin: 20px 0;
+        }
+        .api-test button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .api-test button:hover {
+            background-color: #218838;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .instructions {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 CareCode 카카오 로그인 테스트</h1>
+        
+        <div class="instructions">
+            <h3>📋 테스트 전 확인사항</h3>
+            <ol>
+                <li>Spring Boot 서버가 <code>http://localhost:8080</code>에서 실행 중인지 확인</li>
+                <li>카카오 개발자 콘솔에서 Redirect URI 설정: <code>http://localhost:8080/login/oauth2/code/kakao</code></li>
+                <li>카카오 동의항목에서 닉네임과 이메일이 필수 동의로 설정되었는지 확인</li>
+            </ol>
+        </div>
+
+        <div class="login-section">
+            <h3>소셜 로그인 테스트</h3>
+            <button class="kakao-login-btn" onclick="loginWithKakao()">
+                🟡 카카오로 로그인
+            </button>
+            <button class="google-login-btn" onclick="loginWithGoogle()">
+                🔵 구글로 로그인 (설정 필요)
+            </button>
+        </div>
+
+        <div class="login-section">
+            <h3>API 테스트</h3>
+            <div class="api-test">
+                <button onclick="getProviders()">지원 제공자 목록</button>
+                <button onclick="validateToken()">토큰 검증</button>
+                <button onclick="getCurrentUser()">현재 사용자 정보</button>
+                <button onclick="testJWTEndpoint()">JWT 보호된 엔드포인트 테스트</button>
+                <button onclick="clearResults()">결과 지우기</button>
+            </div>
+        </div>
+
+        <div class="login-section">
+            <h3>현재 저장된 토큰 정보</h3>
+            <div id="tokenInfo" class="result info">토큰 정보가 없습니다.</div>
+            <button onclick="showTokenInfo()">토큰 정보 새로고침</button>
+            <button onclick="clearTokens()">토큰 삭제</button>
+        </div>
+
+        <div id="result" class="result">테스트 결과가 여기에 표시됩니다.</div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 토큰 정보 및 URL 파라미터 확인
+        window.onload = function() {
+            handleOAuth2Redirect();
+            showTokenInfo();
+        };
+
+        // OAuth2 리다이렉트 처리
+        function handleOAuth2Redirect() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const success = urlParams.get('success');
+            
+            if (success === 'true') {
+                const accessToken = urlParams.get('accessToken');
+                const refreshToken = urlParams.get('refreshToken');
+                const userId = urlParams.get('userId');
+                const email = urlParams.get('email');
+                const role = urlParams.get('role');
+
+                // 토큰 저장
+                localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('refreshToken', refreshToken);
+                localStorage.setItem('userInfo', JSON.stringify({
+                    userId, email, role
+                }));
+
+                showResult('로그인 성공! 토큰이 저장되었습니다.', 'success');
+                showTokenInfo();
+                
+                // URL에서 파라미터 제거
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+            } else if (success === 'false') {
+                const error = urlParams.get('error');
+                showResult(`로그인 실패: ${error}`, 'error');
+                
+                // URL에서 파라미터 제거
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        // 카카오 로그인
+        function loginWithKakao() {
+            showResult('카카오 로그인 페이지로 이동합니다...', 'info');
+            window.location.href = 'http://localhost:8080/oauth2/authorization/kakao';
+        }
+
+        // 구글 로그인
+        function loginWithGoogle() {
+            showResult('구글 로그인 페이지로 이동합니다...', 'info');
+            window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+        }
+
+        // 지원 제공자 목록 조회
+        async function getProviders() {
+            try {
+                const response = await fetch('http://localhost:8080/oauth2/providers');
+                const data = await response.json();
+                showResult('지원하는 소셜 로그인 제공자:\n' + JSON.stringify(data, null, 2), 'info');
+            } catch (error) {
+                showResult('API 호출 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 토큰 검증
+        async function validateToken() {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                showResult('저장된 Access Token이 없습니다. 먼저 로그인해주세요.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/auth/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        accessToken: accessToken
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('토큰 검증 성공:\n' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('토큰 검증 실패: ' + response.status, 'error');
+                }
+            } catch (error) {
+                showResult('토큰 검증 API 호출 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 현재 사용자 정보 조회
+        async function getCurrentUser() {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                showResult('저장된 Access Token이 없습니다. 먼저 로그인해주세요.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/auth/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('현재 사용자 정보:\n' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('사용자 정보 조회 실패: ' + response.status, 'error');
+                }
+            } catch (error) {
+                showResult('사용자 정보 API 호출 실패: ' + error.message, 'error');
+            }
+        }
+
+        // JWT 보호된 엔드포인트 테스트
+        async function testJWTEndpoint() {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                showResult('저장된 Access Token이 없습니다. 먼저 로그인해주세요.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/facilities', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('JWT 보호된 API 호출 성공:\n' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('JWT 보호된 API 호출 실패: ' + response.status, 'error');
+                }
+            } catch (error) {
+                showResult('API 호출 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 토큰 정보 표시
+        function showTokenInfo() {
+            const accessToken = localStorage.getItem('accessToken');
+            const refreshToken = localStorage.getItem('refreshToken');
+            const userInfo = localStorage.getItem('userInfo');
+
+            let tokenDisplay = '';
+            if (accessToken) {
+                tokenDisplay += 'Access Token: ' + accessToken.substring(0, 50) + '...\n';
+            }
+            if (refreshToken) {
+                tokenDisplay += 'Refresh Token: ' + refreshToken.substring(0, 50) + '...\n';
+            }
+            if (userInfo) {
+                tokenDisplay += 'User Info: ' + userInfo + '\n';
+            }
+
+            if (!tokenDisplay) {
+                tokenDisplay = '저장된 토큰이 없습니다.';
+            }
+
+            document.getElementById('tokenInfo').textContent = tokenDisplay;
+        }
+
+        // 토큰 삭제
+        function clearTokens() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('userInfo');
+            showTokenInfo();
+            showResult('저장된 토큰이 삭제되었습니다.', 'info');
+        }
+
+        // 결과 표시
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = 'result ' + type;
+        }
+
+        // 결과 지우기
+        function clearResults() {
+            document.getElementById('result').textContent = '테스트 결과가 여기에 표시됩니다.';
+            document.getElementById('result').className = 'result';
+        }
+    </script>
+</body>
+</html>

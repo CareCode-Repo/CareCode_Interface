@@ -40,7 +40,6 @@ public class ChatbotController extends BaseController {
      */
     @PostMapping("/chat")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "챗봇 메시지 전송", description = "챗봇과 대화를 시작합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "응답 성공",
@@ -59,6 +58,9 @@ public class ChatbotController extends BaseController {
         } catch (CareServiceException e) {
             log.error("챗봇 처리 오류: {}", e.getMessage());
             throw e;
+        } catch (Exception e) {
+            log.error("챗봇 처리 중 예상치 못한 오류: {}", e.getMessage(), e);
+            throw new CareServiceException("챗봇 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 
@@ -67,7 +69,6 @@ public class ChatbotController extends BaseController {
      */
     @GetMapping("/history")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "대화 기록 조회", description = "사용자의 챗봇 대화 기록을 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -95,7 +96,6 @@ public class ChatbotController extends BaseController {
      */
     @GetMapping("/sessions")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "세션 목록 조회", description = "사용자의 챗봇 세션 목록을 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -122,7 +122,6 @@ public class ChatbotController extends BaseController {
      */
     @PostMapping("/feedback")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "메시지 피드백 처리", description = "챗봇 메시지에 대한 피드백을 처리합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "처리 성공"),

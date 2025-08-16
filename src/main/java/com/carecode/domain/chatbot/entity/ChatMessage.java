@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 사용자와 챗봇 간의 대화 기록을 저장
  */
 @Entity
-@Table(name = "chat_messages")
+@Table(name = "TBL_CHAT_MESSAGES")
 @Getter
 @Setter
 @NoArgsConstructor
