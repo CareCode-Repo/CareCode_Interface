@@ -39,8 +39,8 @@ public class User {
     @Column(name = "EMAIL", nullable = false, unique = true)
     private String email; // UK
     
-    @Column(name = "PASSWORD", nullable = false)
-    private String password;
+    @Column(name = "PASSWORD")
+    private String password; // OAuth 사용자는 null 가능
     
     @Column(name = "NAME", nullable = false)
     private String name;
@@ -71,11 +71,23 @@ public class User {
     @Column(name = "ROLE", nullable = false)
     private UserRole role; // PARENT, CAREGIVER, ADMIN 등
     
+    @Column(name = "PROVIDER")
+    private String provider; // kakao, google, naver 등
+    
+    @Column(name = "PROVIDER_ID")
+    private String providerId; // OAuth2 제공자의 사용자 ID
+    
     @Column(name = "IS_ACTIVE", nullable = false)
     private Boolean isActive;
     
     @Column(name = "EMAIL_VERIFIED", nullable = false)
     private Boolean emailVerified;
+    
+    @Column(name = "REGISTRATION_COMPLETED", nullable = false)
+    private Boolean registrationCompleted; // 카카오 사용자 가입 프로세스 완료 여부
+    
+    @Column(name = "DELETED_AT")
+    private LocalDateTime deletedAt; // 소프트 삭제를 위한 삭제 시간
     
     @Column(name = "LAST_LOGIN_AT")
     private LocalDateTime lastLoginAt;
@@ -88,18 +100,23 @@ public class User {
     
     // JPA 관계 매핑
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Post> posts = new ArrayList<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<HealthRecord> healthRecords = new ArrayList<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Review> reviews = new ArrayList<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Notification> notifications = new ArrayList<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Child> children = new ArrayList<>();
     
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -111,6 +128,7 @@ public class User {
         updatedAt = LocalDateTime.now();
         if (isActive == null) isActive = true;
         if (emailVerified == null) emailVerified = false;
+        if (registrationCompleted == null) registrationCompleted = false; // 카카오 사용자는 기본적으로 가입 미완료
         if (userId == null) {
             userId = "user_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 1000);
         }

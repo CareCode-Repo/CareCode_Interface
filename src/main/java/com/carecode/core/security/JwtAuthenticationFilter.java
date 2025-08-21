@@ -48,13 +48,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String userId = jwtService.getUserIdFromToken(token);
                     String email = jwtService.getEmailFromToken(token);
                     String role = jwtService.getRoleFromToken(token);
+                    String name = jwtService.getNameFromToken(token);
                     
-                    log.info("JWT 토큰 검증 성공: userId={}, email={}, role={}", userId, email, role);
+                    log.info("JWT 토큰 검증 성공: userId={}, email={}, role={}, name={}", userId, email, role, name);
+                    log.debug("JWT 토큰에서 추출된 정보 - userId: {}, email: {}, role: {}, name: {}", userId, email, role, name);
                     
-                    // 인증 정보 생성 - userId를 principal로 사용
+                    // 인증 정보 생성 - name을 principal로 사용 (name이 없으면 email 사용)
+                    String principal = (name != null && !name.trim().isEmpty()) ? name : email;
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userId,  // principal을 userId로 설정
-                        null,    // credentials는 null
+                        principal,   // principal을 name으로 설정 (name이 없으면 email)
+                        null,        // credentials는 null
                         Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
                     );
                     
@@ -108,6 +111,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.equals("/favicon.ico") ||
                path.startsWith("/auth/login") ||
                path.startsWith("/auth/register") ||
+               path.equals("/auth/refresh") ||
+               path.startsWith("/api/auth/kakao") ||
+               path.startsWith("/oauth2") ||
+               path.startsWith("/login/oauth2") ||
+               path.equals("/kakao-callback.html") ||
                path.startsWith("/admin");
         
         log.debug("JWT 필터 건너뛰기: {} = {}", path, shouldNotFilter);

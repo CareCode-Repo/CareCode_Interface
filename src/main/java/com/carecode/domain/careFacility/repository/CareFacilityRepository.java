@@ -3,6 +3,7 @@ package com.carecode.domain.careFacility.repository;
 import com.carecode.domain.careFacility.dto.CareFacilitySearchResponseDto;
 import com.carecode.domain.careFacility.dto.TypeStats;
 import com.carecode.domain.careFacility.entity.CareFacility;
+import com.carecode.domain.careFacility.entity.FacilityType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,7 +31,7 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
     /**
      * 시설 유형별 조회
      */
-    List<CareFacility> findByFacilityType(String facilityType);
+    List<CareFacility> findByFacilityType(FacilityType facilityType);
     
     /**
      * 지역별 시설 조회
@@ -79,7 +80,7 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
      * 키워드로 시설 검색
      */
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true AND " +
-           "(cf.name LIKE %:keyword% OR cf.address LIKE %:keyword% OR cf.facilityType LIKE %:keyword%)")
+           "(cf.name LIKE %:keyword% OR cf.address LIKE %:keyword%)")
     List<CareFacility> searchByKeyword(@Param("keyword") String keyword);
     
     /**
@@ -111,7 +112,7 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
            "((cf.ageRangeMin IS NULL OR cf.ageRangeMin <= :childAge) AND " +
            "(cf.ageRangeMax IS NULL OR cf.ageRangeMax >= :childAge))) " +
            "ORDER BY cf.rating DESC, cf.reviewCount DESC")
-    List<CareFacility> searchFacilities(@Param("facilityType") String facilityType,
+    List<CareFacility> searchFacilities(@Param("facilityType") FacilityType facilityType,
                                        @Param("isPublic") Boolean isPublic,
                                        @Param("subsidyAvailable") Boolean subsidyAvailable,
                                        @Param("minRating") Double minRating,
@@ -129,7 +130,7 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
      * 시설 유형별 통계 조회
      */
     @Query("SELECT new com.carecode.domain.careFacility.dto.TypeStats(" +
-           "cf.facilityType, COUNT(cf), AVG(cf.rating), COALESCE(SUM(cf.viewCount), 0)) " +
+           "cf.facilityType, COUNT(cf), COALESCE(AVG(cf.rating), 0.0), COALESCE(SUM(cf.viewCount), 0)) " +
            "FROM CareFacility cf WHERE cf.isActive = true " +
            "GROUP BY cf.facilityType")
     List<TypeStats> getTypeStats();
@@ -186,7 +187,7 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
            "AND (:address IS NULL OR cf.address LIKE %:address%)")
     org.springframework.data.domain.Page<CareFacility> findBySearchCriteria(
             @Param("keyword") String keyword,
-            @Param("facilityType") String facilityType,
+            @Param("facilityType") FacilityType facilityType,
             @Param("address") String address,
             org.springframework.data.domain.Pageable pageable);
 } 

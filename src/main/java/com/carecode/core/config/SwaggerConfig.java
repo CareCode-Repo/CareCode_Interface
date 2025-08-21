@@ -23,7 +23,7 @@ public class SwaggerConfig {
     @Value("${server.port:8080}")
     private String serverPort;
     
-    @Value("${swagger.server.url:}")
+    @Value("${springdoc.swagger-ui.server-url:}")
     private String customServerUrl;
 
     @Bean

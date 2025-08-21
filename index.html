@@ -2011,6 +2011,60 @@
                 </div>
             </div>
 
+            <!-- 전체 알림 설정 업데이트 -->
+            <div class="api-endpoint">
+                <div class="endpoint-title">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/notifications/preferences</span>
+                </div>
+                
+                <div class="auth-info">
+                    <h5>인증 정보</h5>
+                    <table>
+                        <tr><th>Key</th><th>Value</th></tr>
+                        <tr><td>Authorization</td><td>Bearer {accessToken}</td></tr>
+                    </table>
+                </div>
+
+                <div class="content-section">
+                    <h4>Query Parameters</h4>
+                    <table>
+                        <tr><th>Name</th><th>Type</th><th>Example</th><th>Required</th><th>Description</th></tr>
+                        <tr><td>userId</td><td>String</td><td>"user_1234567890_123"</td><td>Yes</td><td>사용자 ID</td></tr>
+                    </table>
+                </div>
+
+                <div class="content-section">
+                    <h4>Request Body</h4>
+                    <table>
+                        <tr><th>Name</th><th>Type</th><th>Example</th><th>Required</th><th>Description</th></tr>
+                        <tr><td>notificationType</td><td>String</td><td>"POLICY"</td><td>Yes</td><td>알림 유형</td></tr>
+                        <tr><td>emailEnabled</td><td>Boolean</td><td>true</td><td>Yes</td><td>이메일 알림 활성화 여부</td></tr>
+                        <tr><td>pushEnabled</td><td>Boolean</td><td>false</td><td>Yes</td><td>푸시 알림 활성화 여부</td></tr>
+                        <tr><td>smsEnabled</td><td>Boolean</td><td>true</td><td>Yes</td><td>SMS 알림 활성화 여부</td></tr>
+                    </table>
+                </div>
+
+                <div class="success-section">
+                    <h4>✅ 성공 응답</h4>
+                    <div class="status-codes">
+                        <span class="status-code status-200">200</span>
+                        <span>OK</span>
+                    </div>
+                    <div class="code-block">{
+  "success": true,
+  "message": "알림 설정이 업데이트되었습니다.",
+  "preference": {
+    "notificationType": "POLICY",
+    "emailEnabled": true,
+    "pushEnabled": false,
+    "smsEnabled": true,
+    "updatedAt": "2024-01-15T15:30:00"
+  }
+}</div>
+                </div>
+            </div>
+
             <!-- 알림 설정 조회 -->
             <div class="api-endpoint">
                 <div class="endpoint-title">

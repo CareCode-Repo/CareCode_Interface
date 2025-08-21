@@ -6,6 +6,7 @@ import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.domain.user.dto.UserDto;
 import com.carecode.domain.user.dto.UserProfileUpdateDto;
 import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.service.JwtService;
 import com.carecode.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,7 @@ import java.util.Map;
 public class UserProfileController extends BaseController {
 
     private final UserService userService;
+    private final JwtService jwtService;
 
     /**
      * 현재 사용자 프로필 조회
@@ -53,14 +56,15 @@ public class UserProfileController extends BaseController {
         @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     public ResponseEntity<UserDto> getCurrentUserProfile() {
-        String currentUserEmail = getCurrentUserEmail();
-        log.info("프로필 조회 요청: 사용자={}", currentUserEmail);
+        UserInfo userInfo = getCurrentUserInfo();
+        log.info("프로필 조회 요청: 사용자={} (이메일: {})", userInfo.getName(), userInfo.getEmail());
         
         try {
-            UserDto userDto = userService.getUserByEmail(currentUserEmail);
+            // 이메일로 사용자 조회 (더 정확함)
+            UserDto userDto = userService.getUserByEmail(userInfo.getEmail());
             return ResponseEntity.ok(userDto);
         } catch (UserNotFoundException e) {
-            log.error("사용자를 찾을 수 없음: {}", currentUserEmail);
+            log.error("사용자를 찾을 수 없음: name={}, email={}", userInfo.getName(), userInfo.getEmail());
             return ResponseEntity.notFound().build();
         }
     }
@@ -78,15 +82,15 @@ public class UserProfileController extends BaseController {
         @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     public ResponseEntity<UserProfileUpdateDto.ProfileCompletionResponse> checkProfileCompletion() {
-        String currentUserEmail = getCurrentUserEmail();
-        log.info("프로필 완성도 체크 요청: 사용자={}", currentUserEmail);
+        UserInfo userInfo = getCurrentUserInfo();
+        log.info("프로필 완성도 체크 요청: 사용자={} (이메일: {})", userInfo.getName(), userInfo.getEmail());
         
         try {
-            User user = userService.getUserEntityByEmail(currentUserEmail);
+            User user = userService.getUserEntityByEmail(userInfo.getEmail());
             UserProfileUpdateDto.ProfileCompletionResponse completion = calculateProfileCompletion(user);
             return ResponseEntity.ok(completion);
         } catch (UserNotFoundException e) {
-            log.error("사용자를 찾을 수 없음: {}", currentUserEmail);
+            log.error("사용자를 찾을 수 없음: name={}, email={}", userInfo.getName(), userInfo.getEmail());
             return ResponseEntity.notFound().build();
         }
     }
@@ -108,11 +112,11 @@ public class UserProfileController extends BaseController {
             @Parameter(description = "업데이트할 프로필 정보", required = true)
             @Valid @RequestBody UserProfileUpdateDto updateDto) {
         
-        String currentUserEmail = getCurrentUserEmail();
-        log.info("프로필 업데이트 요청: 사용자={}", currentUserEmail);
+        UserInfo userInfo = getCurrentUserInfo();
+        log.info("프로필 업데이트 요청: 사용자={} (이메일: {})", userInfo.getName(), userInfo.getEmail());
         
         try {
-            User user = userService.getUserEntityByEmail(currentUserEmail);
+            User user = userService.getUserEntityByEmail(userInfo.getEmail());
             
             // 프로필 정보 업데이트
             updateUserProfile(user, updateDto);
@@ -124,11 +128,11 @@ public class UserProfileController extends BaseController {
             // DTO 변환 후 응답
             UserDto userDto = convertToDto(updatedUser);
             
-            log.info("프로필 업데이트 완료: 사용자={}", currentUserEmail);
+            log.info("프로필 업데이트 완료: 사용자={} (이메일: {})", userInfo.getName(), userInfo.getEmail());
             return ResponseEntity.ok(userDto);
             
         } catch (UserNotFoundException e) {
-            log.error("사용자를 찾을 수 없음: {}", currentUserEmail);
+            log.error("사용자를 찾을 수 없음: name={}, email={}", userInfo.getName(), userInfo.getEmail());
             return ResponseEntity.notFound().build();
         }
     }
@@ -287,7 +291,86 @@ public class UserProfileController extends BaseController {
         String email = authentication.getName();
         log.debug("현재 사용자 이메일: {}", email);
         
+        // email이 null이거나 비어있는 경우 예외 처리
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("토큰에서 이메일을 추출할 수 없습니다");
+        }
+        
         return email;
+    }
+
+    /**
+     * 현재 로그인한 사용자의 이름과 이메일 추출
+     */
+    private UserInfo getCurrentUserInfo() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("인증되지 않은 사용자입니다");
+        }
+        
+        // JWT 토큰에서 이메일과 이름 추출
+        String email = authentication.getName();
+        String name = null;
+        
+        // principal이 name인지 email인지 확인
+        if (email != null && email.contains("@")) {
+            // email인 경우, name을 별도로 추출
+            try {
+                User user = userService.getUserEntityByEmail(email);
+                name = user.getName();
+            } catch (UserNotFoundException e) {
+                log.error("사용자를 찾을 수 없음: {}", email);
+                throw new RuntimeException("사용자 정보를 찾을 수 없습니다");
+            }
+        } else {
+            // name인 경우, email을 별도로 추출
+            name = email;
+            try {
+                User user = userService.getUserEntityByName(name);
+                email = user.getEmail();
+            } catch (UserNotFoundException e) {
+                log.error("사용자를 찾을 수 없음: {}", name);
+                throw new RuntimeException("사용자 정보를 찾을 수 없습니다");
+            }
+        }
+        
+        log.debug("현재 사용자 정보: name={}, email={}", name, email);
+        return new UserInfo(name, email);
+    }
+
+    /**
+     * 사용자 정보를 담는 내부 클래스
+     */
+    private static class UserInfo {
+        private final String name;
+        private final String email;
+        
+        public UserInfo(String name, String email) {
+            this.name = name;
+            this.email = email;
+        }
+        
+        public String getName() { return name; }
+        public String getEmail() { return email; }
+    }
+
+    /**
+     * JWT 토큰에서 직접 이메일 추출 (대안 방법)
+     */
+    private String getCurrentUserEmailFromToken(HttpServletRequest request) {
+        try {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new RuntimeException("유효한 Authorization 헤더가 없습니다.");
+            }
+            
+            String token = authHeader.substring(7);
+            return jwtService.extractEmailFromToken(token);
+        } catch (Exception e) {
+            log.error("JWT 토큰에서 이메일 추출 실패: {}", e.getMessage());
+            throw new RuntimeException("인증 토큰이 유효하지 않습니다.");
+        }
     }
 
     /**

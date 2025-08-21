@@ -252,7 +252,7 @@
 
         // 카카오 로그인 페이지로 이동
         function goToKakaoLogin() {
-            window.location.href = 'http://localhost:8080/oauth2/authorization/kakao';
+            window.location.href = 'http://13.209.36.209:8081/oauth2/authorization/kakao';
         }
 
         // 토큰 삭제
@@ -275,7 +275,7 @@
             try {
                 showResult('요청 중...', 'info', 'completionResult');
                 
-                const response = await fetch('http://localhost:8080/api/user/profile/completion', {
+                const response = await fetch('http://13.209.36.209:8081/api/user/profile/completion', {
                     method: 'GET',
                     headers: {
                         'Authorization': 'Bearer ' + accessToken,
@@ -316,7 +316,7 @@
             try {
                 showResult('요청 중...', 'info', 'profileResult');
                 
-                const response = await fetch('http://localhost:8080/api/user/profile', {
+                const response = await fetch('http://13.209.36.209:8081/api/user/profile', {
                     method: 'GET',
                     headers: {
                         'Authorization': 'Bearer ' + accessToken,
@@ -374,10 +374,10 @@
             try {
                 showResult('요청 중...', 'info', 'updateResult');
                 
-                console.log('요청 URL: http://localhost:8080/api/user/profile');
+                console.log('요청 URL: http://13.209.36.209:8081/api/user/profile');
                 console.log('요청 데이터:', profileData);
                 
-                const response = await fetch('http://localhost:8080/api/user/profile', {
+                const response = await fetch('http://13.209.36.209:8081/api/user/profile', {
                     method: 'PUT',
                     headers: {
                         'Authorization': 'Bearer ' + accessToken,
@@ -420,7 +420,7 @@
             try {
                 showResult('요청 중...', 'info', 'nicknameResult');
                 
-                const response = await fetch('http://localhost:8080/api/user/profile/nickname', {
+                const response = await fetch('http://13.209.36.209:8081/api/user/profile/nickname', {
                     method: 'PATCH',
                     headers: {
                         'Authorization': 'Bearer ' + accessToken,
@@ -458,10 +458,10 @@
             }
             debugInfo += `사용자 정보: ${userInfo || 'None'}\n`;
             debugInfo += `\n=== API 엔드포인트 ===\n`;
-            debugInfo += `프로필 조회: GET http://localhost:8080/api/user/profile\n`;
-            debugInfo += `완성도 체크: GET http://localhost:8080/api/user/profile/completion\n`;
-            debugInfo += `프로필 업데이트: PUT http://localhost:8080/api/user/profile\n`;
-            debugInfo += `닉네임 변경: PATCH http://localhost:8080/api/user/profile/nickname\n`;
+                    debugInfo += `프로필 조회: GET http://13.209.36.209:8081/api/user/profile\n`;
+        debugInfo += `완성도 체크: GET http://13.209.36.209:8081/api/user/profile/completion\n`;
+        debugInfo += `프로필 업데이트: PUT http://13.209.36.209:8081/api/user/profile\n`;
+        debugInfo += `닉네임 변경: PATCH http://13.209.36.209:8081/api/user/profile/nickname\n`;
             
             showResult(debugInfo, 'info', 'debugResult');
         }

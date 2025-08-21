@@ -383,6 +383,33 @@ public class NotificationController extends BaseController {
     }
 
     /**
+     * 전체 알림 설정 업데이트
+     */
+    @PutMapping("/preferences")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "전체 알림 설정 업데이트", description = "사용자의 모든 알림 설정을 한 번에 업데이트합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "업데이트 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<NotificationPreferenceDto> updateNotificationPreferences(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "알림 설정", required = true) @RequestBody NotificationPreferenceDto preferenceDto) {
+        log.info("전체 알림 설정 업데이트: 사용자ID={}, 설정={}", userId, preferenceDto);
+        
+        try {
+            NotificationPreferenceDto updatedPreference = preferenceService.savePreference(userId, preferenceDto);
+            return ResponseEntity.ok(updatedPreference);
+        } catch (CareServiceException e) {
+            log.error("전체 알림 설정 업데이트 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
      * 알림 설정 저장
      */
     @PostMapping("/preferences")

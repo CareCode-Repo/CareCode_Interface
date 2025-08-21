@@ -34,8 +34,9 @@ public class CareFacility {
     @Column(name = "name", nullable = false)
     private String name;
     
+    @Enumerated(EnumType.STRING)
     @Column(name = "facility_type")
-    private String facilityType; // 어린이집, 유치원, 놀이방 등
+    private FacilityType facilityType;
     
     @Column(name = "city")
     private String city;

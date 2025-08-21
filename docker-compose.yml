@@ -11,6 +11,7 @@ services:
       - JWT_SECRET=careCodeSecretKey123456789012345678901234567890
       - DB_USERNAME=carecode
       - DB_PASSWORD=carecode!123
+      - SWAGGER_SERVER_URL=http://13.209.36.209:8081
     depends_on:
       - carecode-mariadb
       - carecode-redis

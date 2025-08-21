@@ -119,7 +119,7 @@ public class ApiDocumentationGenerator {
                 asciiDoc.append("* **설명**: ").append(info.get("description").asText()).append("\n");
             }
         }
-        asciiDoc.append("* **Base URL**: `http://localhost:8080`\n");
+        asciiDoc.append("* **Base URL**: `http://13.209.36.209:8081`\n");
         asciiDoc.append("* **인증**: JWT Bearer Token\n\n");
     }
 

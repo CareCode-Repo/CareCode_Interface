@@ -53,6 +53,8 @@ public class UserProfileUpdateDto {
         private int completionPercentage;
         private String message;
         private MissingFields missingFields;
+        private int completedFields;
+        private int totalFields;
         
         @Getter
         @Setter

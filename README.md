@@ -19,7 +19,7 @@ docker-compose up -d
 ```
 
 ### 3. 접속 정보
-- **웹 애플리케이션**: http://localhost:8080
+- **웹 애플리케이션**: http://13.209.36.209:8081
 - **MySQL**: localhost:3306
 - **Redis**: localhost:6379
 

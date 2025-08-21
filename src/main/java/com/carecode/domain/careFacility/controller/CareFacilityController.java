@@ -9,6 +9,8 @@ import com.carecode.domain.careFacility.dto.CareFacilityDto;
 import com.carecode.domain.careFacility.dto.CareFacilitySearchRequestDto;
 import com.carecode.domain.careFacility.dto.CareFacilitySearchResponseDto;
 import com.carecode.domain.careFacility.dto.CareFacilityBookingDto;
+import com.carecode.domain.careFacility.entity.FacilityType;
+import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.service.CareFacilityService;
 import com.carecode.domain.careFacility.service.CareFacilityBookingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -87,11 +89,12 @@ public class CareFacilityController extends BaseController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공",
             content = @Content(schema = @Schema(implementation = CareFacilityDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 시설 유형"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<List<CareFacilityDto>> getFacilitiesByType(
-            @Parameter(description = "시설 유형 (KINDERGARTEN, DAYCARE, PLAYGROUP, NURSERY, OTHER)", required = true) 
-            @PathVariable String facilityType) {
+            @Parameter(description = "시설 유형 (KINDERGARTEN: 유치원, DAYCARE: 어린이집, PLAYGROUP: 놀이방, NURSERY: 보육원, OTHER: 기타)", required = true) 
+            @PathVariable FacilityType facilityType) {
         log.info("시설 유형별 조회 요청 - 유형: {}", facilityType);
         List<CareFacilityDto> facilities = careFacilityService.getCareFacilitiesByType(facilityType);
         return ResponseEntity.ok(facilities);

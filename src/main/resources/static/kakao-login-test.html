@@ -118,8 +118,8 @@
         <div class="instructions">
             <h3>📋 테스트 전 확인사항</h3>
             <ol>
-                <li>Spring Boot 서버가 <code>http://localhost:8080</code>에서 실행 중인지 확인</li>
-                <li>카카오 개발자 콘솔에서 Redirect URI 설정: <code>http://localhost:8080/login/oauth2/code/kakao</code></li>
+                            <li>Spring Boot 서버가 <code>http://13.209.36.209:8081</code>에서 실행 중인지 확인</li>
+            <li>카카오 개발자 콘솔에서 Redirect URI 설정: <code>http://13.209.36.209:8081/login/oauth2/code/kakao</code></li>
                 <li>카카오 동의항목에서 닉네임과 이메일이 필수 동의로 설정되었는지 확인</li>
             </ol>
         </div>
@@ -199,19 +199,19 @@
         // 카카오 로그인
         function loginWithKakao() {
             showResult('카카오 로그인 페이지로 이동합니다...', 'info');
-            window.location.href = 'http://localhost:8080/oauth2/authorization/kakao';
+            window.location.href = 'http://13.209.36.209:8081/oauth2/authorization/kakao';
         }
 
         // 구글 로그인
         function loginWithGoogle() {
             showResult('구글 로그인 페이지로 이동합니다...', 'info');
-            window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+            window.location.href = 'http://13.209.36.209:8081/oauth2/authorization/google';
         }
 
         // 지원 제공자 목록 조회
         async function getProviders() {
             try {
-                const response = await fetch('http://localhost:8080/oauth2/providers');
+                const response = await fetch('http://13.209.36.209:8081/oauth2/providers');
                 const data = await response.json();
                 showResult('지원하는 소셜 로그인 제공자:\n' + JSON.stringify(data, null, 2), 'info');
             } catch (error) {
@@ -228,7 +228,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:8080/auth/validate', {
+                const response = await fetch('http://13.209.36.209:8081/auth/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -258,7 +258,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:8080/auth/me', {
+                const response = await fetch('http://13.209.36.209:8081/auth/me', {
                     method: 'GET',
                     headers: {
                         'Authorization': 'Bearer ' + accessToken,
@@ -286,7 +286,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:8080/facilities', {
+                const response = await fetch('http://13.209.36.209:8081/facilities', {
                     method: 'GET',
                     headers: {
                         'Authorization': 'Bearer ' + accessToken,

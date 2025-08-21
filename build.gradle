@@ -33,6 +33,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-batch'
     implementation 'org.springframework.boot:spring-boot-starter-quartz'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 
     // Swagger/OpenAPI 3
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
@@ -135,7 +136,7 @@ task generateApiDocs {
         outputDir.mkdirs()
         
         // Swagger JSON 다운로드
-        def swaggerUrl = 'http://localhost:8080/v3/api-docs'
+        def swaggerUrl = 'http://13.209.36.209:8081/v3/api-docs'
         def swaggerFile = file('swagger.json')
         
         new URL(swaggerUrl).withInputStream { input ->
@@ -165,7 +166,7 @@ task generateDetailedApiDocs {
         javaexec {
             classpath = sourceSets.main.runtimeClasspath
             mainClass = 'com.carecode.docs.ApiDocumentationGenerator'
-            args = ['http://localhost:8080/api-docs', detailedDocFile.absolutePath]
+            args = ['http://13.209.36.209:8081/api-docs', detailedDocFile.absolutePath]
         }
         
         println "✅ 상세 API 문서 생성 완료: ${detailedDocFile.absolutePath}"
@@ -274,7 +275,7 @@ CareCode API는 육아 정보 플랫폼을 위한 RESTful API입니다.
 
 === 기본 정보
 
-* **Base URL**: `http://localhost:8080`
+* **Base URL**: `http://13.209.36.209:8081`
 * **API 버전**: v1
 * **인증**: JWT Bearer Token
 
@@ -511,7 +512,7 @@ Content-Type: application/json
 
 2. Swagger UI 접속:
    ```
-   http://localhost:8080/swagger-ui.html
+   http://13.209.36.209:8081/swagger-ui.html
    ```
 
 3. API 문서 생성:
@@ -526,12 +527,12 @@ API 테스트는 Postman이나 curl을 사용할 수 있습니다:
 [source,bash]
 ----
 # 로그인
-curl -X POST http://localhost:8080/auth/login \\
+curl -X POST http://13.209.36.209:8081/auth/login \\
   -H "Content-Type: application/json" \\
   -d '{"email":"user@example.com","password":"password"}'
 
 # 토큰으로 API 호출
-curl -X GET http://localhost:8080/api/facilities \\
+curl -X GET http://13.209.36.209:8081/api/facilities \\
   -H "Authorization: Bearer <your-token>"
 ----
 '''

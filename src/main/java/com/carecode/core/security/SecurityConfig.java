@@ -1,10 +1,12 @@
 package com.carecode.core.security;
 
-import jakarta.servlet.http.HttpServletResponse;
+import com.carecode.core.security.JwtAuthenticationFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -12,6 +14,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Spring Security 설정
@@ -22,22 +26,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomOAuth2UserService customOAuth2UserService;
     private final CustomUserDetailsService customUserDetailsService;
-    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, 
-                         CustomOAuth2UserService customOAuth2UserService, 
-                         CustomUserDetailsService customUserDetailsService,
-                         OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
-                         OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler) {
+                         CustomUserDetailsService customUserDetailsService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.customOAuth2UserService = customOAuth2UserService;
         this.customUserDetailsService = customUserDetailsService;
-        this.oAuth2AuthenticationSuccessHandler = oAuth2AuthenticationSuccessHandler;
-        this.oAuth2AuthenticationFailureHandler = oAuth2AuthenticationFailureHandler;
-        log.info("SecurityConfig 초기화 - JWT 필터 및 OAuth2 핸들러 등록됨");
+        log.info("SecurityConfig 초기화 - JWT 필터 등록됨");
     }
 
     @Bean
@@ -45,6 +40,14 @@ public class SecurityConfig {
         log.info("SecurityFilterChain 설정 시작");
         
         http
+            .cors(cors -> cors.configurationSource(request -> {
+                CorsConfiguration configuration = new CorsConfiguration();
+                configuration.setAllowCredentials(true);
+                configuration.addAllowedOriginPattern("*");
+                configuration.addAllowedHeader("*");
+                configuration.addAllowedMethod("*");
+                return configuration;
+            })) // CORS 활성화
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -72,13 +75,21 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                 .requestMatchers("/static/**", "/*.html").permitAll()
                 
-                // 인증 관련 엔드포인트 (공개 접근)
-                .requestMatchers("/auth/login", "/auth/register").permitAll()
-                .requestMatchers("/users/send-code", "/users/verify-code", "/users/verify").permitAll()
+                // 통합 인증 관련 엔드포인트 (공개 접근)
+                .requestMatchers("/auth/login", "/auth/register").permitAll() // 일반 로그인/회원가입
+                .requestMatchers("/auth/refresh").permitAll() // 토큰 갱신
+                .requestMatchers("/auth/kakao/login").permitAll() // 카카오 로그인
+                .requestMatchers("/auth/kakao/login-url").permitAll() // 카카오 로그인 URL 생성
+                .requestMatchers("/auth/kakao/complete-registration").permitAll() // 카카오 가입 완료
                 
-                // OAuth2 소셜 로그인 (공개 접근)
+                // OAuth2 관련 엔드포인트 (공개 접근)
                 .requestMatchers("/oauth2/**").permitAll()
-                .requestMatchers("/login/oauth2/**").permitAll()
+                .requestMatchers("/kakao-callback.html").permitAll()
+                .requestMatchers("/kakao-test.html").permitAll()
+                .requestMatchers("/kakao-debug.html").permitAll()
+                
+                // 이메일 인증 관련 엔드포인트 (공개 접근)
+                .requestMatchers("/users/send-code", "/users/verify-code", "/users/verify").permitAll()
                 
                 // 관리자 API (ADMIN 권한 필요)
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -96,35 +107,46 @@ public class SecurityConfig {
                 .requestMatchers("/facilities/*/view").permitAll()
                 .requestMatchers("/facilities/*/rating").permitAll()
                 
+                // 돌봄시설 공공데이터 API (공개 접근)
+                .requestMatchers("/api/public/care-facilities/**").permitAll()
+                
                 // Health API 엔드포인트 (공개 접근)
-                .requestMatchers("/health/records").permitAll()
-                .requestMatchers("/health/statistics").permitAll()
-                .requestMatchers("/health/goals").permitAll()
-                .requestMatchers("/health/records/*").permitAll()
-                .requestMatchers("/health/statistics/*").permitAll()
-                .requestMatchers("/health/goals/*").permitAll()
-                .requestMatchers("/health/records/user/*").permitAll()
-                .requestMatchers("/health/records/user/*/chart").permitAll()
+                .requestMatchers("/health").permitAll()
+                .requestMatchers("/health/**").permitAll()
+                .requestMatchers("/hospitals").permitAll()
+                .requestMatchers("/hospitals/search").permitAll()
+                .requestMatchers("/hospitals/*/reviews").permitAll()
+                .requestMatchers("/hospitals/*/rating").permitAll()
+                .requestMatchers("/hospitals/*/like").permitAll()
                 
-                // Community API 엔드포인트 (공개 접근)
-                .requestMatchers("/community/posts").permitAll()
-                .requestMatchers("/community/tags").permitAll()
-                .requestMatchers("/community/posts/*").permitAll()
-                .requestMatchers("/community/posts/*/comments").permitAll()
-                .requestMatchers("/community/search").permitAll()
-                .requestMatchers("/community/popular").permitAll()
-                .requestMatchers("/community/latest").permitAll()
-                
-                // Policy API 엔드포인트 (공개 접근)
+                // 정책 API 엔드포인트 (공개 접근)
                 .requestMatchers("/policies").permitAll()
-                .requestMatchers("/policies/*").permitAll()
+                .requestMatchers("/policies/search").permitAll()
                 .requestMatchers("/policies/categories").permitAll()
-                .requestMatchers("/policies/category/**").permitAll()
-                .requestMatchers("/policies/location/**").permitAll()
-                .requestMatchers("/policies/age").permitAll()
-                .requestMatchers("/policies/popular").permitAll()
-                .requestMatchers("/policies/latest").permitAll()
+                .requestMatchers("/policies/*").permitAll()
                 .requestMatchers("/policies/statistics").permitAll()
+                
+                // 챗봇 API (공개 접근 허용)
+                .requestMatchers("/chatbot/chat").permitAll()
+                .requestMatchers("/chatbot/history").permitAll()
+                .requestMatchers("/chatbot/sessions").permitAll()
+                .requestMatchers("/chatbot/feedback").permitAll()
+                
+                // CORS preflight 요청 허용
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                
+                // 커뮤니티 API - 조회는 공개, 작성/수정/삭제는 인증 필요
+                .requestMatchers(HttpMethod.GET, "/community/posts").permitAll() // 게시글 목록 조회
+                .requestMatchers(HttpMethod.GET, "/community/posts/*").permitAll() // 게시글 상세 조회
+                .requestMatchers(HttpMethod.GET, "/community/search").permitAll() // 게시글 검색
+                .requestMatchers(HttpMethod.GET, "/community/popular").permitAll() // 인기 게시글
+                .requestMatchers(HttpMethod.GET, "/community/latest").permitAll() // 최신 게시글
+                .requestMatchers(HttpMethod.GET, "/community/posts/*/comments").permitAll() // 댓글 조회
+                .requestMatchers(HttpMethod.GET, "/community/tags").permitAll() // 태그 목록
+                .requestMatchers(HttpMethod.GET, "/community/tags/**").permitAll() // 태그 관련 조회
+                .requestMatchers(HttpMethod.GET, "/community/search/all").permitAll() // 전체 검색
+                .requestMatchers(HttpMethod.GET, "/community/popular/limit").permitAll() // 제한된 인기 게시글
+                .requestMatchers(HttpMethod.GET, "/community/latest/limit").permitAll() // 제한된 최신 게시글
                 
                 // 인증이 필요한 API 엔드포인트 (로그인/회원가입 제외)
                 .requestMatchers("/auth/user/**").authenticated()
@@ -135,25 +157,11 @@ public class SecurityConfig {
                 .requestMatchers("/community/comments/**").authenticated()
                 .requestMatchers("/notifications/**").authenticated()
                 
-                // 챗봇 API (공개 접근 허용)
-                .requestMatchers("/chatbot/chat").permitAll()
-                .requestMatchers("/chatbot/history").permitAll()
-                .requestMatchers("/chatbot/sessions").permitAll()
-                .requestMatchers("/chatbot/feedback").permitAll()
-                
                 // 기타 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin())); // H2 콘솔 사용 시 필요
-
-        http.oauth2Login(oauth2Login -> oauth2Login
-            .userInfoEndpoint(userInfo -> userInfo
-                .userService(customOAuth2UserService)
-            )
-            .successHandler(oAuth2AuthenticationSuccessHandler)
-            .failureHandler(oAuth2AuthenticationFailureHandler)
-        );
 
         log.info("SecurityFilterChain 설정 완료");
         return http.build();
@@ -163,7 +171,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-
-
 } 

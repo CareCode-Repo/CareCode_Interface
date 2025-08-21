@@ -32,8 +32,12 @@ public class UserDto {
     private Double longitude;
     private String profileImageUrl;
     private String role;
+    private String provider; // OAuth 제공자 (kakao, google, naver 등)
+    private String providerId; // OAuth 제공자의 사용자 ID
     private Boolean isActive;
     private Boolean emailVerified;
+    private Boolean registrationCompleted; // 카카오 사용자 가입 프로세스 완료 여부
+    private LocalDateTime deletedAt; // 소프트 삭제를 위한 삭제 시간
     private LocalDateTime lastLoginAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

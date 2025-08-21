@@ -20,22 +20,15 @@ public class TokenDto {
     private String refreshToken;
     private String tokenType;
     private Long expiresIn;
+    private Long refreshExpiresIn;
     private String userId;
     private String email;
     private String role;
     private Boolean success;
     private String message;
+    private UserDto user;
     
-    /**
-     * 토큰 갱신 요청 DTO
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class RefreshTokenRequest {
-        private String refreshToken;
-    }
+
     
     /**
      * 토큰 검증 요청 DTO

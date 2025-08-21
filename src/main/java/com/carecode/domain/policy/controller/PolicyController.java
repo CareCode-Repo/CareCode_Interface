@@ -32,6 +32,7 @@ import java.util.Map;
 @RequestMapping("/policies")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins = "*", allowedHeaders = "*") // CORS 허용
 @Tag(name = "육아 정책", description = "육아 정책 정보 및 검색 API")
 public class PolicyController extends BaseController {
 

@@ -56,4 +56,9 @@ public interface HealthRecordRepository extends JpaRepository<HealthRecord, Long
      * 사용자별 건강 기록 개수 조회
      */
     long countByUser(User user);
+    
+    /**
+     * 아동별 특정 타입의 건강 기록 조회
+     */
+    List<HealthRecord> findByChildIdAndRecordType(Long childId, HealthRecord.RecordType recordType);
 } 

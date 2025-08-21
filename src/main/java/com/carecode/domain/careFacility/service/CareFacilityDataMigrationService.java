@@ -1,6 +1,7 @@
 package com.carecode.domain.careFacility.service;
 
 import com.carecode.domain.careFacility.entity.CareFacility;
+import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -82,7 +83,7 @@ public class CareFacilityDataMigrationService implements CommandLineRunner {
         return CareFacility.builder()
                 .facilityCode("CF" + System.currentTimeMillis() + (int)(Math.random() * 1000))
                 .name(name)
-                .facilityType("HOSPITAL") // 병원/의원으로 설정
+                .facilityType(FacilityType.OTHER) // 병원/의원은 기타로 분류
                 .city(city)
                 .district(district)
                 .address(address)

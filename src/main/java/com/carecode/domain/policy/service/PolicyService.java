@@ -17,6 +17,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -223,17 +225,42 @@ public class PolicyService {
                 .minAge(policy.getTargetAgeMin()) // minAge 필드가 없으므로 targetAgeMin 사용
                 .maxAge(policy.getTargetAgeMax()) // maxAge 필드가 없으므로 targetAgeMax 사용
                 .supportAmount(policy.getBenefitAmount()) // supportAmount 필드가 없으므로 benefitAmount 사용
-                .applicationPeriod(policy.getApplicationStartDate() + " ~ " + policy.getApplicationEndDate())
+                .applicationPeriod(formatApplicationPeriod(policy.getApplicationStartDate(), policy.getApplicationEndDate()))
                 .eligibilityCriteria(null) // eligibilityCriteria 필드가 엔티티에 없음
                 .applicationMethod(policy.getApplicationUrl()) // applicationMethod 필드가 없으므로 applicationUrl 사용
                 .requiredDocuments(policy.getRequiredDocuments())
                 .contactInfo(policy.getContactInfo())
-                .websiteUrl(policy.getApplicationUrl()) // websiteUrl 필드가 없으므로 applicationUrl 사용
+                .websiteUrl(formatWebsiteUrl(policy.getApplicationUrl())) // websiteUrl 필드가 없으므로 applicationUrl 사용
                 .viewCount(0) // viewCount 필드가 엔티티에 없으므로 0으로 설정
                 .isActive(policy.getIsActive())
                 .createdAt(policy.getCreatedAt())
                 .updatedAt(policy.getUpdatedAt())
                 .build();
+    }
+    
+    /**
+     * 신청 기간 포맷팅
+     */
+    private String formatApplicationPeriod(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null && endDate == null) {
+            return "상시 신청";
+        } else if (startDate == null) {
+            return "~ " + endDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"));
+        } else if (endDate == null) {
+            return startDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd")) + " ~";
+        } else {
+            return startDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd")) + " ~ " + endDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"));
+        }
+    }
+    
+    /**
+     * 웹사이트 URL 포맷팅
+     */
+    private String formatWebsiteUrl(String applicationUrl) {
+        if (applicationUrl == null || applicationUrl.trim().isEmpty()) {
+            return "해당 정책 홈페이지";
+        }
+        return applicationUrl;
     }
     
     // ========== 정책 카테고리 관련 메서드 ==========
