@@ -37,41 +37,29 @@ public class CareFacilityApiService {
      * @return 정제된 보육시설 정보
      */
     public Map<String, Object> getChildcareFacilities(String sido, String sigungu, int pageNo, int numOfRows) {
-        try {
-            // 서울시 API는 한 번에 최대 1000건까지만 요청 가능
-            if (numOfRows > 1000) {
-                numOfRows = 1000;
-                log.warn("한 번에 최대 1000건까지만 요청 가능합니다. numOfRows를 1000으로 조정합니다.");
-            }
-            
-            // 서울시 API는 파라미터가 URL 경로에 포함됨
-            // URL 구조: /서비스명/START_INDEX/END_INDEX/
-            String startIndex = String.valueOf((pageNo - 1) * numOfRows + 1);
-            String endIndex = String.valueOf(pageNo * numOfRows);
-            
-            // 서울시 공공데이터 API 엔드포인트 (경로 파라미터 포함)
-            String endpoint = "TnFcltySttusInfo1004/" + startIndex + "/" + endIndex + "/";
-            
-            log.info("보육시설 API 호출 시작: endpoint={}, startIndex={}, endIndex={}", endpoint, startIndex, endIndex);
-            log.info("참고: 서울시 API는 지역별 필터링을 지원하지 않으므로 전체 서울시 데이터를 가져옵니다.");
-            
-            // 서울시 API는 쿼리 파라미터가 없음
-            String response = publicDataApiClient.get(endpoint, null, String.class);
-            
-            log.info("보육시설 정보 조회 성공: pageNo={}, responseLength={}", 
-                    pageNo, response != null ? response.length() : 0);
-            log.debug("보육시설 API 응답: {}", response);
-            
-            // 응답 정제 및 파싱
-            Map<String, Object> result = parseAndRefineResponse(response, "TnFcltySttusInfo1004");
-            
-            log.debug("정제된 보육시설 API 응답: {}", result);
-            return result;
-            
-        } catch (Exception e) {
-            log.error("보육시설 정보 조회 실패: pageNo={}, error={}", pageNo, e.getMessage(), e);
-            throw new RuntimeException("보육시설 정보 조회 중 오류가 발생했습니다: " + e.getMessage(), e);
+        // 서울시 API는 한 번에 최대 1000건까지만 요청 가능
+        if (numOfRows > 1000) {
+            numOfRows = 1000;
+            log.warn("한 번에 최대 1000건까지만 요청 가능합니다. numOfRows를 1000으로 조정합니다.");
         }
+
+        // 서울시 API는 파라미터가 URL 경로에 포함됨
+        // URL 구조: /서비스명/START_INDEX/END_INDEX/
+        String startIndex = String.valueOf((pageNo - 1) * numOfRows + 1);
+        String endIndex = String.valueOf(pageNo * numOfRows);
+
+        // 서울시 공공데이터 API 엔드포인트 (경로 파라미터 포함)
+        String endpoint = "TnFcltySttusInfo1004/" + startIndex + "/" + endIndex + "/";
+
+        log.info("보육시설 API 호출 시작: endpoint={}, startIndex={}, endIndex={}", endpoint, startIndex, endIndex);
+
+        // 서울시 API는 쿼리 파라미터가 없음
+        String response = publicDataApiClient.get(endpoint, null, String.class);
+
+        // 응답 정제 및 파싱
+        Map<String, Object> result = parseAndRefineResponse(response, "TnFcltySttusInfo1004");
+
+        return result;
     }
 
     /**
@@ -168,7 +156,7 @@ public class CareFacilityApiService {
             result.put("serviceName", serviceName);
             
             return result;
-            
+
         } catch (Exception e) {
             log.error("응답 파싱 실패: {}", e.getMessage(), e);
             log.error("원본 응답: {}", rawResponse);
@@ -235,57 +223,33 @@ public class CareFacilityApiService {
      * 유치원 정보 조회
      */
     public Map<String, Object> getKindergartens(String sido, String sigungu, int pageNo, int numOfRows) {
-        try {
-            String startIndex = String.valueOf((pageNo - 1) * numOfRows + 1);
-            String endIndex = String.valueOf(pageNo * numOfRows);
-            String endpoint = "/15001061/2/1/kindergarten/" + startIndex + "/" + endIndex + "/";
-            
-            log.info("유치원 API 호출: endpoint={}", endpoint);
-            String response = publicDataApiClient.get(endpoint, null, String.class);
-            
-            // 유치원 데이터도 동일한 방식으로 정제
-            return parseAndRefineResponse(response, "kindergarten");
-            
-        } catch (Exception e) {
-            log.error("유치원 정보 조회 실패: sido={}, sigungu={}, error={}", sido, sigungu, e.getMessage(), e);
-            throw new RuntimeException("유치원 정보 조회 중 오류가 발생했습니다: " + e.getMessage(), e);
-        }
+        String startIndex = String.valueOf((pageNo - 1) * numOfRows + 1);
+        String endIndex = String.valueOf(pageNo * numOfRows);
+        String endpoint = "/15001061/2/1/kindergarten/" + startIndex + "/" + endIndex + "/";
+        String response = publicDataApiClient.get(endpoint, null, String.class);
+
+        return parseAndRefineResponse(response, "kindergarten");
     }
 
     /**
      * 돌봄시설 통계 정보 조회
      */
     public Map<String, Object> getCareFacilityStatistics(String sido) {
-        try {
-            String endpoint = "/statistics/" + sido + "/";
-            log.info("돌봄시설 통계 API 호출: endpoint={}", endpoint);
-            String response = publicDataApiClient.get(endpoint, null, String.class);
-            
-            return parseAndRefineResponse(response, "statistics");
-            
-        } catch (Exception e) {
-            log.error("돌봄시설 통계 조회 실패: sido={}, error={}", sido, e.getMessage(), e);
-            throw new RuntimeException("돌봄시설 통계 조회 중 오류가 발생했습니다: " + e.getMessage(), e);
-        }
+        String endpoint = "/statistics/" + sido + "/";
+        String response = publicDataApiClient.get(endpoint, null, String.class);
+
+        return parseAndRefineResponse(response, "statistics");
     }
 
     /**
      * 돌봄시설 키워드 검색
      */
     public Map<String, Object> searchCareFacilities(String keyword, int pageNo, int numOfRows) {
-        try {
-            String startIndex = String.valueOf((pageNo - 1) * numOfRows + 1);
-            String endIndex = String.valueOf(pageNo * numOfRows);
-            String endpoint = "/search/" + keyword + "/" + startIndex + "/" + endIndex + "/";
-            
-            log.info("돌봄시설 검색 API 호출: endpoint={}, keyword={}", endpoint, keyword);
-            String response = publicDataApiClient.get(endpoint, null, String.class);
-            
-            return parseAndRefineResponse(response, "search");
-            
-        } catch (Exception e) {
-            log.error("돌봄시설 검색 실패: keyword={}, error={}", keyword, e.getMessage(), e);
-            throw new RuntimeException("돌봄시설 검색 중 오류가 발생했습니다: " + e.getMessage(), e);
-        }
+        String startIndex = String.valueOf((pageNo - 1) * numOfRows + 1);
+        String endIndex = String.valueOf(pageNo * numOfRows);
+        String endpoint = "/search/" + keyword + "/" + startIndex + "/" + endIndex + "/";
+        String response = publicDataApiClient.get(endpoint, null, String.class);
+
+        return parseAndRefineResponse(response, "search");
     }
 }

@@ -10,7 +10,6 @@ import com.carecode.domain.careFacility.dto.CareFacilitySearchRequestDto;
 import com.carecode.domain.careFacility.dto.CareFacilitySearchResponseDto;
 import com.carecode.domain.careFacility.dto.CareFacilityBookingDto;
 import com.carecode.domain.careFacility.entity.FacilityType;
-import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.service.CareFacilityService;
 import com.carecode.domain.careFacility.service.CareFacilityBookingService;
 import io.swagger.v3.oas.annotations.Operation;

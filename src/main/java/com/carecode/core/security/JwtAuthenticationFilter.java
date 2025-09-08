@@ -50,13 +50,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String role = jwtService.getRoleFromToken(token);
                     String name = jwtService.getNameFromToken(token);
                     
-                    log.info("JWT 토큰 검증 성공: userId={}, email={}, role={}, name={}", userId, email, role, name);
-                    log.debug("JWT 토큰에서 추출된 정보 - userId: {}, email: {}, role: {}, name: {}", userId, email, role, name);
-                    
-                    // 인증 정보 생성 - name을 principal로 사용 (name이 없으면 email 사용)
-                    String principal = (name != null && !name.trim().isEmpty()) ? name : email;
+                    // 인증 정보 생성 - email을 principal로 사용 (일관성을 위해)
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        principal,   // principal을 name으로 설정 (name이 없으면 email)
+                        email,       // principal을 email로 설정 (일관성)
                         null,        // credentials는 null
                         Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
                     );
@@ -86,11 +82,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private String extractTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        log.debug("Authorization 헤더: {}", bearerToken);
-        
+
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             String token = bearerToken.substring(7);
-            log.debug("추출된 토큰 길이: {}", token.length());
             return token;
         }
         
@@ -118,7 +112,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.equals("/kakao-callback.html") ||
                path.startsWith("/admin");
         
-        log.debug("JWT 필터 건너뛰기: {} = {}", path, shouldNotFilter);
         return shouldNotFilter;
     }
 } 

@@ -419,7 +419,13 @@ public class CommunityService {
         String userEmail = authentication.getName();
         log.info("getCurrentUser() - 인증된 사용자 이메일: {}", userEmail);
         
-        return userRepository.findByEmail(userEmail)
+        // 이메일 형식 검증
+        if (userEmail == null || !userEmail.contains("@")) {
+            log.error("getCurrentUser() - 유효하지 않은 이메일 형식: {}", userEmail);
+            throw new CareServiceException("유효하지 않은 사용자 정보입니다.");
+        }
+
+        return userRepository.findByEmailAndDeletedAtIsNull(userEmail)
                 .orElseThrow(() -> {
                     log.error("getCurrentUser() - 사용자를 찾을 수 없음: {}", userEmail);
                     return new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userEmail);

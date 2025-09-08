@@ -1,6 +1,9 @@
 package com.carecode.core.controller;
 
 import com.carecode.core.client.CareFacilityApiService;
+import com.carecode.domain.careFacility.dto.CareFacilityDto;
+import com.carecode.domain.careFacility.dto.CareFacilitySearchResponseDto;
+import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.service.CareFacilityService;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
@@ -30,6 +33,7 @@ public class CareFacilityApiController {
     private final CareFacilityApiService careFacilityApiService;
     private final CareFacilityService careFacilityService;
     private final CareFacilityRepository careFacilityRepository;
+    private FacilityType facilityType;
 
     /**
      * 전체 보육시설 정보 동기화 (모든 데이터)
@@ -42,8 +46,6 @@ public class CareFacilityApiController {
             @Parameter(description = "한 페이지 결과 수", example = "100") @RequestParam(defaultValue = "100") int numOfRows) {
         
         try {
-            log.info("전체 보육시설 정보 동기화 요청: sido={}, sigungu={}, numOfRows={}", sido, sigungu, numOfRows);
-            
             int totalSaved = 0;
             int totalUpdated = 0;
             int totalError = 0;
@@ -119,7 +121,7 @@ public class CareFacilityApiController {
                         log.warn("페이지 제한에 도달했습니다. (최대 50페이지)");
                         break;
                     }
-                    
+
                 } catch (Exception e) {
                     log.error("페이지 {} 처리 중 오류: {}", pageNo, e.getMessage());
                     break;
@@ -152,7 +154,7 @@ public class CareFacilityApiController {
     public ResponseEntity<Map<String, Object>> swaggerSync() {
         try {
             log.info("Swagger용 보육시설 동기화 요청");
-            
+
             // 기본 파라미터로 전체 동기화 실행
             return syncAllChildcareFacilities("서울특별시", "강남구", 1000);
             
@@ -178,12 +180,12 @@ public class CareFacilityApiController {
             log.info("DB 저장된 보육시설 목록 조회 요청: page={}, size={}", page, size);
             
             // CareFacilityService를 통해 DB에서 데이터 조회
-            List<com.carecode.domain.careFacility.dto.CareFacilityDto> facilities = careFacilityService.getAllCareFacilities();
+            List<CareFacilityDto> facilities = careFacilityService.getAllCareFacilities();
             
             // 페이징 처리
             int start = page * size;
             int end = Math.min(start + size, facilities.size());
-            List<com.carecode.domain.careFacility.dto.CareFacilityDto> pagedFacilities = facilities.subList(start, end);
+            List<CareFacilityDto> pagedFacilities = facilities.subList(start, end);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -213,7 +215,7 @@ public class CareFacilityApiController {
             log.info("보육시설 통계 조회 요청");
             
             // CareFacilityService를 통해 통계 조회
-            com.carecode.domain.careFacility.dto.CareFacilitySearchResponseDto.FacilityStats stats = careFacilityService.getFacilityStats();
+            CareFacilitySearchResponseDto.FacilityStats stats = careFacilityService.getFacilityStats();
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -289,22 +291,22 @@ public class CareFacilityApiController {
     /**
      * 서비스 타입을 FacilityType으로 매핑
      */
-    private com.carecode.domain.careFacility.entity.FacilityType mapServiceTypeToFacilityType(String serviceType) {
+    private FacilityType mapServiceTypeToFacilityType(String serviceType) {
         if (serviceType == null) {
-            return com.carecode.domain.careFacility.entity.FacilityType.OTHER;
+            return FacilityType.OTHER;
         }
         
         switch (serviceType) {
             case "공동육아나눔터":
-                return com.carecode.domain.careFacility.entity.FacilityType.PLAYGROUP;
+                return FacilityType.PLAYGROUP;
             case "어린이집":
-                return com.carecode.domain.careFacility.entity.FacilityType.DAYCARE;
+                return FacilityType.DAYCARE;
             case "유치원":
-                return com.carecode.domain.careFacility.entity.FacilityType.KINDERGARTEN;
+                return FacilityType.KINDERGARTEN;
             case "방과후교실":
-                return com.carecode.domain.careFacility.entity.FacilityType.NURSERY;
+                return FacilityType.NURSERY;
             default:
-                return com.carecode.domain.careFacility.entity.FacilityType.OTHER;
+                return FacilityType.OTHER;
         }
     }
 

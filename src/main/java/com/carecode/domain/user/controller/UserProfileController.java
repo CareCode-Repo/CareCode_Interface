@@ -309,34 +309,25 @@ public class UserProfileController extends BaseController {
             throw new RuntimeException("인증되지 않은 사용자입니다");
         }
         
-        // JWT 토큰에서 이메일과 이름 추출
+        // JWT 토큰에서 이메일 추출 (principal이 email로 설정됨)
         String email = authentication.getName();
-        String name = null;
         
-        // principal이 name인지 email인지 확인
-        if (email != null && email.contains("@")) {
-            // email인 경우, name을 별도로 추출
-            try {
-                User user = userService.getUserEntityByEmail(email);
-                name = user.getName();
-            } catch (UserNotFoundException e) {
-                log.error("사용자를 찾을 수 없음: {}", email);
-                throw new RuntimeException("사용자 정보를 찾을 수 없습니다");
-            }
-        } else {
-            // name인 경우, email을 별도로 추출
-            name = email;
-            try {
-                User user = userService.getUserEntityByName(name);
-                email = user.getEmail();
-            } catch (UserNotFoundException e) {
-                log.error("사용자를 찾을 수 없음: {}", name);
-                throw new RuntimeException("사용자 정보를 찾을 수 없습니다");
-            }
+        if (email == null || !email.contains("@")) {
+            log.error("유효하지 않은 이메일 형식: {}", email);
+            throw new RuntimeException("유효하지 않은 사용자 정보입니다");
         }
         
-        log.debug("현재 사용자 정보: name={}, email={}", name, email);
-        return new UserInfo(name, email);
+        // 이메일로 사용자 정보 조회
+        try {
+            User user = userService.getUserEntityByEmail(email);
+            String name = user.getName();
+            
+            log.debug("현재 사용자 정보: name={}, email={}", name, email);
+            return new UserInfo(name, email);
+        } catch (UserNotFoundException e) {
+            log.error("사용자를 찾을 수 없음: {}", email);
+            throw new RuntimeException("사용자 정보를 찾을 수 없습니다");
+        }
     }
 
     /**

@@ -27,21 +27,16 @@ public class PublicDataApiService {
      * @return 육아 시설 정보
      */
     public PublicDataResponse<Object> getChildcareFacilities(String region, int pageNo, int numOfRows) {
-        try {
-            Map<String, String> params = new HashMap<>();
-            params.put("pageNo", String.valueOf(pageNo));
-            params.put("numOfRows", String.valueOf(numOfRows));
-            params.put("type", "json");
-            
-            if (region != null && !region.isEmpty()) {
-                params.put("sidoCd", region);
-            }
+        Map<String, String> params = new HashMap<>();
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("numOfRows", String.valueOf(numOfRows));
+        params.put("type", "json");
 
-            return apiClient.get("/getChildcareFacilities", params, PublicDataResponse.class);
-        } catch (Exception e) {
-            log.error("육아 시설 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("육아 시설 정보 조회 실패", e);
+        if (region != null && !region.isEmpty()) {
+            params.put("sidoCd", region);
         }
+
+        return apiClient.get("/getChildcareFacilities", params, PublicDataResponse.class);
     }
 
     /**
@@ -52,21 +47,16 @@ public class PublicDataApiService {
      * @return 보육 정책 정보
      */
     public PublicDataResponse<Object> getChildcarePolicies(String policyType, int pageNo, int numOfRows) {
-        try {
-            Map<String, String> params = new HashMap<>();
-            params.put("pageNo", String.valueOf(pageNo));
-            params.put("numOfRows", String.valueOf(numOfRows));
-            params.put("type", "json");
-            
-            if (policyType != null && !policyType.isEmpty()) {
-                params.put("policyType", policyType);
-            }
+        Map<String, String> params = new HashMap<>();
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("numOfRows", String.valueOf(numOfRows));
+        params.put("type", "json");
 
-            return apiClient.get("/getChildcarePolicies", params, PublicDataResponse.class);
-        } catch (Exception e) {
-            log.error("보육 정책 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("보육 정책 정보 조회 실패", e);
+        if (policyType != null && !policyType.isEmpty()) {
+            params.put("policyType", policyType);
         }
+
+        return apiClient.get("/getChildcarePolicies", params, PublicDataResponse.class);
     }
 
     /**
@@ -77,21 +67,16 @@ public class PublicDataApiService {
      * @return 소아과 병원 정보
      */
     public PublicDataResponse<Object> getPediatricHospitals(String region, int pageNo, int numOfRows) {
-        try {
-            Map<String, String> params = new HashMap<>();
-            params.put("pageNo", String.valueOf(pageNo));
-            params.put("numOfRows", String.valueOf(numOfRows));
-            params.put("type", "json");
-            
-            if (region != null && !region.isEmpty()) {
-                params.put("sidoCd", region);
-            }
+        Map<String, String> params = new HashMap<>();
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("numOfRows", String.valueOf(numOfRows));
+        params.put("type", "json");
 
-            return apiClient.get("/getPediatricHospitals", params, PublicDataResponse.class);
-        } catch (Exception e) {
-            log.error("소아과 병원 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("소아과 병원 정보 조회 실패", e);
+        if (region != null && !region.isEmpty()) {
+            params.put("sidoCd", region);
         }
+
+        return apiClient.get("/getPediatricHospitals", params, PublicDataResponse.class);
     }
 
     /**
@@ -102,21 +87,16 @@ public class PublicDataApiService {
      * @return 육아 지원금 정보
      */
     public PublicDataResponse<Object> getChildcareSubsidies(String region, int pageNo, int numOfRows) {
-        try {
-            Map<String, String> params = new HashMap<>();
-            params.put("pageNo", String.valueOf(pageNo));
-            params.put("numOfRows", String.valueOf(numOfRows));
-            params.put("type", "json");
-            
-            if (region != null && !region.isEmpty()) {
-                params.put("sidoCd", region);
-            }
+        Map<String, String> params = new HashMap<>();
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("numOfRows", String.valueOf(numOfRows));
+        params.put("type", "json");
 
-            return apiClient.get("/getChildcareSubsidies", params, PublicDataResponse.class);
-        } catch (Exception e) {
-            log.error("육아 지원금 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("육아 지원금 정보 조회 실패", e);
+        if (region != null && !region.isEmpty()) {
+            params.put("sidoCd", region);
         }
+
+        return apiClient.get("/getChildcareSubsidies", params, PublicDataResponse.class);
     }
 
     /**
@@ -127,21 +107,16 @@ public class PublicDataApiService {
      * @return 육아 교육 정보
      */
     public PublicDataResponse<Object> getChildcareEducation(String educationType, int pageNo, int numOfRows) {
-        try {
-            Map<String, String> params = new HashMap<>();
-            params.put("pageNo", String.valueOf(pageNo));
-            params.put("numOfRows", String.valueOf(numOfRows));
-            params.put("type", "json");
-            
-            if (educationType != null && !educationType.isEmpty()) {
-                params.put("educationType", educationType);
-            }
+        Map<String, String> params = new HashMap<>();
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("numOfRows", String.valueOf(numOfRows));
+        params.put("type", "json");
 
-            return apiClient.get("/getChildcareEducation", params, PublicDataResponse.class);
-        } catch (Exception e) {
-            log.error("육아 교육 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("육아 교육 정보 조회 실패", e);
+        if (educationType != null && !educationType.isEmpty()) {
+            params.put("educationType", educationType);
         }
+
+        return apiClient.get("/getChildcareEducation", params, PublicDataResponse.class);
     }
 
     /**
@@ -151,17 +126,12 @@ public class PublicDataApiService {
      * @return API 응답
      */
     public PublicDataResponse<Object> callCustomApi(String endpoint, Map<String, String> params) {
-        try {
-            if (params == null) {
-                params = new HashMap<>();
-            }
-            params.put("type", "json");
-
-            return apiClient.get(endpoint, params, PublicDataResponse.class);
-        } catch (Exception e) {
-            log.error("커스텀 API 호출 중 오류 발생: {} - {}", endpoint, e.getMessage(), e);
-            throw new RuntimeException("커스텀 API 호출 실패", e);
+        if (params == null) {
+            params = new HashMap<>();
         }
+        params.put("type", "json");
+
+        return apiClient.get(endpoint, params, PublicDataResponse.class);
     }
 
     /**
