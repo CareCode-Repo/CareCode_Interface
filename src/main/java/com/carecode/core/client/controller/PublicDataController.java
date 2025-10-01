@@ -35,19 +35,12 @@ public class PublicDataController {
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "1") int pageNo,
             @Parameter(description = "페이지당 행 수") @RequestParam(defaultValue = "10") int numOfRows) {
         
-        log.info("육아 시설 정보 조회 요청: region={}, pageNo={}, numOfRows={}", region, pageNo, numOfRows);
-        
-        try {
-            PublicDataResponse<Object> response = publicDataApiService.getChildcareFacilities(region, pageNo, numOfRows);
-            
-            if (publicDataApiService.validateResponse(response)) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
-        } catch (Exception e) {
-            log.error("육아 시설 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+        PublicDataResponse<Object> response = publicDataApiService.getChildcareFacilities(region, pageNo, numOfRows);
+
+        if (publicDataApiService.validateResponse(response)) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -61,19 +54,12 @@ public class PublicDataController {
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "1") int pageNo,
             @Parameter(description = "페이지당 행 수") @RequestParam(defaultValue = "10") int numOfRows) {
         
-        log.info("보육 정책 정보 조회 요청: policyType={}, pageNo={}, numOfRows={}", policyType, pageNo, numOfRows);
-        
-        try {
-            PublicDataResponse<Object> response = publicDataApiService.getChildcarePolicies(policyType, pageNo, numOfRows);
-            
-            if (publicDataApiService.validateResponse(response)) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
-        } catch (Exception e) {
-            log.error("보육 정책 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+        PublicDataResponse<Object> response = publicDataApiService.getChildcarePolicies(policyType, pageNo, numOfRows);
+
+        if (publicDataApiService.validateResponse(response)) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -86,20 +72,13 @@ public class PublicDataController {
             @Parameter(description = "지역명") @RequestParam(required = false) String region,
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "1") int pageNo,
             @Parameter(description = "페이지당 행 수") @RequestParam(defaultValue = "10") int numOfRows) {
-        
-        log.info("소아과 병원 정보 조회 요청: region={}, pageNo={}, numOfRows={}", region, pageNo, numOfRows);
-        
-        try {
-            PublicDataResponse<Object> response = publicDataApiService.getPediatricHospitals(region, pageNo, numOfRows);
-            
-            if (publicDataApiService.validateResponse(response)) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
-        } catch (Exception e) {
-            log.error("소아과 병원 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+
+        PublicDataResponse<Object> response = publicDataApiService.getPediatricHospitals(region, pageNo, numOfRows);
+
+        if (publicDataApiService.validateResponse(response)) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -113,19 +92,12 @@ public class PublicDataController {
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "1") int pageNo,
             @Parameter(description = "페이지당 행 수") @RequestParam(defaultValue = "10") int numOfRows) {
         
-        log.info("육아 지원금 정보 조회 요청: region={}, pageNo={}, numOfRows={}", region, pageNo, numOfRows);
-        
-        try {
-            PublicDataResponse<Object> response = publicDataApiService.getChildcareSubsidies(region, pageNo, numOfRows);
-            
-            if (publicDataApiService.validateResponse(response)) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
-        } catch (Exception e) {
-            log.error("육아 지원금 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+        PublicDataResponse<Object> response = publicDataApiService.getChildcareSubsidies(region, pageNo, numOfRows);
+
+        if (publicDataApiService.validateResponse(response)) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -139,19 +111,12 @@ public class PublicDataController {
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "1") int pageNo,
             @Parameter(description = "페이지당 행 수") @RequestParam(defaultValue = "10") int numOfRows) {
         
-        log.info("육아 교육 정보 조회 요청: educationType={}, pageNo={}, numOfRows={}", educationType, pageNo, numOfRows);
-        
-        try {
-            PublicDataResponse<Object> response = publicDataApiService.getChildcareEducation(educationType, pageNo, numOfRows);
-            
-            if (publicDataApiService.validateResponse(response)) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
-        } catch (Exception e) {
-            log.error("육아 교육 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+        PublicDataResponse<Object> response = publicDataApiService.getChildcareEducation(educationType, pageNo, numOfRows);
+
+        if (publicDataApiService.validateResponse(response)) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -164,19 +129,12 @@ public class PublicDataController {
             @Parameter(description = "API 엔드포인트") @PathVariable String endpoint,
             @Parameter(description = "쿼리 파라미터") @RequestParam Map<String, String> params) {
         
-        log.info("커스텀 API 호출 요청: endpoint={}, params={}", endpoint, params);
-        
-        try {
-            PublicDataResponse<Object> response = publicDataApiService.callCustomApi("/" + endpoint, params);
-            
-            if (publicDataApiService.validateResponse(response)) {
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body(response);
-            }
-        } catch (Exception e) {
-            log.error("커스텀 API 호출 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+        PublicDataResponse<Object> response = publicDataApiService.callCustomApi("/" + endpoint, params);
+
+        if (publicDataApiService.validateResponse(response)) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 } 

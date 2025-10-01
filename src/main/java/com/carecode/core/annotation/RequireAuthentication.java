@@ -12,6 +12,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequireAuthentication {
+    String message = "인증이 필요합니다.";
+
     String[] roles() default {};
-    String message() default "인증이 필요합니다.";
+    String message() default message;
 } 

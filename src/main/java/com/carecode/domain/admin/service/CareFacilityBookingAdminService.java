@@ -40,102 +40,88 @@ public class CareFacilityBookingAdminService {
      */
     @LogExecutionTime
     public CareFacilityBookingDto.AdminBookingSearchResponse getAllBookings(
-            CareFacilityBookingDto.AdminBookingSearchRequest request) {
-        log.info("관리자 예약 목록 조회: {}", request);
-        
-        try {
-            Pageable pageable = PageRequest.of(
-                    request.getPage() != null ? request.getPage() : 0,
-                    request.getSize() != null ? request.getSize() : 20,
-                    Sort.by(Sort.Direction.DESC, "createdAt")
-            );
-            
-            Page<CareFacilityBooking> bookingPage = bookingRepository.findAll(pageable);
-            
-            List<CareFacilityBookingDto.AdminBookingListResponse> bookings = bookingPage.getContent().stream()
-                    .map(this::convertToAdminListResponse)
-                    .collect(Collectors.toList());
-            
-            return CareFacilityBookingDto.AdminBookingSearchResponse.builder()
-                    .bookings(bookings)
-                    .totalElements(bookingPage.getTotalElements())
-                    .totalPages(bookingPage.getTotalPages())
-                    .currentPage(bookingPage.getNumber())
-                    .pageSize(bookingPage.getSize())
-                    .hasNext(bookingPage.hasNext())
-                    .hasPrevious(bookingPage.hasPrevious())
-                    .build();
+        CareFacilityBookingDto.AdminBookingSearchRequest request) {
+
+        Pageable pageable = PageRequest.of(
+                request.getPage() != null ? request.getPage() : 0,
+                request.getSize() != null ? request.getSize() : 20,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Page<CareFacilityBooking> bookingPage = bookingRepository.findAll(pageable);
+
+        List<CareFacilityBookingDto.AdminBookingListResponse> bookings = bookingPage.getContent().stream()
+                .map(this::convertToAdminListResponse)
+                .collect(Collectors.toList());
+
+        return CareFacilityBookingDto.AdminBookingSearchResponse.builder()
+                .bookings(bookings)
+                .totalElements(bookingPage.getTotalElements())
+                .totalPages(bookingPage.getTotalPages())
+                .currentPage(bookingPage.getNumber())
+                .pageSize(bookingPage.getSize())
+                .hasNext(bookingPage.hasNext())
+                .hasPrevious(bookingPage.hasPrevious())
+                .build();
                     
-        } catch (Exception e) {
-            log.error("관리자 예약 목록 조회 실패: {}", e.getMessage(), e);
-            throw new CareServiceException("예약 목록 조회 중 오류가 발생했습니다.", e);
-        }
     }
 
     /**
      * 조건별 예약 검색
      */
     @LogExecutionTime
-    public CareFacilityBookingDto.AdminBookingSearchResponse searchBookings(
-            CareFacilityBookingDto.AdminBookingSearchRequest request) {
-        log.info("관리자 예약 검색: {}", request);
-        
-        try {
-            Pageable pageable = PageRequest.of(
-                    request.getPage() != null ? request.getPage() : 0,
-                    request.getSize() != null ? request.getSize() : 20,
-                    Sort.by(Sort.Direction.DESC, "createdAt")
-            );
-            
-            // String을 enum으로 변환
-            CareFacilityBooking.BookingType bookingType = null;
-            if (request.getBookingType() != null && !request.getBookingType().trim().isEmpty()) {
-                try {
-                    bookingType = CareFacilityBooking.BookingType.valueOf(request.getBookingType().toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    log.warn("유효하지 않은 예약 타입: {}", request.getBookingType());
-                }
+    public CareFacilityBookingDto.AdminBookingSearchResponse searchBookings(CareFacilityBookingDto.AdminBookingSearchRequest request) {
+
+        Pageable pageable = PageRequest.of(
+                request.getPage() != null ? request.getPage() : 0,
+                request.getSize() != null ? request.getSize() : 20,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        // String을 enum으로 변환
+        CareFacilityBooking.BookingType bookingType = null;
+        if (request.getBookingType() != null && !request.getBookingType().trim().isEmpty()) {
+            try {
+                bookingType = CareFacilityBooking.BookingType.valueOf(request.getBookingType().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("유효하지 않은 예약 타입: {}", request.getBookingType());
             }
-            
-            CareFacilityBooking.BookingStatus status = null;
-            if (request.getStatus() != null && !request.getStatus().trim().isEmpty()) {
-                try {
-                    status = CareFacilityBooking.BookingStatus.valueOf(request.getStatus().toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    log.warn("유효하지 않은 예약 상태: {}", request.getStatus());
-                }
-            }
-            
-            // 검색 조건에 따른 쿼리 실행
-            Page<CareFacilityBooking> bookingPage = bookingRepository.findBySearchCriteria(
-                    request.getFacilityId(),
-                    request.getUserId(),
-                    bookingType,
-                    status,
-                    request.getStartDate(),
-                    request.getEndDate(),
-                    request.getKeyword(),
-                    pageable
-            );
-            
-            List<CareFacilityBookingDto.AdminBookingListResponse> bookings = bookingPage.getContent().stream()
-                    .map(this::convertToAdminListResponse)
-                    .collect(Collectors.toList());
-            
-            return CareFacilityBookingDto.AdminBookingSearchResponse.builder()
-                    .bookings(bookings)
-                    .totalElements(bookingPage.getTotalElements())
-                    .totalPages(bookingPage.getTotalPages())
-                    .currentPage(bookingPage.getNumber())
-                    .pageSize(bookingPage.getSize())
-                    .hasNext(bookingPage.hasNext())
-                    .hasPrevious(bookingPage.hasPrevious())
-                    .build();
-                    
-        } catch (Exception e) {
-            log.error("관리자 예약 검색 실패: {}", e.getMessage(), e);
-            throw new CareServiceException("예약 검색 중 오류가 발생했습니다.", e);
         }
+
+        CareFacilityBooking.BookingStatus status = null;
+        if (request.getStatus() != null && !request.getStatus().trim().isEmpty()) {
+            try {
+                status = CareFacilityBooking.BookingStatus.valueOf(request.getStatus().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("유효하지 않은 예약 상태: {}", request.getStatus());
+            }
+        }
+
+        // 검색 조건에 따른 쿼리 실행
+        Page<CareFacilityBooking> bookingPage = bookingRepository.findBySearchCriteria(
+                request.getFacilityId(),
+                request.getUserId(),
+                bookingType,
+                status,
+                request.getStartDate(),
+                request.getEndDate(),
+                request.getKeyword(),
+                pageable
+        );
+
+        List<CareFacilityBookingDto.AdminBookingListResponse> bookings = bookingPage.getContent().stream()
+                .map(this::convertToAdminListResponse)
+                .collect(Collectors.toList());
+
+        return CareFacilityBookingDto.AdminBookingSearchResponse.builder()
+                .bookings(bookings)
+                .totalElements(bookingPage.getTotalElements())
+                .totalPages(bookingPage.getTotalPages())
+                .currentPage(bookingPage.getNumber())
+                .pageSize(bookingPage.getSize())
+                .hasNext(bookingPage.hasNext())
+                .hasPrevious(bookingPage.hasPrevious())
+                .build();
     }
 
     /**
@@ -143,17 +129,10 @@ public class CareFacilityBookingAdminService {
      */
     @LogExecutionTime
     public CareFacilityBookingDto.AdminBookingDetailResponse getBookingDetail(Long bookingId) {
-        log.info("관리자 예약 상세 조회: 예약ID={}", bookingId);
-        
-        try {
-            CareFacilityBooking booking = bookingRepository.findById(bookingId)
-                    .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
-            
-            return convertToAdminDetailResponse(booking);
-        } catch (Exception e) {
-            log.error("관리자 예약 상세 조회 실패: {}", e.getMessage(), e);
-            throw new CareServiceException("예약 상세 조회 중 오류가 발생했습니다.", e);
-        }
+        CareFacilityBooking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
+
+        return convertToAdminDetailResponse(booking);
     }
 
     /**
@@ -161,11 +140,8 @@ public class CareFacilityBookingAdminService {
      */
     @LogExecutionTime
     @Transactional
-    public CareFacilityBookingDto.AdminBookingDetailResponse updateBookingStatus(
-            Long bookingId, CareFacilityBookingDto.AdminStatusUpdateRequest request) {
-        log.info("관리자 예약 상태 변경: 예약ID={}, 상태={}", bookingId, request.getStatus());
-        
-        try {
+    public CareFacilityBookingDto.AdminBookingDetailResponse updateBookingStatus(Long bookingId,
+                                                                                 CareFacilityBookingDto.AdminStatusUpdateRequest request) {
             CareFacilityBooking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
             
@@ -180,10 +156,6 @@ public class CareFacilityBookingAdminService {
             
             CareFacilityBooking savedBooking = bookingRepository.save(booking);
             return convertToAdminDetailResponse(savedBooking);
-        } catch (Exception e) {
-            log.error("관리자 예약 상태 변경 실패: {}", e.getMessage(), e);
-            throw new CareServiceException("예약 상태 변경 중 오류가 발생했습니다.", e);
-        }
     }
 
     /**
@@ -192,17 +164,10 @@ public class CareFacilityBookingAdminService {
     @LogExecutionTime
     @Transactional
     public void deleteBooking(Long bookingId) {
-        log.info("관리자 예약 삭제: 예약ID={}", bookingId);
-        
-        try {
-            CareFacilityBooking booking = bookingRepository.findById(bookingId)
-                    .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
-            
-            bookingRepository.delete(booking);
-        } catch (Exception e) {
-            log.error("관리자 예약 삭제 실패: {}", e.getMessage(), e);
-            throw new CareServiceException("예약 삭제 중 오류가 발생했습니다.", e);
-        }
+        CareFacilityBooking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
+
+        bookingRepository.delete(booking);
     }
 
     /**
@@ -210,57 +175,49 @@ public class CareFacilityBookingAdminService {
      */
     @LogExecutionTime
     public CareFacilityBookingDto.AdminBookingStatsResponse getBookingStats() {
-        log.info("관리자 예약 통계 조회");
-        
-        try {
-            // 전체 통계
-            long totalBookings = bookingRepository.count();
-            long pendingBookings = bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.PENDING);
-            long confirmedBookings = bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.CONFIRMED);
-            long completedBookings = bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.COMPLETED);
-            long cancelledBookings = bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.CANCELLED);
-            
-            // 기간별 통계
-            long todayBookings = bookingRepository.countTodayBookings();
-            long thisWeekBookings = bookingRepository.countThisWeekBookings();
-            long thisMonthBookings = bookingRepository.countThisMonthBookings();
-            
-            // 완료율 계산
-            double averageCompletionRate = totalBookings > 0 ? 
-                    (double) completedBookings / totalBookings * 100 : 0.0;
-            
-            // 상태별 분포
-            List<CareFacilityBookingDto.StatusDistribution> statusDistribution = getStatusDistribution();
-            
-            // 타입별 분포
-            List<CareFacilityBookingDto.TypeDistribution> typeDistribution = getTypeDistribution();
-            
-            // 시설별 분포
-            List<CareFacilityBookingDto.FacilityDistribution> facilityDistribution = getFacilityDistribution();
-            
-            // 일별 예약 수
-            List<CareFacilityBookingDto.DailyBookingCount> dailyBookingCounts = getDailyBookingCounts();
-            
-            return CareFacilityBookingDto.AdminBookingStatsResponse.builder()
-                    .totalBookings(totalBookings)
-                    .pendingBookings(pendingBookings)
-                    .confirmedBookings(confirmedBookings)
-                    .completedBookings(completedBookings)
-                    .cancelledBookings(cancelledBookings)
-                    .todayBookings(todayBookings)
-                    .thisWeekBookings(thisWeekBookings)
-                    .thisMonthBookings(thisMonthBookings)
-                    .averageCompletionRate(averageCompletionRate)
-                    .statusDistribution(statusDistribution)
-                    .typeDistribution(typeDistribution)
-                    .facilityDistribution(facilityDistribution)
-                    .dailyBookingCounts(dailyBookingCounts)
-                    .build();
-                    
-        } catch (Exception e) {
-            log.error("관리자 예약 통계 조회 실패: {}", e.getMessage(), e);
-            throw new CareServiceException("예약 통계 조회 중 오류가 발생했습니다.", e);
-        }
+        // 전체 통계
+        long totalBookings = bookingRepository.count();
+        long pendingBookings = bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.PENDING);
+        long confirmedBookings = bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.CONFIRMED);
+        long completedBookings = bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.COMPLETED);
+        long cancelledBookings = bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.CANCELLED);
+
+        // 기간별 통계
+        long todayBookings = bookingRepository.countTodayBookings();
+        long thisWeekBookings = bookingRepository.countThisWeekBookings();
+        long thisMonthBookings = bookingRepository.countThisMonthBookings();
+
+        // 완료율 계산
+        double averageCompletionRate = totalBookings > 0 ?
+                (double) completedBookings / totalBookings * 100 : 0.0;
+
+        // 상태별 분포
+        List<CareFacilityBookingDto.StatusDistribution> statusDistribution = getStatusDistribution();
+
+        // 타입별 분포
+        List<CareFacilityBookingDto.TypeDistribution> typeDistribution = getTypeDistribution();
+
+        // 시설별 분포
+        List<CareFacilityBookingDto.FacilityDistribution> facilityDistribution = getFacilityDistribution();
+
+        // 일별 예약 수
+        List<CareFacilityBookingDto.DailyBookingCount> dailyBookingCounts = getDailyBookingCounts();
+
+        return CareFacilityBookingDto.AdminBookingStatsResponse.builder()
+                .totalBookings(totalBookings)
+                .pendingBookings(pendingBookings)
+                .confirmedBookings(confirmedBookings)
+                .completedBookings(completedBookings)
+                .cancelledBookings(cancelledBookings)
+                .todayBookings(todayBookings)
+                .thisWeekBookings(thisWeekBookings)
+                .thisMonthBookings(thisMonthBookings)
+                .averageCompletionRate(averageCompletionRate)
+                .statusDistribution(statusDistribution)
+                .typeDistribution(typeDistribution)
+                .facilityDistribution(facilityDistribution)
+                .dailyBookingCounts(dailyBookingCounts)
+                .build();
     }
 
     /**

@@ -72,9 +72,8 @@ public class PublicDataApiClient {
     public <T> T post(String endpoint, Object requestBody, Class<T> responseType) {
         try {
             String url = baseUrl + endpoint;
-            log.info("공공데이터 API POST 호출: {}", url);
-
             HttpHeaders headers = new HttpHeaders();
+
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("serviceKey", apiKey);
 
@@ -82,14 +81,11 @@ public class PublicDataApiClient {
             ResponseEntity<T> response = restTemplate.postForEntity(url, entity, responseType);
 
             if (response.getStatusCode() == HttpStatus.OK) {
-                log.info("공공데이터 API POST 호출 성공: {}", endpoint);
                 return response.getBody();
             } else {
-                log.error("공공데이터 API POST 호출 실패: {} - {}", endpoint, response.getStatusCode());
                 throw new RuntimeException("API POST 호출 실패: " + response.getStatusCode());
             }
         } catch (Exception e) {
-            log.error("공공데이터 API POST 호출 중 오류 발생: {} - {}", endpoint, e.getMessage(), e);
             throw new RuntimeException("API POST 호출 중 오류 발생", e);
         }
     }
@@ -104,36 +100,27 @@ public class PublicDataApiClient {
      */
     public <T> T getWithHeaders(String endpoint, Map<String, String> params, 
                                Map<String, String> headers, Class<T> responseType) {
-        try {
-            UriComponentsBuilder builder = UriComponentsBuilder
-                    .fromHttpUrl(baseUrl + endpoint)
-                    .queryParam("serviceKey", apiKey);
+        UriComponentsBuilder builder = UriComponentsBuilder
+                .fromHttpUrl(baseUrl + endpoint)
+                .queryParam("serviceKey", apiKey);
 
-            if (params != null) {
-                params.forEach(builder::queryParam);
-            }
+        if (params != null) {
+            params.forEach(builder::queryParam);
+        }
 
-            String url = builder.toUriString();
-            log.info("공공데이터 API 헤더 포함 호출: {}", url);
+        String url = builder.toUriString();
+        HttpHeaders httpHeaders = new HttpHeaders();
+        if (headers != null) {
+            headers.forEach(httpHeaders::add);
+        }
 
-            HttpHeaders httpHeaders = new HttpHeaders();
-            if (headers != null) {
-                headers.forEach(httpHeaders::add);
-            }
+        HttpEntity<String> entity = new HttpEntity<>(httpHeaders);
+        ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET, entity, responseType);
 
-            HttpEntity<String> entity = new HttpEntity<>(httpHeaders);
-            ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET, entity, responseType);
-
-            if (response.getStatusCode() == HttpStatus.OK) {
-                log.info("공공데이터 API 헤더 포함 호출 성공: {}", endpoint);
-                return response.getBody();
-            } else {
-                log.error("공공데이터 API 헤더 포함 호출 실패: {} - {}", endpoint, response.getStatusCode());
-                throw new RuntimeException("API 헤더 포함 호출 실패: " + response.getStatusCode());
-            }
-        } catch (Exception e) {
-            log.error("공공데이터 API 헤더 포함 호출 중 오류 발생: {} - {}", endpoint, e.getMessage(), e);
-            throw new RuntimeException("API 헤더 포함 호출 중 오류 발생", e);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return response.getBody();
+        } else {
+            throw new RuntimeException("API 헤더 포함 호출 실패: " + response.getStatusCode());
         }
     }
 

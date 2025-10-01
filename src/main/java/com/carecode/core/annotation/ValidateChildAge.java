@@ -12,7 +12,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidateChildAge {
+    String message = "자녀 연령이 유효하지 않습니다.";
+
     int minAge() default 0;
     int maxAge() default 12;
-    String message() default "자녀 연령이 유효하지 않습니다.";
+    String message() default message;
 } 
