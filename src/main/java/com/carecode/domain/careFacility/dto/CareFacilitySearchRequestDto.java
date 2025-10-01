@@ -1,5 +1,6 @@
 package com.carecode.domain.careFacility.dto;
 
+import com.carecode.domain.careFacility.entity.FacilityType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -17,7 +18,7 @@ import lombok.Builder;
 public class CareFacilitySearchRequestDto {
     
     private String keyword;
-    private String facilityType;
+    private FacilityType facilityType;
     private String region;
     private Double latitude;
     private Double longitude;

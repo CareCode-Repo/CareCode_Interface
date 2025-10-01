@@ -48,7 +48,6 @@ public class CommonUtil {
 
     }
 
-
     /**
      * HttpServletRequest to HashMap
      *

@@ -91,11 +91,28 @@ public class HealthService {
     }
 
     /**
-     * 사용자별 건강 기록 조회
+     * 사용자별 건강 기록 조회 (DTO 반환)
      */
     @LogExecutionTime
     public List<HealthResponseDto.HealthRecordResponse> getHealthRecordsByUserId(String userId) {
         log.info("사용자별 건강 기록 조회: 사용자ID={}", userId);
+        try {
+            List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
+            return records.stream()
+                    .map(this::convertToResponseDto)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("사용자별 건강 기록 조회 실패: {}", e.getMessage());
+            throw new CareServiceException("사용자별 건강 기록 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 사용자별 건강 기록 조회 (Entity 반환)
+     */
+    @LogExecutionTime
+    public List<HealthRecord> getHealthRecordsByUserIdAsEntity(String userId) {
+        log.info("사용자별 건강 기록 조회 (Entity): 사용자ID={}", userId);
         try {
             // userId(문자열)로 먼저 조회
             Optional<User> userOpt = userRepository.findByUserId(userId);
@@ -112,10 +129,7 @@ public class HealthService {
                     throw new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId);
                 }
             }
-            List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
-            return records.stream()
-                    .map(this::convertToResponseDto)
-                    .collect(Collectors.toList());
+            return healthRecordRepository.findByUserOrderByRecordDateDesc(user);
         } catch (Exception e) {
             log.error("사용자별 건강 기록 조회 실패: {}", e.getMessage());
             throw new CareServiceException("사용자별 건강 기록 조회 중 오류가 발생했습니다.", e);
@@ -215,44 +229,7 @@ public class HealthService {
         }
     }
 
-    /**
-     * 건강 통계 조회
-     */
-    @LogExecutionTime
-    public Map<String, Object> getHealthStatistics(String userId) {
-        log.info("건강 통계 조회: 사용자ID={}", userId);
-        try {
-            // userId(문자열)로 먼저 조회
-            Optional<User> userOpt = userRepository.findByUserId(userId);
-            User user;
-            if (userOpt.isPresent()) {
-                user = userOpt.get();
-            } else {
-                // userId가 숫자라면 PK(id)로도 조회 시도
-                try {
-                    Long id = Long.parseLong(userId);
-                    user = userRepository.findById(id)
-                        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId);
-                }
-            }
-            List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
-            Map<String, Object> statistics = new HashMap<>();
-            statistics.put("userId", userId);
-            statistics.put("totalRecords", records.size());
-            statistics.put("completedVaccines", countCompletedVaccines(records));
-            statistics.put("pendingVaccines", countPendingVaccines(records));
-            statistics.put("completedCheckups", countCompletedCheckups(records));
-            statistics.put("pendingCheckups", countPendingCheckups(records));
-            statistics.put("recordTypeDistribution", calculateRecordTypeDistribution(records));
-            statistics.put("upcomingEvents", generateUpcomingEvents(records));
-            return statistics;
-        } catch (Exception e) {
-            log.error("건강 통계 조회 실패: {}", e.getMessage());
-            throw new CareServiceException("건강 통계 조회 중 오류가 발생했습니다.", e);
-        }
-    }
+
 
     /**
      * 건강 리포트 생성
@@ -306,8 +283,21 @@ public class HealthService {
         log.info("건강 목표 조회: 사용자ID={}", userId);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+            // userId(문자열)로 먼저 조회
+            Optional<User> userOpt = userRepository.findByUserId(userId);
+            User user;
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+            } else {
+                // userId가 숫자라면 PK(id)로도 조회 시도
+                try {
+                    Long id = Long.parseLong(userId);
+                    user = userRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId);
+                }
+            }
             
             List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
             
@@ -520,5 +510,135 @@ public class HealthService {
         progress.put("nutrition", 85); // 임시 값
         
         return progress;
+    }
+
+    /**
+     * 건강 통계 조회
+     */
+    @LogExecutionTime
+    public HealthResponseDto.HealthStatsResponse getHealthStatistics(String userId) {
+        log.info("건강 통계 조회: 사용자ID={}", userId);
+        
+        try {
+            List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
+            
+            return HealthResponseDto.HealthStatsResponse.builder()
+                    .totalRecords(records.size())
+                    .completedVaccines(countCompletedVaccines(records))
+                    .pendingVaccines(countPendingVaccines(records))
+                    .completedCheckups(countCompletedCheckups(records))
+                    .pendingCheckups(countPendingCheckups(records))
+                    .recordTypeDistribution(calculateRecordTypeDistribution(records))
+                    .upcomingEvents(generateUpcomingEvents(records))
+                    .build();
+        } catch (Exception e) {
+            log.error("건강 통계 조회 실패: {}", e.getMessage());
+            throw new CareServiceException("건강 통계 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 예방접종 스케줄 조회
+     */
+    @LogExecutionTime
+    public List<HealthResponseDto.VaccineScheduleResponse> getVaccineSchedule(String childId) {
+        log.info("예방접종 스케줄 조회: 아동ID={}", childId);
+        
+        try {
+            List<HealthRecord> vaccineRecords = healthRecordRepository.findByChildIdAndRecordType(
+                    Long.valueOf(childId), HealthRecord.RecordType.VACCINATION);
+            
+            return vaccineRecords.stream()
+                    .map(this::convertToVaccineScheduleResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("예방접종 스케줄 조회 실패: {}", e.getMessage());
+            throw new CareServiceException("예방접종 스케줄 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 건강 검진 스케줄 조회
+     */
+    @LogExecutionTime
+    public List<HealthResponseDto.CheckupScheduleResponse> getCheckupSchedule(String childId) {
+        log.info("건강 검진 스케줄 조회: 아동ID={}", childId);
+        
+        try {
+            List<HealthRecord> checkupRecords = healthRecordRepository.findByChildIdAndRecordType(
+                    Long.valueOf(childId), HealthRecord.RecordType.CHECKUP);
+            
+            return checkupRecords.stream()
+                    .map(this::convertToCheckupScheduleResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("건강 검진 스케줄 조회 실패: {}", e.getMessage());
+            throw new CareServiceException("건강 검진 스케줄 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 건강 알림 조회
+     */
+    @LogExecutionTime
+    public List<HealthResponseDto.HealthAlertResponse> getHealthAlerts(String userId) {
+        log.info("건강 알림 조회: 사용자ID={}", userId);
+        
+        try {
+            List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
+            
+            return records.stream()
+                    .filter(r -> r.getNextDate() != null && r.getNextDate().isAfter(java.time.LocalDate.now()))
+                    .map(this::convertToHealthAlertResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("건강 알림 조회 실패: {}", e.getMessage());
+            throw new CareServiceException("건강 알림 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 예방접종 스케줄 응답 DTO 변환
+     */
+    private HealthResponseDto.VaccineScheduleResponse convertToVaccineScheduleResponse(HealthRecord record) {
+        return HealthResponseDto.VaccineScheduleResponse.builder()
+                .vaccineName(record.getTitle())
+                .description(record.getDescription())
+                .recommendedAge(null) // 나이 정보는 별도 계산 필요
+                .status(Boolean.TRUE.equals(record.getIsCompleted()) ? "COMPLETED" : "UPCOMING")
+                .scheduledDate(record.getRecordDate() != null ? record.getRecordDate().toString() : null)
+                .completedDate(Boolean.TRUE.equals(record.getIsCompleted()) ? record.getUpdatedAt().toString() : null)
+                .notes(record.getDescription())
+                .build();
+    }
+
+    /**
+     * 건강 검진 스케줄 응답 DTO 변환
+     */
+    private HealthResponseDto.CheckupScheduleResponse convertToCheckupScheduleResponse(HealthRecord record) {
+        return HealthResponseDto.CheckupScheduleResponse.builder()
+                .checkupName(record.getTitle())
+                .description(record.getDescription())
+                .recommendedAge(null) // 나이 정보는 별도 계산 필요
+                .status(Boolean.TRUE.equals(record.getIsCompleted()) ? "COMPLETED" : "UPCOMING")
+                .scheduledDate(record.getRecordDate() != null ? record.getRecordDate().toString() : null)
+                .completedDate(Boolean.TRUE.equals(record.getIsCompleted()) ? record.getUpdatedAt().toString() : null)
+                .notes(record.getDescription())
+                .build();
+    }
+
+    /**
+     * 건강 알림 응답 DTO 변환
+     */
+    private HealthResponseDto.HealthAlertResponse convertToHealthAlertResponse(HealthRecord record) {
+        return HealthResponseDto.HealthAlertResponse.builder()
+                .alertId(record.getId().toString())
+                .alertType(record.getRecordType().name())
+                .title(record.getTitle())
+                .message(record.getDescription())
+                .priority("MEDIUM")
+                .dueDate(record.getNextDate() != null ? record.getNextDate().toString() : null)
+                .isRead(false)
+                .build();
     }
 } 

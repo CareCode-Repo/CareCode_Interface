@@ -42,7 +42,7 @@ public class EmailVerificationService {
 
         String subject = "[CareCode] 이메일 인증 안내";
         String text = "아래 링크를 클릭하여 이메일 인증을 완료해 주세요.\n" +
-                "http://localhost:8080/users/verify?token=" + token;
+                "http://13.209.36.209:8081/users/verify?token=" + token;
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(user.getEmail());

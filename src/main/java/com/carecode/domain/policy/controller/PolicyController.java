@@ -32,6 +32,7 @@ import java.util.Map;
 @RequestMapping("/policies")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins = "*", allowedHeaders = "*") // CORS 허용
 @Tag(name = "육아 정책", description = "육아 정책 정보 및 검색 API")
 public class PolicyController extends BaseController {
 
@@ -249,6 +250,28 @@ public class PolicyController extends BaseController {
             return ResponseEntity.ok(Map.of("message", "조회수가 증가되었습니다."));
         } catch (PolicyNotFoundException e) {
             log.error("정책을 찾을 수 없음: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 정책 카테고리 목록 조회
+     */
+    @GetMapping("/categories")
+    @LogExecutionTime
+    @Operation(summary = "정책 카테고리 목록 조회", description = "사용 가능한 정책 카테고리 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "카테고리 목록 조회 성공"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<String>> getPolicyCategories() {
+        log.info("정책 카테고리 목록 조회");
+        
+        try {
+            List<String> categories = policyService.getPolicyCategories();
+            return ResponseEntity.ok(categories);
+        } catch (CareServiceException e) {
+            log.error("정책 카테고리 목록 조회 오류: {}", e.getMessage());
             throw e;
         }
     }

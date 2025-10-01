@@ -104,9 +104,9 @@ public class ChatbotService {
         log.info("챗봇 메시지 처리: 사용자ID={}, 메시지={}", request.getUserId(), request.getMessage());
         
         try {
-            // 사용자 조회
+            // 사용자 조회 (없으면 임시 사용자 생성)
             User user = userRepository.findByUserId(request.getUserId())
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다."));
+                    .orElseGet(() -> createTemporaryUser(request.getUserId()));
             
             // 세션 관리
             ChatSession session = getOrCreateSession(user, request.getSessionId());
@@ -135,7 +135,11 @@ public class ChatbotService {
                     
         } catch (Exception e) {
             log.error("챗봇 메시지 처리 중 오류 발생: {}", e.getMessage(), e);
-            throw new CareServiceException("챗봇 메시지 처리 중 오류가 발생했습니다.", e);
+            // 상세한 오류 정보 로깅
+            if (e.getCause() != null) {
+                log.error("원인: {}", e.getCause().getMessage());
+            }
+            throw new CareServiceException("챗봇 메시지 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 
@@ -148,7 +152,7 @@ public class ChatbotService {
         
         try {
             User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다."));
+                    .orElseGet(() -> createTemporaryUser(userId));
             
             Pageable pageable = PageRequest.of(page, size);
             Page<ChatMessage> messages;
@@ -178,7 +182,7 @@ public class ChatbotService {
         
         try {
             User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다."));
+                    .orElseGet(() -> createTemporaryUser(userId));
             
             Pageable pageable = PageRequest.of(page, size);
             Page<ChatSession> sessions = chatSessionRepository.findByUserOrderByCreatedAtDesc(user, pageable);
@@ -234,12 +238,35 @@ public class ChatbotService {
                 .sessionId(sessionId)
                 .user(user)
                 .title("새로운 대화")
+                .description("챗봇과의 대화 세션")
                 .status(ChatSession.SessionStatus.ACTIVE)
                 .messageCount(0)
                 .lastActivityAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
         
         return chatSessionRepository.save(session);
+    }
+
+    /**
+     * 임시 사용자 생성
+     */
+    private User createTemporaryUser(String userId) {
+        log.info("임시 사용자 생성: 사용자ID={}", userId);
+        
+        User temporaryUser = User.builder()
+                .userId(userId)
+                .name("게스트 사용자")
+                .email("guest@" + userId + ".temp")
+                .password("temp_password_123") // 임시 비밀번호 설정
+                .phoneNumber("000-0000-0000")
+                .role(User.UserRole.GUEST)
+                .isActive(true)
+                .emailVerified(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        
+        return userRepository.save(temporaryUser);
     }
 
     /**
@@ -319,7 +346,8 @@ public class ChatbotService {
      * 인사 응답 생성
      */
     private String generateGreetingResponse(User user) {
-        return String.format("안녕하세요, %s님! 육아에 관한 궁금한 점이 있으시면 언제든 물어보세요. 건강, 정책, 시설, 교육 등 다양한 정보를 제공해드릴 수 있습니다.", user.getName());
+        String userName = user.getName() != null ? user.getName() : "게스트";
+        return String.format("안녕하세요, %s님! 육아에 관한 궁금한 점이 있으시면 언제든 물어보세요. 건강, 정책, 시설, 교육 등 다양한 정보를 제공해드릴 수 있습니다.", userName);
     }
 
     /**
@@ -418,10 +446,12 @@ public class ChatbotService {
                 .user(user)
                 .message(message)
                 .response(response)
-                .messageType(ChatMessage.MessageType.USER)
+                .messageType(ChatMessage.MessageType.BOT)
                 .intentType(intentType)
                 .confidence(confidence)
                 .sessionId(session.getSessionId())
+                .isHelpful(null)
+                .createdAt(LocalDateTime.now())
                 .build();
         
         return chatMessageRepository.save(chatMessage);

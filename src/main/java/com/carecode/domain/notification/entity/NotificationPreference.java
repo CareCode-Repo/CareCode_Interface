@@ -36,15 +36,19 @@ public class NotificationPreference {
     private Notification.NotificationType notificationType;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean emailEnabled = true;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean pushEnabled = true;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean smsEnabled = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean inAppEnabled = true;
 
     @Column

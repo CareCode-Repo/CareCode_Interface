@@ -37,20 +37,27 @@ public class JwtService {
      * Access Token 생성
      */
     public String generateAccessToken(String userId, String email, String role) {
-        return generateToken(userId, email, role, accessTokenExpiration);
+        return generateToken(userId, email, role, null, accessTokenExpiration);
+    }
+
+    /**
+     * Access Token 생성 (name 포함)
+     */
+    public String generateAccessToken(String userId, String email, String role, String name) {
+        return generateToken(userId, email, role, name, accessTokenExpiration);
     }
 
     /**
      * Refresh Token 생성
      */
     public String generateRefreshToken(String userId, String email) {
-        return generateToken(userId, email, null, refreshTokenExpiration);
+        return generateToken(userId, email, null, null, refreshTokenExpiration);
     }
 
     /**
      * 토큰 생성
      */
-    private String generateToken(String userId, String email, String role, long expiration) {
+    private String generateToken(String userId, String email, String role, String name, long expiration) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
@@ -59,6 +66,9 @@ public class JwtService {
         claims.put("email", email);
         if (role != null) {
             claims.put("role", role);
+        }
+        if (name != null) {
+            claims.put("name", name);
         }
 
         return Jwts.builder()
@@ -82,12 +92,26 @@ public class JwtService {
     public String getEmailFromToken(String token) {
         return getClaimFromToken(token, "email", String.class);
     }
+    
+    /**
+     * 토큰에서 이메일 추출 (별칭 메서드)
+     */
+    public String extractEmailFromToken(String token) {
+        return getEmailFromToken(token);
+    }
 
     /**
      * 토큰에서 역할 추출
      */
     public String getRoleFromToken(String token) {
         return getClaimFromToken(token, "role", String.class);
+    }
+
+    /**
+     * 토큰에서 이름 추출
+     */
+    public String getNameFromToken(String token) {
+        return getClaimFromToken(token, "name", String.class);
     }
 
     /**

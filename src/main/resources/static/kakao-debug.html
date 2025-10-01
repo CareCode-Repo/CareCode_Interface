@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카카오 OAuth 디버깅</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        .step h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .btn {
+            background: #FEE500;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #FFD700;
+            transform: translateY(-2px);
+        }
+        .result {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .url-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 카카오 OAuth 디버깅</h1>
+            <p>단계별로 카카오 OAuth 플로우를 디버깅합니다.</p>
+        </div>
+
+        <!-- 1단계: 설정 확인 -->
+        <div class="step">
+            <h3>1️⃣ 설정 확인</h3>
+            <button class="btn" onclick="checkConfig()">설정 정보 확인</button>
+            <div id="configResult" class="result info" style="display: none;"></div>
+        </div>
+
+        <!-- 2단계: 인증 URL 생성 -->
+        <div class="step">
+            <h3>2️⃣ 인증 URL 생성</h3>
+            <button class="btn" onclick="generateAuthUrl()">인증 URL 생성</button>
+            <div id="authUrlResult" class="result info" style="display: none;"></div>
+        </div>
+
+        <!-- 3단계: 인증 코드 입력 -->
+        <div class="step">
+            <h3>3️⃣ 인증 코드 입력</h3>
+            <div class="input-group">
+                <label for="authCode">카카오 인증 코드:</label>
+                <input type="text" id="authCode" placeholder="카카오에서 받은 인증 코드를 입력하세요">
+            </div>
+            <button class="btn" onclick="validateCode()">인증 코드 검증</button>
+            <div id="codeValidationResult" class="result info" style="display: none;"></div>
+        </div>
+
+        <!-- 4단계: 토큰 요청 테스트 -->
+        <div class="step">
+            <h3>4️⃣ 토큰 요청 테스트</h3>
+            <button class="btn" onclick="testTokenRequest()">토큰 요청 테스트</button>
+            <div id="tokenResult" class="result info" style="display: none;"></div>
+        </div>
+
+        <!-- 5단계: 프로필 요청 테스트 -->
+        <div class="step">
+            <h3>5️⃣ 프로필 요청 테스트</h3>
+            <div class="input-group">
+                <label for="accessToken">액세스 토큰:</label>
+                <input type="text" id="accessToken" placeholder="액세스 토큰을 입력하세요">
+            </div>
+            <button class="btn" onclick="testProfileRequest()">프로필 요청 테스트</button>
+            <div id="profileResult" class="result info" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 설정 확인
+        async function checkConfig() {
+            try {
+                showResult('configResult', '설정 정보를 확인하는 중...', 'info');
+                
+                const response = await fetch('/oauth2/config/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('configResult', 
+                        `✅ 설정 정보 확인 성공!\n\n` +
+                        `카카오 설정:\n` +
+                        `- 활성화: ${data.config.kakao.enabled}\n` +
+                        `- 클라이언트 ID: ${data.config.kakao.clientId}\n` +
+                        `- 리다이렉트 URI: ${data.config.kakao.redirectUri}\n` +
+                        `- 스코프: ${data.config.kakao.scope}\n` +
+                        `- 인증 URI: ${data.config.kakao.authorizationUri}\n` +
+                        `- 토큰 URI: ${data.config.kakao.tokenUri}\n` +
+                        `- 사용자 정보 URI: ${data.config.kakao.userInfoUri}`, 
+                        'success'
+                    );
+                } else {
+                    showResult('configResult', `❌ 설정 정보 확인 실패: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('configResult', `❌ 오류 발생: ${error.message}`, 'error');
+            }
+        }
+
+        // 인증 URL 생성
+        async function generateAuthUrl() {
+            try {
+                showResult('authUrlResult', '인증 URL을 생성하는 중...', 'info');
+                
+                const response = await fetch('/oauth2/kakao/auth-url');
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('authUrlResult', 
+                        `✅ 인증 URL 생성 성공!\n\n` +
+                        `URL: ${data.authUrl}\n\n` +
+                        `클라이언트 ID: ${data.clientId}\n` +
+                        `리다이렉트 URI: ${data.redirectUri}\n\n` +
+                        `위 URL로 이동하여 카카오 로그인을 진행하세요.`, 
+                        'success'
+                    );
+                } else {
+                    showResult('authUrlResult', `❌ 인증 URL 생성 실패: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('authUrlResult', `❌ 오류 발생: ${error.message}`, 'error');
+            }
+        }
+
+        // 인증 코드 검증
+        function validateCode() {
+            const code = document.getElementById('authCode').value.trim();
+            if (!code) {
+                showResult('codeValidationResult', '❌ 인증 코드를 입력해주세요.', 'error');
+                return;
+            }
+
+            showResult('codeValidationResult', 
+                `✅ 인증 코드 입력됨\n\n` +
+                `코드: ${code}\n` +
+                `길이: ${code.length}자\n` +
+                `형식: ${code.includes('-') ? '올바름' : '의심스러움'}\n\n` +
+                `이제 토큰 요청을 테스트해보세요.`, 
+                'success'
+            );
+        }
+
+        // 토큰 요청 테스트
+        async function testTokenRequest() {
+            const code = document.getElementById('authCode').value.trim();
+            if (!code) {
+                showResult('tokenResult', '❌ 인증 코드를 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                showResult('tokenResult', 'OAuth 처리 테스트 중...', 'info');
+                
+                const response = await fetch('/api/auth/kakao/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `code=${encodeURIComponent(code)}`
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const action = data.isNewUser ? '회원가입' : '로그인';
+                    showResult('tokenResult', 
+                        `✅ OAuth 처리 성공!\n\n` +
+                        `처리 결과: ${action}\n\n` +
+                        `사용자 정보: ${JSON.stringify(data.user, null, 2)}\n\n` +
+                        `액세스 토큰: ${data.accessToken}`, 
+                        'success'
+                    );
+                    
+                    // 액세스 토큰을 프로필 테스트용 입력란에 자동 입력
+                    document.getElementById('accessToken').value = data.accessToken;
+                } else {
+                    showResult('tokenResult', 
+                        `❌ OAuth 처리 실패\n\n` +
+                        `상태 코드: ${response.status}\n` +
+                        `응답: ${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showResult('tokenResult', `❌ 오류 발생: ${error.message}`, 'error');
+            }
+        }
+
+        // 프로필 요청 테스트
+        async function testProfileRequest() {
+            const token = document.getElementById('accessToken').value.trim();
+            if (!token) {
+                showResult('profileResult', '❌ 액세스 토큰을 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                showResult('profileResult', '프로필 요청을 테스트하는 중...', 'info');
+                
+                const response = await fetch('https://kapi.kakao.com/v2/user/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('profileResult', 
+                        `✅ 프로필 요청 성공!\n\n` +
+                        `사용자 정보: ${JSON.stringify(data, null, 2)}`, 
+                        'success'
+                    );
+                } else {
+                    showResult('profileResult', 
+                        `❌ 프로필 요청 실패\n\n` +
+                        `상태 코드: ${response.status}\n` +
+                        `응답: ${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showResult('profileResult', `❌ 오류 발생: ${error.message}`, 'error');
+            }
+        }
+
+        // 결과 표시
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

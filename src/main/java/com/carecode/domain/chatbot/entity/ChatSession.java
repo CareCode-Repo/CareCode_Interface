@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 사용자별 대화 세션 정보를 관리
  */
 @Entity
-@Table(name = "chat_sessions")
+@Table(name = "TBL_CHAT_SESSIONS")
 @Getter
 @Setter
 @NoArgsConstructor

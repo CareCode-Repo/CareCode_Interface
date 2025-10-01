@@ -1,0 +1,5862 @@
+= CareCode API 문서
+:toc: left
+:toclevels: 3
+:sectnums:
+:source-highlighter: highlightjs
+:icons: font
+
+== 개요
+
+이 문서는 실제 Swagger JSON에서 동적으로 생성되었습니다.
+모든 API 엔드포인트, 파라미터, 요청/응답 예제가 포함되어 있습니다.
+
+=== API 정보
+
+* **제목**: CareCode API
+* **버전**: 1.0.0
+* **설명**: 육아 지원 플랫폼 맘편한의 REST API 문서
+* **Base URL**: `http://localhost:8080`
+* **인증**: JWT Bearer Token
+
+== 인증
+
+=== JWT 토큰
+
+API 요청 시 Authorization 헤더에 JWT 토큰을 포함해야 합니다:
+
+[source,http]
+----
+Authorization: Bearer <your-jwt-token>
+----
+
+== API 엔드포인트
+
+=== 사용자 관리
+
+==== 사용자 프로필 조회
+특정 사용자의 프로필 정보를 조회합니다.
+
+[source,http]
+----
+GET /users/{userId}
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `UserDto`
+* `404` - 사용자를 찾을 수 없음
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+==== 사용자 프로필 업데이트
+사용자의 프로필 정보를 업데이트합니다.
+
+[source,http]
+----
+PUT /users/{userId}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `UserDto`
+* `404` - 사용자를 찾을 수 없음
+  * 응답 타입: `UserDto`
+* `400` - 잘못된 요청
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 업데이트 성공
+  * 응답 타입: `UserDto`
+
+==== 사용자 삭제
+특정 사용자를 삭제합니다.
+
+[source,http]
+----
+DELETE /users/{userId}
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 삭제 성공
+
+==== 사용자 프로필 조회
+특정 사용자의 프로필 정보를 조회합니다.
+
+[source,http]
+----
+GET /users/{userId}
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `UserDto`
+* `404` - 사용자를 찾을 수 없음
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+==== 사용자 프로필 업데이트
+사용자의 프로필 정보를 업데이트합니다.
+
+[source,http]
+----
+PUT /users/{userId}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `UserDto`
+* `404` - 사용자를 찾을 수 없음
+  * 응답 타입: `UserDto`
+* `400` - 잘못된 요청
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 업데이트 성공
+  * 응답 타입: `UserDto`
+
+==== 사용자 삭제
+특정 사용자를 삭제합니다.
+
+[source,http]
+----
+DELETE /users/{userId}
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 삭제 성공
+
+==== 사용자 프로필 조회
+특정 사용자의 프로필 정보를 조회합니다.
+
+[source,http]
+----
+GET /users/{userId}
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `UserDto`
+* `404` - 사용자를 찾을 수 없음
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+==== 사용자 프로필 업데이트
+사용자의 프로필 정보를 업데이트합니다.
+
+[source,http]
+----
+PUT /users/{userId}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `UserDto`
+* `404` - 사용자를 찾을 수 없음
+  * 응답 타입: `UserDto`
+* `400` - 잘못된 요청
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 업데이트 성공
+  * 응답 타입: `UserDto`
+
+==== 사용자 삭제
+특정 사용자를 삭제합니다.
+
+[source,http]
+----
+DELETE /users/{userId}
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 삭제 성공
+
+==== 사용자 인증
+사용자 계정을 인증합니다.
+
+[source,http]
+----
+PUT /users/{userId}/verify
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 인증 성공
+
+==== 프로필 이미지 업데이트
+사용자의 프로필 이미지를 업데이트합니다.
+
+[source,http]
+----
+PUT /users/{userId}/profile-image
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+* `profileImageUrl` (query) **필수** - 프로필 이미지 URL
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 프로필 이미지 업데이트 성공
+* `400` - 잘못된 이미지 URL
+
+==== 비밀번호 변경
+사용자의 비밀번호를 변경합니다.
+
+[source,http]
+----
+PUT /users/{userId}/password
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `400` - 잘못된 요청
+* `500` - 서버 오류
+* `200` - 비밀번호 변경 성공
+
+==== 사용자 위치 업데이트
+사용자의 위치 정보를 업데이트합니다.
+
+[source,http]
+----
+PUT /users/{userId}/location
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+* `latitude` (query) **필수** - 위도
+  * 타입: `number`
+  * 형식: `double`
+* `longitude` (query) **필수** - 경도
+  * 타입: `number`
+  * 형식: `double`
+
+**응답:**
+
+* `401` - 인증 필요
+* `200` - 위치 업데이트 성공
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `400` - 잘못된 위치 정보
+
+==== 사용자 비활성화
+사용자 계정을 비활성화합니다.
+
+[source,http]
+----
+PUT /users/{userId}/deactivate
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 비활성화 성공
+
+==== 사용자 활성화
+사용자 계정을 활성화합니다.
+
+[source,http]
+----
+PUT /users/{userId}/activate
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `200` - 활성화 성공
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+
+==== 사용자 목록 조회
+모든 사용자 목록을 조회합니다.
+
+[source,http]
+----
+GET /users
+Authorization: Bearer <token>
+----
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+==== 사용자 등록
+새로운 사용자를 등록합니다.
+
+[source,http]
+----
+POST /users
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `400` - 잘못된 요청
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 등록 성공
+  * 응답 타입: `UserDto`
+* `409` - 이미 존재하는 사용자
+  * 응답 타입: `UserDto`
+
+==== 사용자 목록 조회
+모든 사용자 목록을 조회합니다.
+
+[source,http]
+----
+GET /users
+Authorization: Bearer <token>
+----
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+==== 사용자 등록
+새로운 사용자를 등록합니다.
+
+[source,http]
+----
+POST /users
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `400` - 잘못된 요청
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 등록 성공
+  * 응답 타입: `UserDto`
+* `409` - 이미 존재하는 사용자
+  * 응답 타입: `UserDto`
+
+==== 사용자 로그인 (Deprecated)
+이 메서드는 더 이상 사용되지 않습니다. /auth/login을 사용하세요.
+
+[source,http]
+----
+POST /users/login
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `200` - 로그인 성공
+  * 응답 타입: `UserDto`
+* `401` - 로그인 실패
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+
+==== 인증된 사용자 조회
+인증이 완료된 사용자 목록을 조회합니다.
+
+[source,http]
+----
+GET /users/verified
+Authorization: Bearer <token>
+----
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+==== 사용자 유형별 조회
+특정 유형의 사용자 목록을 조회합니다.
+
+[source,http]
+----
+GET /users/type/{userType}
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `userType` (path) **필수** - 사용자 유형
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+==== 사용자 통계 조회
+사용자 관련 통계 정보를 조회합니다.
+
+[source,http]
+----
+GET /users/statistics
+Authorization: Bearer <token>
+----
+
+**응답:**
+
+* `200` - 통계 조회 성공
+  * 응답 타입: `UserStats`
+* `401` - 인증 필요
+  * 응답 타입: `UserStats`
+* `500` - 서버 오류
+  * 응답 타입: `UserStats`
+
+==== 사용자 검색
+키워드로 사용자를 검색합니다.
+
+[source,http]
+----
+GET /users/search
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `keyword` (query) **필수** - 검색 키워드
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 검색 성공
+  * 응답 타입: `UserDto`
+
+==== 지역별 사용자 조회
+특정 지역의 사용자 목록을 조회합니다.
+
+[source,http]
+----
+GET /users/region/{region}
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `region` (path) **필수** - 지역
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+==== 최근 활동 사용자 조회
+최근에 활동한 사용자 목록을 조회합니다.
+
+[source,http]
+----
+GET /users/recent
+Authorization: Bearer <token>
+----
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+==== 이메일로 사용자 조회
+이메일로 특정 사용자를 조회합니다.
+
+[source,http]
+----
+GET /users/email/{email}
+Authorization: Bearer <token>
+----
+
+**파라미터:**
+
+* `email` (path) **필수** - 이메일
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `UserDto`
+* `404` - 사용자를 찾을 수 없음
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+==== 활성 사용자 조회
+활성 상태인 사용자 목록을 조회합니다.
+
+[source,http]
+----
+GET /users/active
+Authorization: Bearer <token>
+----
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+
+=== 알림 관리
+
+==== 알림 상세 조회
+특정 알림의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /notifications/{notificationId}
+----
+
+**파라미터:**
+
+* `notificationId` (path) **필수** - 알림 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `NotificationResponse`
+* `404` - 알림을 찾을 수 없음
+  * 응답 타입: `NotificationResponse`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationResponse`
+* `200` - 조회 성공
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 수정
+기존 알림을 수정합니다.
+
+[source,http]
+----
+PUT /notifications/{notificationId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `notificationId` (path) **필수** - 알림 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `NotificationResponse`
+* `404` - 알림을 찾을 수 없음
+  * 응답 타입: `NotificationResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `NotificationResponse`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationResponse`
+* `200` - 수정 성공
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 삭제
+알림을 삭제합니다.
+
+[source,http]
+----
+DELETE /notifications/{notificationId}
+----
+
+**파라미터:**
+
+* `notificationId` (path) **필수** - 알림 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 알림을 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 삭제 성공
+
+==== 알림 상세 조회
+특정 알림의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /notifications/{notificationId}
+----
+
+**파라미터:**
+
+* `notificationId` (path) **필수** - 알림 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `NotificationResponse`
+* `404` - 알림을 찾을 수 없음
+  * 응답 타입: `NotificationResponse`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationResponse`
+* `200` - 조회 성공
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 수정
+기존 알림을 수정합니다.
+
+[source,http]
+----
+PUT /notifications/{notificationId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `notificationId` (path) **필수** - 알림 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `NotificationResponse`
+* `404` - 알림을 찾을 수 없음
+  * 응답 타입: `NotificationResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `NotificationResponse`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationResponse`
+* `200` - 수정 성공
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 삭제
+알림을 삭제합니다.
+
+[source,http]
+----
+DELETE /notifications/{notificationId}
+----
+
+**파라미터:**
+
+* `notificationId` (path) **필수** - 알림 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 알림을 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 삭제 성공
+
+==== 알림 상세 조회
+특정 알림의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /notifications/{notificationId}
+----
+
+**파라미터:**
+
+* `notificationId` (path) **필수** - 알림 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `NotificationResponse`
+* `404` - 알림을 찾을 수 없음
+  * 응답 타입: `NotificationResponse`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationResponse`
+* `200` - 조회 성공
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 수정
+기존 알림을 수정합니다.
+
+[source,http]
+----
+PUT /notifications/{notificationId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `notificationId` (path) **필수** - 알림 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `NotificationResponse`
+* `404` - 알림을 찾을 수 없음
+  * 응답 타입: `NotificationResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `NotificationResponse`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationResponse`
+* `200` - 수정 성공
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 삭제
+알림을 삭제합니다.
+
+[source,http]
+----
+DELETE /notifications/{notificationId}
+----
+
+**파라미터:**
+
+* `notificationId` (path) **필수** - 알림 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 알림을 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 삭제 성공
+
+==== 알림 읽음 처리
+알림을 읽음 상태로 변경합니다.
+
+[source,http]
+----
+PUT /notifications/{notificationId}/read
+----
+
+**파라미터:**
+
+* `notificationId` (path) **필수** - 알림 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 알림을 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 처리 성공
+
+==== 알림 설정 조회
+사용자의 알림 설정을 조회합니다.
+
+[source,http]
+----
+GET /notifications/settings/{userId}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 알림 설정 업데이트
+사용자의 알림 설정을 업데이트합니다.
+
+[source,http]
+----
+PUT /notifications/settings/{userId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `400` - 잘못된 요청
+* `500` - 서버 오류
+* `200` - 업데이트 성공
+
+==== 알림 설정 조회
+사용자의 알림 설정을 조회합니다.
+
+[source,http]
+----
+GET /notifications/settings/{userId}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 알림 설정 업데이트
+사용자의 알림 설정을 업데이트합니다.
+
+[source,http]
+----
+PUT /notifications/settings/{userId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `400` - 잘못된 요청
+* `500` - 서버 오류
+* `200` - 업데이트 성공
+
+==== 모든 알림 읽음 처리
+사용자의 모든 알림을 읽음 상태로 변경합니다.
+
+[source,http]
+----
+PUT /notifications/read-all
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 처리 성공
+
+==== 채널별 설정 업데이트
+사용자의 특정 알림 타입의 채널별 설정을 업데이트합니다.
+
+[source,http]
+----
+PUT /notifications/preferences/{notificationType}/channels/{channel}
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+* `notificationType` (path) **필수** - 알림 타입
+  * 타입: `string`
+* `channel` (path) **필수** - 채널
+  * 타입: `string`
+* `enabled` (query) **필수** - 활성화 여부
+  * 타입: `boolean`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `NotificationPreferenceDto`
+* `400` - 잘못된 요청
+  * 응답 타입: `NotificationPreferenceDto`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationPreferenceDto`
+* `200` - 업데이트 성공
+  * 응답 타입: `NotificationPreferenceDto`
+
+==== 알림 설정 초기화
+사용자의 알림 설정을 기본값으로 초기화합니다.
+
+[source,http]
+----
+PUT /notifications/preferences/reset
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `200` - 초기화 성공
+* `401` - 인증 필요
+* `500` - 서버 오류
+
+==== 모든 알림 설정 비활성화
+사용자의 모든 알림 설정을 비활성화합니다.
+
+[source,http]
+----
+PUT /notifications/preferences/disable-all
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 비활성화 성공
+
+==== 알림 목록 조회
+사용자의 알림 목록을 조회합니다.
+
+[source,http]
+----
+GET /notifications
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 생성
+새로운 알림을 생성합니다.
+
+[source,http]
+----
+POST /notifications
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `NotificationResponse`
+* `200` - 생성 성공
+  * 응답 타입: `NotificationResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `NotificationResponse`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 목록 조회
+사용자의 알림 목록을 조회합니다.
+
+[source,http]
+----
+GET /notifications
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 생성
+새로운 알림을 생성합니다.
+
+[source,http]
+----
+POST /notifications
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `NotificationResponse`
+* `200` - 생성 성공
+  * 응답 타입: `NotificationResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `NotificationResponse`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 설정 목록 조회
+사용자의 알림 설정 목록을 조회합니다.
+
+[source,http]
+----
+GET /notifications/preferences
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 알림 설정 저장
+사용자의 알림 설정을 저장합니다.
+
+[source,http]
+----
+POST /notifications/preferences
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `200` - 저장 성공
+  * 응답 타입: `NotificationPreferenceDto`
+* `401` - 인증 필요
+  * 응답 타입: `NotificationPreferenceDto`
+* `400` - 잘못된 요청
+  * 응답 타입: `NotificationPreferenceDto`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationPreferenceDto`
+
+==== 알림 설정 목록 조회
+사용자의 알림 설정 목록을 조회합니다.
+
+[source,http]
+----
+GET /notifications/preferences
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 알림 설정 저장
+사용자의 알림 설정을 저장합니다.
+
+[source,http]
+----
+POST /notifications/preferences
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `200` - 저장 성공
+  * 응답 타입: `NotificationPreferenceDto`
+* `401` - 인증 필요
+  * 응답 타입: `NotificationPreferenceDto`
+* `400` - 잘못된 요청
+  * 응답 타입: `NotificationPreferenceDto`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationPreferenceDto`
+
+==== 읽지 않은 알림 조회
+사용자의 읽지 않은 알림 목록을 조회합니다.
+
+[source,http]
+----
+GET /notifications/unread
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `NotificationResponse`
+
+==== 알림 통계 조회
+사용자의 알림 관련 통계를 조회합니다.
+
+[source,http]
+----
+GET /notifications/statistics/{userId}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 특정 알림 타입 설정 조회
+사용자의 특정 알림 타입 설정을 조회합니다.
+
+[source,http]
+----
+GET /notifications/preferences/{notificationType}
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+* `notificationType` (path) **필수** - 알림 타입
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `NotificationPreferenceDto`
+* `500` - 서버 오류
+  * 응답 타입: `NotificationPreferenceDto`
+* `200` - 조회 성공
+  * 응답 타입: `NotificationPreferenceDto`
+
+
+=== hospital-review-controller
+
+[source,http]
+----
+PUT /hospitals/reviews/{reviewId}
+----
+
+**파라미터:**
+
+* `reviewId` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+* `rating` (query) **필수** - 
+  * 타입: `integer`
+  * 형식: `int32`
+* `content` (query) **필수** - 
+  * 타입: `string`
+
+**응답:**
+
+* `200` - OK
+  * 응답 타입: `HospitalReview`
+
+[source,http]
+----
+DELETE /hospitals/reviews/{reviewId}
+----
+
+**파라미터:**
+
+* `reviewId` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+PUT /hospitals/reviews/{reviewId}
+----
+
+**파라미터:**
+
+* `reviewId` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+* `rating` (query) **필수** - 
+  * 타입: `integer`
+  * 형식: `int32`
+* `content` (query) **필수** - 
+  * 타입: `string`
+
+**응답:**
+
+* `200` - OK
+  * 응답 타입: `HospitalReview`
+
+[source,http]
+----
+DELETE /hospitals/reviews/{reviewId}
+----
+
+**파라미터:**
+
+* `reviewId` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+GET /hospitals/{id}/reviews
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+POST /hospitals/{id}/reviews
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+* `rating` (query) **필수** - 
+  * 타입: `integer`
+  * 형식: `int32`
+* `content` (query) **필수** - 
+  * 타입: `string`
+
+**응답:**
+
+* `200` - OK
+  * 응답 타입: `HospitalReview`
+
+[source,http]
+----
+GET /hospitals/{id}/reviews
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+POST /hospitals/{id}/reviews
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+* `rating` (query) **필수** - 
+  * 타입: `integer`
+  * 형식: `int32`
+* `content` (query) **필수** - 
+  * 타입: `string`
+
+**응답:**
+
+* `200` - OK
+  * 응답 타입: `HospitalReview`
+
+
+=== 건강 관리
+
+==== 건강 정보 조회
+특정 건강 정보를 조회합니다.
+
+[source,http]
+----
+GET /health/records/{recordId}
+----
+
+**파라미터:**
+
+* `recordId` (path) **필수** - 건강 정보 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `HealthRecordResponse`
+* `500` - 서버 오류
+  * 응답 타입: `HealthRecordResponse`
+* `200` - 조회 성공
+  * 응답 타입: `HealthRecordResponse`
+* `404` - 건강 정보를 찾을 수 없음
+  * 응답 타입: `HealthRecordResponse`
+
+==== 건강 정보 수정
+기존 건강 정보를 수정합니다.
+
+[source,http]
+----
+PUT /health/records/{recordId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `recordId` (path) **필수** - 건강 정보 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `HealthRecordResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `HealthRecordResponse`
+* `500` - 서버 오류
+  * 응답 타입: `HealthRecordResponse`
+* `404` - 건강 정보를 찾을 수 없음
+  * 응답 타입: `HealthRecordResponse`
+* `200` - 수정 성공
+  * 응답 타입: `HealthRecordResponse`
+
+==== 건강 정보 삭제
+건강 정보를 삭제합니다.
+
+[source,http]
+----
+DELETE /health/records/{recordId}
+----
+
+**파라미터:**
+
+* `recordId` (path) **필수** - 건강 정보 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 삭제 성공
+* `404` - 건강 정보를 찾을 수 없음
+
+==== 건강 정보 조회
+특정 건강 정보를 조회합니다.
+
+[source,http]
+----
+GET /health/records/{recordId}
+----
+
+**파라미터:**
+
+* `recordId` (path) **필수** - 건강 정보 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `HealthRecordResponse`
+* `500` - 서버 오류
+  * 응답 타입: `HealthRecordResponse`
+* `200` - 조회 성공
+  * 응답 타입: `HealthRecordResponse`
+* `404` - 건강 정보를 찾을 수 없음
+  * 응답 타입: `HealthRecordResponse`
+
+==== 건강 정보 수정
+기존 건강 정보를 수정합니다.
+
+[source,http]
+----
+PUT /health/records/{recordId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `recordId` (path) **필수** - 건강 정보 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `HealthRecordResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `HealthRecordResponse`
+* `500` - 서버 오류
+  * 응답 타입: `HealthRecordResponse`
+* `404` - 건강 정보를 찾을 수 없음
+  * 응답 타입: `HealthRecordResponse`
+* `200` - 수정 성공
+  * 응답 타입: `HealthRecordResponse`
+
+==== 건강 정보 삭제
+건강 정보를 삭제합니다.
+
+[source,http]
+----
+DELETE /health/records/{recordId}
+----
+
+**파라미터:**
+
+* `recordId` (path) **필수** - 건강 정보 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 삭제 성공
+* `404` - 건강 정보를 찾을 수 없음
+
+==== 건강 정보 조회
+특정 건강 정보를 조회합니다.
+
+[source,http]
+----
+GET /health/records/{recordId}
+----
+
+**파라미터:**
+
+* `recordId` (path) **필수** - 건강 정보 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `HealthRecordResponse`
+* `500` - 서버 오류
+  * 응답 타입: `HealthRecordResponse`
+* `200` - 조회 성공
+  * 응답 타입: `HealthRecordResponse`
+* `404` - 건강 정보를 찾을 수 없음
+  * 응답 타입: `HealthRecordResponse`
+
+==== 건강 정보 수정
+기존 건강 정보를 수정합니다.
+
+[source,http]
+----
+PUT /health/records/{recordId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `recordId` (path) **필수** - 건강 정보 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `HealthRecordResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `HealthRecordResponse`
+* `500` - 서버 오류
+  * 응답 타입: `HealthRecordResponse`
+* `404` - 건강 정보를 찾을 수 없음
+  * 응답 타입: `HealthRecordResponse`
+* `200` - 수정 성공
+  * 응답 타입: `HealthRecordResponse`
+
+==== 건강 정보 삭제
+건강 정보를 삭제합니다.
+
+[source,http]
+----
+DELETE /health/records/{recordId}
+----
+
+**파라미터:**
+
+* `recordId` (path) **필수** - 건강 정보 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 삭제 성공
+* `404` - 건강 정보를 찾을 수 없음
+
+==== 건강 리포트 생성
+건강 관련 리포트를 생성합니다.
+
+[source,http]
+----
+POST /health/reports
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `200` - 생성 성공
+* `401` - 인증 필요
+* `400` - 잘못된 요청
+* `500` - 서버 오류
+
+==== 건강 정보 조회
+사용자 ID로 건강 정보 목록을 조회합니다.
+
+[source,http]
+----
+GET /health/records
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 건강 정보 등록
+새로운 건강 정보를 등록합니다.
+
+[source,http]
+----
+POST /health/records
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `200` - 등록 성공
+  * 응답 타입: `HealthRecordResponse`
+* `401` - 인증 필요
+  * 응답 타입: `HealthRecordResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `HealthRecordResponse`
+* `500` - 서버 오류
+  * 응답 타입: `HealthRecordResponse`
+
+==== 건강 정보 조회
+사용자 ID로 건강 정보 목록을 조회합니다.
+
+[source,http]
+----
+GET /health/records
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 건강 정보 등록
+새로운 건강 정보를 등록합니다.
+
+[source,http]
+----
+POST /health/records
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `200` - 등록 성공
+  * 응답 타입: `HealthRecordResponse`
+* `401` - 인증 필요
+  * 응답 타입: `HealthRecordResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `HealthRecordResponse`
+* `500` - 서버 오류
+  * 응답 타입: `HealthRecordResponse`
+
+==== 건강 목표 조회
+사용자 ID로 건강 목표를 조회합니다.
+
+[source,http]
+----
+GET /health/goals
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 건강 목표 설정
+건강 관련 목표를 설정합니다.
+
+[source,http]
+----
+POST /health/goals
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `401` - 인증 필요
+* `400` - 잘못된 요청
+* `500` - 서버 오류
+* `200` - 설정 성공
+
+==== 건강 목표 조회
+사용자 ID로 건강 목표를 조회합니다.
+
+[source,http]
+----
+GET /health/goals
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 건강 목표 설정
+건강 관련 목표를 설정합니다.
+
+[source,http]
+----
+POST /health/goals
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `401` - 인증 필요
+* `400` - 잘못된 요청
+* `500` - 서버 오류
+* `200` - 설정 성공
+
+==== 건강 상태 분석
+사용자의 건강 상태를 분석합니다.
+
+[source,http]
+----
+POST /health/analysis
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `200` - 분석 성공
+* `401` - 인증 필요
+* `400` - 잘못된 요청
+* `500` - 서버 오류
+
+==== 건강 알림 설정
+건강 관련 알림을 설정합니다.
+
+[source,http]
+----
+POST /health/alerts
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `401` - 인증 필요
+* `400` - 잘못된 요청
+* `500` - 서버 오류
+* `200` - 설정 성공
+
+==== 건강 통계 조회
+사용자 ID로 건강 통계를 조회합니다.
+
+[source,http]
+----
+GET /health/statistics
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 건강 통계 조회
+사용자의 건강 관련 통계를 조회합니다.
+
+[source,http]
+----
+GET /health/statistics/{userId}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 사용자별 건강 정보 조회
+특정 사용자의 건강 정보 목록을 조회합니다.
+
+[source,http]
+----
+GET /health/records/user/{userId}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `HealthRecordResponse`
+
+[source,http]
+----
+GET /health/records/user/{userId}/chart
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 
+  * 타입: `string`
+* `type` (query) **필수** - 
+  * 타입: `string`
+* `from` (query) - 
+  * 타입: `string`
+  * 형식: `date`
+* `to` (query) - 
+  * 타입: `string`
+  * 형식: `date`
+
+**응답:**
+
+* `200` - OK
+
+==== 건강 목표 조회
+사용자의 건강 목표를 조회합니다.
+
+[source,http]
+----
+GET /health/goals/{userId}
+----
+
+**파라미터:**
+
+* `userId` (path) **필수** - 사용자 ID
+  * 타입: `string`
+
+**응답:**
+
+* `401` - 인증 필요
+* `404` - 사용자를 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+
+=== 육아 시설
+
+==== 예약 상세 조회
+특정 예약의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /facilities/bookings/{bookingId}
+----
+
+**파라미터:**
+
+* `bookingId` (path) **필수** - 예약 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `BookingResponse`
+* `500` - 서버 오류
+  * 응답 타입: `BookingResponse`
+* `404` - 예약을 찾을 수 없음
+  * 응답 타입: `BookingResponse`
+* `200` - 조회 성공
+  * 응답 타입: `BookingResponse`
+
+==== 예약 수정
+기존 예약 정보를 수정합니다.
+
+[source,http]
+----
+PUT /facilities/bookings/{bookingId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `bookingId` (path) **필수** - 예약 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `400` - 잘못된 예약 정보
+  * 응답 타입: `BookingResponse`
+* `409` - 예약 시간 중복
+  * 응답 타입: `BookingResponse`
+* `200` - 예약 수정 성공
+  * 응답 타입: `BookingResponse`
+* `401` - 인증 필요
+  * 응답 타입: `BookingResponse`
+* `500` - 서버 오류
+  * 응답 타입: `BookingResponse`
+* `404` - 예약을 찾을 수 없음
+  * 응답 타입: `BookingResponse`
+
+==== 예약 취소
+예약을 취소합니다.
+
+[source,http]
+----
+DELETE /facilities/bookings/{bookingId}
+----
+
+**파라미터:**
+
+* `bookingId` (path) **필수** - 예약 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - 예약 취소 성공
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `404` - 예약을 찾을 수 없음
+
+==== 예약 상세 조회
+특정 예약의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /facilities/bookings/{bookingId}
+----
+
+**파라미터:**
+
+* `bookingId` (path) **필수** - 예약 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `BookingResponse`
+* `500` - 서버 오류
+  * 응답 타입: `BookingResponse`
+* `404` - 예약을 찾을 수 없음
+  * 응답 타입: `BookingResponse`
+* `200` - 조회 성공
+  * 응답 타입: `BookingResponse`
+
+==== 예약 수정
+기존 예약 정보를 수정합니다.
+
+[source,http]
+----
+PUT /facilities/bookings/{bookingId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `bookingId` (path) **필수** - 예약 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `400` - 잘못된 예약 정보
+  * 응답 타입: `BookingResponse`
+* `409` - 예약 시간 중복
+  * 응답 타입: `BookingResponse`
+* `200` - 예약 수정 성공
+  * 응답 타입: `BookingResponse`
+* `401` - 인증 필요
+  * 응답 타입: `BookingResponse`
+* `500` - 서버 오류
+  * 응답 타입: `BookingResponse`
+* `404` - 예약을 찾을 수 없음
+  * 응답 타입: `BookingResponse`
+
+==== 예약 취소
+예약을 취소합니다.
+
+[source,http]
+----
+DELETE /facilities/bookings/{bookingId}
+----
+
+**파라미터:**
+
+* `bookingId` (path) **필수** - 예약 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - 예약 취소 성공
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `404` - 예약을 찾을 수 없음
+
+==== 예약 상세 조회
+특정 예약의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /facilities/bookings/{bookingId}
+----
+
+**파라미터:**
+
+* `bookingId` (path) **필수** - 예약 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `BookingResponse`
+* `500` - 서버 오류
+  * 응답 타입: `BookingResponse`
+* `404` - 예약을 찾을 수 없음
+  * 응답 타입: `BookingResponse`
+* `200` - 조회 성공
+  * 응답 타입: `BookingResponse`
+
+==== 예약 수정
+기존 예약 정보를 수정합니다.
+
+[source,http]
+----
+PUT /facilities/bookings/{bookingId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `bookingId` (path) **필수** - 예약 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `400` - 잘못된 예약 정보
+  * 응답 타입: `BookingResponse`
+* `409` - 예약 시간 중복
+  * 응답 타입: `BookingResponse`
+* `200` - 예약 수정 성공
+  * 응답 타입: `BookingResponse`
+* `401` - 인증 필요
+  * 응답 타입: `BookingResponse`
+* `500` - 서버 오류
+  * 응답 타입: `BookingResponse`
+* `404` - 예약을 찾을 수 없음
+  * 응답 타입: `BookingResponse`
+
+==== 예약 취소
+예약을 취소합니다.
+
+[source,http]
+----
+DELETE /facilities/bookings/{bookingId}
+----
+
+**파라미터:**
+
+* `bookingId` (path) **필수** - 예약 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - 예약 취소 성공
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `404` - 예약을 찾을 수 없음
+
+==== 예약 상태 업데이트
+예약의 상태를 업데이트합니다.
+
+[source,http]
+----
+PUT /facilities/bookings/{bookingId}/status
+----
+
+**파라미터:**
+
+* `bookingId` (path) **필수** - 예약 ID
+  * 타입: `integer`
+  * 형식: `int64`
+* `status` (query) **필수** - 새로운 상태
+  * 타입: `string`
+
+**응답:**
+
+* `400` - 잘못된 상태 정보
+  * 응답 타입: `BookingResponse`
+* `401` - 인증 필요
+  * 응답 타입: `BookingResponse`
+* `500` - 서버 오류
+  * 응답 타입: `BookingResponse`
+* `404` - 예약을 찾을 수 없음
+  * 응답 타입: `BookingResponse`
+* `200` - 상태 업데이트 성공
+  * 응답 타입: `BookingResponse`
+
+==== 시설 조회수 증가
+특정 시설의 조회수를 증가시킵니다.
+
+[source,http]
+----
+POST /facilities/{id}/view
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 시설 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `404` - 시설을 찾을 수 없음
+* `500` - 서버 오류
+* `200` - 조회수 증가 성공
+
+==== 시설 평점 업데이트
+특정 시설의 평점을 업데이트합니다.
+
+[source,http]
+----
+POST /facilities/{id}/rating
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 시설 ID
+  * 타입: `integer`
+  * 형식: `int64`
+* `rating` (query) **필수** - 평점 (0.0 ~ 5.0)
+  * 타입: `number`
+  * 형식: `double`
+
+**응답:**
+
+* `200` - 평점 업데이트 성공
+* `404` - 시설을 찾을 수 없음
+* `401` - 인증 필요
+* `500` - 서버 오류
+
+==== 시설별 예약 목록 조회
+특정 시설의 예약 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/{facilityId}/bookings
+----
+
+**파라미터:**
+
+* `facilityId` (path) **필수** - 시설 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `404` - 시설을 찾을 수 없음
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `BookingResponse`
+
+==== 시설 예약 생성
+특정 육아 시설에 예약을 생성합니다.
+
+[source,http]
+----
+POST /facilities/{facilityId}/bookings
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `facilityId` (path) **필수** - 시설 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `400` - 잘못된 예약 정보
+  * 응답 타입: `BookingResponse`
+* `409` - 예약 시간 중복
+  * 응답 타입: `BookingResponse`
+* `404` - 시설을 찾을 수 없음
+  * 응답 타입: `BookingResponse`
+* `401` - 인증 필요
+  * 응답 타입: `BookingResponse`
+* `200` - 예약 생성 성공
+  * 응답 타입: `BookingResponse`
+* `500` - 서버 오류
+  * 응답 타입: `BookingResponse`
+
+==== 시설별 예약 목록 조회
+특정 시설의 예약 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/{facilityId}/bookings
+----
+
+**파라미터:**
+
+* `facilityId` (path) **필수** - 시설 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `404` - 시설을 찾을 수 없음
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `BookingResponse`
+
+==== 시설 예약 생성
+특정 육아 시설에 예약을 생성합니다.
+
+[source,http]
+----
+POST /facilities/{facilityId}/bookings
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `facilityId` (path) **필수** - 시설 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `400` - 잘못된 예약 정보
+  * 응답 타입: `BookingResponse`
+* `409` - 예약 시간 중복
+  * 응답 타입: `BookingResponse`
+* `404` - 시설을 찾을 수 없음
+  * 응답 타입: `BookingResponse`
+* `401` - 인증 필요
+  * 응답 타입: `BookingResponse`
+* `200` - 예약 생성 성공
+  * 응답 타입: `BookingResponse`
+* `500` - 서버 오류
+  * 응답 타입: `BookingResponse`
+
+==== 복합 조건 시설 검색
+다양한 조건으로 육아 시설을 검색합니다.
+
+[source,http]
+----
+POST /facilities/search
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `CareFacilitySearchResponseDto`
+* `500` - 서버 오류
+  * 응답 타입: `CareFacilitySearchResponseDto`
+* `200` - 검색 성공
+  * 응답 타입: `CareFacilitySearchResponseDto`
+
+==== 전체 시설 목록 조회
+등록된 모든 육아 시설 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities
+----
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `CareFacilityDto`
+* `500` - 서버 오류
+
+==== 시설 상세 조회
+시설 ID로 특정 육아 시설의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /facilities/{id}
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 시설 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `404` - 시설을 찾을 수 없음
+  * 응답 타입: `CareFacilityDto`
+* `200` - 조회 성공
+  * 응답 타입: `CareFacilityDto`
+* `500` - 서버 오류
+  * 응답 타입: `CareFacilityDto`
+
+==== 시설별 오늘의 예약 조회
+특정 시설의 오늘 예약 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/{facilityId}/bookings/today
+----
+
+**파라미터:**
+
+* `facilityId` (path) **필수** - 시설 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `404` - 시설을 찾을 수 없음
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `BookingResponse`
+
+==== 시설 유형별 조회
+특정 유형의 육아 시설 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/type/{facilityType}
+----
+
+**파라미터:**
+
+* `facilityType` (path) **필수** - 시설 유형 (KINDERGARTEN, DAYCARE, PLAYGROUP, NURSERY, OTHER)
+  * 타입: `string`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `CareFacilityDto`
+* `500` - 서버 오류
+
+==== 시설 통계 조회
+육아 시설 관련 통계 정보를 조회합니다.
+
+[source,http]
+----
+GET /facilities/statistics
+----
+
+**응답:**
+
+* `200` - 통계 조회 성공
+  * 응답 타입: `FacilityStats`
+* `500` - 서버 오류
+  * 응답 타입: `FacilityStats`
+
+==== 반경 내 시설 검색
+특정 위치 기준 반경 내의 육아 시설을 검색합니다.
+
+[source,http]
+----
+GET /facilities/radius
+----
+
+**파라미터:**
+
+* `latitude` (query) **필수** - 위도
+  * 타입: `number`
+  * 형식: `double`
+* `longitude` (query) **필수** - 경도
+  * 타입: `number`
+  * 형식: `double`
+* `radius` (query) **필수** - 반경 (km)
+  * 타입: `number`
+  * 형식: `double`
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 검색 성공
+  * 응답 타입: `CareFacilityDto`
+* `400` - 잘못된 위치 정보
+
+==== 인기 시설 조회
+평점 기준으로 인기 있는 육아 시설 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/popular
+----
+
+**파라미터:**
+
+* `limit` (query) - 조회할 시설 수
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `CareFacilityDto`
+* `500` - 서버 오류
+
+==== 운영 시간별 시설 조회
+특정 운영 시간을 가진 육아 시설 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/operating-hours
+----
+
+**파라미터:**
+
+* `operatingHours` (query) **필수** - 운영 시간
+  * 타입: `string`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `CareFacilityDto`
+* `500` - 서버 오류
+
+==== 신규 시설 조회
+최근 등록된 육아 시설 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/new
+----
+
+**파라미터:**
+
+* `limit` (query) - 조회할 시설 수
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `CareFacilityDto`
+* `500` - 서버 오류
+
+==== 지역별 시설 조회
+특정 지역의 육아 시설 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/location/{location}
+----
+
+**파라미터:**
+
+* `location` (path) **필수** - 지역명
+  * 타입: `string`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `CareFacilityDto`
+* `500` - 서버 오류
+* `400` - 잘못된 지역 정보
+
+==== 사용자별 예약 목록 조회
+현재 로그인한 사용자의 예약 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/bookings/user
+----
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `BookingResponse`
+
+==== 오늘의 예약 조회
+오늘 날짜의 예약 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/bookings/today
+----
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `BookingResponse`
+
+==== 연령대별 시설 조회
+특정 연령대에 적합한 육아 시설 목록을 조회합니다.
+
+[source,http]
+----
+GET /facilities/age
+----
+
+**파라미터:**
+
+* `minAge` (query) **필수** - 최소 연령
+  * 타입: `integer`
+  * 형식: `int32`
+* `maxAge` (query) **필수** - 최대 연령
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `400` - 잘못된 연령 정보
+* `200` - 조회 성공
+  * 응답 타입: `CareFacilityDto`
+* `500` - 서버 오류
+
+
+=== 커뮤니티
+
+==== 게시글 상세 조회
+특정 게시글의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /community/posts/{postId}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `PostDetailResponse`
+* `500` - 서버 오류
+  * 응답 타입: `PostDetailResponse`
+* `404` - 게시글을 찾을 수 없음
+  * 응답 타입: `PostDetailResponse`
+
+==== 게시글 수정
+기존 게시글을 수정합니다.
+
+[source,http]
+----
+PUT /community/posts/{postId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `PostResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `PostResponse`
+* `500` - 서버 오류
+  * 응답 타입: `PostResponse`
+* `404` - 게시글을 찾을 수 없음
+  * 응답 타입: `PostResponse`
+* `200` - 수정 성공
+  * 응답 타입: `PostResponse`
+
+==== 게시글 삭제
+게시글을 삭제합니다.
+
+[source,http]
+----
+DELETE /community/posts/{postId}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `404` - 게시글을 찾을 수 없음
+* `200` - 삭제 성공
+
+==== 게시글 상세 조회
+특정 게시글의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /community/posts/{postId}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `PostDetailResponse`
+* `500` - 서버 오류
+  * 응답 타입: `PostDetailResponse`
+* `404` - 게시글을 찾을 수 없음
+  * 응답 타입: `PostDetailResponse`
+
+==== 게시글 수정
+기존 게시글을 수정합니다.
+
+[source,http]
+----
+PUT /community/posts/{postId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `PostResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `PostResponse`
+* `500` - 서버 오류
+  * 응답 타입: `PostResponse`
+* `404` - 게시글을 찾을 수 없음
+  * 응답 타입: `PostResponse`
+* `200` - 수정 성공
+  * 응답 타입: `PostResponse`
+
+==== 게시글 삭제
+게시글을 삭제합니다.
+
+[source,http]
+----
+DELETE /community/posts/{postId}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `404` - 게시글을 찾을 수 없음
+* `200` - 삭제 성공
+
+==== 게시글 상세 조회
+특정 게시글의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /community/posts/{postId}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `PostDetailResponse`
+* `500` - 서버 오류
+  * 응답 타입: `PostDetailResponse`
+* `404` - 게시글을 찾을 수 없음
+  * 응답 타입: `PostDetailResponse`
+
+==== 게시글 수정
+기존 게시글을 수정합니다.
+
+[source,http]
+----
+PUT /community/posts/{postId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `PostResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `PostResponse`
+* `500` - 서버 오류
+  * 응답 타입: `PostResponse`
+* `404` - 게시글을 찾을 수 없음
+  * 응답 타입: `PostResponse`
+* `200` - 수정 성공
+  * 응답 타입: `PostResponse`
+
+==== 게시글 삭제
+게시글을 삭제합니다.
+
+[source,http]
+----
+DELETE /community/posts/{postId}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `404` - 게시글을 찾을 수 없음
+* `200` - 삭제 성공
+
+==== 댓글 수정
+기존 댓글을 수정합니다.
+
+[source,http]
+----
+PUT /community/comments/{commentId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `commentId` (path) **필수** - 댓글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `404` - 댓글을 찾을 수 없음
+  * 응답 타입: `CommentResponse`
+* `200` - 수정 성공
+  * 응답 타입: `CommentResponse`
+* `401` - 인증 필요
+  * 응답 타입: `CommentResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `CommentResponse`
+* `500` - 서버 오류
+  * 응답 타입: `CommentResponse`
+
+==== 댓글 삭제
+댓글을 삭제합니다.
+
+[source,http]
+----
+DELETE /community/comments/{commentId}
+----
+
+**파라미터:**
+
+* `commentId` (path) **필수** - 댓글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `404` - 댓글을 찾을 수 없음
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 삭제 성공
+
+==== 댓글 수정
+기존 댓글을 수정합니다.
+
+[source,http]
+----
+PUT /community/comments/{commentId}
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `commentId` (path) **필수** - 댓글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `404` - 댓글을 찾을 수 없음
+  * 응답 타입: `CommentResponse`
+* `200` - 수정 성공
+  * 응답 타입: `CommentResponse`
+* `401` - 인증 필요
+  * 응답 타입: `CommentResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `CommentResponse`
+* `500` - 서버 오류
+  * 응답 타입: `CommentResponse`
+
+==== 댓글 삭제
+댓글을 삭제합니다.
+
+[source,http]
+----
+DELETE /community/comments/{commentId}
+----
+
+**파라미터:**
+
+* `commentId` (path) **필수** - 댓글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `404` - 댓글을 찾을 수 없음
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 삭제 성공
+
+==== 게시글 목록 조회
+커뮤니티 게시글 목록을 조회합니다.
+
+[source,http]
+----
+GET /community/posts
+----
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `PostResponse`
+
+==== 게시글 작성
+새로운 게시글을 작성합니다.
+
+[source,http]
+----
+POST /community/posts
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `PostResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `PostResponse`
+* `500` - 서버 오류
+  * 응답 타입: `PostResponse`
+* `200` - 작성 성공
+  * 응답 타입: `PostResponse`
+
+==== 게시글 목록 조회
+커뮤니티 게시글 목록을 조회합니다.
+
+[source,http]
+----
+GET /community/posts
+----
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `PostResponse`
+
+==== 게시글 작성
+새로운 게시글을 작성합니다.
+
+[source,http]
+----
+POST /community/posts
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `PostResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `PostResponse`
+* `500` - 서버 오류
+  * 응답 타입: `PostResponse`
+* `200` - 작성 성공
+  * 응답 타입: `PostResponse`
+
+==== 댓글 목록 조회
+특정 게시글의 댓글 목록을 조회합니다.
+
+[source,http]
+----
+GET /community/posts/{postId}/comments
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `500` - 서버 오류
+* `404` - 게시글을 찾을 수 없음
+* `200` - 조회 성공
+  * 응답 타입: `CommentResponse`
+
+==== 댓글 작성
+게시글에 댓글을 작성합니다.
+
+[source,http]
+----
+POST /community/posts/{postId}/comments
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `CommentResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `CommentResponse`
+* `500` - 서버 오류
+  * 응답 타입: `CommentResponse`
+* `404` - 게시글을 찾을 수 없음
+  * 응답 타입: `CommentResponse`
+* `200` - 작성 성공
+  * 응답 타입: `CommentResponse`
+
+==== 댓글 목록 조회
+특정 게시글의 댓글 목록을 조회합니다.
+
+[source,http]
+----
+GET /community/posts/{postId}/comments
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `500` - 서버 오류
+* `404` - 게시글을 찾을 수 없음
+* `200` - 조회 성공
+  * 응답 타입: `CommentResponse`
+
+==== 댓글 작성
+게시글에 댓글을 작성합니다.
+
+[source,http]
+----
+POST /community/posts/{postId}/comments
+Content-Type: application/json
+
+{
+}
+----
+
+**파라미터:**
+
+* `postId` (path) **필수** - 게시글 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `CommentResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `CommentResponse`
+* `500` - 서버 오류
+  * 응답 타입: `CommentResponse`
+* `404` - 게시글을 찾을 수 없음
+  * 응답 타입: `CommentResponse`
+* `200` - 작성 성공
+  * 응답 타입: `CommentResponse`
+
+==== 태그 목록 조회
+커뮤니티 태그 목록을 조회합니다.
+
+[source,http]
+----
+GET /community/tags
+----
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `TagResponse`
+
+==== 게시글 검색
+키워드로 게시글을 검색합니다.
+
+[source,http]
+----
+GET /community/search
+----
+
+**파라미터:**
+
+* `keyword` (query) **필수** - 검색 키워드
+  * 타입: `string`
+
+**응답:**
+
+* `200` - 검색 성공
+  * 응답 타입: `PostResponse`
+* `500` - 서버 오류
+
+==== 인기 게시글 조회
+인기 있는 게시글 목록을 조회합니다.
+
+[source,http]
+----
+GET /community/popular
+----
+
+**파라미터:**
+
+* `limit` (query) - 조회할 게시글 수
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `PostResponse`
+
+==== 최신 게시글 조회
+최근 작성된 게시글 목록을 조회합니다.
+
+[source,http]
+----
+GET /community/latest
+----
+
+**파라미터:**
+
+* `limit` (query) - 조회할 게시글 수
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회 성공
+  * 응답 타입: `PostResponse`
+
+
+=== email-verification-controller
+
+[source,http]
+----
+POST /users/verify-code
+----
+
+**파라미터:**
+
+* `email` (query) **필수** - 
+  * 타입: `string`
+* `code` (query) **필수** - 
+  * 타입: `string`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+POST /users/send-code
+----
+
+**파라미터:**
+
+* `email` (query) **필수** - 
+  * 타입: `string`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+GET /users/verify
+----
+
+**파라미터:**
+
+* `token` (query) **필수** - 
+  * 타입: `string`
+
+**응답:**
+
+* `200` - OK
+
+
+=== 육아 정책
+
+==== 정책 조회수 증가
+특정 정책의 조회수를 증가시킵니다.
+
+[source,http]
+----
+POST /policies/{policyId}/view
+----
+
+**파라미터:**
+
+* `policyId` (path) **필수** - 정책 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 조회수 증가 성공
+* `404` - 정책을 찾을 수 없음
+
+==== 정책 검색
+다양한 조건으로 육아 정책을 검색합니다.
+
+[source,http]
+----
+POST /policies/search
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `200` - 검색 성공
+  * 응답 타입: `PolicySearchResponseDto`
+* `400` - 잘못된 요청
+  * 응답 타입: `PolicySearchResponseDto`
+* `500` - 서버 오류
+  * 응답 타입: `PolicySearchResponseDto`
+
+==== 전체 정책 목록 조회
+등록된 모든 육아 정책 목록을 조회합니다.
+
+[source,http]
+----
+GET /policies
+----
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `PolicyDto`
+* `500` - 서버 오류
+
+==== 정책 상세 조회
+정책 ID로 특정 육아 정책의 상세 정보를 조회합니다.
+
+[source,http]
+----
+GET /policies/{policyId}
+----
+
+**파라미터:**
+
+* `policyId` (path) **필수** - 정책 ID
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `PolicyDto`
+* `500` - 서버 오류
+  * 응답 타입: `PolicyDto`
+* `404` - 정책을 찾을 수 없음
+  * 응답 타입: `PolicyDto`
+
+==== 정책 통계 조회
+육아 정책 관련 통계 정보를 조회합니다.
+
+[source,http]
+----
+GET /policies/statistics
+----
+
+**응답:**
+
+* `200` - 통계 조회 성공
+  * 응답 타입: `PolicyStats`
+* `500` - 서버 오류
+  * 응답 타입: `PolicyStats`
+
+==== 인기 정책 조회
+인기 있는 육아 정책 목록을 조회합니다.
+
+[source,http]
+----
+GET /policies/popular
+----
+
+**파라미터:**
+
+* `limit` (query) - 조회할 정책 수
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `PolicyDto`
+* `500` - 서버 오류
+
+==== 지역별 정책 조회
+특정 지역의 육아 정책 목록을 조회합니다.
+
+[source,http]
+----
+GET /policies/location/{location}
+----
+
+**파라미터:**
+
+* `location` (path) **필수** - 지역명
+  * 타입: `string`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `PolicyDto`
+* `500` - 서버 오류
+* `400` - 잘못된 지역 정보
+
+==== 최신 정책 조회
+최근 등록된 육아 정책 목록을 조회합니다.
+
+[source,http]
+----
+GET /policies/latest
+----
+
+**파라미터:**
+
+* `limit` (query) - 조회할 정책 수
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `PolicyDto`
+* `500` - 서버 오류
+
+==== 카테고리별 정책 조회
+특정 카테고리의 육아 정책 목록을 조회합니다.
+
+[source,http]
+----
+GET /policies/category/{category}
+----
+
+**파라미터:**
+
+* `category` (path) **필수** - 정책 카테고리
+  * 타입: `string`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `PolicyDto`
+* `500` - 서버 오류
+
+==== 정책 카테고리 목록 조회
+사용 가능한 정책 카테고리 목록을 조회합니다.
+
+[source,http]
+----
+GET /policies/categories
+----
+
+**응답:**
+
+* `200` - 카테고리 목록 조회 성공
+* `500` - 서버 오류
+
+==== 연령대별 정책 조회
+특정 연령대에 해당하는 육아 정책 목록을 조회합니다.
+
+[source,http]
+----
+GET /policies/age
+----
+
+**파라미터:**
+
+* `minAge` (query) **필수** - 최소 연령
+  * 타입: `integer`
+  * 형식: `int32`
+* `maxAge` (query) **필수** - 최대 연령
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `200` - 조회 성공
+  * 응답 타입: `PolicyDto`
+* `400` - 잘못된 연령 정보
+* `500` - 서버 오류
+
+
+=== hospital-controller
+
+[source,http]
+----
+POST /hospitals/{id}/like
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+DELETE /hospitals/{id}/like
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+POST /hospitals/{id}/like
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+DELETE /hospitals/{id}/like
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+GET /hospitals
+----
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+GET /hospitals/{id}
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - OK
+  * 응답 타입: `Hospital`
+
+[source,http]
+----
+GET /hospitals/{id}/likes
+----
+
+**파라미터:**
+
+* `id` (path) **필수** - 
+  * 타입: `integer`
+  * 형식: `int64`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+GET /hospitals/type/{type}
+----
+
+**파라미터:**
+
+* `type` (path) **필수** - 
+  * 타입: `string`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+GET /hospitals/popular
+----
+
+**파라미터:**
+
+* `limit` (query) - 
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `200` - OK
+
+[source,http]
+----
+GET /hospitals/nearby
+----
+
+**파라미터:**
+
+* `lat` (query) **필수** - 
+  * 타입: `number`
+  * 형식: `double`
+* `lng` (query) **필수** - 
+  * 타입: `number`
+  * 형식: `double`
+* `radius` (query) **필수** - 
+  * 타입: `number`
+  * 형식: `double`
+
+**응답:**
+
+* `200` - OK
+
+
+=== 챗봇
+
+==== 메시지 피드백 처리
+챗봇 메시지에 대한 피드백을 처리합니다.
+
+[source,http]
+----
+POST /chatbot/feedback
+----
+
+**파라미터:**
+
+* `messageId` (query) **필수** - 메시지 ID
+  * 타입: `integer`
+  * 형식: `int64`
+* `isHelpful` (query) **필수** - 도움됨 여부
+  * 타입: `boolean`
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `FeedbackResponse`
+* `400` - 잘못된 요청
+  * 응답 타입: `FeedbackResponse`
+* `500` - 서버 오류
+  * 응답 타입: `FeedbackResponse`
+* `200` - 처리 성공
+  * 응답 타입: `FeedbackResponse`
+
+==== 챗봇 메시지 전송
+챗봇과 대화를 시작합니다.
+
+[source,http]
+----
+POST /chatbot/chat
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `200` - 응답 성공
+  * 응답 타입: `ChatbotResponseDto`
+* `401` - 인증 필요
+  * 응답 타입: `ChatbotResponseDto`
+* `400` - 잘못된 요청
+  * 응답 타입: `ChatbotResponseDto`
+* `500` - 서버 오류
+  * 응답 타입: `ChatbotResponseDto`
+
+==== 세션 목록 조회
+사용자의 챗봇 세션 목록을 조회합니다.
+
+[source,http]
+----
+GET /chatbot/sessions
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+* `page` (query) - 페이지 번호
+  * 타입: `integer`
+  * 형식: `int32`
+* `size` (query) - 페이지 크기
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+==== 대화 기록 조회
+사용자의 챗봇 대화 기록을 조회합니다.
+
+[source,http]
+----
+GET /chatbot/history
+----
+
+**파라미터:**
+
+* `userId` (query) **필수** - 사용자 ID
+  * 타입: `string`
+* `sessionId` (query) - 세션 ID
+  * 타입: `string`
+* `page` (query) - 페이지 번호
+  * 타입: `integer`
+  * 형식: `int32`
+* `size` (query) - 페이지 크기
+  * 타입: `integer`
+  * 형식: `int32`
+
+**응답:**
+
+* `401` - 인증 필요
+* `500` - 서버 오류
+* `200` - 조회 성공
+
+
+=== 인증
+
+==== 토큰 검증
+Access Token의 유효성을 검증합니다.
+
+[source,http]
+----
+POST /auth/validate
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `500` - 서버 오류
+  * 응답 타입: `TokenValidationResponse`
+* `200` - 토큰 검증 성공
+  * 응답 타입: `TokenValidationResponse`
+* `401` - 유효하지 않은 토큰
+  * 응답 타입: `TokenValidationResponse`
+
+==== 회원가입
+새로운 사용자를 등록합니다.
+
+[source,http]
+----
+POST /auth/register
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `400` - 잘못된 요청
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 회원가입 성공
+  * 응답 타입: `UserDto`
+* `409` - 이미 존재하는 사용자
+  * 응답 타입: `UserDto`
+
+==== 토큰 갱신
+Refresh Token을 사용하여 새로운 Access Token을 발급합니다.
+
+[source,http]
+----
+POST /auth/refresh
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `401` - 유효하지 않은 Refresh Token
+  * 응답 타입: `TokenDto`
+* `400` - 잘못된 요청
+  * 응답 타입: `TokenDto`
+* `500` - 서버 오류
+  * 응답 타입: `TokenDto`
+* `200` - 토큰 갱신 성공
+  * 응답 타입: `TokenDto`
+
+==== 로그아웃
+사용자 로그아웃을 처리합니다.
+
+[source,http]
+----
+POST /auth/logout
+----
+
+**응답:**
+
+* `500` - 서버 오류
+* `200` - 로그아웃 성공
+
+==== 로그인
+사용자 로그인 후 JWT 토큰을 발급합니다.
+
+[source,http]
+----
+POST /auth/login
+Content-Type: application/json
+
+{
+}
+----
+
+**응답:**
+
+* `200` - 로그인 성공
+  * 응답 타입: `TokenDto`
+* `400` - 잘못된 요청
+  * 응답 타입: `TokenDto`
+* `500` - 서버 오류
+  * 응답 타입: `TokenDto`
+* `401` - 로그인 실패
+  * 응답 타입: `TokenDto`
+
+==== 현재 사용자 정보 조회
+현재 인증된 사용자의 정보를 조회합니다.
+
+[source,http]
+----
+GET /auth/me
+Authorization: Bearer <token>
+----
+
+**응답:**
+
+* `401` - 인증 필요
+  * 응답 타입: `UserDto`
+* `404` - 사용자를 찾을 수 없음
+  * 응답 타입: `UserDto`
+* `500` - 서버 오류
+  * 응답 타입: `UserDto`
+* `200` - 조회 성공
+  * 응답 타입: `UserDto`
+
+
+== 데이터 모델
+
+=== UserDto
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `userId` (string)
+* `email` (string)
+* `password` (string)
+* `name` (string)
+* `phoneNumber` (string)
+* `birthDate` (string)
+  * 형식: `date`
+* `gender` (string)
+* `address` (string)
+* `latitude` (number)
+  * 형식: `double`
+* `longitude` (number)
+  * 형식: `double`
+* `profileImageUrl` (string)
+* `role` (string)
+* `isActive` (boolean)
+* `emailVerified` (boolean)
+* `lastLoginAt` (string)
+  * 형식: `date-time`
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "id": 0,
+  "userId": "string",
+  "email": "string",
+  "password": "string",
+  "name": "string",
+  "phoneNumber": "string",
+  "birthDate": "string",
+  "gender": "string",
+  "address": "string",
+  "latitude": "value",
+  "longitude": "value",
+  "profileImageUrl": "string",
+  "role": "string",
+  "isActive": true,
+  "emailVerified": true,
+  "lastLoginAt": "string",
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+----
+
+=== PasswordChangeRequestDto
+
+비밀번호 변경 정보
+
+**속성:**
+
+* `oldPassword` (string)
+* `newPassword` (string)
+
+[source,json]
+----
+{
+  "oldPassword": "string",
+  "newPassword": "string"
+}
+----
+
+=== CreateNotificationRequest
+
+알림 정보
+
+**속성:**
+
+* `userId` (string)
+* `notificationType` (string)
+* `title` (string)
+* `message` (string)
+* `priority` (string)
+* `scheduledAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "userId": "string",
+  "notificationType": "string",
+  "title": "string",
+  "message": "string",
+  "priority": "string",
+  "scheduledAt": "string"
+}
+----
+
+=== NotificationResponse
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `notificationType` (string)
+* `title` (string)
+* `message` (string)
+* `priority` (string)
+* `isRead` (boolean)
+* `isSent` (boolean)
+* `scheduledAt` (string)
+* `sentAt` (string)
+* `readAt` (string)
+* `createdAt` (string)
+
+[source,json]
+----
+{
+  "id": 0,
+  "notificationType": "string",
+  "title": "string",
+  "message": "string",
+  "priority": "string",
+  "isRead": true,
+  "isSent": true,
+  "scheduledAt": "string",
+  "sentAt": "string",
+  "readAt": "string",
+  "createdAt": "string"
+}
+----
+
+=== NotificationPreferenceDto
+
+알림 설정
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `userId` (string)
+* `notificationType` (string)
+* `emailEnabled` (boolean)
+* `pushEnabled` (boolean)
+* `smsEnabled` (boolean)
+* `inAppEnabled` (boolean)
+* `emailAddress` (string)
+* `phoneNumber` (string)
+* `deviceToken` (string)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "id": 0,
+  "userId": "string",
+  "notificationType": "string",
+  "emailEnabled": true,
+  "pushEnabled": true,
+  "smsEnabled": true,
+  "inAppEnabled": true,
+  "emailAddress": "string",
+  "phoneNumber": "string",
+  "deviceToken": "string",
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+----
+
+=== CareFacility
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `facilityCode` (string)
+* `name` (string)
+* `facilityType` (string)
+* `city` (string)
+* `district` (string)
+* `address` (string)
+* `latitude` (number)
+  * 형식: `double`
+* `longitude` (number)
+  * 형식: `double`
+* `phone` (string)
+* `email` (string)
+* `website` (string)
+* `capacity` (integer)
+  * 형식: `int32`
+* `currentEnrollment` (integer)
+  * 형식: `int32`
+* `availableSpots` (integer)
+  * 형식: `int32`
+* `ageRangeMin` (integer)
+  * 형식: `int32`
+* `ageRangeMax` (integer)
+  * 형식: `int32`
+* `operatingHours` (string)
+* `tuitionFee` (integer)
+  * 형식: `int32`
+* `additionalFees` (string)
+* `facilities` (string)
+* `curriculum` (string)
+* `teacherCount` (integer)
+  * 형식: `int32`
+* `studentTeacherRatio` (string)
+* `accreditation` (string)
+* `rating` (number)
+  * 형식: `double`
+* `reviewCount` (integer)
+  * 형식: `int32`
+* `viewCount` (integer)
+  * 형식: `int32`
+* `description` (string)
+* `ageRange` (string)
+* `isActive` (boolean)
+* `isPublic` (boolean)
+* `subsidyAvailable` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+* `reviews` (array)
+
+[source,json]
+----
+{
+  "id": 0,
+  "facilityCode": "string",
+  "name": "string",
+  "facilityType": "string",
+  "city": "string",
+  "district": "string",
+  "address": "string",
+  "latitude": "value",
+  "longitude": "value",
+  "phone": "string",
+  "email": "string",
+  "website": "string",
+  "capacity": 0,
+  "currentEnrollment": 0,
+  "availableSpots": 0,
+  "ageRangeMin": 0,
+  "ageRangeMax": 0,
+  "operatingHours": "string",
+  "tuitionFee": 0,
+  "additionalFees": "string",
+  "facilities": "string",
+  "curriculum": "string",
+  "teacherCount": 0,
+  "studentTeacherRatio": "string",
+  "accreditation": "string",
+  "rating": "value",
+  "reviewCount": 0,
+  "viewCount": 0,
+  "description": "string",
+  "ageRange": "string",
+  "isActive": true,
+  "isPublic": true,
+  "subsidyAvailable": true,
+  "createdAt": "string",
+  "updatedAt": "string",
+  "reviews": []
+}
+----
+
+=== Child
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `user`
+* `name` (string)
+* `age` (integer)
+  * 형식: `int32`
+* `gender` (string)
+* `birthDate` (string)
+  * 형식: `date`
+* `specialNeeds` (string)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+* `displayName` (string)
+
+[source,json]
+----
+{
+  "id": 0,
+  "user": "value",
+  "name": "string",
+  "age": 0,
+  "gender": "string",
+  "birthDate": "string",
+  "specialNeeds": "string",
+  "createdAt": "string",
+  "updatedAt": "string",
+  "displayName": "string"
+}
+----
+
+=== Comment
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `post`
+* `content` (string)
+* `author`
+* `authorName` (string)
+* `likeCount` (integer)
+  * 형식: `int32`
+* `status` (string)
+  * 가능한 값: `PUBLISHED`, `HIDDEN`, `DELETED`
+* `isActive` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+* `parentComment`
+* `replies` (array)
+* `topLevelComment` (boolean)
+* `reply` (boolean)
+
+[source,json]
+----
+{
+  "id": 0,
+  "post": "value",
+  "content": "string",
+  "author": "value",
+  "authorName": "string",
+  "likeCount": 0,
+  "status": "string",
+  "isActive": true,
+  "createdAt": "string",
+  "updatedAt": "string",
+  "parentComment": "value",
+  "replies": [],
+  "topLevelComment": true,
+  "reply": true
+}
+----
+
+=== HealthRecord
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `user`
+* `child`
+* `recordType` (string)
+  * 가능한 값: `VACCINATION`, `CHECKUP`, `ILLNESS`, `GROWTH`, `DENTAL`, `EYE`, `EMERGENCY`, `OTHER`
+* `title` (string)
+* `description` (string)
+* `recordDate` (string)
+  * 형식: `date`
+* `nextDate` (string)
+  * 형식: `date`
+* `location` (string)
+* `doctorName` (string)
+* `hospitalName` (string)
+* `height` (number)
+  * 형식: `double`
+* `weight` (number)
+  * 형식: `double`
+* `temperature` (number)
+  * 형식: `double`
+* `bloodPressure` (string)
+* `pulseRate` (integer)
+  * 형식: `int32`
+* `vaccineName` (string)
+* `vaccineBatch` (string)
+* `symptoms` (string)
+* `diagnosis` (string)
+* `treatment` (string)
+* `medication` (string)
+* `notes` (string)
+* `status` (string)
+  * 가능한 값: `SCHEDULED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`, `MISSED`
+* `isCompleted` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+* `healthRecordType`
+* `healthRecordAttachments` (array)
+
+[source,json]
+----
+{
+  "id": 0,
+  "user": "value",
+  "child": "value",
+  "recordType": "string",
+  "title": "string",
+  "description": "string",
+  "recordDate": "string",
+  "nextDate": "string",
+  "location": "string",
+  "doctorName": "string",
+  "hospitalName": "string",
+  "height": "value",
+  "weight": "value",
+  "temperature": "value",
+  "bloodPressure": "string",
+  "pulseRate": 0,
+  "vaccineName": "string",
+  "vaccineBatch": "string",
+  "symptoms": "string",
+  "diagnosis": "string",
+  "treatment": "string",
+  "medication": "string",
+  "notes": "string",
+  "status": "string",
+  "isCompleted": true,
+  "createdAt": "string",
+  "updatedAt": "string",
+  "healthRecordType": "value",
+  "healthRecordAttachments": []
+}
+----
+
+=== HealthRecordAttachment
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `healthRecord`
+* `fileUrl` (string)
+* `fileName` (string)
+* `fileType` (string)
+* `fileSize` (integer)
+  * 형식: `int64`
+* `description` (string)
+* `displayOrder` (integer)
+  * 형식: `int32`
+* `isActive` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "id": 0,
+  "healthRecord": "value",
+  "fileUrl": "string",
+  "fileName": "string",
+  "fileType": "string",
+  "fileSize": 0,
+  "description": "string",
+  "displayOrder": 0,
+  "isActive": true,
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+----
+
+=== HealthRecordType
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `name` (string)
+* `category` (string)
+* `description` (string)
+* `displayOrder` (integer)
+  * 형식: `int32`
+* `isActive` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+* `healthRecords` (array)
+
+[source,json]
+----
+{
+  "id": 0,
+  "name": "string",
+  "category": "string",
+  "description": "string",
+  "displayOrder": 0,
+  "isActive": true,
+  "createdAt": "string",
+  "updatedAt": "string",
+  "healthRecords": []
+}
+----
+
+=== Hospital
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `name` (string)
+* `type` (string)
+* `address` (string)
+* `latitude` (number)
+  * 형식: `double`
+* `longitude` (number)
+  * 형식: `double`
+* `phone` (string)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "id": 0,
+  "name": "string",
+  "type": "string",
+  "address": "string",
+  "latitude": "value",
+  "longitude": "value",
+  "phone": "string",
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+----
+
+=== HospitalReview
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `hospital`
+* `user`
+* `rating` (integer)
+  * 형식: `int32`
+* `content` (string)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "id": 0,
+  "hospital": "value",
+  "user": "value",
+  "rating": 0,
+  "content": "string",
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+----
+
+=== LocalTime
+
+**속성:**
+
+* `hour` (integer)
+  * 형식: `int32`
+* `minute` (integer)
+  * 형식: `int32`
+* `second` (integer)
+  * 형식: `int32`
+* `nano` (integer)
+  * 형식: `int32`
+
+[source,json]
+----
+{
+  "hour": 0,
+  "minute": 0,
+  "second": 0,
+  "nano": 0
+}
+----
+
+=== Notification
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `user`
+* `notificationType` (string)
+  * 가능한 값: `POLICY`, `HEALTH`, `COMMUNITY`, `SYSTEM`
+* `title` (string)
+* `message` (string)
+* `isRead` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "id": 0,
+  "user": "value",
+  "notificationType": "string",
+  "title": "string",
+  "message": "string",
+  "isRead": true,
+  "createdAt": "string"
+}
+----
+
+=== NotificationSettings
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `user`
+* `policyNotification` (boolean)
+* `facilityNotification` (boolean)
+* `communityNotification` (boolean)
+* `chatbotNotification` (boolean)
+* `emailNotification` (boolean)
+* `pushNotification` (boolean)
+* `smsNotification` (boolean)
+* `quietHoursStart`
+* `quietHoursEnd`
+* `quietHoursEnabled` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+* `inQuietHours` (boolean)
+
+[source,json]
+----
+{
+  "id": 0,
+  "user": "value",
+  "policyNotification": true,
+  "facilityNotification": true,
+  "communityNotification": true,
+  "chatbotNotification": true,
+  "emailNotification": true,
+  "pushNotification": true,
+  "smsNotification": true,
+  "quietHoursStart": "value",
+  "quietHoursEnd": "value",
+  "quietHoursEnabled": true,
+  "createdAt": "string",
+  "updatedAt": "string",
+  "inQuietHours": true
+}
+----
+
+=== Post
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `title` (string)
+* `content` (string)
+* `author`
+* `authorName` (string)
+* `category` (string)
+  * 가능한 값: `GENERAL`, `QUESTION`, `SHARE`, `REVIEW`, `NEWS`, `EVENT`, `NOTICE`
+* `isAnonymous` (boolean)
+* `viewCount` (integer)
+  * 형식: `int32`
+* `likeCount` (integer)
+  * 형식: `int32`
+* `commentCount` (integer)
+  * 형식: `int32`
+* `status` (string)
+  * 가능한 값: `DRAFT`, `PUBLISHED`, `HIDDEN`, `DELETED`
+* `isActive` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+* `comments` (array)
+* `tags` (array)
+
+[source,json]
+----
+{
+  "id": 0,
+  "title": "string",
+  "content": "string",
+  "author": "value",
+  "authorName": "string",
+  "category": "string",
+  "isAnonymous": true,
+  "viewCount": 0,
+  "likeCount": 0,
+  "commentCount": 0,
+  "status": "string",
+  "isActive": true,
+  "createdAt": "string",
+  "updatedAt": "string",
+  "comments": [],
+  "tags": []
+}
+----
+
+=== Review
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `careFacility`
+* `user`
+* `rating` (integer)
+  * 형식: `int32`
+* `content` (string)
+* `isVerified` (boolean)
+* `isActive` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "id": 0,
+  "careFacility": "value",
+  "user": "value",
+  "rating": 0,
+  "content": "string",
+  "isVerified": true,
+  "isActive": true,
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+----
+
+=== Tag
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `name` (string)
+* `description` (string)
+* `isActive` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+* `posts` (array)
+
+[source,json]
+----
+{
+  "id": 0,
+  "name": "string",
+  "description": "string",
+  "isActive": true,
+  "createdAt": "string",
+  "updatedAt": "string",
+  "posts": []
+}
+----
+
+=== User
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `userId` (string)
+* `email` (string)
+* `password` (string)
+* `name` (string)
+* `phoneNumber` (string)
+* `birthDate` (string)
+  * 형식: `date`
+* `gender` (string)
+  * 가능한 값: `MALE`, `FEMALE`, `OTHER`
+* `address` (string)
+* `latitude` (number)
+  * 형식: `double`
+* `longitude` (number)
+  * 형식: `double`
+* `profileImageUrl` (string)
+* `role` (string)
+  * 가능한 값: `PARENT`, `CAREGIVER`, `ADMIN`, `GUEST`
+* `isActive` (boolean)
+* `emailVerified` (boolean)
+* `lastLoginAt` (string)
+  * 형식: `date-time`
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+* `posts` (array)
+* `healthRecords` (array)
+* `reviews` (array)
+* `notifications` (array)
+* `children` (array)
+* `notificationSettings`
+
+[source,json]
+----
+{
+  "id": 0,
+  "userId": "string",
+  "email": "string",
+  "password": "string",
+  "name": "string",
+  "phoneNumber": "string",
+  "birthDate": "string",
+  "gender": "string",
+  "address": "string",
+  "latitude": "value",
+  "longitude": "value",
+  "profileImageUrl": "string",
+  "role": "string",
+  "isActive": true,
+  "emailVerified": true,
+  "lastLoginAt": "string",
+  "createdAt": "string",
+  "updatedAt": "string",
+  "posts": [],
+  "healthRecords": [],
+  "reviews": [],
+  "notifications": [],
+  "children": [],
+  "notificationSettings": "value"
+}
+----
+
+=== UpdateHealthRecordRequest
+
+수정할 건강 정보
+
+**속성:**
+
+* `title` (string)
+* `description` (string)
+* `recordDate` (string)
+  * 형식: `date-time`
+* `nextDate` (string)
+  * 형식: `date-time`
+* `location` (string)
+* `doctorName` (string)
+* `isCompleted` (boolean)
+
+[source,json]
+----
+{
+  "title": "string",
+  "description": "string",
+  "recordDate": "string",
+  "nextDate": "string",
+  "location": "string",
+  "doctorName": "string",
+  "isCompleted": true
+}
+----
+
+=== HealthRecordResponse
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `childId` (string)
+* `recordType` (string)
+* `title` (string)
+* `description` (string)
+* `recordDate` (string)
+* `nextDate` (string)
+* `location` (string)
+* `doctorName` (string)
+* `isCompleted` (boolean)
+* `createdAt` (string)
+* `updatedAt` (string)
+
+[source,json]
+----
+{
+  "id": 0,
+  "childId": "string",
+  "recordType": "string",
+  "title": "string",
+  "description": "string",
+  "recordDate": "string",
+  "nextDate": "string",
+  "location": "string",
+  "doctorName": "string",
+  "isCompleted": true,
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+----
+
+=== UpdateBookingRequest
+
+수정할 예약 정보
+
+**속성:**
+
+* `childName` (string)
+* `childAge` (integer)
+  * 형식: `int32`
+* `parentName` (string)
+* `parentPhone` (string)
+* `bookingType` (string)
+* `startTime` (string)
+  * 형식: `date-time`
+* `endTime` (string)
+  * 형식: `date-time`
+* `specialRequirements` (string)
+* `notes` (string)
+
+[source,json]
+----
+{
+  "childName": "string",
+  "childAge": 0,
+  "parentName": "string",
+  "parentPhone": "string",
+  "bookingType": "string",
+  "startTime": "string",
+  "endTime": "string",
+  "specialRequirements": "string",
+  "notes": "string"
+}
+----
+
+=== BookingResponse
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `facilityId` (integer)
+  * 형식: `int64`
+* `facilityName` (string)
+* `userId` (string)
+* `childName` (string)
+* `childAge` (integer)
+  * 형식: `int32`
+* `parentName` (string)
+* `parentPhone` (string)
+* `bookingType` (string)
+* `status` (string)
+* `startTime` (string)
+  * 형식: `date-time`
+* `endTime` (string)
+  * 형식: `date-time`
+* `specialRequirements` (string)
+* `notes` (string)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "id": 0,
+  "facilityId": 0,
+  "facilityName": "string",
+  "userId": "string",
+  "childName": "string",
+  "childAge": 0,
+  "parentName": "string",
+  "parentPhone": "string",
+  "bookingType": "string",
+  "status": "string",
+  "startTime": "string",
+  "endTime": "string",
+  "specialRequirements": "string",
+  "notes": "string",
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+----
+
+=== UpdatePostRequest
+
+수정할 게시글 정보
+
+**속성:**
+
+* `title` (string)
+* `content` (string)
+* `category` (string)
+* `tags` (array)
+
+[source,json]
+----
+{
+  "title": "string",
+  "content": "string",
+  "category": "string",
+  "tags": []
+}
+----
+
+=== PostResponse
+
+**속성:**
+
+* `postId` (integer)
+  * 형식: `int64`
+* `title` (string)
+* `content` (string)
+* `category` (string)
+* `authorName` (string)
+* `authorId` (string)
+* `isAnonymous` (boolean)
+* `createdAt` (string)
+* `viewCount` (integer)
+  * 형식: `int32`
+* `likeCount` (integer)
+  * 형식: `int32`
+* `commentCount` (integer)
+  * 형식: `int32`
+* `tags` (array)
+* `isLiked` (boolean)
+* `isBookmarked` (boolean)
+
+[source,json]
+----
+{
+  "postId": 0,
+  "title": "string",
+  "content": "string",
+  "category": "string",
+  "authorName": "string",
+  "authorId": "string",
+  "isAnonymous": true,
+  "createdAt": "string",
+  "viewCount": 0,
+  "likeCount": 0,
+  "commentCount": 0,
+  "tags": [],
+  "isLiked": true,
+  "isBookmarked": true
+}
+----
+
+=== UpdateCommentRequest
+
+수정할 댓글 정보
+
+**속성:**
+
+* `content` (string)
+
+[source,json]
+----
+{
+  "content": "string"
+}
+----
+
+=== CommentResponse
+
+**속성:**
+
+* `commentId` (integer)
+  * 형식: `int64`
+* `content` (string)
+* `authorName` (string)
+* `authorId` (string)
+* `createdAt` (string)
+* `likeCount` (integer)
+  * 형식: `int32`
+* `isLiked` (boolean)
+* `parentCommentId` (integer)
+  * 형식: `int64`
+* `replies` (array)
+
+[source,json]
+----
+{
+  "commentId": 0,
+  "content": "string",
+  "authorName": "string",
+  "authorId": "string",
+  "createdAt": "string",
+  "likeCount": 0,
+  "isLiked": true,
+  "parentCommentId": 0,
+  "replies": []
+}
+----
+
+=== LoginRequestDto
+
+로그인 정보
+
+**속성:**
+
+* `email` (string)
+* `password` (string)
+
+[source,json]
+----
+{
+  "email": "string",
+  "password": "string"
+}
+----
+
+=== PolicySearchRequestDto
+
+검색 조건
+
+**속성:**
+
+* `keyword` (string)
+* `category` (string)
+* `location` (string)
+* `minAge` (integer)
+  * 형식: `int32`
+* `maxAge` (integer)
+  * 형식: `int32`
+* `page` (integer)
+  * 형식: `int32`
+* `size` (integer)
+  * 형식: `int32`
+* `sortBy` (string)
+* `sortDirection` (string)
+
+[source,json]
+----
+{
+  "keyword": "string",
+  "category": "string",
+  "location": "string",
+  "minAge": 0,
+  "maxAge": 0,
+  "page": 0,
+  "size": 0,
+  "sortBy": "string",
+  "sortDirection": "string"
+}
+----
+
+=== PolicyDto
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `title` (string)
+* `description` (string)
+* `category` (string)
+* `location` (string)
+* `minAge` (integer)
+  * 형식: `int32`
+* `maxAge` (integer)
+  * 형식: `int32`
+* `supportAmount` (integer)
+  * 형식: `int32`
+* `applicationPeriod` (string)
+* `eligibilityCriteria` (string)
+* `applicationMethod` (string)
+* `requiredDocuments` (string)
+* `contactInfo` (string)
+* `websiteUrl` (string)
+* `viewCount` (integer)
+  * 형식: `int32`
+* `isActive` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "id": 0,
+  "title": "string",
+  "description": "string",
+  "category": "string",
+  "location": "string",
+  "minAge": 0,
+  "maxAge": 0,
+  "supportAmount": 0,
+  "applicationPeriod": "string",
+  "eligibilityCriteria": "string",
+  "applicationMethod": "string",
+  "requiredDocuments": "string",
+  "contactInfo": "string",
+  "websiteUrl": "string",
+  "viewCount": 0,
+  "isActive": true,
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+----
+
+=== PolicySearchResponseDto
+
+**속성:**
+
+* `policies` (array)
+* `totalElements` (integer)
+  * 형식: `int64`
+* `totalPages` (integer)
+  * 형식: `int32`
+* `currentPage` (integer)
+  * 형식: `int32`
+* `pageSize` (integer)
+  * 형식: `int32`
+* `hasNext` (boolean)
+* `hasPrevious` (boolean)
+
+[source,json]
+----
+{
+  "policies": [],
+  "totalElements": 0,
+  "totalPages": 0,
+  "currentPage": 0,
+  "pageSize": 0,
+  "hasNext": true,
+  "hasPrevious": true
+}
+----
+
+=== CreateHealthRecordRequest
+
+알림 설정 정보
+
+**속성:**
+
+* `childId` (string)
+* `recordType` (string)
+* `title` (string)
+* `description` (string)
+* `recordDate` (string)
+  * 형식: `date-time`
+* `nextDate` (string)
+  * 형식: `date-time`
+* `location` (string)
+* `doctorName` (string)
+
+[source,json]
+----
+{
+  "childId": "string",
+  "recordType": "string",
+  "title": "string",
+  "description": "string",
+  "recordDate": "string",
+  "nextDate": "string",
+  "location": "string",
+  "doctorName": "string"
+}
+----
+
+=== CreateBookingRequest
+
+예약 정보
+
+**속성:**
+
+* `childName` (string)
+* `childAge` (integer)
+  * 형식: `int32`
+* `parentName` (string)
+* `parentPhone` (string)
+* `bookingType` (string)
+* `startTime` (string)
+  * 형식: `date-time`
+* `endTime` (string)
+  * 형식: `date-time`
+* `specialRequirements` (string)
+* `notes` (string)
+
+[source,json]
+----
+{
+  "childName": "string",
+  "childAge": 0,
+  "parentName": "string",
+  "parentPhone": "string",
+  "bookingType": "string",
+  "startTime": "string",
+  "endTime": "string",
+  "specialRequirements": "string",
+  "notes": "string"
+}
+----
+
+=== CareFacilitySearchRequestDto
+
+검색 조건
+
+**속성:**
+
+* `keyword` (string)
+* `facilityType` (string)
+* `region` (string)
+* `latitude` (number)
+  * 형식: `double`
+* `longitude` (number)
+  * 형식: `double`
+* `radiusKm` (number)
+  * 형식: `double`
+* `childAge` (integer)
+  * 형식: `int32`
+* `minRating` (integer)
+  * 형식: `int32`
+* `isPublic` (boolean)
+* `subsidyAvailable` (boolean)
+* `minAvailableSpots` (integer)
+  * 형식: `int32`
+* `maxTuitionFee` (integer)
+  * 형식: `int32`
+* `page` (integer)
+  * 형식: `int32`
+* `size` (integer)
+  * 형식: `int32`
+* `sortBy` (string)
+* `sortDirection` (string)
+
+[source,json]
+----
+{
+  "keyword": "string",
+  "facilityType": "string",
+  "region": "string",
+  "latitude": "value",
+  "longitude": "value",
+  "radiusKm": "value",
+  "childAge": 0,
+  "minRating": 0,
+  "isPublic": true,
+  "subsidyAvailable": true,
+  "minAvailableSpots": 0,
+  "maxTuitionFee": 0,
+  "page": 0,
+  "size": 0,
+  "sortBy": "string",
+  "sortDirection": "string"
+}
+----
+
+=== CareFacilityDto
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `name` (string)
+* `facilityType` (string)
+* `description` (string)
+* `address` (string)
+* `location` (string)
+* `latitude` (number)
+  * 형식: `double`
+* `longitude` (number)
+  * 형식: `double`
+* `phoneNumber` (string)
+* `email` (string)
+* `websiteUrl` (string)
+* `operatingHours` (string)
+* `capacity` (integer)
+  * 형식: `int32`
+* `currentEnrollment` (integer)
+  * 형식: `int32`
+* `minAge` (integer)
+  * 형식: `int32`
+* `maxAge` (integer)
+  * 형식: `int32`
+* `rating` (number)
+  * 형식: `double`
+* `reviewCount` (integer)
+  * 형식: `int32`
+* `viewCount` (integer)
+  * 형식: `int32`
+* `isActive` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+* `updatedAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "id": 0,
+  "name": "string",
+  "facilityType": "string",
+  "description": "string",
+  "address": "string",
+  "location": "string",
+  "latitude": "value",
+  "longitude": "value",
+  "phoneNumber": "string",
+  "email": "string",
+  "websiteUrl": "string",
+  "operatingHours": "string",
+  "capacity": 0,
+  "currentEnrollment": 0,
+  "minAge": 0,
+  "maxAge": 0,
+  "rating": "value",
+  "reviewCount": 0,
+  "viewCount": 0,
+  "isActive": true,
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+----
+
+=== CareFacilitySearchResponseDto
+
+**속성:**
+
+* `facilities` (array)
+* `totalElements` (integer)
+  * 형식: `int64`
+* `totalPages` (integer)
+  * 형식: `int32`
+* `currentPage` (integer)
+  * 형식: `int32`
+* `pageSize` (integer)
+  * 형식: `int32`
+* `hasNext` (boolean)
+* `hasPrevious` (boolean)
+
+[source,json]
+----
+{
+  "facilities": [],
+  "totalElements": 0,
+  "totalPages": 0,
+  "currentPage": 0,
+  "pageSize": 0,
+  "hasNext": true,
+  "hasPrevious": true
+}
+----
+
+=== CreatePostRequest
+
+게시글 정보
+
+**속성:**
+
+* `title` (string)
+* `content` (string)
+* `category` (string)
+* `tags` (array)
+* `isAnonymous` (boolean)
+
+[source,json]
+----
+{
+  "title": "string",
+  "content": "string",
+  "category": "string",
+  "tags": [],
+  "isAnonymous": true
+}
+----
+
+=== CreateCommentRequest
+
+댓글 정보
+
+**속성:**
+
+* `content` (string)
+* `parentCommentId` (integer)
+  * 형식: `int64`
+
+[source,json]
+----
+{
+  "content": "string",
+  "parentCommentId": 0
+}
+----
+
+=== FeedbackResponse
+
+**속성:**
+
+* `messageId` (integer)
+  * 형식: `int64`
+* `isHelpful` (boolean)
+* `message` (string)
+* `updatedAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "messageId": 0,
+  "isHelpful": true,
+  "message": "string",
+  "updatedAt": "string"
+}
+----
+
+=== ChatbotRequest
+
+챗봇 요청 정보
+
+**속성:**
+
+* `userId` (string)
+* `message` (string)
+* `sessionId` (string)
+* `childAge` (integer)
+  * 형식: `int32`
+* `context` (string)
+
+[source,json]
+----
+{
+  "userId": "string",
+  "message": "string",
+  "sessionId": "string",
+  "childAge": 0,
+  "context": "string"
+}
+----
+
+=== ChatbotResponseDto
+
+**속성:**
+
+* `messageId` (integer)
+  * 형식: `int64`
+* `response` (string)
+* `intentType` (string)
+* `confidence` (number)
+  * 형식: `double`
+* `sessionId` (string)
+* `timestamp` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "messageId": 0,
+  "response": "string",
+  "intentType": "string",
+  "confidence": "value",
+  "sessionId": "string",
+  "timestamp": "string"
+}
+----
+
+=== TokenValidationRequest
+
+토큰 검증 요청
+
+**속성:**
+
+* `accessToken` (string)
+
+[source,json]
+----
+{
+  "accessToken": "string"
+}
+----
+
+=== TokenValidationResponse
+
+**속성:**
+
+* `valid` (boolean)
+* `userId` (string)
+* `email` (string)
+* `role` (string)
+* `message` (string)
+
+[source,json]
+----
+{
+  "valid": true,
+  "userId": "string",
+  "email": "string",
+  "role": "string",
+  "message": "string"
+}
+----
+
+=== RefreshTokenRequest
+
+토큰 갱신 요청
+
+**속성:**
+
+* `refreshToken` (string)
+
+[source,json]
+----
+{
+  "refreshToken": "string"
+}
+----
+
+=== TokenDto
+
+**속성:**
+
+* `accessToken` (string)
+* `refreshToken` (string)
+* `tokenType` (string)
+* `expiresIn` (integer)
+  * 형식: `int64`
+* `userId` (string)
+* `email` (string)
+* `role` (string)
+* `success` (boolean)
+* `message` (string)
+
+[source,json]
+----
+{
+  "accessToken": "string",
+  "refreshToken": "string",
+  "tokenType": "string",
+  "expiresIn": 0,
+  "userId": "string",
+  "email": "string",
+  "role": "string",
+  "success": true,
+  "message": "string"
+}
+----
+
+=== UserStats
+
+**속성:**
+
+* `totalUsers` (integer)
+  * 형식: `int64`
+* `activeUsers` (integer)
+  * 형식: `int64`
+* `verifiedUsers` (integer)
+  * 형식: `int64`
+
+[source,json]
+----
+{
+  "totalUsers": 0,
+  "activeUsers": 0,
+  "verifiedUsers": 0
+}
+----
+
+=== CategoryStats
+
+**속성:**
+
+* `category` (string)
+* `count` (integer)
+  * 형식: `int64`
+* `averageRating` (number)
+  * 형식: `double`
+* `totalViews` (integer)
+  * 형식: `int64`
+
+[source,json]
+----
+{
+  "category": "string",
+  "count": 0,
+  "averageRating": "value",
+  "totalViews": 0
+}
+----
+
+=== PolicyStats
+
+**속성:**
+
+* `totalPolicies` (integer)
+  * 형식: `int64`
+* `totalViews` (integer)
+  * 형식: `int64`
+* `categoryStats` (array)
+
+[source,json]
+----
+{
+  "totalPolicies": 0,
+  "totalViews": 0,
+  "categoryStats": []
+}
+----
+
+=== FacilityStats
+
+**속성:**
+
+* `totalFacilities` (integer)
+  * 형식: `int64`
+* `totalViews` (integer)
+  * 형식: `int64`
+* `typeStats` (array)
+
+[source,json]
+----
+{
+  "totalFacilities": 0,
+  "totalViews": 0,
+  "typeStats": []
+}
+----
+
+=== TypeStats
+
+**속성:**
+
+* `facilityType` (string)
+* `count` (integer)
+  * 형식: `int64`
+* `averageRating` (number)
+  * 형식: `double`
+* `totalViews` (integer)
+  * 형식: `int64`
+
+[source,json]
+----
+{
+  "facilityType": "string",
+  "count": 0,
+  "averageRating": "value",
+  "totalViews": 0
+}
+----
+
+=== TagResponse
+
+**속성:**
+
+* `id` (integer)
+  * 형식: `int64`
+* `name` (string)
+* `description` (string)
+* `createdAt` (string)
+
+[source,json]
+----
+{
+  "id": 0,
+  "name": "string",
+  "description": "string",
+  "createdAt": "string"
+}
+----
+
+=== PostDetailResponse
+
+**속성:**
+
+* `postId` (integer)
+  * 형식: `int64`
+* `title` (string)
+* `content` (string)
+* `category` (string)
+* `authorName` (string)
+* `authorId` (string)
+* `isAnonymous` (boolean)
+* `createdAt` (string)
+* `viewCount` (integer)
+  * 형식: `int32`
+* `likeCount` (integer)
+  * 형식: `int32`
+* `commentCount` (integer)
+  * 형식: `int32`
+* `tags` (array)
+* `isLiked` (boolean)
+* `isBookmarked` (boolean)
+* `comments` (array)
+* `relatedPosts` (array)
+
+[source,json]
+----
+{
+  "postId": 0,
+  "title": "string",
+  "content": "string",
+  "category": "string",
+  "authorName": "string",
+  "authorId": "string",
+  "isAnonymous": true,
+  "createdAt": "string",
+  "viewCount": 0,
+  "likeCount": 0,
+  "commentCount": 0,
+  "tags": [],
+  "isLiked": true,
+  "isBookmarked": true,
+  "comments": [],
+  "relatedPosts": []
+}
+----
+
+=== RelatedPostResponse
+
+**속성:**
+
+* `postId` (integer)
+  * 형식: `int64`
+* `title` (string)
+* `category` (string)
+* `viewCount` (integer)
+  * 형식: `int32`
+* `likeCount` (integer)
+  * 형식: `int32`
+
+[source,json]
+----
+{
+  "postId": 0,
+  "title": "string",
+  "category": "string",
+  "viewCount": 0,
+  "likeCount": 0
+}
+----
+
+=== SessionResponse
+
+**속성:**
+
+* `sessionId` (string)
+* `title` (string)
+* `description` (string)
+* `status` (string)
+* `messageCount` (integer)
+  * 형식: `int32`
+* `lastActivityAt` (string)
+  * 형식: `date-time`
+* `createdAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "sessionId": "string",
+  "title": "string",
+  "description": "string",
+  "status": "string",
+  "messageCount": 0,
+  "lastActivityAt": "string",
+  "createdAt": "string"
+}
+----
+
+=== ChatHistoryResponse
+
+**속성:**
+
+* `messageId` (integer)
+  * 형식: `int64`
+* `message` (string)
+* `response` (string)
+* `messageType` (string)
+* `intentType` (string)
+* `confidence` (number)
+  * 형식: `double`
+* `sessionId` (string)
+* `isHelpful` (boolean)
+* `createdAt` (string)
+  * 형식: `date-time`
+
+[source,json]
+----
+{
+  "messageId": 0,
+  "message": "string",
+  "response": "string",
+  "messageType": "string",
+  "intentType": "string",
+  "confidence": "value",
+  "sessionId": "string",
+  "isHelpful": true,
+  "createdAt": "string"
+}
+----
+
+== 응답 코드
+
+|코드|설명|
+|---|---|
+|200|성공|
+|201|생성됨|
+|400|잘못된 요청|
+|401|인증 실패|
+|403|권한 없음|
+|404|찾을 수 없음|
+|500|서버 오류|
+

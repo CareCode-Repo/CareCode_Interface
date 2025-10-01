@@ -35,30 +35,29 @@ public class PublicDataApiClient {
      * @return API 응답
      */
     public <T> T get(String endpoint, Map<String, String> params, Class<T> responseType) {
-        try {
-            UriComponentsBuilder builder = UriComponentsBuilder
-                    .fromHttpUrl(baseUrl + endpoint)
-                    .queryParam("serviceKey", apiKey);
+        // 서울시 API URL 구조: http://openapi.seoul.go.kr:8088/KEY/TYPE/SERVICE/START_INDEX/END_INDEX/
+        // endpoint는 SERVICE/START_INDEX/END_INDEX/ 형태로 전달됨
+        String url = baseUrl + "/" + apiKey + "/json/" + endpoint;
 
-            if (params != null) {
-                params.forEach(builder::queryParam);
+        log.info("공공데이터 API 호출: {}", url);
+        log.info("API 키: {}", apiKey != null ? apiKey.substring(0, Math.min(10, apiKey.length())) + "..." : "null");
+        log.info("Base URL: {}", baseUrl);
+
+        ResponseEntity<T> response = restTemplate.getForEntity(url, responseType);
+
+        log.info("공공데이터 API 응답 상태: {}", response.getStatusCode());
+        log.info("공공데이터 API 응답 헤더: {}", response.getHeaders());
+
+        if (response.getStatusCode() == HttpStatus.OK) {
+            log.info("공공데이터 API 호출 성공: {}", endpoint);
+            if (response.getBody() != null) {
+                log.debug("응답 본문 길이: {}", response.getBody().toString().length());
             }
-
-            String url = builder.toUriString();
-            log.info("공공데이터 API 호출: {}", url);
-
-            ResponseEntity<T> response = restTemplate.getForEntity(url, responseType);
-            
-            if (response.getStatusCode() == HttpStatus.OK) {
-                log.info("공공데이터 API 호출 성공: {}", endpoint);
-                return response.getBody();
-            } else {
-                log.error("공공데이터 API 호출 실패: {} - {}", endpoint, response.getStatusCode());
-                throw new RuntimeException("API 호출 실패: " + response.getStatusCode());
-            }
-        } catch (Exception e) {
-            log.error("공공데이터 API 호출 중 오류 발생: {} - {}", endpoint, e.getMessage(), e);
-            throw new RuntimeException("API 호출 중 오류 발생", e);
+            return response.getBody();
+        } else {
+            log.error("공공데이터 API 호출 실패: {} - {}", endpoint, response.getStatusCode());
+            log.error("응답 본문: {}", response.getBody());
+            throw new RuntimeException("API 호출 실패: " + response.getStatusCode() + " - " + response.getBody());
         }
     }
 
@@ -139,4 +138,4 @@ public class PublicDataApiClient {
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
     }
-} 
+}

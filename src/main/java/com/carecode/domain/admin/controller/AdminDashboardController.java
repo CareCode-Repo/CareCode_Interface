@@ -26,10 +26,7 @@ public class AdminDashboardController {
     private final HospitalRepository hospitalRepository;
     private final PolicyRepository policyRepository;
 
-    @GetMapping("/login")
-    public String adminLogin(Model model) {
-        return "admin/login";
-    }
+
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {

@@ -7,9 +7,11 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,6 +19,12 @@ import java.util.List;
  */
 @Configuration
 public class SwaggerConfig {
+
+    @Value("${server.port:8080}")
+    private String serverPort;
+    
+    @Value("${springdoc.swagger-ui.server-url:}")
+    private String customServerUrl;
 
     @Bean
     public OpenAPI customOpenAPI() {
@@ -32,14 +40,7 @@ public class SwaggerConfig {
                         .license(new License()
                                 .name("MIT License")
                                 .url("https://opensource.org/licenses/MIT")))
-                .servers(List.of(
-                        new Server()
-                                .url("http://localhost:8080")
-                                .description("개발 서버"),
-                        new Server()
-                                .url("https://api.carecode.com")
-                                .description("운영 서버")
-                ))
+                .servers(createServerList())
                 .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
                 .components(new io.swagger.v3.oas.models.Components()
                         .addSecuritySchemes("Bearer Authentication", new SecurityScheme()
@@ -58,5 +59,24 @@ public class SwaggerConfig {
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("basic")
                                 .description("기본 인증 정보를 입력하세요")));
+    }
+    
+    /**
+     * 환경별 서버 목록 생성
+     */
+    private List<Server> createServerList() {
+        List<Server> servers = new ArrayList<>();
+        
+        // 커스텀 서버 URL이 설정된 경우 (환경변수로 주입)
+        if (customServerUrl != null && !customServerUrl.isEmpty()) {
+            servers.add(new Server()
+                    .url(customServerUrl)
+                    .description("현재 환경 서버"));
+        } else {
+            servers.add(new Server()
+                    .url("http://localhost:" + serverPort)
+                    .description("로컬 개발 서버"));
+        }
+        return servers;
     }
 } 

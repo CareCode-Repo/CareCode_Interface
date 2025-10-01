@@ -48,13 +48,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String userId = jwtService.getUserIdFromToken(token);
                     String email = jwtService.getEmailFromToken(token);
                     String role = jwtService.getRoleFromToken(token);
+                    String name = jwtService.getNameFromToken(token);
                     
-                    log.info("JWT 토큰 검증 성공: userId={}, email={}, role={}", userId, email, role);
-                    
-                    // 인증 정보 생성 - userId를 principal로 사용
+                    // 인증 정보 생성 - email을 principal로 사용 (일관성을 위해)
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userId,  // principal을 userId로 설정
-                        null,    // credentials는 null
+                        email,       // principal을 email로 설정 (일관성)
+                        null,        // credentials는 null
                         Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
                     );
                     
@@ -83,11 +82,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private String extractTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        log.debug("Authorization 헤더: {}", bearerToken);
-        
+
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             String token = bearerToken.substring(7);
-            log.debug("추출된 토큰 길이: {}", token.length());
             return token;
         }
         
@@ -108,9 +105,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.equals("/favicon.ico") ||
                path.startsWith("/auth/login") ||
                path.startsWith("/auth/register") ||
+               path.equals("/auth/refresh") ||
+               path.startsWith("/api/auth/kakao") ||
+               path.startsWith("/oauth2") ||
+               path.startsWith("/login/oauth2") ||
+               path.equals("/kakao-callback.html") ||
                path.startsWith("/admin");
         
-        log.debug("JWT 필터 건너뛰기: {} = {}", path, shouldNotFilter);
         return shouldNotFilter;
     }
 } 

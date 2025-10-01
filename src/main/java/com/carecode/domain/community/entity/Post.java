@@ -71,6 +71,7 @@ public class Post {
     private LocalDateTime updatedAt;
     
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Comment> comments = new ArrayList<>();
     
     @ManyToMany
@@ -79,6 +80,7 @@ public class Post {
         joinColumns = @JoinColumn(name = "POST_ID"),
         inverseJoinColumns = @JoinColumn(name = "TAG_ID")
     )
+    @Builder.Default
     private List<Tag> tags = new ArrayList<>();
     
     @PrePersist

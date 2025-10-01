@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카카오 로그인 결과</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        .header {
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #666;
+            margin: 0;
+        }
+        .result-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .code-display {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .btn {
+            background: #FEE500;
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #FFD700;
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .json-result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .json-result pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #FEE500;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 카카오 로그인 결과</h1>
+            <p>인증 코드를 받아 토큰을 발급받습니다.</p>
+        </div>
+
+        <div id="result-container">
+            <div class="status loading">
+                <span class="loading-spinner"></span>
+                인증 코드 처리 중...
+            </div>
+        </div>
+
+        <div id="actions" style="display: none;">
+            <button class="btn" onclick="retryLogin()">다시 시도</button>
+            <button class="btn" onclick="goToHome()">홈으로 이동</button>
+        </div>
+    </div>
+
+    <script>
+        // URL에서 인증 코드 추출
+        function getAuthCode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('code');
+        }
+
+        // 에러 파라미터 추출
+        function getError() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return {
+                error: urlParams.get('error'),
+                error_description: urlParams.get('error_description'),
+                error_code: urlParams.get('error_code')
+            };
+        }
+
+        // 결과 표시
+        function showResult(status, message, data = null) {
+            const container = document.getElementById('result-container');
+            const actions = document.getElementById('actions');
+            
+            let html = '';
+            
+            if (status === 'success') {
+                html = `
+                    <div class="status success">✅ ${message}</div>
+                    <div class="result-box">
+                        <h3>🎉 로그인 성공!</h3>
+                        <p><strong>사용자 정보:</strong></p>
+                        <div class="json-result">
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    </div>
+                `;
+            } else if (status === 'error') {
+                html = `
+                    <div class="status error">❌ ${message}</div>
+                    <div class="result-box">
+                        <h3>⚠️ 로그인 실패</h3>
+                        <p><strong>에러 정보:</strong></p>
+                        <div class="json-result">
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    </div>
+                `;
+            } else if (status === 'new_user') {
+                html = `
+                    <div class="status loading">🆕 신규 사용자</div>
+                    <div class="result-box">
+                        <h3>📝 회원가입 필요</h3>
+                        <p>신규 사용자입니다. 회원가입을 진행해주세요.</p>
+                        <div class="json-result">
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <button class="btn" onclick="registerNewUser()" style="background: #FEE500; color: #000;">
+                                🚀 카카오 회원가입 진행
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+            actions.style.display = 'block';
+        }
+
+        // 카카오 OAuth 통합 처리
+        async function processKakaoAuth(code) {
+            try {
+                console.log('카카오 OAuth 통합 처리 시작:', code);
+                
+                const response = await fetch('/api/auth/kakao/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `code=${encodeURIComponent(code)}`
+                });
+
+                const data = await response.json();
+                console.log('카카오 OAuth 통합 처리 응답:', data);
+
+                if (response.ok && data.success) {
+                    if (data.isNewUser) {
+                        showResult('success', '🎉 카카오 회원가입 성공!', data);
+                    } else {
+                        showResult('success', '🎉 카카오 로그인 성공!', data);
+                    }
+                } else {
+                    showResult('error', data.message || 'OAuth 처리에 실패했습니다.', data);
+                }
+            } catch (error) {
+                console.error('카카오 OAuth 통합 처리 오류:', error);
+                showResult('error', 'OAuth 처리 중 오류가 발생했습니다.', {
+                    error: error.message,
+                    stack: error.stack
+                });
+            }
+        }
+
+        // 다시 시도
+        function retryLogin() {
+            window.location.href = '/oauth2/kakao/auth-url';
+        }
+
+        // 홈으로 이동
+        function goToHome() {
+            window.location.href = '/';
+        }
+
+        // 페이지 로드 시 실행
+        document.addEventListener('DOMContentLoaded', function() {
+            const code = getAuthCode();
+            const error = getError();
+
+            if (error.error) {
+                // 에러가 있는 경우
+                showResult('error', `카카오 인증 실패: ${error.error_description || error.error}`, error);
+            } else if (code) {
+                // 인증 코드가 있는 경우
+                console.log('인증 코드 받음:', code);
+                processKakaoAuth(code);
+            } else {
+                // 코드도 에러도 없는 경우
+                showResult('error', '인증 코드를 찾을 수 없습니다.', {
+                    message: 'URL에 인증 코드가 없습니다.',
+                    url: window.location.href
+                });
+            }
+        });
+    </script>
+</body>
+</html>

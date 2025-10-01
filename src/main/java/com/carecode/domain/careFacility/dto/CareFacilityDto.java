@@ -1,5 +1,6 @@
 package com.carecode.domain.careFacility.dto;
 
+import com.carecode.domain.careFacility.entity.FacilityType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -26,10 +27,8 @@ public class CareFacilityDto {
     @Size(max = 200, message = "시설명은 200자를 초과할 수 없습니다")
     private String name;
     
-    @NotBlank(message = "시설 유형은 필수입니다")
-    @Pattern(regexp = "^(KINDERGARTEN|DAYCARE|PLAYGROUP|NURSERY|OTHER)$", 
-             message = "유효하지 않은 시설 유형입니다")
-    private String facilityType;
+    @NotNull(message = "시설 유형은 필수입니다")
+    private FacilityType facilityType;
     
     @Size(max = 2000, message = "시설 설명은 2000자를 초과할 수 없습니다")
     private String description;
