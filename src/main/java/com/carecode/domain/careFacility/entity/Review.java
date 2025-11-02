@@ -110,9 +110,6 @@ public class Review {
 
     /**
      * 리뷰 수정 일시
-     * 
-     * <p>리뷰 정보가 마지막으로 수정된 시간입니다.
-     * JPA Auditing에 의해 자동으로 업데이트됩니다.</p>
      */
     @LastModifiedDate
     @Column(name = "UPDATED_AT")
@@ -120,9 +117,6 @@ public class Review {
 
     /**
      * 리뷰 생성자
-     * 
-     * <p>새로운 리뷰를 생성합니다. 기본적으로 검증되지 않은 상태로 생성되며,
-     * 활성 상태로 설정됩니다. 생성 일시와 수정 일시는 JPA Auditing에 의해 자동으로 설정됩니다.</p>
      * 
      * @param careFacility 리뷰가 작성된 돌봄 시설 (필수)
      * @param user 리뷰를 작성한 사용자 (필수)
@@ -143,9 +137,6 @@ public class Review {
     /**
      * 리뷰 정보 업데이트
      * 
-     * <p>리뷰의 평점과 내용을 수정합니다.
-     * 수정 일시는 JPA Auditing에 의해 자동으로 업데이트됩니다.</p>
-     * 
      * @param rating 새로운 평점 (1-5점, null이면 기존 값 유지)
      * @param content 새로운 리뷰 내용 (null이면 기존 값 유지)
      * 
@@ -158,11 +149,6 @@ public class Review {
 
     /**
      * 리뷰 검증
-     * 
-     * <p>리뷰를 검증된 상태로 변경합니다. 검증된 리뷰는
-     * UI에 표시되고 신뢰도가 높은 리뷰로 간주됩니다.</p>
-     * 
-     * <p>일반적으로 관리자나 자동 검증 시스템에 의해 호출됩니다.</p>
      */
     public void verify() {
         this.isVerified = true;
@@ -170,11 +156,6 @@ public class Review {
 
     /**
      * 리뷰 비활성화
-     * 
-     * <p>리뷰를 비활성 상태로 변경합니다. 비활성화된 리뷰는
-     * UI에서 숨겨지고 검색에서 제외됩니다.</p>
-     * 
-     * <p>부적절한 리뷰나 신고된 리뷰를 관리할 때 사용됩니다.</p>
      */
     public void deactivate() {
         this.isActive = false;
@@ -182,9 +163,6 @@ public class Review {
 
     /**
      * 리뷰 활성화
-     * 
-     * <p>비활성화된 리뷰를 다시 활성 상태로 변경합니다.
-     * 활성화된 리뷰는 UI에 표시되고 검색에 포함됩니다.</p>
      */
     public void activate() {
         this.isActive = true;

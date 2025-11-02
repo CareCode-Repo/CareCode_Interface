@@ -14,6 +14,22 @@ import java.util.List;
 public class ChatbotRequestDto {
     
     /**
+     * 기본 챗봇 요청 DTO
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ChatbotRequest {
+        private String userId;
+        private String message;
+        private String sessionId;
+        private Integer childAge;
+        private String context;
+    }
+    
+    /**
      * 질문 요청 DTO
      */
     @Getter

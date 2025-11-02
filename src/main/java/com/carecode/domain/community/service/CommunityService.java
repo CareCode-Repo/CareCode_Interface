@@ -2,15 +2,19 @@ package com.carecode.domain.community.service;
 
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.domain.community.dto.CommunityRequestDto;
-import com.carecode.domain.community.dto.CommunityResponseDto;
+import com.carecode.domain.community.dto.CommunityRequest;
+import com.carecode.domain.community.dto.CommunityResponse;
 import com.carecode.domain.community.entity.Comment;
 import com.carecode.domain.community.entity.Post;
 import com.carecode.domain.community.entity.Tag;
 import com.carecode.domain.community.repository.CommentRepository;
 import com.carecode.domain.community.repository.PostRepository;
 import com.carecode.domain.community.repository.TagRepository;
+import com.carecode.domain.community.repository.PostLikeRepository;
+import com.carecode.domain.community.repository.BookmarkRepository;
 import com.carecode.domain.community.mapper.CommunityMapper;
+import com.carecode.domain.community.entity.PostLike;
+import com.carecode.domain.community.entity.Bookmark;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +23,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 /**
  * 커뮤니티 서비스 클래스
@@ -34,26 +43,44 @@ public class CommunityService {
     private final CommentRepository commentRepository;
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
+    private final PostLikeRepository postLikeRepository;
+    private final BookmarkRepository bookmarkRepository;
     private final CommunityMapper communityMapper;
     
     /**
-     * 게시글 목록 조회
+     * 게시글 목록 조회 (페이징)
      */
-    public List<CommunityResponseDto.PostResponse> getAllPosts() {
-        log.info("게시글 목록 조회");
+    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> getAllPosts(int page, int size) {
+        log.info("게시글 목록 조회 - 페이지: {}, 크기: {}", page, size);
         try {
-            List<Post> posts = postRepository.findAll();
-            return communityMapper.toPostResponseList(posts);
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Page<Post> postPage = postRepository.findAll(pageable);
+            
+            List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+            
+            return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+                    .content(postResponses)
+                    .page(postPage.getNumber())
+                    .size(postPage.getSize())
+                    .totalElements(postPage.getTotalElements())
+                    .totalPages(postPage.getTotalPages())
+                    .first(postPage.isFirst())
+                    .last(postPage.isLast())
+                    .hasNext(postPage.hasNext())
+                    .hasPrevious(postPage.hasPrevious())
+                    .build();
         } catch (Exception e) {
             log.error("게시글 목록 조회 중 오류 발생: {}", e.getMessage());
             throw new CareServiceException("게시글 목록을 조회하는 중 오류가 발생했습니다.");
         }
     }
     
+    // 레거시 전체 조회 메서드 제거 (페이징 API로 일원화)
+    
     /**
      * 게시글 상세 조회
      */
-    public CommunityResponseDto.PostDetailResponse getPostById(Long postId) {
+    public CommunityResponse.PostDetailResponse getPostById(Long postId) {
         log.info("게시글 상세 조회 - 게시글 ID: {}", postId);
         try {
             Post post = postRepository.findById(postId)
@@ -75,20 +102,20 @@ public class CommunityService {
     /**
      * 게시글 작성
      */
-    public CommunityResponseDto.PostResponse createPost(CommunityRequestDto.CreatePostRequest request) {
-        log.info("게시글 작성 - 제목: {}", request.getTitle());
-        try {
-            // TODO: 실제 인증된 사용자 ID로 변경
-            User author = userRepository.findById(1L) // 임시로 ID 1 사용
-                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+    public CommunityResponse.PostResponse createPost(CommunityRequest.CreatePost request) {
+            // 현재 인증된 사용자 가져오기
+            User author = getCurrentUser();
+            
+            // 카테고리 매핑
+            Post.PostCategory category = mapCategory(request.getCategory());
             
             Post post = Post.builder()
                     .title(request.getTitle())
                     .content(request.getContent())
-                    .category(Post.PostCategory.valueOf(request.getCategory()))
+                    .category(category)
                     .author(author)
                     .authorName(author.getName())
-                    .isAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false)
+                    .isAnonymous(request.isAnonymous())
                     .build();
             
             Post savedPost = postRepository.save(post);
@@ -99,16 +126,12 @@ public class CommunityService {
             }
             
             return communityMapper.toPostResponse(savedPost);
-        } catch (Exception e) {
-            log.error("게시글 작성 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글을 작성하는 중 오류가 발생했습니다.");
-        }
     }
     
     /**
      * 게시글 수정
      */
-    public CommunityResponseDto.PostResponse updatePost(Long postId, CommunityRequestDto.UpdatePostRequest request) {
+    public CommunityResponse.PostResponse updatePost(Long postId, CommunityRequest.UpdatePost request) {
         log.info("게시글 수정 - 게시글 ID: {}", postId);
         try {
             Post post = postRepository.findById(postId)
@@ -116,7 +139,7 @@ public class CommunityService {
             
             post.setTitle(request.getTitle());
             post.setContent(request.getContent());
-            post.setCategory(Post.PostCategory.valueOf(request.getCategory()));
+            post.setCategory(mapCategory(request.getCategory()));
             
             Post updatedPost = postRepository.save(post);
             return communityMapper.toPostResponse(updatedPost);
@@ -146,30 +169,14 @@ public class CommunityService {
         }
     }
     
-    /**
-     * 게시글 검색
-     */
-    public List<CommunityResponseDto.PostResponse> searchPosts(String keyword) {
-        log.info("게시글 검색 - 키워드: {}", keyword);
-        try {
-            // TODO: 실제 검색 로직 구현 (제목, 내용에서 키워드 검색)
-            List<Post> posts = postRepository.findAll();
-            return posts.stream()
-                    .filter(post -> post.getTitle().contains(keyword) || post.getContent().contains(keyword))
-                    .map(communityMapper::toPostResponse)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("게시글 검색 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글을 검색하는 중 오류가 발생했습니다.");
-        }
-    }
+
     
     // ========== 댓글 관련 메서드 ==========
     
     /**
      * 게시글의 댓글 목록 조회
      */
-    public List<CommunityResponseDto.CommentResponse> getCommentsByPostId(Long postId) {
+    public List<CommunityResponse.CommentResponse> getCommentsByPostId(Long postId) {
         log.info("댓글 목록 조회 - 게시글 ID: {}", postId);
         try {
             // 게시글 존재 확인
@@ -190,15 +197,14 @@ public class CommunityService {
     /**
      * 댓글 작성
      */
-    public CommunityResponseDto.CommentResponse createComment(Long postId, CommunityRequestDto.CreateCommentRequest request) {
+    public CommunityResponse.CommentResponse createComment(Long postId, CommunityRequest.CreateComment request) {
         log.info("댓글 작성 - 게시글 ID: {}, 부모 댓글 ID: {}", postId, request.getParentCommentId());
         try {
             Post post = postRepository.findById(postId)
                     .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
             
-            // TODO: 실제 인증된 사용자 ID로 변경
-            User author = userRepository.findById(1L) // 임시로 ID 1 사용
-                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+            // 현재 인증된 사용자 가져오기
+            User author = getCurrentUser();
             
             Comment parentComment = null;
             if (request.getParentCommentId() != null) {
@@ -232,47 +238,31 @@ public class CommunityService {
     /**
      * 댓글 수정
      */
-    public CommunityResponseDto.CommentResponse updateComment(Long commentId, CommunityRequestDto.UpdateCommentRequest request) {
-        log.info("댓글 수정 - 댓글 ID: {}", commentId);
-        try {
-            Comment comment = commentRepository.findById(commentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
-            
-            comment.setContent(request.getContent());
-            Comment updatedComment = commentRepository.save(comment);
-            
-            return communityMapper.toCommentResponse(updatedComment);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("댓글 수정 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("댓글을 수정하는 중 오류가 발생했습니다.");
-        }
+    public CommunityResponse.CommentResponse updateComment(Long commentId, CommunityRequest.UpdateComment request) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
+
+        comment.setContent(request.getContent());
+        Comment updatedComment = commentRepository.save(comment);
+
+        return communityMapper.toCommentResponse(updatedComment);
     }
     
     /**
      * 댓글 삭제
      */
     public void deleteComment(Long commentId) {
-        log.info("댓글 삭제 - 댓글 ID: {}", commentId);
-        try {
-            Comment comment = commentRepository.findById(commentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
-            
-            Long postId = comment.getPost().getId();
-            commentRepository.delete(comment);
-            
-            // 게시글의 댓글 수 업데이트
-            Post post = postRepository.findById(postId).orElse(null);
-            if (post != null) {
-                post.setCommentCount((int) commentRepository.countByPostId(postId));
-                postRepository.save(post);
-            }
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("댓글 삭제 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("댓글을 삭제하는 중 오류가 발생했습니다.");
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
+
+        Long postId = comment.getPost().getId();
+        commentRepository.delete(comment);
+
+        // 게시글의 댓글 수 업데이트
+        Post post = postRepository.findById(postId).orElse(null);
+        if (post != null) {
+            post.setCommentCount((int) commentRepository.countByPostId(postId));
+            postRepository.save(post);
         }
     }
     
@@ -281,54 +271,34 @@ public class CommunityService {
     /**
      * 태그 목록 조회
      */
-    public List<CommunityResponseDto.TagResponse> getAllTags() {
-        log.info("태그 목록 조회");
-        try {
-            List<Tag> tags = tagRepository.findByIsActiveTrue();
-            return communityMapper.toTagResponseList(tags);
-        } catch (Exception e) {
-            log.error("태그 목록 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("태그 목록을 조회하는 중 오류가 발생했습니다.");
-        }
+    public List<CommunityResponse.TagResponse> getAllTags() {
+        List<Tag> tags = tagRepository.findByIsActiveTrue();
+        return communityMapper.toTagResponseList(tags);
     }
     
     /**
      * 태그 검색
      */
-    public List<CommunityResponseDto.TagResponse> searchTags(String keyword) {
-        log.info("태그 검색 - 키워드: {}", keyword);
-        try {
-            List<Tag> tags = tagRepository.findByNameContainingAndIsActiveTrue(keyword);
-            return communityMapper.toTagResponseList(tags);
-        } catch (Exception e) {
-            log.error("태그 검색 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("태그를 검색하는 중 오류가 발생했습니다.");
-        }
+    public List<CommunityResponse.TagResponse> searchTags(String keyword) {
+        List<Tag> tags = tagRepository.findByNameContainingAndIsActiveTrue(keyword);
+        return communityMapper.toTagResponseList(tags);
     }
     
     /**
      * 태그 생성
      */
-    public CommunityResponseDto.TagResponse createTag(CommunityRequestDto.CreateTagRequest request) {
-        log.info("태그 생성 - 이름: {}", request.getName());
-        try {
-            if (tagRepository.existsByName(request.getName())) {
-                throw new CareServiceException("이미 존재하는 태그입니다: " + request.getName());
-            }
-            
-            Tag tag = Tag.builder()
-                    .name(request.getName())
-                    .description(request.getDescription())
-                    .build();
-            
-            Tag savedTag = tagRepository.save(tag);
-            return communityMapper.toTagResponse(savedTag);
-        } catch (CareServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("태그 생성 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("태그를 생성하는 중 오류가 발생했습니다.");
+    public CommunityResponse.TagResponse createTag(CommunityRequest.CreateTag request) {
+        if (tagRepository.existsByName(request.getName())) {
+            throw new CareServiceException("이미 존재하는 태그입니다: " + request.getName());
         }
+
+        Tag tag = Tag.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .build();
+
+        Tag savedTag = tagRepository.save(tag);
+        return communityMapper.toTagResponse(savedTag);
     }
     
     /**
@@ -347,44 +317,299 @@ public class CommunityService {
      * 태그가 없으면 생성
      */
     private Tag createTagIfNotExists(String tagName) {
-        Tag tag = Tag.builder()
-                .name(tagName)
-                .description("자동 생성된 태그")
-                .build();
+        Tag tag = new Tag(tagName, "자동 생성된 태그");
         return tagRepository.save(tag);
     }
     
     /**
      * 게시글의 태그 목록 조회
      */
-    public List<CommunityResponseDto.TagResponse> getTagsByPostId(Long postId) {
-        log.info("게시글 태그 목록 조회 - 게시글 ID: {}", postId);
-        try {
-            Post post = postRepository.findById(postId)
-                    .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
-            return communityMapper.toTagResponseList(post.getTags());
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("게시글 태그 목록 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글 태그 목록을 조회하는 중 오류가 발생했습니다.");
-        }
+    public List<CommunityResponse.TagResponse> getTagsByPostId(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
+        return communityMapper.toTagResponseList(post.getTags());
     }
     
     /**
      * 태그별 게시글 목록 조회
      */
-    public List<CommunityResponseDto.PostResponse> getPostsByTagId(Long tagId) {
-        log.info("태그별 게시글 목록 조회 - 태그 ID: {}", tagId);
-        try {
-            Tag tag = tagRepository.findById(tagId)
-                    .orElseThrow(() -> new ResourceNotFoundException("태그를 찾을 수 없습니다. ID: " + tagId));
-            return communityMapper.toPostResponseList(postRepository.findByTagsContaining(tag));
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("태그별 게시글 목록 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("태그별 게시글 목록을 조회하는 중 오류가 발생했습니다.");
+    public List<CommunityResponse.PostResponse> getPostsByTagId(Long tagId) {
+        Tag tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> new ResourceNotFoundException("태그를 찾을 수 없습니다. ID: " + tagId));
+        return communityMapper.toPostResponseList(postRepository.findByTagsContaining(tag));
+    }
+
+    /**
+     * 현재 인증된 사용자 가져오기
+     */
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated() || 
+            "anonymousUser".equals(authentication.getName())) {
+            log.warn("getCurrentUser() - 인증되지 않은 사용자");
+            throw new CareServiceException("인증된 사용자 정보를 찾을 수 없습니다.");
         }
+        
+        String userEmail = authentication.getName();
+        log.info("getCurrentUser() - 인증된 사용자 이메일: {}", userEmail);
+        
+        // 이메일 형식 검증
+        if (userEmail == null || !userEmail.contains("@")) {
+            log.error("getCurrentUser() - 유효하지 않은 이메일 형식: {}", userEmail);
+            throw new CareServiceException("유효하지 않은 사용자 정보입니다.");
+        }
+
+        return userRepository.findByEmailAndDeletedAtIsNull(userEmail)
+                .orElseThrow(() -> {
+                    log.error("getCurrentUser() - 사용자를 찾을 수 없음: {}", userEmail);
+                    return new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userEmail);
+                });
+    }
+
+    /**
+     * 카테고리 매핑 메서드
+     */
+    private Post.PostCategory mapCategory(String category) {
+        if (category == null) {
+            return Post.PostCategory.GENERAL;
+        }
+        
+        switch (category.toUpperCase()) {
+            case "PARENTING":
+            case "육아팁":
+            case "정보공유":
+                return Post.PostCategory.SHARE;
+            case "질문":
+            case "고민상담":
+                return Post.PostCategory.QUESTION;
+            case "일상":
+            case "GENERAL":
+                return Post.PostCategory.GENERAL;
+            case "후기":
+            case "REVIEW":
+                return Post.PostCategory.REVIEW;
+            case "뉴스":
+            case "NEWS":
+                return Post.PostCategory.NEWS;
+            case "이벤트":
+            case "EVENT":
+                return Post.PostCategory.EVENT;
+            case "공지사항":
+            case "NOTICE":
+                return Post.PostCategory.NOTICE;
+            default:
+                return Post.PostCategory.GENERAL;
+        }
+    }
+
+    /**
+     * 게시글 검색 (페이징)
+     */
+    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> searchPosts(String keyword, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Post> postPage = postRepository.findByKeyword(keyword, pageable);
+
+        List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+
+        return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+                .content(postResponses)
+                .page(postPage.getNumber())
+                .size(postPage.getSize())
+                .totalElements(postPage.getTotalElements())
+                .totalPages(postPage.getTotalPages())
+                .first(postPage.isFirst())
+                .last(postPage.isLast())
+                .hasNext(postPage.hasNext())
+                .hasPrevious(postPage.hasPrevious())
+                .build();
+    }
+    
+    // 레거시 전체 검색 메서드 제거 (페이징 API로 일원화)
+
+    /**
+     * 인기 게시글 조회 (페이징)
+     */
+    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> getPopularPosts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> postPage = postRepository.findPopularPosts(pageable);
+
+        List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+
+        return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+                .content(postResponses)
+                .page(postPage.getNumber())
+                .size(postPage.getSize())
+                .totalElements(postPage.getTotalElements())
+                .totalPages(postPage.getTotalPages())
+                .first(postPage.isFirst())
+                .last(postPage.isLast())
+                .hasNext(postPage.hasNext())
+                .hasPrevious(postPage.hasPrevious())
+                .build();
+    }
+
+    // 레거시 인기 게시글 리스트 메서드 제거 (페이징 API로 일원화)
+
+    /**
+     * 최신 게시글 조회 (페이징)
+     */
+    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> getLatestPosts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> postPage = postRepository.findLatestPosts(pageable);
+
+        List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+
+        return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+                .content(postResponses)
+                .page(postPage.getNumber())
+                .size(postPage.getSize())
+                .totalElements(postPage.getTotalElements())
+                .totalPages(postPage.getTotalPages())
+                .first(postPage.isFirst())
+                .last(postPage.isLast())
+                .hasNext(postPage.hasNext())
+                .hasPrevious(postPage.hasPrevious())
+                .build();
+    }
+
+    /**
+     * 좋아요 토글
+     */
+    public boolean toggleLike(Long postId, Long userId) {
+        log.info("좋아요 토글 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다: " + postId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+
+        // 이미 좋아요를 눌렀는지 확인
+        if (postLikeRepository.existsByPostAndUser(post, user)) {
+            // 좋아요 취소
+            postLikeRepository.deleteByPostAndUser(post, user);
+            log.info("좋아요 취소됨 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+            return false;
+        } else {
+            // 좋아요 추가
+            PostLike postLike = PostLike.builder()
+                    .post(post)
+                    .user(user)
+                    .build();
+            postLikeRepository.save(postLike);
+            log.info("좋아요 추가됨 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+            return true;
+        }
+    }
+
+    /**
+     * 북마크 토글
+     */
+    public boolean toggleBookmark(Long postId, Long userId) {
+        log.info("북마크 토글 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다: " + postId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+
+        // 이미 북마크했는지 확인
+        if (bookmarkRepository.existsByPostAndUser(post, user)) {
+            // 북마크 취소
+            bookmarkRepository.deleteByPostAndUser(post, user);
+            log.info("북마크 취소됨 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+            return false;
+        } else {
+            // 북마크 추가
+            Bookmark bookmark = Bookmark.builder()
+                    .post(post)
+                    .user(user)
+                    .build();
+            bookmarkRepository.save(bookmark);
+            log.info("북마크 추가됨 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+            return true;
+        }
+    }
+
+    /**
+     * 사용자가 특정 게시글에 좋아요를 눌렀는지 확인
+     */
+    @Transactional(readOnly = true)
+    public boolean isLikedByUser(Long postId, Long userId) {
+        if (userId == null) {
+            return false;
+        }
+
+        Post post = postRepository.findById(postId).orElse(null);
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (post == null || user == null) {
+            return false;
+        }
+
+        return postLikeRepository.existsByPostAndUser(post, user);
+    }
+
+    /**
+     * 사용자가 특정 게시글을 북마크했는지 확인
+     */
+    @Transactional(readOnly = true)
+    public boolean isBookmarkedByUser(Long postId, Long userId) {
+        if (userId == null) {
+            return false;
+        }
+
+        Post post = postRepository.findById(postId).orElse(null);
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (post == null || user == null) {
+            return false;
+        }
+
+        return bookmarkRepository.existsByPostAndUser(post, user);
+    }
+
+    /**
+     * 특정 게시글의 좋아요 개수 조회
+     */
+    @Transactional(readOnly = true)
+    public long getLikeCount(Long postId) {
+        Post post = postRepository.findById(postId).orElse(null);
+        if (post == null) {
+            return 0;
+        }
+        return postLikeRepository.countByPost(post);
+    }
+
+    /**
+     * 특정 게시글의 북마크 개수 조회
+     */
+    @Transactional(readOnly = true)
+    public long getBookmarkCount(Long postId) {
+        Post post = postRepository.findById(postId).orElse(null);
+        if (post == null) {
+            return 0;
+        }
+        return bookmarkRepository.countByPost(post);
+    }
+
+    /**
+     * 현재 로그인한 사용자 ID 가져오기
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        String username = authentication.getName();
+        if (username == null || username.equals("anonymousUser")) {
+            return null;
+        }
+
+        User user = userRepository.findByEmail(username).orElse(null);
+        return user != null ? user.getId() : null;
     }
 } 

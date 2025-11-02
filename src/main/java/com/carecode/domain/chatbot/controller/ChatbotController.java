@@ -6,8 +6,15 @@ import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.domain.chatbot.dto.ChatbotRequestDto;
 import com.carecode.domain.chatbot.dto.ChatbotResponseDto;
-import com.carecode.domain.chatbot.dto.ChatMessageDto;
 import com.carecode.domain.chatbot.service.ChatbotService;
+import com.carecode.domain.chatbot.app.ChatbotFacade;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -17,237 +24,107 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 육아 챗봇 API 컨트롤러
- * AI 기반 육아 상담 및 질문-답변 서비스
+ * 챗봇 API 컨트롤러
+ * 육아 관련 챗봇 서비스
  */
 @RestController
 @RequestMapping("/chatbot")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "챗봇", description = "육아 관련 챗봇 서비스 API")
 public class ChatbotController extends BaseController {
 
     private final ChatbotService chatbotService;
+    private final ChatbotFacade chatbotFacade;
 
     /**
-     * 육아 질문에 대한 AI 응답 생성
+     * 챗봇 메시지 전송
      */
-    @PostMapping("/ask")
+    @PostMapping("/chat")
     @LogExecutionTime
-    public ResponseEntity<ChatbotResponseDto.ChatbotResponse> askQuestion(@RequestBody ChatbotRequestDto.AskQuestionRequest request) {
-        log.info("챗봇 질문 요청: {}", request.getQuestion());
+    @Operation(summary = "챗봇 메시지 전송", description = "챗봇과 대화를 시작합니다.")
+    public ResponseEntity<ChatbotResponseDto> sendMessage(
+            @Parameter(description = "챗봇 요청 정보", required = true) @RequestBody ChatbotRequestDto.ChatbotRequest request) {
+        log.info("챗봇 메시지 전송: 사용자ID={}, 메시지={}", request.getUserId(), request.getMessage());
         
         try {
-            ChatbotService.ChatbotResponse response = chatbotService.generateResponse(
-                request.getQuestion(), 
-                request.getChildAge(), 
-                request.getContext()
-            );
-            
-            return ResponseEntity.ok(ChatbotResponseDto.ChatbotResponse.builder()
-                .response(response.getResponse())
-                .category(response.getCategory().toString())
-                .confidence(response.getConfidence())
-                .relatedInfo(response.getRelatedInfo().stream()
-                    .map(info -> ChatbotResponseDto.RelatedInfoDto.builder()
-                        .title(info.getTitle())
-                        .description(info.getDescription())
-                        .url(info.getUrl())
-                        .category(info.getCategory())
-                        .build())
-                    .collect(java.util.stream.Collectors.toList()))
-                .suggestedQuestions(response.getSuggestedQuestions())
-                .followUpQuestions(response.getFollowUpQuestions())
-                .build());
+            ChatbotResponseDto response = chatbotFacade.processMessage(request);
+            return ResponseEntity.ok(response);
         } catch (CareServiceException e) {
-            log.error("챗봇 서비스 오류: {}", e.getMessage());
+            log.error("챗봇 처리 오류: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("챗봇 처리 중 예상치 못한 오류: {}", e.getMessage(), e);
+            throw new CareServiceException("챗봇 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 대화 기록 조회
+     */
+    @GetMapping("/history")
+    @LogExecutionTime
+    @Operation(summary = "대화 기록 조회", description = "사용자의 챗봇 대화 기록을 조회합니다.")
+    public ResponseEntity<List<ChatbotResponseDto.ChatHistoryResponse>> getChatHistory(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "세션 ID") @RequestParam(required = false) String sessionId,
+            @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") int size) {
+        log.info("대화 기록 조회: 사용자ID={}, 세션ID={}, 페이지={}, 크기={}", userId, sessionId, page, size);
+        
+        try {
+            List<ChatbotResponseDto.ChatHistoryResponse> history = chatbotFacade.getChatHistory(userId, sessionId, page, size);
+            return ResponseEntity.ok(history);
+        } catch (CareServiceException e) {
+            log.error("대화 기록 조회 오류: {}", e.getMessage());
             throw e;
         }
     }
 
     /**
-     * 육아 상담 세션 시작
+     * 세션 목록 조회
      */
-    @PostMapping("/session/start")
+    @GetMapping("/sessions")
     @LogExecutionTime
-    @RequireAuthentication
-    public ResponseEntity<ChatbotResponseDto.ChatSessionResponse> startChatSession(@RequestBody ChatbotRequestDto.StartSessionRequest request) {
-        log.info("챗봇 세션 시작 요청: 사용자ID={}", request.getUserId());
+    @Operation(summary = "세션 목록 조회", description = "사용자의 챗봇 세션 목록을 조회합니다.")
+    public ResponseEntity<List<ChatbotResponseDto.SessionResponse>> getSessions(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
+        log.info("세션 목록 조회: 사용자ID={}, 페이지={}, 크기={}", userId, page, size);
         
         try {
-            ChatbotService.ChatSession session = chatbotService.startChatSession(
-                request.getUserId(),
-                request.getChildAge(),
-                request.getChildGender(),
-                request.getParentType(),
-                request.getConcerns()
-            );
-            
-            return ResponseEntity.ok(ChatbotResponseDto.ChatSessionResponse.builder()
-                .sessionId(session.getSessionId())
-                .userId(session.getUserId())
-                .profile(ChatbotResponseDto.UserProfileDto.builder()
-                    .userId(session.getProfile().getUserId())
-                    .childAge(session.getProfile().getChildAge())
-                    .childGender(session.getProfile().getChildGender())
-                    .parentType(session.getProfile().getParentType())
-                    .build())
-                .status(session.getStatus())
-                .startTime(session.getStartTime().toString())
-                .initialQuestions(session.getInitialQuestions())
-                .build());
+            List<ChatbotResponseDto.SessionResponse> sessions = chatbotFacade.getSessions(userId, page, size);
+            return ResponseEntity.ok(sessions);
         } catch (CareServiceException e) {
-            log.error("챗봇 세션 시작 오류: {}", e.getMessage());
+            log.error("세션 목록 조회 오류: {}", e.getMessage());
             throw e;
         }
     }
 
     /**
-     * 대화 히스토리 기반 맞춤 응답
-     */
-    @PostMapping("/session/{sessionId}/ask")
-    @LogExecutionTime
-    @RequireAuthentication
-    public ResponseEntity<ChatbotResponseDto.ChatbotResponse> askContextualQuestion(
-            @PathVariable String sessionId,
-            @RequestBody ChatbotRequestDto.ContextualQuestionRequest request) {
-        log.info("맥락 기반 질문 요청: 세션ID={}", sessionId);
-        
-        try {
-            // ChatMessageDto를 ChatMessage로 변환
-            List<ChatbotService.ChatMessage> conversationHistory = request.getConversationHistory().stream()
-                .map(dto -> {
-                    ChatbotService.ChatMessage message = new ChatbotService.ChatMessage();
-                    message.setMessageId(dto.getMessageId());
-                    message.setSessionId(dto.getSessionId());
-                    message.setSender(dto.getSender());
-                    message.setContent(dto.getContent());
-                    if (dto.getTimestamp() != null) {
-                        message.setTimestamp(java.time.LocalDateTime.parse(dto.getTimestamp()));
-                    }
-                    return message;
-                })
-                .collect(java.util.stream.Collectors.toList());
-            
-            ChatbotService.ChatbotResponse response = chatbotService.generateContextualResponse(
-                sessionId,
-                request.getQuestion(),
-                conversationHistory
-            );
-            
-            return ResponseEntity.ok(ChatbotResponseDto.ChatbotResponse.builder()
-                .response(response.getResponse())
-                .category(response.getCategory().toString())
-                .confidence(response.getConfidence())
-                .relatedInfo(response.getRelatedInfo().stream()
-                    .map(info -> ChatbotResponseDto.RelatedInfoDto.builder()
-                        .title(info.getTitle())
-                        .description(info.getDescription())
-                        .url(info.getUrl())
-                        .category(info.getCategory())
-                        .build())
-                    .collect(java.util.stream.Collectors.toList()))
-                .suggestedQuestions(response.getSuggestedQuestions())
-                .followUpQuestions(response.getFollowUpQuestions())
-                .build());
-        } catch (CareServiceException e) {
-            log.error("맥락 기반 응답 생성 오류: {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    /**
-     * 육아 지식 베이스 검색
-     */
-    @GetMapping("/knowledge")
-    @LogExecutionTime
-    public ResponseEntity<List<ChatbotResponseDto.KnowledgeBaseResponse>> searchKnowledge(
-            @RequestParam String query,
-            @RequestParam(defaultValue = "0") int childAge,
-            @RequestParam(required = false) String category,
-            @RequestParam(defaultValue = "10") int limit) {
-        log.info("지식 베이스 검색: 쿼리={}, 자녀연령={}", query, childAge);
-        
-        try {
-            List<ChatbotService.KnowledgeBaseEntry> entries = chatbotService.searchKnowledgeBase(
-                query, childAge, category, limit
-            );
-            
-            List<ChatbotResponseDto.KnowledgeBaseResponse> responses = entries.stream()
-                .map(entry -> ChatbotResponseDto.KnowledgeBaseResponse.builder()
-                    .entryId(entry.getEntryId())
-                    .title(entry.getTitle())
-                    .content(entry.getContent())
-                    .category(entry.getCategory())
-                    .minAge(entry.getMinAge())
-                    .maxAge(entry.getMaxAge())
-                    .relevanceScore(entry.getRelevanceScore())
-                    .build())
-                .collect(java.util.stream.Collectors.toList());
-            
-            return ResponseEntity.ok(responses);
-        } catch (CareServiceException e) {
-            log.error("지식 베이스 검색 오류: {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    /**
-     * 육아 상담 피드백 수집
+     * 메시지 피드백 처리
      */
     @PostMapping("/feedback")
     @LogExecutionTime
-    public ResponseEntity<Map<String, String>> submitFeedback(@RequestBody ChatbotRequestDto.FeedbackRequest request) {
-        log.info("피드백 제출: 세션ID={}, 응답ID={}, 평점={}", 
-                request.getSessionId(), request.getResponseId(), request.getRating());
+    @Operation(summary = "메시지 피드백 처리", description = "챗봇 메시지에 대한 피드백을 처리합니다.")
+    public ResponseEntity<ChatbotResponseDto.FeedbackResponse> processFeedback(
+            @Parameter(description = "메시지 ID", required = true) @RequestParam Long messageId,
+            @Parameter(description = "도움됨 여부", required = true) @RequestParam boolean isHelpful) {
+        log.info("메시지 피드백 처리: 메시지ID={}, 도움됨={}", messageId, isHelpful);
         
         try {
-            chatbotService.collectFeedback(
-                request.getSessionId(),
-                request.getResponseId(),
-                request.getRating(),
-                request.getFeedback(),
-                request.getImprovement()
-            );
-            
-            return ResponseEntity.ok(Map.of("message", SUCCESS_MESSAGE));
+            chatbotFacade.processFeedback(messageId, isHelpful);
+            ChatbotResponseDto.FeedbackResponse response = ChatbotResponseDto.FeedbackResponse.builder()
+                    .messageId(messageId)
+                    .isHelpful(isHelpful)
+                    .message("피드백이 성공적으로 처리되었습니다.")
+                    .updatedAt(java.time.LocalDateTime.now())
+                    .build();
+            return ResponseEntity.ok(response);
         } catch (CareServiceException e) {
-            log.error("피드백 제출 오류: {}", e.getMessage());
+            log.error("메시지 피드백 처리 오류: {}", e.getMessage());
             throw e;
         }
-    }
-
-    /**
-     * 챗봇 세션 종료
-     */
-    @PostMapping("/session/{sessionId}/end")
-    @LogExecutionTime
-    @RequireAuthentication
-    public ResponseEntity<Map<String, String>> endChatSession(@PathVariable String sessionId) {
-        log.info("챗봇 세션 종료: 세션ID={}", sessionId);
-        
-        // 세션 종료 로직 구현
-        return ResponseEntity.ok(Map.of("message", SUCCESS_MESSAGE));
-    }
-
-    /**
-     * 챗봇 통계 조회
-     */
-    @GetMapping("/stats")
-    @LogExecutionTime
-    @RequireAuthentication
-    public ResponseEntity<ChatbotResponseDto.ChatbotStatsResponse> getChatbotStats(
-            @RequestParam(required = false) String userId,
-            @RequestParam(required = false) String period) {
-        log.info("챗봇 통계 조회: 사용자ID={}, 기간={}", userId, period);
-        
-        // 통계 조회 로직 구현
-        ChatbotResponseDto.ChatbotStatsResponse stats = ChatbotResponseDto.ChatbotStatsResponse.builder()
-            .totalSessions(0)
-            .activeSessions(0)
-            .averageRating(0.0)
-            .categoryDistribution(Map.of())
-            .ageGroupDistribution(Map.of())
-            .build();
-        return ResponseEntity.ok(stats);
     }
 } 

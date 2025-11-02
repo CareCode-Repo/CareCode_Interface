@@ -16,7 +16,7 @@ import java.util.List;
  * 어린이집, 유치원 등 육아 관련 시설 정보를 관리
  */
 @Entity
-@Table(name = "care_facilities")
+@Table(name = "TBL_CARE_FACILITIES")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -34,8 +34,15 @@ public class CareFacility {
     @Column(name = "name", nullable = false)
     private String name;
     
+    @Enumerated(EnumType.STRING)
     @Column(name = "facility_type")
-    private String facilityType; // 어린이집, 유치원, 놀이방 등
+    private FacilityType facilityType;
+    
+    @Column(name = "city")
+    private String city;
+    
+    @Column(name = "district")
+    private String district;
     
     @Column(name = "address")
     private String address;
@@ -100,6 +107,15 @@ public class CareFacility {
     @Column(name = "review_count")
     private Integer reviewCount;
     
+    @Column(name = "view_count")
+    private Integer viewCount;
+    
+    @Column(name = "description")
+    private String description;
+    
+    @Column(name = "age_range")
+    private String ageRange;
+    
     @Column(name = "is_active")
     private Boolean isActive;
     
@@ -116,6 +132,7 @@ public class CareFacility {
     private LocalDateTime updatedAt;
     
     @OneToMany(mappedBy = "careFacility", cascade = CascadeType.ALL, orphanRemoval = true)
+    @lombok.Builder.Default
     private List<Review> reviews = new ArrayList<>();
     
     @PrePersist

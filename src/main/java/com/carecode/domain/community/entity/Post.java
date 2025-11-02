@@ -16,7 +16,7 @@ import java.util.List;
  * 커뮤니티 게시글 엔티티
  */
 @Entity
-@Table(name = "community_posts")
+@Table(name = "TBL_POST")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -71,6 +71,7 @@ public class Post {
     private LocalDateTime updatedAt;
     
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Comment> comments = new ArrayList<>();
     
     @ManyToMany
@@ -79,6 +80,7 @@ public class Post {
         joinColumns = @JoinColumn(name = "POST_ID"),
         inverseJoinColumns = @JoinColumn(name = "TAG_ID")
     )
+    @Builder.Default
     private List<Tag> tags = new ArrayList<>();
     
     @PrePersist
@@ -170,48 +172,5 @@ public class Post {
      */
     public void clearTags() {
         tags.clear();
-    }
-    
-    /**
-     * 게시글 카테고리 Enum
-     */
-    public enum PostCategory {
-        GENERAL("일반"),
-        QUESTION("질문"),
-        SHARE("공유"),
-        REVIEW("후기"),
-        NEWS("뉴스"),
-        EVENT("이벤트"),
-        NOTICE("공지사항");
-        
-        private final String displayName;
-        
-        PostCategory(String displayName) {
-            this.displayName = displayName;
-        }
-        
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-    
-    /**
-     * 게시글 상태 Enum
-     */
-    public enum PostStatus {
-        DRAFT("임시저장"),
-        PUBLISHED("발행"),
-        HIDDEN("숨김"),
-        DELETED("삭제");
-        
-        private final String displayName;
-        
-        PostStatus(String displayName) {
-            this.displayName = displayName;
-        }
-        
-        public String getDisplayName() {
-            return displayName;
-        }
     }
 } 

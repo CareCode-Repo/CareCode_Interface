@@ -10,7 +10,6 @@ public enum CustomHttpStatus {
     CHATBOT_TEMPORARILY_UNAVAILABLE(462, "Chatbot Temporarily Unavailable"),
     COMMUNITY_ANSWER_PENDING(463, "Community Answer Pending"),
     DUPLICATE_POLICY_APPLICATION(464, "Duplicate Policy Application"),
-    // 필요시 추가
     ;
 
     private final int value;

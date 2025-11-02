@@ -15,7 +15,6 @@ public class ApiConfig {
     private String title = "맘편한 API";
     private String description = "육아 지원 플랫폼 맘편한의 REST API";
     
-    // Getter and Setter methods
     public String getBaseUrl() {
         return baseUrl;
     }

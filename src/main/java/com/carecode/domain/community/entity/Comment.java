@@ -17,7 +17,7 @@ import java.util.List;
  * 계층형 댓글 구조를 지원 (답글/대댓글 기능)
  */
 @Entity
-@Table(name = "community_comments")
+@Table(name = "TBL_COMMENT")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -65,6 +65,7 @@ public class Comment {
     private Comment parentComment; // 부모 댓글 (답글인 경우)
     
     @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Comment> replies = new ArrayList<>(); // 답글 목록
     
     @PrePersist

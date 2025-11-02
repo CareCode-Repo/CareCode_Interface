@@ -11,62 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-/**
- * 건강 기록 첨부파일 엔티티
- * 
- * <p>건강 기록에 첨부되는 파일(이미지, 문서, 동영상 등)을 관리합니다.
- * 각 첨부파일은 파일 URL, 파일명, 파일 타입, 파일 크기 등의 정보를 포함하며,
- * 건강 기록(HealthRecord)과 N:1 관계를 가집니다.</p>
- *
- * <h3>주요 기능:</h3>
- * <ul>
- *   <li>건강 기록 첨부파일 생성 및 관리</li>
- *   <li>파일 메타데이터 관리 (파일명, 타입, 크기)</li>
- *   <li>첨부파일 순서 관리</li>
- *   <li>활성/비활성 상태 관리</li>
- * </ul>
- *
- * <h3>사용 예시:</h3>
- * <pre>{@code
- * // 새로운 첨부파일 생성
- * HealthRecordAttachment attachment = HealthRecordAttachment.builder()
- *     .healthRecord(healthRecord)
- *     .fileUrl("https://example.com/files/vaccine.jpg")
- *     .fileName("vaccine.jpg")
- *     .fileType("image/jpeg")
- *     .fileSize(1024000L)
- *     .description("예방접종 증명서")
- *     .displayOrder(1)
- *     .build();
- *
- * // 첨부파일 정보 업데이트
- * attachment.updateAttachment(newFileUrl, newFileName, "image/png", 
- *                           newFileSize, newDescription, 2);
- *
- * // 첨부파일 비활성화
- * attachment.deactivate();
- * }</pre>
- *
- * <h3>데이터베이스 스키마:</h3>
- * <ul>
- *   <li>테이블명: health_record_attachments</li>
- *   <li>기본키: id (AUTO_INCREMENT)</li>
- *   <li>외래키: health_record_id (health_records 테이블 참조)</li>
- * </ul>
- *
- * <h3>관련 엔티티:</h3>
- * <ul>
- *   <li>{@link HealthRecord} - 이 첨부파일이 속한 건강 기록</li>
- * </ul>
- *
- * <h3>향후 확장 가능성:</h3>
- * <ul>
- *   <li>파일 업로드/다운로드 기능</li>
- *   <li>파일 압축 및 최적화</li>
- *   <li>파일 보안 및 암호화</li>
- *   <li>CDN 연동</li>
- * </ul>
- *
+/*
  * @author CareCode Team
  * @since 1.0.0
  */

@@ -22,6 +22,6 @@ public class ChatMessageDto {
     private String sessionId;
     private String sender;
     private String content;
-    private String timestamp;
+    private LocalDateTime timestamp;
     private Boolean isRead;
 } 

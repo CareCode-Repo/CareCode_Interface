@@ -12,6 +12,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidateLocation {
+    String message = "위치 정보가 필요합니다.";
+
     boolean required() default true;
-    String message() default "위치 정보가 필요합니다.";
+    String message() default message;
 } 

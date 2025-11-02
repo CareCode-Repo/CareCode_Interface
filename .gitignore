@@ -35,3 +35,30 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+### Docker & Environment Variables ###
+*.env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+### Sensitive Configuration Files ###
+# application.properties는 버전 관리하되, 민감정보는 환경 변수로 관리
+# 로컬 설정 파일은 제외
+application-local.properties
+application-secret.properties
+
+### Logs ###
+*.log
+logs/
+
+### Temporary files ###
+*.tmp
+*.temp

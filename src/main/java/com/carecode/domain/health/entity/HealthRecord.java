@@ -18,7 +18,7 @@ import java.util.List;
  * 건강 기록 엔티티
  */
 @Entity
-@Table(name = "health_records")
+@Table(name = "TBL_HEALTH_RECORD")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -117,6 +117,7 @@ public class HealthRecord {
     private HealthRecordType healthRecordType;
     
     @OneToMany(mappedBy = "healthRecord", cascade = CascadeType.ALL, orphanRemoval = true)
+    @lombok.Builder.Default
     private List<HealthRecordAttachment> healthRecordAttachments = new ArrayList<>();
     
     @PrePersist

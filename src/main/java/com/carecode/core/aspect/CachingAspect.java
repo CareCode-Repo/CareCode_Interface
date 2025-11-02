@@ -23,7 +23,6 @@ public class CachingAspect {
         // 캐시에서 결과 확인
         CacheEntry cachedEntry = cache.get(cacheKey);
         if (cachedEntry != null && !cachedEntry.isExpired()) {
-            log.debug("캐시에서 결과 반환: {}", cacheKey);
             return cachedEntry.getValue();
         }
         
@@ -33,8 +32,6 @@ public class CachingAspect {
         // 결과 캐싱
         long ttl = cacheableResult.ttl() * 1000; // 초를 밀리초로 변환
         cache.put(cacheKey, new CacheEntry(result, System.currentTimeMillis() + ttl));
-        
-        log.debug("결과를 캐시에 저장: {}", cacheKey);
         return result;
     }
     
