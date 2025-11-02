@@ -21,28 +21,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByPostIdAndParentCommentIsNull(@Param("postId") Long postId);
     
     /**
-     * 게시글 ID로 모든 댓글 조회
-     */
-    @Query("SELECT c FROM Comment c WHERE c.post.id = :postId AND c.isActive = true ORDER BY c.createdAt ASC")
-    List<Comment> findByPostId(@Param("postId") Long postId);
-    
-    /**
-     * 부모 댓글 ID로 답글 목록 조회
-     */
-    @Query("SELECT c FROM Comment c WHERE c.parentComment.id = :parentCommentId AND c.isActive = true ORDER BY c.createdAt ASC")
-    List<Comment> findByParentCommentId(@Param("parentCommentId") Long parentCommentId);
-    
-    /**
-     * 작성자 ID로 댓글 목록 조회
-     */
-    List<Comment> findByAuthorIdAndIsActiveTrueOrderByCreatedAtDesc(Long authorId);
-    
-    /**
-     * 댓글 존재 여부 확인
-     */
-    boolean existsByIdAndIsActiveTrue(Long commentId);
-    
-    /**
      * 게시글의 댓글 수 조회
      */
     @Query("SELECT COUNT(c) FROM Comment c WHERE c.post.id = :postId AND c.isActive = true")

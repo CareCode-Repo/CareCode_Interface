@@ -4,11 +4,9 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.notification.dto.NotificationRequestDto;
-import com.carecode.domain.notification.dto.NotificationResponseDto;
-import com.carecode.domain.notification.dto.NotificationPreferenceDto;
-import com.carecode.domain.notification.service.NotificationService;
-import com.carecode.domain.notification.service.NotificationPreferenceService;
+import com.carecode.domain.notification.dto.NotificationRequest;
+import com.carecode.domain.notification.dto.NotificationResponse;
+import com.carecode.domain.notification.app.NotificationFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -22,6 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.carecode.core.handler.ApiSuccess;
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -35,8 +35,7 @@ import java.util.Map;
 @Tag(name = "알림 관리", description = "육아 관련 알림 관리 API")
 public class NotificationController extends BaseController {
 
-    private final NotificationService notificationService;
-    private final NotificationPreferenceService preferenceService;
+    private final NotificationFacade notificationFacade;
 
     /**
      * 알림 목록 조회
@@ -45,23 +44,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 목록 조회", description = "사용자의 알림 목록을 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = NotificationResponseDto.NotificationResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<List<NotificationResponseDto.NotificationResponse>> getAllNotifications(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-        log.info("알림 목록 조회: 사용자ID={}", userId);
-        
-        try {
-            List<NotificationResponseDto.NotificationResponse> notifications = notificationService.getNotificationsByUserId(userId);
-            return ResponseEntity.ok(notifications);
-        } catch (CareServiceException e) {
-            log.error("알림 목록 조회 오류: {}", e.getMessage());
-            throw e;
-        }
+    public ResponseEntity<List<NotificationResponse.Notification>> getAllNotifications(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        List<NotificationResponse.Notification> notifications = notificationFacade.getNotificationsByUserId(userId);
+        return ResponseEntity.ok(notifications);
     }
 
     /**
@@ -73,17 +58,17 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 상세 조회", description = "특정 알림의 상세 정보를 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = NotificationResponseDto.NotificationResponse.class))),
+            content = @Content(schema = @Schema(implementation = NotificationResponse.Notification.class))),
         @ApiResponse(responseCode = "401", description = "인증 필요"),
         @ApiResponse(responseCode = "404", description = "알림을 찾을 수 없음"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<NotificationResponseDto.NotificationResponse> getNotification(
+    public ResponseEntity<NotificationResponse.Notification> getNotification(
             @Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
         log.info("알림 상세 조회: 알림ID={}", notificationId);
         
         try {
-            NotificationResponseDto.NotificationResponse notification = notificationService.getNotificationById(notificationId);
+            NotificationResponse.Notification notification = notificationFacade.getNotificationById(notificationId);
             return ResponseEntity.ok(notification);
         } catch (CareServiceException e) {
             log.error("알림 상세 조회 오류: {}", e.getMessage());
@@ -100,17 +85,17 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 생성", description = "새로운 알림을 생성합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "생성 성공",
-            content = @Content(schema = @Schema(implementation = NotificationResponseDto.NotificationResponse.class))),
+            content = @Content(schema = @Schema(implementation = NotificationResponse.Notification.class))),
         @ApiResponse(responseCode = "401", description = "인증 필요"),
         @ApiResponse(responseCode = "400", description = "잘못된 요청"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<NotificationResponseDto.NotificationResponse> createNotification(
-            @Parameter(description = "알림 정보", required = true) @RequestBody NotificationRequestDto.CreateNotificationRequest request) {
+    public ResponseEntity<NotificationResponse.Notification> createNotification(
+            @Parameter(description = "알림 정보", required = true) @RequestBody NotificationRequest.Create request) {
         log.info("알림 생성: 사용자ID={}, 제목={}", request.getUserId(), request.getTitle());
         
         try {
-            NotificationResponseDto.NotificationResponse notification = notificationService.createNotification(request);
+            NotificationResponse.Notification notification = notificationFacade.createNotification(request);
             return ResponseEntity.ok(notification);
         } catch (CareServiceException e) {
             log.error("알림 생성 오류: {}", e.getMessage());
@@ -127,19 +112,19 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 수정", description = "기존 알림을 수정합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "수정 성공",
-            content = @Content(schema = @Schema(implementation = NotificationResponseDto.NotificationResponse.class))),
+            content = @Content(schema = @Schema(implementation = NotificationResponse.Notification.class))),
         @ApiResponse(responseCode = "401", description = "인증 필요"),
         @ApiResponse(responseCode = "404", description = "알림을 찾을 수 없음"),
         @ApiResponse(responseCode = "400", description = "잘못된 요청"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<NotificationResponseDto.NotificationResponse> updateNotification(
+    public ResponseEntity<NotificationResponse.Notification> updateNotification(
             @Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId,
-            @Parameter(description = "수정할 알림 정보", required = true) @RequestBody NotificationRequestDto.CreateNotificationRequest request) {
+            @Parameter(description = "수정할 알림 정보", required = true) @RequestBody NotificationRequest.Create request) {
         log.info("알림 수정: 알림ID={}", notificationId);
         
         try {
-            NotificationResponseDto.NotificationResponse notification = notificationService.updateNotification(notificationId, request);
+            NotificationResponse.Notification notification = notificationFacade.updateNotification(notificationId, request);
             return ResponseEntity.ok(notification);
         } catch (CareServiceException e) {
             log.error("알림 수정 오류: {}", e.getMessage());
@@ -160,13 +145,13 @@ public class NotificationController extends BaseController {
         @ApiResponse(responseCode = "404", description = "알림을 찾을 수 없음"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<Map<String, String>> deleteNotification(
+    public ResponseEntity<ApiSuccess> deleteNotification(
             @Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
         log.info("알림 삭제: 알림ID={}", notificationId);
         
         try {
-            notificationService.deleteNotification(notificationId);
-            return ResponseEntity.ok(Map.of("message", "알림이 삭제되었습니다."));
+            notificationFacade.deleteNotification(notificationId);
+            return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림이 삭제되었습니다.").build());
         } catch (CareServiceException e) {
             log.error("알림 삭제 오류: {}", e.getMessage());
             throw e;
@@ -186,13 +171,13 @@ public class NotificationController extends BaseController {
         @ApiResponse(responseCode = "404", description = "알림을 찾을 수 없음"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<Map<String, String>> markAsRead(
+    public ResponseEntity<ApiSuccess> markAsRead(
             @Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
         log.info("알림 읽음 처리: 알림ID={}", notificationId);
         
         try {
-            notificationService.markAsRead(notificationId);
-            return ResponseEntity.ok(Map.of("message", "알림이 읽음 처리되었습니다."));
+            notificationFacade.markAsRead(notificationId);
+            return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림이 읽음 처리되었습니다.").build());
         } catch (CareServiceException e) {
             log.error("알림 읽음 처리 오류: {}", e.getMessage());
             throw e;
@@ -211,13 +196,13 @@ public class NotificationController extends BaseController {
         @ApiResponse(responseCode = "401", description = "인증 필요"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<Map<String, String>> markAllAsRead(
+    public ResponseEntity<ApiSuccess> markAllAsRead(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
         log.info("모든 알림 읽음 처리: 사용자ID={}", userId);
         
         try {
-            notificationService.markAllAsRead(userId);
-            return ResponseEntity.ok(Map.of("message", "모든 알림이 읽음 처리되었습니다."));
+            notificationFacade.markAllAsRead(userId);
+            return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("모든 알림이 읽음 처리되었습니다.").build());
         } catch (CareServiceException e) {
             log.error("모든 알림 읽음 처리 오류: {}", e.getMessage());
             throw e;
@@ -233,16 +218,16 @@ public class NotificationController extends BaseController {
     @Operation(summary = "읽지 않은 알림 조회", description = "사용자의 읽지 않은 알림 목록을 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = NotificationResponseDto.NotificationResponse.class))),
+            content = @Content(schema = @Schema(implementation = NotificationResponse.Notification.class))),
         @ApiResponse(responseCode = "401", description = "인증 필요"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<List<NotificationResponseDto.NotificationResponse>> getUnreadNotifications(
+    public ResponseEntity<List<NotificationResponse.Notification>> getUnreadNotifications(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
         log.info("읽지 않은 알림 조회: 사용자ID={}", userId);
         
         try {
-            List<NotificationResponseDto.NotificationResponse> notifications = notificationService.getUnreadNotifications(userId);
+            List<NotificationResponse.Notification> notifications = notificationFacade.getUnreadNotifications(userId);
             return ResponseEntity.ok(notifications);
         } catch (CareServiceException e) {
             log.error("읽지 않은 알림 조회 오류: {}", e.getMessage());
@@ -268,7 +253,7 @@ public class NotificationController extends BaseController {
         log.info("알림 설정 조회: 사용자ID={}", userId);
         
         try {
-            Map<String, Object> settings = notificationService.getNotificationSettings(userId);
+            Map<String, Object> settings = notificationFacade.getNotificationSettings(userId);
             return ResponseEntity.ok(settings);
         } catch (CareServiceException e) {
             log.error("알림 설정 조회 오류: {}", e.getMessage());
@@ -296,7 +281,7 @@ public class NotificationController extends BaseController {
         log.info("알림 설정 업데이트: 사용자ID={}", userId);
         
         try {
-            Map<String, Object> updatedSettings = notificationService.updateNotificationSettings(userId, settings);
+            Map<String, Object> updatedSettings = notificationFacade.updateNotificationSettings(userId, settings);
             return ResponseEntity.ok(updatedSettings);
         } catch (CareServiceException e) {
             log.error("알림 설정 업데이트 오류: {}", e.getMessage());
@@ -311,23 +296,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 통계 조회", description = "사용자의 알림 관련 통계를 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<Map<String, Object>> getNotificationStatistics(
-            @Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
-        log.info("알림 통계 조회: 사용자ID={}", userId);
-        
-        try {
-            Map<String, Object> statistics = notificationService.getNotificationStatistics(userId);
-            return ResponseEntity.ok(statistics);
-        } catch (CareServiceException e) {
-            log.error("알림 통계 조회 오류: {}", e.getMessage());
-            throw e;
-        }
+    public ResponseEntity<Map<String, Object>> getNotificationStatistics(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
+        Map<String, Object> statistics = notificationFacade.getNotificationStatistics(userId);
+        return ResponseEntity.ok(statistics);
     }
 
     /**
@@ -337,22 +308,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 설정 목록 조회", description = "사용자의 알림 설정 목록을 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<List<NotificationPreferenceDto>> getNotificationPreferences(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-        log.info("알림 설정 목록 조회: 사용자ID={}", userId);
-        
-        try {
-            List<NotificationPreferenceDto> preferences = preferenceService.getUserPreferences(userId);
-            return ResponseEntity.ok(preferences);
-        } catch (CareServiceException e) {
-            log.error("알림 설정 목록 조회 오류: {}", e.getMessage());
-            throw e;
-        }
+    public ResponseEntity<List<NotificationResponse.Settings>> getNotificationPreferences(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        List<NotificationResponse.Settings> preferences = notificationFacade.getUserPreferences(userId);
+        return ResponseEntity.ok(preferences);
     }
 
     /**
@@ -362,24 +320,10 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "특정 알림 타입 설정 조회", description = "사용자의 특정 알림 타입 설정을 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<NotificationPreferenceDto> getNotificationPreferenceByType(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
-            @Parameter(description = "알림 타입", required = true) @PathVariable String notificationType) {
-        log.info("특정 알림 타입 설정 조회: 사용자ID={}, 타입={}", userId, notificationType);
-        
-        try {
-            NotificationPreferenceDto preference = preferenceService.getPreferenceByType(userId, 
-                com.carecode.domain.notification.entity.Notification.NotificationType.valueOf(notificationType));
-            return ResponseEntity.ok(preference);
-        } catch (CareServiceException e) {
-            log.error("특정 알림 타입 설정 조회 오류: {}", e.getMessage());
-            throw e;
-        }
+    public ResponseEntity<NotificationResponse.Settings> getNotificationPreferenceByType(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+                                                                                         @Parameter(description = "알림 타입", required = true) @PathVariable String notificationType) {
+        NotificationResponse.Settings preference = notificationFacade.getPreferenceByType(userId, notificationType);
+        return ResponseEntity.ok(preference);
     }
 
     /**
@@ -389,24 +333,10 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "전체 알림 설정 업데이트", description = "사용자의 모든 알림 설정을 한 번에 업데이트합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "업데이트 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<NotificationPreferenceDto> updateNotificationPreferences(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
-            @Parameter(description = "알림 설정", required = true) @RequestBody NotificationPreferenceDto preferenceDto) {
-        log.info("전체 알림 설정 업데이트: 사용자ID={}, 설정={}", userId, preferenceDto);
-        
-        try {
-            NotificationPreferenceDto updatedPreference = preferenceService.savePreference(userId, preferenceDto);
+    public ResponseEntity<NotificationResponse.Settings> updateNotificationPreferences(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+                                                                                       @Parameter(description = "알림 설정", required = true) @RequestBody NotificationResponse.Settings preferenceDto) {
+            NotificationResponse.Settings updatedPreference = notificationFacade.savePreference(userId, preferenceDto);
             return ResponseEntity.ok(updatedPreference);
-        } catch (CareServiceException e) {
-            log.error("전체 알림 설정 업데이트 오류: {}", e.getMessage());
-            throw e;
-        }
     }
 
     /**
@@ -416,24 +346,10 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 설정 저장", description = "사용자의 알림 설정을 저장합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "저장 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<NotificationPreferenceDto> saveNotificationPreference(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
-            @Parameter(description = "알림 설정", required = true) @RequestBody NotificationPreferenceDto preferenceDto) {
-        log.info("알림 설정 저장: 사용자ID={}, 타입={}", userId, preferenceDto.getNotificationType());
-        
-        try {
-            NotificationPreferenceDto savedPreference = preferenceService.savePreference(userId, preferenceDto);
+    public ResponseEntity<NotificationResponse.Settings> saveNotificationPreference(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+                                                                                    @Parameter(description = "알림 설정", required = true) @RequestBody NotificationResponse.Settings preferenceDto) {
+            NotificationResponse.Settings savedPreference = notificationFacade.savePreference(userId, preferenceDto);
             return ResponseEntity.ok(savedPreference);
-        } catch (CareServiceException e) {
-            log.error("알림 설정 저장 오류: {}", e.getMessage());
-            throw e;
-        }
     }
 
     /**
@@ -443,26 +359,12 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "채널별 설정 업데이트", description = "사용자의 특정 알림 타입의 채널별 설정을 업데이트합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "업데이트 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<NotificationPreferenceDto> updateChannelPreference(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
-            @Parameter(description = "알림 타입", required = true) @PathVariable String notificationType,
-            @Parameter(description = "채널", required = true) @PathVariable String channel,
-            @Parameter(description = "활성화 여부", required = true) @RequestParam boolean enabled) {
-        log.info("채널별 설정 업데이트: 사용자ID={}, 타입={}, 채널={}, 활성화={}", userId, notificationType, channel, enabled);
-        
-        try {
-            NotificationPreferenceDto updatedPreference = preferenceService.updateChannelPreference(userId, notificationType, channel, enabled);
+    public ResponseEntity<NotificationResponse.Settings> updateChannelPreference(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+                                                                                 @Parameter(description = "알림 타입", required = true) @PathVariable String notificationType,
+                                                                                 @Parameter(description = "채널", required = true) @PathVariable String channel,
+                                                                                 @Parameter(description = "활성화 여부", required = true) @RequestParam boolean enabled) {
+            NotificationResponse.Settings updatedPreference = notificationFacade.updateChannelPreference(userId, notificationType, channel, enabled);
             return ResponseEntity.ok(updatedPreference);
-        } catch (CareServiceException e) {
-            log.error("채널별 설정 업데이트 오류: {}", e.getMessage());
-            throw e;
-        }
     }
 
     /**
@@ -472,22 +374,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "모든 알림 설정 비활성화", description = "사용자의 모든 알림 설정을 비활성화합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "비활성화 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<Map<String, String>> disableAllNotifications(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-        log.info("모든 알림 설정 비활성화: 사용자ID={}", userId);
-        
-        try {
-            preferenceService.disableAllNotifications(userId);
-            return ResponseEntity.ok(Map.of("message", "모든 알림 설정이 비활성화되었습니다."));
-        } catch (CareServiceException e) {
-            log.error("모든 알림 설정 비활성화 오류: {}", e.getMessage());
-            throw e;
-        }
+    public ResponseEntity<ApiSuccess> disableAllNotifications(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+            notificationFacade.disableAllNotifications(userId);
+            return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("모든 알림 설정이 비활성화되었습니다.").build());
     }
 
     /**
@@ -497,21 +386,95 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 설정 초기화", description = "사용자의 알림 설정을 기본값으로 초기화합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "초기화 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<Map<String, String>> resetNotificationPreferences(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-        log.info("알림 설정 초기화: 사용자ID={}", userId);
-        
-        try {
-            preferenceService.resetToDefault(userId);
-            return ResponseEntity.ok(Map.of("message", "알림 설정이 기본값으로 초기화되었습니다."));
-        } catch (CareServiceException e) {
-            log.error("알림 설정 초기화 오류: {}", e.getMessage());
-            throw e;
-        }
+    public ResponseEntity<ApiSuccess> resetNotificationPreferences(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+            notificationFacade.resetToDefault(userId);
+            return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림 설정이 기본값으로 초기화되었습니다.").build());
+    }
+
+    /**
+     * 알림 읽음 처리
+     */
+    @PutMapping("/mark-read")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "알림 읽음 처리", description = "알림을 읽음으로 표시합니다.")
+    public ResponseEntity<ApiSuccess> markAsRead(@Parameter(description = "읽음 처리 요청", required = true) @RequestBody NotificationRequest.MarkAsRead request) {
+            notificationFacade.markAsRead(request);
+            return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림이 읽음으로 처리되었습니다.").build());
+    }
+
+    /**
+     * 푸시 알림 토큰 등록
+     */
+    @PostMapping("/push-token")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "푸시 알림 토큰 등록", description = "사용자의 푸시 알림 토큰을 등록합니다.")
+    public ResponseEntity<ApiSuccess> registerPushToken(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+                                                        @Parameter(description = "푸시 토큰 등록 요청", required = true) @RequestBody NotificationRequest.RegisterPushToken request) {
+            notificationFacade.registerPushToken(userId, request);
+            return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("푸시 알림 토큰이 등록되었습니다.").build());
+    }
+
+    /**
+     * 알림 설정 수정
+     */
+    @PutMapping("/settings")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "알림 설정 수정", description = "사용자의 알림 설정을 수정합니다.")
+    public ResponseEntity<ApiSuccess> updateSettings(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+                                                     @Parameter(description = "설정 수정 요청", required = true) @RequestBody NotificationRequest.UpdateSettings request) {
+            notificationFacade.updateSettings(userId, request);
+            return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림 설정이 수정되었습니다.").build());
+    }
+
+    /**
+     * 테스트 알림 발송
+     */
+    @PostMapping("/test")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "테스트 알림 발송", description = "테스트 알림을 발송합니다.")
+    public ResponseEntity<ApiSuccess> sendTestNotification(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+                                                           @Parameter(description = "테스트 알림 요청", required = true) @RequestBody NotificationRequest.SendTest request) {
+        notificationFacade.sendTestNotification(userId, request);
+        return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("테스트 알림이 발송되었습니다.").build());
+    }
+
+    /**
+     * 알림 통계 조회
+     */
+    @GetMapping("/stats")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "알림 통계 조회", description = "사용자의 알림 통계를 조회합니다.")
+    public ResponseEntity<NotificationResponse.Stats> getNotificationStats(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+            NotificationResponse.Stats stats = notificationFacade.getNotificationStats(userId);
+            return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * 알림 템플릿 조회
+     */
+    @GetMapping("/templates")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "알림 템플릿 조회", description = "알림 템플릿 목록을 조회합니다.")
+    public ResponseEntity<List<NotificationResponse.Template>> getNotificationTemplates(@Parameter(description = "알림 타입", required = false) @RequestParam(required = false) String type) {
+            List<NotificationResponse.Template> templates = notificationFacade.getNotificationTemplates(type);
+            return ResponseEntity.ok(templates);
+    }
+
+    /**
+     * 알림 전송 상태 조회
+     */
+    @GetMapping("/delivery-status/{notificationId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "알림 전송 상태 조회", description = "특정 알림의 전송 상태를 조회합니다.")
+    public ResponseEntity<NotificationResponse.DeliveryStatus> getDeliveryStatus(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
+            NotificationResponse.DeliveryStatus status = notificationFacade.getDeliveryStatus(notificationId);
+            return ResponseEntity.ok(status);
     }
 } 

@@ -59,4 +59,21 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
      * 알림 타입별 개수 조회
      */
     long countByUserIdAndNotificationType(Long userId, Notification.NotificationType notificationType);
+
+    /**
+     * 읽음/읽지 않음별 알림 개수 조회
+     */
+    long countByUserIdAndIsRead(Long userId, boolean isRead);
+
+    /**
+     * 모든 알림을 읽음으로 처리
+     */
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.isRead = false")
+    void markAllAsRead();
+
+    /**
+     * 특정 알림들을 읽음으로 처리
+     */
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.id IN :notificationIds")
+    void markAsReadByIds(@Param("notificationIds") List<Long> notificationIds);
 } 

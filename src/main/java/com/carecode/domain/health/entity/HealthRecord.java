@@ -117,6 +117,7 @@ public class HealthRecord {
     private HealthRecordType healthRecordType;
     
     @OneToMany(mappedBy = "healthRecord", cascade = CascadeType.ALL, orphanRemoval = true)
+    @lombok.Builder.Default
     private List<HealthRecordAttachment> healthRecordAttachments = new ArrayList<>();
     
     @PrePersist

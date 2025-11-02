@@ -1,6 +1,6 @@
 package com.carecode.domain.notification.service;
 
-import com.carecode.domain.notification.dto.NotificationRequestDto;
+import com.carecode.domain.notification.dto.NotificationRequest;
 import com.carecode.domain.notification.factory.NotificationStrategyFactory;
 import com.carecode.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +25,8 @@ public class NotificationTemplateService {
     /**
      * 시스템 업데이트 알림 템플릿
      */
-    public NotificationRequestDto.CreateNotificationRequest createSystemUpdateTemplate(User user, String version, String features) {
-        return NotificationRequestDto.CreateNotificationRequest.builder()
+    public NotificationRequest.Create createSystemUpdateTemplate(User user, String version, String features) {
+        return NotificationRequest.Create.builder()
                 .userId(user.getUserId())
                 .notificationType("SYSTEM")
                 .title("시스템 업데이트 알림")
@@ -38,8 +38,8 @@ public class NotificationTemplateService {
     /**
      * 정책 변경 알림 템플릿
      */
-    public NotificationRequestDto.CreateNotificationRequest createPolicyChangeTemplate(User user, String policyName, String changeDetails) {
-        return NotificationRequestDto.CreateNotificationRequest.builder()
+    public NotificationRequest.Create createPolicyChangeTemplate(User user, String policyName, String changeDetails) {
+        return NotificationRequest.Create.builder()
                 .userId(user.getUserId())
                 .notificationType("POLICY")
                 .title("육아 정책 변경 알림")
@@ -51,8 +51,8 @@ public class NotificationTemplateService {
     /**
      * 커뮤니티 활동 알림 템플릿
      */
-    public NotificationRequestDto.CreateNotificationRequest createCommunityActivityTemplate(User user, String activityType, String content) {
-        return NotificationRequestDto.CreateNotificationRequest.builder()
+    public NotificationRequest.Create createCommunityActivityTemplate(User user, String activityType, String content) {
+        return NotificationRequest.Create.builder()
                 .userId(user.getUserId())
                 .notificationType("COMMUNITY")
                 .title("커뮤니티 활동 알림")
@@ -64,8 +64,8 @@ public class NotificationTemplateService {
     /**
      * 건강 기록 알림 템플릿
      */
-    public NotificationRequestDto.CreateNotificationRequest createHealthRecordTemplate(User user, String childName, String recordType) {
-        return NotificationRequestDto.CreateNotificationRequest.builder()
+    public NotificationRequest.Create createHealthRecordTemplate(User user, String childName, String recordType) {
+        return NotificationRequest.Create.builder()
                 .userId(user.getUserId())
                 .notificationType("HEALTH")
                 .title("건강 기록 알림")
@@ -77,8 +77,8 @@ public class NotificationTemplateService {
     /**
      * 예방접종 알림 템플릿
      */
-    public NotificationRequestDto.CreateNotificationRequest createVaccinationReminderTemplate(User user, String childName, String vaccineName, String dueDate) {
-        return NotificationRequestDto.CreateNotificationRequest.builder()
+    public NotificationRequest.Create createVaccinationReminderTemplate(User user, String childName, String vaccineName, String dueDate) {
+        return NotificationRequest.Create.builder()
                 .userId(user.getUserId())
                 .notificationType("HEALTH")
                 .title("예방접종 알림")
@@ -90,8 +90,8 @@ public class NotificationTemplateService {
     /**
      * 시설 추천 알림 템플릿
      */
-    public NotificationRequestDto.CreateNotificationRequest createFacilityRecommendationTemplate(User user, String facilityName, String reason) {
-        return NotificationRequestDto.CreateNotificationRequest.builder()
+    public NotificationRequest.Create createFacilityRecommendationTemplate(User user, String facilityName, String reason) {
+        return NotificationRequest.Create.builder()
                 .userId(user.getUserId())
                 .notificationType("FACILITY")
                 .title("시설 추천 알림")
@@ -103,8 +103,8 @@ public class NotificationTemplateService {
     /**
      * 챗봇 응답 알림 템플릿
      */
-    public NotificationRequestDto.CreateNotificationRequest createChatbotResponseTemplate(User user, String question, String answer) {
-        return NotificationRequestDto.CreateNotificationRequest.builder()
+    public NotificationRequest.Create createChatbotResponseTemplate(User user, String question, String answer) {
+        return NotificationRequest.Create.builder()
                 .userId(user.getUserId())
                 .notificationType("CHATBOT")
                 .title("챗봇 응답 알림")
@@ -116,8 +116,8 @@ public class NotificationTemplateService {
     /**
      * 긴급 알림 템플릿
      */
-    public NotificationRequestDto.CreateNotificationRequest createEmergencyTemplate(User user, String emergencyType, String details) {
-        return NotificationRequestDto.CreateNotificationRequest.builder()
+    public NotificationRequest.Create createEmergencyTemplate(User user, String emergencyType, String details) {
+        return NotificationRequest.Create.builder()
                 .userId(user.getUserId())
                 .notificationType("SYSTEM")
                 .title("긴급 알림")
@@ -129,8 +129,8 @@ public class NotificationTemplateService {
     /**
      * 사용자 정의 알림 템플릿 생성
      */
-    public NotificationRequestDto.CreateNotificationRequest createCustomTemplate(User user, String type, String title, String message, String priority) {
-        return NotificationRequestDto.CreateNotificationRequest.builder()
+    public NotificationRequest.Create createCustomTemplate(User user, String type, String title, String message, String priority) {
+        return NotificationRequest.Create.builder()
                 .userId(user.getUserId())
                 .notificationType(type)
                 .title(title)
@@ -142,7 +142,7 @@ public class NotificationTemplateService {
     /**
      * 템플릿 유효성 검사
      */
-    public boolean validateTemplate(NotificationRequestDto.CreateNotificationRequest template) {
+    public boolean validateTemplate(NotificationRequest.Create template) {
         if (template == null) return false;
         
         // 지원하는 알림 타입인지 확인

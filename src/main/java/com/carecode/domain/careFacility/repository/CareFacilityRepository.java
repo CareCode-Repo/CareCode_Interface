@@ -1,6 +1,5 @@
 package com.carecode.domain.careFacility.repository;
 
-import com.carecode.domain.careFacility.dto.CareFacilitySearchResponseDto;
 import com.carecode.domain.careFacility.dto.TypeStats;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.careFacility.entity.FacilityType;

@@ -4,14 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: carecode-api
-    ports:
-      - "8081:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - JWT_SECRET=careCodeSecretKey123456789012345678901234567890
-      - DB_USERNAME=carecode
-      - DB_PASSWORD=carecode!123
-      - SWAGGER_SERVER_URL=http://13.209.36.209:8081
+      - JWT_SECRET=${JWT_SECRET:-change-me}
+      - DB_USERNAME=${DB_USERNAME:-carecode}
+      - DB_PASSWORD=${DB_PASSWORD:-carecode!123}
+      - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL:-http://localhost}
     depends_on:
       - carecode-mariadb
       - carecode-redis
@@ -19,21 +17,36 @@ services:
     networks:
       - carecode-network
 
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: carecode-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl.conf:/etc/nginx/ssl.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - carecode-api
+    networks:
+      - carecode-network
+
   carecode-mariadb:
     image: mariadb:10.11
     container_name: carecode-mariadb
     ports:
-      - "3307:3306"  # tripcut과 다른 포트
+      - "3307:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=root123
-      - MYSQL_DATABASE=carecode
-      - MYSQL_USER=carecode
-      - MYSQL_PASSWORD=carecode!123
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root123}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-carecode}
+      - MYSQL_USER=${MYSQL_USER:-carecode}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-carecode!123}
       - MYSQL_CHARACTER_SET_SERVER=utf8mb4
       - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
     volumes:
       - carecode-mariadb-data:/var/lib/mysql
-      - ./init-care-facilities.sql:/docker-entrypoint-initdb.d/init-care-facilities.sql
+      - ./create.sql:/docker-entrypoint-initdb.d/01-create.sql:ro
     restart: unless-stopped
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     networks:
@@ -43,7 +56,7 @@ services:
     image: redis:7-alpine
     container_name: carecode-redis
     ports:
-      - "6380:6379"  # tripcut과 다른 포트
+      - "6380:6379"
     volumes:
       - carecode-redis-data:/data
     restart: unless-stopped

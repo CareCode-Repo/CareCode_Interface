@@ -36,33 +36,23 @@ public class CareFacilityDataMigrationService implements CommandLineRunner {
      * Hospital 데이터를 CareFacility로 마이그레이션
      */
     private void migrateHospitalDataToCareFacility() {
-        try {
-            // 이미 CareFacility 데이터가 있으면 마이그레이션 건너뛰기
-            if (careFacilityRepository.count() > 0) {
-                log.info("CareFacility 데이터가 이미 존재합니다. 마이그레이션을 건너뜁니다.");
-                return;
-            }
+        // 이미 CareFacility 데이터가 있으면 마이그레이션 건너뛰기
+        if (careFacilityRepository.count() > 0) {
+            log.info("CareFacility 데이터가 이미 존재합니다. 마이그레이션을 건너뜁니다.");
+            return;
+        }
 
-            // Hospital 데이터 조회
-            String sql = "SELECT * FROM tbl_hospital";
-            List<Map<String, Object>> hospitals = jdbcTemplate.queryForList(sql);
+        // Hospital 데이터 조회
+        String sql = "SELECT * FROM tbl_hospital";
+        List<Map<String, Object>> hospitals = jdbcTemplate.queryForList(sql);
 
-            if (hospitals.isEmpty()) {
-                log.warn("Hospital 데이터가 없습니다.");
-                return;
-            }
+        if (hospitals.isEmpty()) {
+            return;
+        }
 
-            log.info("Hospital 데이터 {}개를 CareFacility로 마이그레이션 시작", hospitals.size());
-
-            for (Map<String, Object> hospital : hospitals) {
-                CareFacility careFacility = createCareFacilityFromHospital(hospital);
-                careFacilityRepository.save(careFacility);
-            }
-
-            log.info("Hospital 데이터 마이그레이션 완료: {}개", hospitals.size());
-
-        } catch (Exception e) {
-            log.error("Hospital 데이터 마이그레이션 중 오류 발생: {}", e.getMessage());
+        for (Map<String, Object> hospital : hospitals) {
+            CareFacility careFacility = createCareFacilityFromHospital(hospital);
+            careFacilityRepository.save(careFacility);
         }
     }
 

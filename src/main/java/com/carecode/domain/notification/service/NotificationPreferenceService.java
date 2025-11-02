@@ -2,7 +2,8 @@ package com.carecode.domain.notification.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.notification.dto.NotificationPreferenceDto;
+import com.carecode.domain.notification.dto.NotificationRequest;
+import com.carecode.domain.notification.dto.NotificationResponse;
 import com.carecode.domain.notification.entity.NotificationPreference;
 import com.carecode.domain.notification.entity.Notification;
 import com.carecode.domain.notification.repository.NotificationPreferenceRepository;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,7 +36,7 @@ public class NotificationPreferenceService {
      * 사용자별 알림 설정 목록 조회
      */
     @LogExecutionTime
-    public List<NotificationPreferenceDto> getUserPreferences(String userId) {
+    public List<NotificationResponse.Settings> getUserPreferences(String userId) {
         log.info("사용자별 알림 설정 조회: 사용자ID={}", userId);
         
         try {
@@ -56,7 +58,7 @@ public class NotificationPreferenceService {
      * 특정 알림 타입 설정 조회
      */
     @LogExecutionTime
-    public NotificationPreferenceDto getPreferenceByType(String userId, Notification.NotificationType notificationType) {
+    public NotificationResponse.Settings getPreferenceByType(String userId, Notification.NotificationType notificationType) {
         log.info("알림 타입별 설정 조회: 사용자ID={}, 타입={}", userId, notificationType);
         
         try {
@@ -78,7 +80,7 @@ public class NotificationPreferenceService {
      */
     @LogExecutionTime
     @Transactional
-    public NotificationPreferenceDto savePreference(String userId, NotificationPreferenceDto preferenceDto) {
+    public NotificationResponse.Settings savePreference(String userId, NotificationResponse.Settings preferenceDto) {
         log.info("알림 설정 저장: 사용자ID={}, 타입={}", userId, preferenceDto.getNotificationType());
         
         try {
@@ -105,7 +107,7 @@ public class NotificationPreferenceService {
      */
     @LogExecutionTime
     @Transactional
-    public NotificationPreferenceDto updateChannelPreference(String userId, String notificationType, String channel, boolean enabled) {
+    public NotificationResponse.Settings updateChannelPreference(String userId, String notificationType, String channel, boolean enabled) {
         log.info("채널별 설정 업데이트: 사용자ID={}, 타입={}, 채널={}, 활성화={}", userId, notificationType, channel, enabled);
         
         try {
@@ -184,7 +186,7 @@ public class NotificationPreferenceService {
      * 특정 알림 타입의 활성화된 설정 조회
      */
     @LogExecutionTime
-    public List<NotificationPreferenceDto> getEnabledPreferencesByType(Notification.NotificationType notificationType) {
+    public List<NotificationResponse.Settings> getEnabledPreferencesByType(Notification.NotificationType notificationType) {
         log.info("알림 타입별 활성화된 설정 조회: 타입={}", notificationType);
         
         try {
@@ -220,7 +222,7 @@ public class NotificationPreferenceService {
     /**
      * 새 설정 생성
      */
-    private NotificationPreference createNewPreference(User user, NotificationPreferenceDto preferenceDto) {
+    private NotificationPreference createNewPreference(User user, NotificationResponse.Settings preferenceDto) {
         return NotificationPreference.builder()
                 .user(user)
                 .notificationType(Notification.NotificationType.valueOf(preferenceDto.getNotificationType()))
@@ -237,7 +239,7 @@ public class NotificationPreferenceService {
     /**
      * 설정 업데이트
      */
-    private void updatePreference(NotificationPreference preference, NotificationPreferenceDto preferenceDto) {
+    private void updatePreference(NotificationPreference preference, NotificationResponse.Settings preferenceDto) {
         preference.setEmailEnabled(preferenceDto.getEmailEnabled());
         preference.setPushEnabled(preferenceDto.getPushEnabled());
         preference.setSmsEnabled(preferenceDto.getSmsEnabled());
@@ -263,8 +265,8 @@ public class NotificationPreferenceService {
     /**
      * DTO 변환
      */
-    private NotificationPreferenceDto convertToDto(NotificationPreference preference) {
-        return NotificationPreferenceDto.builder()
+    private NotificationResponse.Settings convertToDto(NotificationPreference preference) {
+        return NotificationResponse.Settings.builder()
                 .id(preference.getId())
                 .userId(preference.getUser().getUserId())
                 .notificationType(preference.getNotificationType().name())
@@ -278,5 +280,96 @@ public class NotificationPreferenceService {
                 .createdAt(preference.getCreatedAt())
                 .updatedAt(preference.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * 푸시 알림 토큰 등록
+     */
+    @Transactional
+    public void registerPushToken(String userId, NotificationRequest.RegisterPushToken request) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+
+        // 기존 설정이 있는지 확인
+        Optional<NotificationPreference> existingPreference = preferenceRepository
+                .findByUserAndNotificationType(user, Notification.NotificationType.SYSTEM);
+
+        if (existingPreference.isPresent()) {
+            NotificationPreference preference = existingPreference.get();
+            preference.setDeviceToken(request.getPushToken());
+            preference.setUpdatedAt(LocalDateTime.now());
+            preferenceRepository.save(preference);
+        } else {
+            // 새 설정 생성
+            NotificationPreference newPreference = NotificationPreference.builder()
+                    .user(user)
+                    .notificationType(Notification.NotificationType.SYSTEM)
+                    .emailEnabled(false)
+                    .pushEnabled(true)
+                    .smsEnabled(false)
+                    .inAppEnabled(true)
+                    .deviceToken(request.getPushToken())
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+            preferenceRepository.save(newPreference);
+        }
+    }
+
+    /**
+     * 알림 설정 수정
+     */
+    @Transactional
+    public void updateSettings(String userId, NotificationRequest.UpdateSettings request) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+
+        // 각 알림 타입별로 설정 업데이트
+        for (Notification.NotificationType type : Notification.NotificationType.values()) {
+            Optional<NotificationPreference> existingPreference = preferenceRepository
+                    .findByUserAndNotificationType(user, type);
+
+            NotificationPreference preference;
+            if (existingPreference.isPresent()) {
+                preference = existingPreference.get();
+            } else {
+                preference = NotificationPreference.builder()
+                        .user(user)
+                        .notificationType(type)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+            }
+
+            // 타입별 설정 적용
+            switch (type) {
+                case POLICY:
+                    preference.setEmailEnabled(request.isEmailNotification());
+                    preference.setPushEnabled(request.isPushNotification());
+                    preference.setSmsEnabled(request.isSmsNotification());
+                    preference.setInAppEnabled(request.isPolicyNotification());
+                    break;
+                case HEALTH:
+                    preference.setEmailEnabled(request.isEmailNotification());
+                    preference.setPushEnabled(request.isPushNotification());
+                    preference.setSmsEnabled(request.isSmsNotification());
+                    preference.setInAppEnabled(request.isFacilityNotification());
+                    break;
+                case COMMUNITY:
+                    preference.setEmailEnabled(request.isEmailNotification());
+                    preference.setPushEnabled(request.isPushNotification());
+                    preference.setSmsEnabled(request.isSmsNotification());
+                    preference.setInAppEnabled(request.isCommunityNotification());
+                    break;
+                case SYSTEM:
+                    preference.setEmailEnabled(request.isEmailNotification());
+                    preference.setPushEnabled(request.isPushNotification());
+                    preference.setSmsEnabled(request.isSmsNotification());
+                    preference.setInAppEnabled(request.isChatbotNotification());
+                    break;
+            }
+
+            preference.setUpdatedAt(LocalDateTime.now());
+            preferenceRepository.save(preference);
+        }
     }
 } 

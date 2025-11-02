@@ -25,8 +25,11 @@ public class HospitalReview {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "user_id", insertable = false, updatable = false)
+    private Long userId;
+
     @Column(nullable = false)
-    private int rating;
+    private Integer rating;
 
     @Column(columnDefinition = "TEXT")
     private String content;

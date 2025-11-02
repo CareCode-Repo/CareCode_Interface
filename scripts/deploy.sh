@@ -137,9 +137,9 @@ start_services() {
 check_service_health() {
     log_info "서비스 헬스체크 실행 중..."
     
-    # MySQL 헬스체크
+    # MariaDB 헬스체크
     for i in {1..30}; do
-        if docker-compose exec -T mysql mysqladmin ping -h localhost --silent; then
+        if docker-compose exec -T carecode-mariadb mysqladmin ping -h localhost --silent; then
             log_success "MySQL 서비스 정상"
             break
         fi
@@ -152,7 +152,7 @@ check_service_health() {
     
     # Redis 헬스체크
     for i in {1..15}; do
-        if docker-compose exec -T redis redis-cli ping | grep -q PONG; then
+        if docker-compose exec -T carecode-redis redis-cli ping | grep -q PONG; then
             log_success "Redis 서비스 정상"
             break
         fi
@@ -163,9 +163,9 @@ check_service_health() {
         sleep 2
     done
     
-    # Spring Boot 앱 헬스체크
+    # Spring Boot 앱 헬스체크 (Nginx 통해서 확인)
     for i in {1..60}; do
-        if curl -f http://localhost:8080/health >/dev/null 2>&1; then
+        if curl -f http://localhost/health >/dev/null 2>&1; then
             log_success "Spring Boot 애플리케이션 정상"
             break
         fi
@@ -206,7 +206,7 @@ restart_services() {
 
 # 로그 확인
 show_logs() {
-    local service=${1:-app}
+    local service=${1:-carecode-api}
     log_info "${service} 서비스 로그 확인:"
     docker-compose logs -f --tail=100 $service
 }

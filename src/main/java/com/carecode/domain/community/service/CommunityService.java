@@ -2,8 +2,8 @@ package com.carecode.domain.community.service;
 
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.domain.community.dto.CommunityRequestDto;
-import com.carecode.domain.community.dto.CommunityResponseDto;
+import com.carecode.domain.community.dto.CommunityRequest;
+import com.carecode.domain.community.dto.CommunityResponse;
 import com.carecode.domain.community.entity.Comment;
 import com.carecode.domain.community.entity.Post;
 import com.carecode.domain.community.entity.Tag;
@@ -44,15 +44,15 @@ public class CommunityService {
     /**
      * 게시글 목록 조회 (페이징)
      */
-    public CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse> getAllPosts(int page, int size) {
+    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> getAllPosts(int page, int size) {
         log.info("게시글 목록 조회 - 페이지: {}, 크기: {}", page, size);
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
             Page<Post> postPage = postRepository.findAll(pageable);
             
-            List<CommunityResponseDto.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+            List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
             
-            return CommunityResponseDto.PageResponse.<CommunityResponseDto.PostResponse>builder()
+            return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
                     .content(postResponses)
                     .page(postPage.getNumber())
                     .size(postPage.getSize())
@@ -69,24 +69,12 @@ public class CommunityService {
         }
     }
     
-    /**
-     * 게시글 목록 조회 (기존 호환성)
-     */
-    public List<CommunityResponseDto.PostResponse> getAllPosts() {
-        log.info("게시글 목록 조회 (전체)");
-        try {
-            List<Post> posts = postRepository.findAll(Sort.by("createdAt").descending());
-            return communityMapper.toPostResponseList(posts);
-        } catch (Exception e) {
-            log.error("게시글 목록 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글 목록을 조회하는 중 오류가 발생했습니다.");
-        }
-    }
+    // 레거시 전체 조회 메서드 제거 (페이징 API로 일원화)
     
     /**
      * 게시글 상세 조회
      */
-    public CommunityResponseDto.PostDetailResponse getPostById(Long postId) {
+    public CommunityResponse.PostDetailResponse getPostById(Long postId) {
         log.info("게시글 상세 조회 - 게시글 ID: {}", postId);
         try {
             Post post = postRepository.findById(postId)
@@ -108,9 +96,7 @@ public class CommunityService {
     /**
      * 게시글 작성
      */
-    public CommunityResponseDto.PostResponse createPost(CommunityRequestDto.CreatePostRequest request) {
-        log.info("게시글 작성 - 제목: {}", request.getTitle());
-        try {
+    public CommunityResponse.PostResponse createPost(CommunityRequest.CreatePost request) {
             // 현재 인증된 사용자 가져오기
             User author = getCurrentUser();
             
@@ -123,7 +109,7 @@ public class CommunityService {
                     .category(category)
                     .author(author)
                     .authorName(author.getName())
-                    .isAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false)
+                    .isAnonymous(request.isAnonymous())
                     .build();
             
             Post savedPost = postRepository.save(post);
@@ -134,16 +120,12 @@ public class CommunityService {
             }
             
             return communityMapper.toPostResponse(savedPost);
-        } catch (Exception e) {
-            log.error("게시글 작성 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글을 작성하는 중 오류가 발생했습니다.");
-        }
     }
     
     /**
      * 게시글 수정
      */
-    public CommunityResponseDto.PostResponse updatePost(Long postId, CommunityRequestDto.UpdatePostRequest request) {
+    public CommunityResponse.PostResponse updatePost(Long postId, CommunityRequest.UpdatePost request) {
         log.info("게시글 수정 - 게시글 ID: {}", postId);
         try {
             Post post = postRepository.findById(postId)
@@ -188,7 +170,7 @@ public class CommunityService {
     /**
      * 게시글의 댓글 목록 조회
      */
-    public List<CommunityResponseDto.CommentResponse> getCommentsByPostId(Long postId) {
+    public List<CommunityResponse.CommentResponse> getCommentsByPostId(Long postId) {
         log.info("댓글 목록 조회 - 게시글 ID: {}", postId);
         try {
             // 게시글 존재 확인
@@ -209,7 +191,7 @@ public class CommunityService {
     /**
      * 댓글 작성
      */
-    public CommunityResponseDto.CommentResponse createComment(Long postId, CommunityRequestDto.CreateCommentRequest request) {
+    public CommunityResponse.CommentResponse createComment(Long postId, CommunityRequest.CreateComment request) {
         log.info("댓글 작성 - 게시글 ID: {}, 부모 댓글 ID: {}", postId, request.getParentCommentId());
         try {
             Post post = postRepository.findById(postId)
@@ -250,47 +232,31 @@ public class CommunityService {
     /**
      * 댓글 수정
      */
-    public CommunityResponseDto.CommentResponse updateComment(Long commentId, CommunityRequestDto.UpdateCommentRequest request) {
-        log.info("댓글 수정 - 댓글 ID: {}", commentId);
-        try {
-            Comment comment = commentRepository.findById(commentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
-            
-            comment.setContent(request.getContent());
-            Comment updatedComment = commentRepository.save(comment);
-            
-            return communityMapper.toCommentResponse(updatedComment);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("댓글 수정 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("댓글을 수정하는 중 오류가 발생했습니다.");
-        }
+    public CommunityResponse.CommentResponse updateComment(Long commentId, CommunityRequest.UpdateComment request) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
+
+        comment.setContent(request.getContent());
+        Comment updatedComment = commentRepository.save(comment);
+
+        return communityMapper.toCommentResponse(updatedComment);
     }
     
     /**
      * 댓글 삭제
      */
     public void deleteComment(Long commentId) {
-        log.info("댓글 삭제 - 댓글 ID: {}", commentId);
-        try {
-            Comment comment = commentRepository.findById(commentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
-            
-            Long postId = comment.getPost().getId();
-            commentRepository.delete(comment);
-            
-            // 게시글의 댓글 수 업데이트
-            Post post = postRepository.findById(postId).orElse(null);
-            if (post != null) {
-                post.setCommentCount((int) commentRepository.countByPostId(postId));
-                postRepository.save(post);
-            }
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("댓글 삭제 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("댓글을 삭제하는 중 오류가 발생했습니다.");
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
+
+        Long postId = comment.getPost().getId();
+        commentRepository.delete(comment);
+
+        // 게시글의 댓글 수 업데이트
+        Post post = postRepository.findById(postId).orElse(null);
+        if (post != null) {
+            post.setCommentCount((int) commentRepository.countByPostId(postId));
+            postRepository.save(post);
         }
     }
     
@@ -299,54 +265,34 @@ public class CommunityService {
     /**
      * 태그 목록 조회
      */
-    public List<CommunityResponseDto.TagResponse> getAllTags() {
-        log.info("태그 목록 조회");
-        try {
-            List<Tag> tags = tagRepository.findByIsActiveTrue();
-            return communityMapper.toTagResponseList(tags);
-        } catch (Exception e) {
-            log.error("태그 목록 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("태그 목록을 조회하는 중 오류가 발생했습니다.");
-        }
+    public List<CommunityResponse.TagResponse> getAllTags() {
+        List<Tag> tags = tagRepository.findByIsActiveTrue();
+        return communityMapper.toTagResponseList(tags);
     }
     
     /**
      * 태그 검색
      */
-    public List<CommunityResponseDto.TagResponse> searchTags(String keyword) {
-        log.info("태그 검색 - 키워드: {}", keyword);
-        try {
-            List<Tag> tags = tagRepository.findByNameContainingAndIsActiveTrue(keyword);
-            return communityMapper.toTagResponseList(tags);
-        } catch (Exception e) {
-            log.error("태그 검색 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("태그를 검색하는 중 오류가 발생했습니다.");
-        }
+    public List<CommunityResponse.TagResponse> searchTags(String keyword) {
+        List<Tag> tags = tagRepository.findByNameContainingAndIsActiveTrue(keyword);
+        return communityMapper.toTagResponseList(tags);
     }
     
     /**
      * 태그 생성
      */
-    public CommunityResponseDto.TagResponse createTag(CommunityRequestDto.CreateTagRequest request) {
-        log.info("태그 생성 - 이름: {}", request.getName());
-        try {
-            if (tagRepository.existsByName(request.getName())) {
-                throw new CareServiceException("이미 존재하는 태그입니다: " + request.getName());
-            }
-            
-            Tag tag = Tag.builder()
-                    .name(request.getName())
-                    .description(request.getDescription())
-                    .build();
-            
-            Tag savedTag = tagRepository.save(tag);
-            return communityMapper.toTagResponse(savedTag);
-        } catch (CareServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("태그 생성 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("태그를 생성하는 중 오류가 발생했습니다.");
+    public CommunityResponse.TagResponse createTag(CommunityRequest.CreateTag request) {
+        if (tagRepository.existsByName(request.getName())) {
+            throw new CareServiceException("이미 존재하는 태그입니다: " + request.getName());
         }
+
+        Tag tag = Tag.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .build();
+
+        Tag savedTag = tagRepository.save(tag);
+        return communityMapper.toTagResponse(savedTag);
     }
     
     /**
@@ -372,35 +318,19 @@ public class CommunityService {
     /**
      * 게시글의 태그 목록 조회
      */
-    public List<CommunityResponseDto.TagResponse> getTagsByPostId(Long postId) {
-        log.info("게시글 태그 목록 조회 - 게시글 ID: {}", postId);
-        try {
-            Post post = postRepository.findById(postId)
-                    .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
-            return communityMapper.toTagResponseList(post.getTags());
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("게시글 태그 목록 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글 태그 목록을 조회하는 중 오류가 발생했습니다.");
-        }
+    public List<CommunityResponse.TagResponse> getTagsByPostId(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
+        return communityMapper.toTagResponseList(post.getTags());
     }
     
     /**
      * 태그별 게시글 목록 조회
      */
-    public List<CommunityResponseDto.PostResponse> getPostsByTagId(Long tagId) {
-        log.info("태그별 게시글 목록 조회 - 태그 ID: {}", tagId);
-        try {
-            Tag tag = tagRepository.findById(tagId)
-                    .orElseThrow(() -> new ResourceNotFoundException("태그를 찾을 수 없습니다. ID: " + tagId));
-            return communityMapper.toPostResponseList(postRepository.findByTagsContaining(tag));
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("태그별 게시글 목록 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("태그별 게시글 목록을 조회하는 중 오류가 발생했습니다.");
-        }
+    public List<CommunityResponse.PostResponse> getPostsByTagId(Long tagId) {
+        Tag tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> new ResourceNotFoundException("태그를 찾을 수 없습니다. ID: " + tagId));
+        return communityMapper.toPostResponseList(postRepository.findByTagsContaining(tag));
     }
 
     /**
@@ -408,8 +338,7 @@ public class CommunityService {
      */
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        log.debug("getCurrentUser() - Authentication: {}", authentication);
-        
+
         if (authentication == null || !authentication.isAuthenticated() || 
             "anonymousUser".equals(authentication.getName())) {
             log.warn("getCurrentUser() - 인증되지 않은 사용자");
@@ -471,129 +400,70 @@ public class CommunityService {
     /**
      * 게시글 검색 (페이징)
      */
-    public CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse> searchPosts(String keyword, int page, int size) {
-        log.info("게시글 검색 - 키워드: {}, 페이지: {}, 크기: {}", keyword, page, size);
-        try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-            Page<Post> postPage = postRepository.findByKeyword(keyword, pageable);
-            
-            List<CommunityResponseDto.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
-            
-            return CommunityResponseDto.PageResponse.<CommunityResponseDto.PostResponse>builder()
-                    .content(postResponses)
-                    .page(postPage.getNumber())
-                    .size(postPage.getSize())
-                    .totalElements(postPage.getTotalElements())
-                    .totalPages(postPage.getTotalPages())
-                    .first(postPage.isFirst())
-                    .last(postPage.isLast())
-                    .hasNext(postPage.hasNext())
-                    .hasPrevious(postPage.hasPrevious())
-                    .build();
-        } catch (Exception e) {
-            log.error("게시글 검색 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글을 검색하는 중 오류가 발생했습니다.");
-        }
+    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> searchPosts(String keyword, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Post> postPage = postRepository.findByKeyword(keyword, pageable);
+
+        List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+
+        return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+                .content(postResponses)
+                .page(postPage.getNumber())
+                .size(postPage.getSize())
+                .totalElements(postPage.getTotalElements())
+                .totalPages(postPage.getTotalPages())
+                .first(postPage.isFirst())
+                .last(postPage.isLast())
+                .hasNext(postPage.hasNext())
+                .hasPrevious(postPage.hasPrevious())
+                .build();
     }
     
-    /**
-     * 게시글 검색 (기존 호환성)
-     */
-    public List<CommunityResponseDto.PostResponse> searchPosts(String keyword) {
-        log.info("게시글 검색 (전체) - 키워드: {}", keyword);
-        try {
-            Pageable pageable = PageRequest.of(0, 100); // 최대 100개 반환
-            Page<Post> postPage = postRepository.findByKeyword(keyword, pageable);
-            return communityMapper.toPostResponseList(postPage.getContent());
-        } catch (Exception e) {
-            log.error("게시글 검색 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글을 검색하는 중 오류가 발생했습니다.");
-        }
-    }
+    // 레거시 전체 검색 메서드 제거 (페이징 API로 일원화)
 
     /**
      * 인기 게시글 조회 (페이징)
      */
-    public CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse> getPopularPosts(int page, int size) {
-        log.info("인기 게시글 조회 - 페이지: {}, 크기: {}", page, size);
-        try {
-            Pageable pageable = PageRequest.of(page, size);
-            Page<Post> postPage = postRepository.findPopularPosts(pageable);
-            
-            List<CommunityResponseDto.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
-            
-            return CommunityResponseDto.PageResponse.<CommunityResponseDto.PostResponse>builder()
-                    .content(postResponses)
-                    .page(postPage.getNumber())
-                    .size(postPage.getSize())
-                    .totalElements(postPage.getTotalElements())
-                    .totalPages(postPage.getTotalPages())
-                    .first(postPage.isFirst())
-                    .last(postPage.isLast())
-                    .hasNext(postPage.hasNext())
-                    .hasPrevious(postPage.hasPrevious())
-                    .build();
-        } catch (Exception e) {
-            log.error("인기 게시글 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("인기 게시글을 조회하는 중 오류가 발생했습니다.");
-        }
+    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> getPopularPosts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> postPage = postRepository.findPopularPosts(pageable);
+
+        List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+
+        return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+                .content(postResponses)
+                .page(postPage.getNumber())
+                .size(postPage.getSize())
+                .totalElements(postPage.getTotalElements())
+                .totalPages(postPage.getTotalPages())
+                .first(postPage.isFirst())
+                .last(postPage.isLast())
+                .hasNext(postPage.hasNext())
+                .hasPrevious(postPage.hasPrevious())
+                .build();
     }
 
-    /**
-     * 인기 게시글 조회 (기존 호환성)
-     */
-    public List<CommunityResponseDto.PostResponse> getPopularPosts(Integer limit) {
-        log.info("인기 게시글 조회 - 제한: {}", limit);
-        try {
-            Pageable pageable = PageRequest.of(0, limit != null ? limit : 10);
-            List<Post> posts = postRepository.findPopularPostsList(pageable);
-            return communityMapper.toPostResponseList(posts);
-        } catch (Exception e) {
-            log.error("인기 게시글 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("인기 게시글을 조회하는 중 오류가 발생했습니다.");
-        }
-    }
+    // 레거시 인기 게시글 리스트 메서드 제거 (페이징 API로 일원화)
 
     /**
      * 최신 게시글 조회 (페이징)
      */
-    public CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse> getLatestPosts(int page, int size) {
-        log.info("최신 게시글 조회 - 페이지: {}, 크기: {}", page, size);
-        try {
-            Pageable pageable = PageRequest.of(page, size);
-            Page<Post> postPage = postRepository.findLatestPosts(pageable);
-            
-            List<CommunityResponseDto.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
-            
-            return CommunityResponseDto.PageResponse.<CommunityResponseDto.PostResponse>builder()
-                    .content(postResponses)
-                    .page(postPage.getNumber())
-                    .size(postPage.getSize())
-                    .totalElements(postPage.getTotalElements())
-                    .totalPages(postPage.getTotalPages())
-                    .first(postPage.isFirst())
-                    .last(postPage.isLast())
-                    .hasNext(postPage.hasNext())
-                    .hasPrevious(postPage.hasPrevious())
-                    .build();
-        } catch (Exception e) {
-            log.error("최신 게시글 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("최신 게시글을 조회하는 중 오류가 발생했습니다.");
-        }
-    }
+    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> getLatestPosts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> postPage = postRepository.findLatestPosts(pageable);
 
-    /**
-     * 최신 게시글 조회 (기존 호환성)
-     */
-    public List<CommunityResponseDto.PostResponse> getLatestPosts(Integer limit) {
-        log.info("최신 게시글 조회 - 제한: {}", limit);
-        try {
-            Pageable pageable = PageRequest.of(0, limit != null ? limit : 10);
-            List<Post> posts = postRepository.findLatestPostsList(pageable);
-            return communityMapper.toPostResponseList(posts);
-        } catch (Exception e) {
-            log.error("최신 게시글 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("최신 게시글을 조회하는 중 오류가 발생했습니다.");
-        }
+        List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+
+        return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+                .content(postResponses)
+                .page(postPage.getNumber())
+                .size(postPage.getSize())
+                .totalElements(postPage.getTotalElements())
+                .totalPages(postPage.getTotalPages())
+                .first(postPage.isFirst())
+                .last(postPage.isLast())
+                .hasNext(postPage.hasNext())
+                .hasPrevious(postPage.hasPrevious())
+                .build();
     }
 } 

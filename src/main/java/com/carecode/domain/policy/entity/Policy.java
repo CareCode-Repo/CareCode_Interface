@@ -94,6 +94,7 @@ public class Policy {
     private PolicyCategory policyCategory;
     
     @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
+    @lombok.Builder.Default
     private List<PolicyDocument> policyDocuments = new ArrayList<>();
     
     @PrePersist

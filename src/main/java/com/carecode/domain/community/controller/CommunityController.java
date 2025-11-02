@@ -3,15 +3,12 @@ package com.carecode.domain.community.controller;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
-import com.carecode.domain.community.dto.CommunityRequestDto;
-import com.carecode.domain.community.dto.CommunityResponseDto;
+import com.carecode.domain.community.dto.CommunityRequest;
+import com.carecode.domain.community.dto.CommunityResponse;
 import com.carecode.domain.community.service.CommunityService;
+import com.carecode.domain.community.app.CommunityFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import com.carecode.core.handler.ApiSuccess;
+import java.util.Date;
 
 /**
  * 커뮤니티 API 컨트롤러
@@ -33,7 +32,7 @@ import java.util.Map;
 @Tag(name = "커뮤니티", description = "육아 커뮤니티 게시글 및 댓글 관리 API")
 public class CommunityController extends BaseController {
 
-    private final CommunityService communityService;
+    private final CommunityFacade communityFacade;
 
     /**
      * 게시글 목록 조회 (페이징)
@@ -41,16 +40,10 @@ public class CommunityController extends BaseController {
     @GetMapping("/posts")
     @LogExecutionTime
     @Operation(summary = "게시글 목록 조회", description = "커뮤니티 게시글 목록을 페이징으로 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PageResponse.class))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse>> getAllPosts(
+    public ResponseEntity<CommunityResponse.PageResponse<CommunityResponse.PostResponse>> getAllPosts(
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지당 항목 수", example = "10") @RequestParam(defaultValue = "10") int size) {
-        log.info("게시글 목록 조회 - 페이지: {}, 크기: {}", page, size);
-        CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse> posts = communityService.getAllPosts(page, size);
+        CommunityResponse.PageResponse<CommunityResponse.PostResponse> posts = communityFacade.getAllPosts(page, size);
         return ResponseEntity.ok(posts);
     }
 
@@ -60,16 +53,9 @@ public class CommunityController extends BaseController {
     @GetMapping("/posts/{postId}")
     @LogExecutionTime
     @Operation(summary = "게시글 상세 조회", description = "특정 게시글의 상세 정보를 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PostDetailResponse.class))),
-        @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<CommunityResponseDto.PostDetailResponse> getPost(
+    public ResponseEntity<CommunityResponse.PostDetailResponse> getPost(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
-        log.info("게시글 상세 조회: 게시글ID={}", postId);
-        CommunityResponseDto.PostDetailResponse post = communityService.getPostById(postId);
+        CommunityResponse.PostDetailResponse post = communityFacade.getPostDetailById(postId);
         return ResponseEntity.ok(post);
     }
 
@@ -80,17 +66,9 @@ public class CommunityController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "작성 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PostResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<CommunityResponseDto.PostResponse> createPost(
-            @Parameter(description = "게시글 정보", required = true) @RequestBody CommunityRequestDto.CreatePostRequest request) {
-        log.info("게시글 작성: 제목={}", request.getTitle());
-        CommunityResponseDto.PostResponse post = communityService.createPost(request);
+    public ResponseEntity<CommunityResponse.PostResponse> createPost(
+            @Parameter(description = "게시글 정보", required = true) @RequestBody CommunityRequest.CreatePost request) {
+        CommunityResponse.PostResponse post = communityFacade.createPost(request);
         return ResponseEntity.ok(post);
     }
 
@@ -101,19 +79,10 @@ public class CommunityController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "게시글 수정", description = "기존 게시글을 수정합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "수정 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PostResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없음"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<CommunityResponseDto.PostResponse> updatePost(
+    public ResponseEntity<CommunityResponse.PostResponse> updatePost(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
-            @Parameter(description = "수정할 게시글 정보", required = true) @RequestBody CommunityRequestDto.UpdatePostRequest request) {
-        log.info("게시글 수정: 게시글ID={}", postId);
-        CommunityResponseDto.PostResponse post = communityService.updatePost(postId, request);
+            @Parameter(description = "수정할 게시글 정보", required = true) @RequestBody CommunityRequest.UpdatePost request) {
+        CommunityResponse.PostResponse post = communityFacade.updatePost(postId, request);
         return ResponseEntity.ok(post);
     }
 
@@ -124,17 +93,10 @@ public class CommunityController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "게시글 삭제", description = "게시글을 삭제합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "삭제 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<Map<String, String>> deletePost(
+    public ResponseEntity<ApiSuccess> deletePost(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
-        log.info("게시글 삭제: 게시글ID={}", postId);
-        communityService.deletePost(postId);
-        return ResponseEntity.ok(Map.of("message", "게시글이 삭제되었습니다."));
+        communityFacade.deletePost(postId);
+        return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("게시글이 삭제되었습니다.").build());
     }
 
     /**
@@ -143,16 +105,9 @@ public class CommunityController extends BaseController {
     @GetMapping("/posts/{postId}/comments")
     @LogExecutionTime
     @Operation(summary = "댓글 목록 조회", description = "특정 게시글의 댓글 목록을 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.CommentResponse.class))),
-        @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<List<CommunityResponseDto.CommentResponse>> getComments(
+    public ResponseEntity<List<CommunityResponse.CommentResponse>> getComments(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
-        log.info("댓글 목록 조회: 게시글ID={}", postId);
-        List<CommunityResponseDto.CommentResponse> comments = communityService.getCommentsByPostId(postId);
+        List<CommunityResponse.CommentResponse> comments = communityFacade.getCommentsByPostId(postId);
         return ResponseEntity.ok(comments);
     }
 
@@ -163,19 +118,10 @@ public class CommunityController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "댓글 작성", description = "게시글에 댓글을 작성합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "작성 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.CommentResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없음"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<CommunityResponseDto.CommentResponse> createComment(
+    public ResponseEntity<CommunityResponse.CommentResponse> createComment(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
-            @Parameter(description = "댓글 정보", required = true) @RequestBody CommunityRequestDto.CreateCommentRequest request) {
-        log.info("댓글 작성: 게시글ID={}", postId);
-        CommunityResponseDto.CommentResponse comment = communityService.createComment(postId, request);
+            @Parameter(description = "댓글 정보", required = true) @RequestBody CommunityRequest.CreateComment request) {
+        CommunityResponse.CommentResponse comment = communityFacade.createComment(postId, request);
         return ResponseEntity.ok(comment);
     }
 
@@ -186,19 +132,10 @@ public class CommunityController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "댓글 수정", description = "기존 댓글을 수정합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "수정 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.CommentResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "404", description = "댓글을 찾을 수 없음"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<CommunityResponseDto.CommentResponse> updateComment(
+    public ResponseEntity<CommunityResponse.CommentResponse> updateComment(
             @Parameter(description = "댓글 ID", required = true) @PathVariable Long commentId,
-            @Parameter(description = "수정할 댓글 정보", required = true) @RequestBody CommunityRequestDto.UpdateCommentRequest request) {
-        log.info("댓글 수정: 댓글ID={}", commentId);
-        CommunityResponseDto.CommentResponse comment = communityService.updateComment(commentId, request);
+            @Parameter(description = "수정할 댓글 정보", required = true) @RequestBody CommunityRequest.UpdateComment request) {
+        CommunityResponse.CommentResponse comment = communityFacade.updateComment(commentId, request);
         return ResponseEntity.ok(comment);
     }
 
@@ -209,17 +146,10 @@ public class CommunityController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "댓글 삭제", description = "댓글을 삭제합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "삭제 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "404", description = "댓글을 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<Map<String, String>> deleteComment(
+    public ResponseEntity<ApiSuccess> deleteComment(
             @Parameter(description = "댓글 ID", required = true) @PathVariable Long commentId) {
-        log.info("댓글 삭제: 댓글ID={}", commentId);
-        communityService.deleteComment(commentId);
-        return ResponseEntity.ok(Map.of("message", "댓글이 삭제되었습니다."));
+        communityFacade.deleteComment(commentId);
+        return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("댓글이 삭제되었습니다.").build());
     }
 
     /**
@@ -228,17 +158,11 @@ public class CommunityController extends BaseController {
     @GetMapping("/search")
     @LogExecutionTime
     @Operation(summary = "게시글 검색", description = "키워드로 게시글을 페이징 검색합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "검색 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PageResponse.class))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse>> searchPosts(
+    public ResponseEntity<CommunityResponse.PageResponse<CommunityResponse.PostResponse>> searchPosts(
             @Parameter(description = "검색 키워드", required = true) @RequestParam String keyword,
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지당 항목 수", example = "10") @RequestParam(defaultValue = "10") int size) {
-        log.info("게시글 검색: 키워드={}, 페이지: {}, 크기: {}", keyword, page, size);
-        CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse> posts = communityService.searchPosts(keyword, page, size);
+        CommunityResponse.PageResponse<CommunityResponse.PostResponse> posts = communityFacade.searchPosts(keyword, page, size);
         return ResponseEntity.ok(posts);
     }
 
@@ -248,16 +172,10 @@ public class CommunityController extends BaseController {
     @GetMapping("/popular")
     @LogExecutionTime
     @Operation(summary = "인기 게시글 조회", description = "인기 있는 게시글 목록을 페이징으로 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PageResponse.class))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse>> getPopularPosts(
+    public ResponseEntity<CommunityResponse.PageResponse<CommunityResponse.PostResponse>> getPopularPosts(
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지당 항목 수", example = "10") @RequestParam(defaultValue = "10") int size) {
-        log.info("인기 게시글 조회: 페이지={}, 크기={}", page, size);
-        CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse> posts = communityService.getPopularPosts(page, size);
+        CommunityResponse.PageResponse<CommunityResponse.PostResponse> posts = communityFacade.getPopularPosts(page, size);
         return ResponseEntity.ok(posts);
     }
 
@@ -267,16 +185,10 @@ public class CommunityController extends BaseController {
     @GetMapping("/latest")
     @LogExecutionTime
     @Operation(summary = "최신 게시글 조회", description = "최근 작성된 게시글 목록을 페이징으로 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PageResponse.class))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse>> getLatestPosts(
+    public ResponseEntity<CommunityResponse.PageResponse<CommunityResponse.PostResponse>> getLatestPosts(
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지당 항목 수", example = "10") @RequestParam(defaultValue = "10") int size) {
-        log.info("최신 게시글 조회: 페이지={}, 크기={}", page, size);
-        CommunityResponseDto.PageResponse<CommunityResponseDto.PostResponse> posts = communityService.getLatestPosts(page, size);
+        CommunityResponse.PageResponse<CommunityResponse.PostResponse> posts = communityFacade.getLatestPosts(page, size);
         return ResponseEntity.ok(posts);
     }
 
@@ -286,87 +198,9 @@ public class CommunityController extends BaseController {
     @GetMapping("/tags")
     @LogExecutionTime
     @Operation(summary = "태그 목록 조회", description = "커뮤니티 태그 목록을 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.TagResponse.class))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<List<CommunityResponseDto.TagResponse>> getAllTags() {
-        log.info("태그 목록 조회");
-        List<CommunityResponseDto.TagResponse> tags = communityService.getAllTags();
+    public ResponseEntity<List<CommunityResponse.TagResponse>> getAllTags() {
+        List<CommunityResponse.TagResponse> tags = communityFacade.getAllTags();
         return ResponseEntity.ok(tags);
     }
 
-    // ============== 기존 호환성을 위한 엔드포인트들 ==============
-    
-    /**
-     * 게시글 목록 조회 (전체) - 기존 호환성
-     */
-    @GetMapping("/posts/all")
-    @LogExecutionTime
-    @Operation(summary = "게시글 전체 목록 조회", description = "모든 게시글을 조회합니다 (페이징 없음)")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PostResponse.class))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<List<CommunityResponseDto.PostResponse>> getAllPostsList() {
-        log.info("게시글 전체 목록 조회");
-        List<CommunityResponseDto.PostResponse> posts = communityService.getAllPosts();
-        return ResponseEntity.ok(posts);
-    }
-
-    /**
-     * 게시글 검색 (전체) - 기존 호환성
-     */
-    @GetMapping("/search/all")
-    @LogExecutionTime
-    @Operation(summary = "게시글 전체 검색", description = "키워드로 모든 게시글을 검색합니다 (페이징 없음)")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "검색 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PostResponse.class))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<List<CommunityResponseDto.PostResponse>> searchAllPosts(
-            @Parameter(description = "검색 키워드", required = true) @RequestParam String keyword) {
-        log.info("게시글 전체 검색: 키워드={}", keyword);
-        List<CommunityResponseDto.PostResponse> posts = communityService.searchPosts(keyword);
-        return ResponseEntity.ok(posts);
-    }
-
-    /**
-     * 인기 게시글 조회 (제한) - 기존 호환성
-     */
-    @GetMapping("/popular/limit")
-    @LogExecutionTime
-    @Operation(summary = "인기 게시글 제한 조회", description = "지정된 수만큼 인기 게시글을 조회합니다")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PostResponse.class))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<List<CommunityResponseDto.PostResponse>> getPopularPostsLimit(
-            @Parameter(description = "조회할 게시글 수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
-        log.info("인기 게시글 제한 조회: 제한={}", limit);
-        List<CommunityResponseDto.PostResponse> posts = communityService.getPopularPosts(limit);
-        return ResponseEntity.ok(posts);
-    }
-
-    /**
-     * 최신 게시글 조회 (제한) - 기존 호환성
-     */
-    @GetMapping("/latest/limit")
-    @LogExecutionTime
-    @Operation(summary = "최신 게시글 제한 조회", description = "지정된 수만큼 최신 게시글을 조회합니다")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = CommunityResponseDto.PostResponse.class))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<List<CommunityResponseDto.PostResponse>> getLatestPostsLimit(
-            @Parameter(description = "조회할 게시글 수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
-        log.info("최신 게시글 제한 조회: 제한={}", limit);
-        List<CommunityResponseDto.PostResponse> posts = communityService.getLatestPosts(limit);
-        return ResponseEntity.ok(posts);
-    }
 } 

@@ -6,9 +6,9 @@ import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.PolicyNotFoundException;
 import com.carecode.domain.policy.dto.PolicyDto;
-import com.carecode.domain.policy.dto.PolicySearchRequestDto;
-import com.carecode.domain.policy.dto.PolicySearchResponseDto;
-import com.carecode.domain.policy.service.PolicyService;
+import com.carecode.domain.policy.dto.PolicyRequest;
+import com.carecode.domain.policy.dto.PolicyResponse;
+import com.carecode.domain.policy.app.PolicyFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -22,7 +22,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
+import com.carecode.core.handler.ApiSuccess;
+import java.util.Date;
 
 /**
  * 육아 정책 API 컨트롤러
@@ -36,7 +37,7 @@ import java.util.Map;
 @Tag(name = "육아 정책", description = "육아 정책 정보 및 검색 API")
 public class PolicyController extends BaseController {
 
-    private final PolicyService policyService;
+    private final PolicyFacade policyFacade;
 
     /**
      * 전체 정책 목록 조회
@@ -46,12 +47,12 @@ public class PolicyController extends BaseController {
     @Operation(summary = "전체 정책 목록 조회", description = "등록된 모든 육아 정책 목록을 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = PolicyDto.class))),
+            content = @Content(schema = @Schema(implementation = PolicyResponse.Policy.class))),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<List<PolicyDto>> getAllPolicies() {
         log.info("전체 정책 목록 조회");
-        List<PolicyDto> policies = policyService.getAllPolicies();
+        List<PolicyDto> policies = policyFacade.getAllPolicies();
         return ResponseEntity.ok(policies);
     }
 
@@ -63,16 +64,16 @@ public class PolicyController extends BaseController {
     @Operation(summary = "정책 상세 조회", description = "정책 ID로 특정 육아 정책의 상세 정보를 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = PolicyDto.class))),
+            content = @Content(schema = @Schema(implementation = PolicyResponse.Policy.class))),
         @ApiResponse(responseCode = "404", description = "정책을 찾을 수 없음"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<PolicyDto> getPolicy(
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
         log.info("정책 상세 조회: 정책ID={}", policyId);
-        
+
         try {
-            PolicyDto policy = policyService.getPolicyById(policyId);
+            PolicyDto policy = policyFacade.getPolicyById(policyId);
             return ResponseEntity.ok(policy);
         } catch (PolicyNotFoundException e) {
             log.error("정책을 찾을 수 없음: {}", e.getMessage());
@@ -88,17 +89,17 @@ public class PolicyController extends BaseController {
     @Operation(summary = "정책 검색", description = "다양한 조건으로 육아 정책을 검색합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "검색 성공",
-            content = @Content(schema = @Schema(implementation = PolicySearchResponseDto.class))),
+            content = @Content(schema = @Schema(implementation = PolicyResponse.PolicyList.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<PolicySearchResponseDto> searchPolicies(
-            @Parameter(description = "검색 조건", required = true) @RequestBody PolicySearchRequestDto request) {
-        log.info("정책 검색: 키워드={}, 카테고리={}, 지역={}", 
+    public ResponseEntity<PolicyResponse.PolicyList> searchPolicies(
+            @Parameter(description = "검색 조건", required = true) @RequestBody PolicyRequest.Search request) {
+        log.info("정책 검색: 키워드={}, 카테고리={}, 지역={}",
                 request.getKeyword(), request.getCategory(), request.getLocation());
-        
+
         try {
-            PolicySearchResponseDto response = policyService.searchPolicies(request);
+            PolicyResponse.PolicyList response = policyFacade.searchPolicies(request);
             return ResponseEntity.ok(response);
         } catch (CareServiceException e) {
             log.error("정책 검색 오류: {}", e.getMessage());
@@ -114,15 +115,15 @@ public class PolicyController extends BaseController {
     @Operation(summary = "카테고리별 정책 조회", description = "특정 카테고리의 육아 정책 목록을 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = PolicyDto.class))),
+            content = @Content(schema = @Schema(implementation = PolicyResponse.Policy.class))),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<List<PolicyDto>> getPoliciesByCategory(
             @Parameter(description = "정책 카테고리", required = true) @PathVariable String category) {
         log.info("카테고리별 정책 조회: 카테고리={}", category);
-        
+
         try {
-            List<PolicyDto> policies = policyService.getPoliciesByCategory(category);
+            List<PolicyDto> policies = policyFacade.getPoliciesByCategory(category);
             return ResponseEntity.ok(policies);
         } catch (CareServiceException e) {
             log.error("카테고리별 정책 조회 오류: {}", e.getMessage());
@@ -139,16 +140,16 @@ public class PolicyController extends BaseController {
     @Operation(summary = "지역별 정책 조회", description = "특정 지역의 육아 정책 목록을 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = PolicyDto.class))),
+            content = @Content(schema = @Schema(implementation = PolicyResponse.Policy.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 지역 정보"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<List<PolicyDto>> getPoliciesByLocation(
             @Parameter(description = "지역명", required = true) @PathVariable String location) {
         log.info("지역별 정책 조회: 지역={}", location);
-        
+
         try {
-            List<PolicyDto> policies = policyService.getPoliciesByLocation(location);
+            List<PolicyDto> policies = policyFacade.getPoliciesByLocation(location);
             return ResponseEntity.ok(policies);
         } catch (CareServiceException e) {
             log.error("지역별 정책 조회 오류: {}", e.getMessage());
@@ -164,17 +165,17 @@ public class PolicyController extends BaseController {
     @Operation(summary = "연령대별 정책 조회", description = "특정 연령대에 해당하는 육아 정책 목록을 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = PolicyDto.class))),
+            content = @Content(schema = @Schema(implementation = PolicyResponse.Policy.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 연령 정보"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<List<PolicyDto>> getPoliciesByAgeRange(
-            @Parameter(description = "최소 연령", required = true) @RequestParam Integer minAge, 
+            @Parameter(description = "최소 연령", required = true) @RequestParam Integer minAge,
             @Parameter(description = "최대 연령", required = true) @RequestParam Integer maxAge) {
         log.info("연령대별 정책 조회: 최소연령={}, 최대연령={}", minAge, maxAge);
-        
+
         try {
-            List<PolicyDto> policies = policyService.getPoliciesByAgeRange(minAge, maxAge);
+            List<PolicyDto> policies = policyFacade.getPoliciesByAgeRange(minAge, maxAge);
             return ResponseEntity.ok(policies);
         } catch (CareServiceException e) {
             log.error("연령대별 정책 조회 오류: {}", e.getMessage());
@@ -190,15 +191,15 @@ public class PolicyController extends BaseController {
     @Operation(summary = "인기 정책 조회", description = "인기 있는 육아 정책 목록을 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = PolicyDto.class))),
+            content = @Content(schema = @Schema(implementation = PolicyResponse.Policy.class))),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<List<PolicyDto>> getPopularPolicies(
             @Parameter(description = "조회할 정책 수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
         log.info("인기 정책 조회: 제한={}", limit);
-        
+
         try {
-            List<PolicyDto> policies = policyService.getPopularPolicies(limit);
+            List<PolicyDto> policies = policyFacade.getPopularPolicies(limit);
             return ResponseEntity.ok(policies);
         } catch (CareServiceException e) {
             log.error("인기 정책 조회 오류: {}", e.getMessage());
@@ -214,15 +215,15 @@ public class PolicyController extends BaseController {
     @Operation(summary = "최신 정책 조회", description = "최근 등록된 육아 정책 목록을 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = PolicyDto.class))),
+            content = @Content(schema = @Schema(implementation = PolicyResponse.Policy.class))),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<List<PolicyDto>> getLatestPolicies(
             @Parameter(description = "조회할 정책 수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
         log.info("최신 정책 조회: 제한={}", limit);
-        
+
         try {
-            List<PolicyDto> policies = policyService.getLatestPolicies(limit);
+            List<PolicyDto> policies = policyFacade.getLatestPolicies(limit);
             return ResponseEntity.ok(policies);
         } catch (CareServiceException e) {
             log.error("최신 정책 조회 오류: {}", e.getMessage());
@@ -241,13 +242,13 @@ public class PolicyController extends BaseController {
         @ApiResponse(responseCode = "404", description = "정책을 찾을 수 없음"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<Map<String, String>> incrementViewCount(
+    public ResponseEntity<ApiSuccess> incrementViewCount(
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
         log.info("정책 조회수 증가: 정책ID={}", policyId);
         
         try {
-            policyService.incrementViewCount(policyId);
-            return ResponseEntity.ok(Map.of("message", "조회수가 증가되었습니다."));
+            policyFacade.incrementViewCount(policyId);
+            return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("조회수가 증가되었습니다.").build());
         } catch (PolicyNotFoundException e) {
             log.error("정책을 찾을 수 없음: {}", e.getMessage());
             throw e;
@@ -268,7 +269,7 @@ public class PolicyController extends BaseController {
         log.info("정책 카테고리 목록 조회");
         
         try {
-            List<String> categories = policyService.getPolicyCategories();
+            List<String> categories = policyFacade.getPolicyCategories();
             return ResponseEntity.ok(categories);
         } catch (CareServiceException e) {
             log.error("정책 카테고리 목록 조회 오류: {}", e.getMessage());
@@ -282,16 +283,11 @@ public class PolicyController extends BaseController {
     @GetMapping("/statistics")
     @LogExecutionTime
     @Operation(summary = "정책 통계 조회", description = "육아 정책 관련 통계 정보를 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "통계 조회 성공",
-            content = @Content(schema = @Schema(implementation = PolicySearchResponseDto.PolicyStats.class))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<PolicySearchResponseDto.PolicyStats> getPolicyStatistics() {
+    public ResponseEntity<PolicyResponse.Stats> getPolicyStatistics() {
         log.info("정책 통계 조회");
         
         try {
-            PolicySearchResponseDto.PolicyStats stats = policyService.getPolicyStats();
+            PolicyResponse.Stats stats = policyFacade.getPolicyStats();
             return ResponseEntity.ok(stats);
         } catch (CareServiceException e) {
             log.error("정책 통계 조회 오류: {}", e.getMessage());

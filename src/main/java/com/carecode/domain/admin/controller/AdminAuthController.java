@@ -30,38 +30,28 @@ public class AdminAuthController {
     }
 
     @PostMapping("/login")
-    public String adminLogin(@RequestParam String username, 
-                           @RequestParam String password,
-                           RedirectAttributes redirectAttributes) {
-        try {
-            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-            
-            if (userDetails != null && passwordEncoder.matches(password, userDetails.getPassword())) {
-                // ADMIN 권한 확인
-                boolean isAdmin = userDetails.getAuthorities().stream()
-                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
-                
-                if (!isAdmin) {
-                    log.error("관리자 권한이 없는 사용자: {}", username);
-                    redirectAttributes.addFlashAttribute("error", "관리자 권한이 필요합니다.");
-                    return "redirect:/admin/login?error";
-                }
-                
-                Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities()
-                );
-                
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.info("관리자 로그인 성공: {}", username);
-                
-                return "redirect:/admin/dashboard";
-            } else {
-                throw new RuntimeException("Invalid credentials");
+    public String adminLogin(@RequestParam String username, @RequestParam String password, RedirectAttributes redirectAttributes) {
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+
+        if (userDetails != null && passwordEncoder.matches(password, userDetails.getPassword())) {
+            // ADMIN 권한 확인
+            boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin) {
+                redirectAttributes.addFlashAttribute("error", "관리자 권한이 필요합니다.");
+                return "redirect:/admin/login?error";
             }
-        } catch (Exception e) {
-            log.error("관리자 로그인 실패: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("error", "로그인에 실패했습니다.");
-            return "redirect:/admin/login?error";
+
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities()
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            return "redirect:/admin/dashboard";
+        } else {
+            throw new RuntimeException("Invalid credentials");
         }
     }
-} 
+}

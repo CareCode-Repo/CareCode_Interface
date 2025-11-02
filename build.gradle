@@ -4,7 +4,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'com'
+group = 'com.carecode'
 version = '0.0.1-SNAPSHOT'
 
 java {
@@ -46,6 +46,11 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.h2database:h2'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // MapStruct for DTO mappings
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
@@ -135,8 +140,9 @@ task generateApiDocs {
         def outputDir = file('src/docs/asciidoc')
         outputDir.mkdirs()
         
-        // Swagger JSON 다운로드
-        def swaggerUrl = 'http://13.209.36.209:8081/v3/api-docs'
+        // Swagger JSON 다운로드 (환경 변수 또는 gradle -P 로 주입 가능)
+        def serverUrl = System.getenv('SWAGGER_SERVER_URL') ?: (project.hasProperty('swaggerServerUrl') ? project.getProperty('swaggerServerUrl') : 'http://localhost:8081')
+        def swaggerUrl = serverUrl + '/v3/api-docs'
         def swaggerFile = file('swagger.json')
         
         new URL(swaggerUrl).withInputStream { input ->
@@ -166,7 +172,8 @@ task generateDetailedApiDocs {
         javaexec {
             classpath = sourceSets.main.runtimeClasspath
             mainClass = 'com.carecode.docs.ApiDocumentationGenerator'
-            args = ['http://13.209.36.209:8081/api-docs', detailedDocFile.absolutePath]
+            def serverUrl = System.getenv('SWAGGER_SERVER_URL') ?: (project.hasProperty('swaggerServerUrl') ? project.getProperty('swaggerServerUrl') : 'http://localhost:8081')
+            args = [serverUrl + '/api-docs', detailedDocFile.absolutePath]
         }
         
         println "✅ 상세 API 문서 생성 완료: ${detailedDocFile.absolutePath}"

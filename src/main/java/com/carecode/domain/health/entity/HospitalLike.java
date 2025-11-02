@@ -25,6 +25,9 @@ public class HospitalLike {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "user_id", insertable = false, updatable = false)
+    private Long userId;
+
     @Column
     private LocalDateTime createdAt;
 }

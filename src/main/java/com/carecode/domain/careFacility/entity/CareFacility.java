@@ -132,6 +132,7 @@ public class CareFacility {
     private LocalDateTime updatedAt;
     
     @OneToMany(mappedBy = "careFacility", cascade = CascadeType.ALL, orphanRemoval = true)
+    @lombok.Builder.Default
     private List<Review> reviews = new ArrayList<>();
     
     @PrePersist

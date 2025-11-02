@@ -9,6 +9,7 @@ import com.carecode.domain.user.dto.TokenDto;
 import com.carecode.domain.user.dto.UserDto;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.service.JwtService;
+import com.carecode.domain.user.service.EmailVerificationService;
 import com.carecode.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import com.carecode.core.handler.ApiSuccess;
 
 /**
  * 통합 인증 컨트롤러
@@ -40,10 +42,11 @@ import java.util.Map;
 @Slf4j
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @Tag(name = "인증", description = "통합 인증 API (일반 로그인, 토큰 갱신)")
-public class UnifiedAuthController extends BaseController {
+public class AuthController extends BaseController {
 
     private final UserService userService;
     private final JwtService jwtService;
+    private final EmailVerificationService emailVerificationService;
     private final PasswordEncoder passwordEncoder;
 
     // ==================== 일반 로그인 ====================
@@ -54,16 +57,8 @@ public class UnifiedAuthController extends BaseController {
     @PostMapping("/login")
     @LogExecutionTime
     @Operation(summary = "일반 로그인", description = "이메일과 비밀번호로 로그인합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "로그인 성공"),
-        @ApiResponse(responseCode = "401", description = "로그인 실패"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청")
-    })
-    public ResponseEntity<TokenDto> login(
-            @Parameter(description = "로그인 정보", required = true) 
-            @Valid @RequestBody LoginRequestDto request) {
-        log.info("일반 로그인 요청: 이메일={}", request.getEmail());
-        
+    public ResponseEntity<TokenDto> login(@Parameter(description = "로그인 정보", required = true)
+                                              @Valid @RequestBody LoginRequestDto request) {
         try {
             User userEntity = userService.getUserEntityByEmail(request.getEmail());
             
@@ -115,7 +110,7 @@ public class UnifiedAuthController extends BaseController {
                     .build();
             
             return ResponseEntity.ok(tokenDto);
-            
+
         } catch (UserNotFoundException e) {
             log.warn("로그인 실패: 사용자를 찾을 수 없음 - 이메일={}", request.getEmail());
             return ResponseEntity.status(401).body(TokenDto.builder()
@@ -137,16 +132,9 @@ public class UnifiedAuthController extends BaseController {
     @PostMapping("/register")
     @LogExecutionTime
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "회원가입 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "409", description = "이미 존재하는 이메일")
-    })
-    public ResponseEntity<TokenDto> register(
-            @Parameter(description = "회원가입 정보", required = true) 
-            @Valid @RequestBody UserDto request) {
-        log.info("회원가입 요청: 이메일={}", request.getEmail());
-        
+    public ResponseEntity<TokenDto> register(@Parameter(description = "회원가입 정보", required = true)
+                                                 @Valid @RequestBody UserDto request) {
+
         try {
             UserDto createdUser = userService.createUser(request);
             
@@ -191,8 +179,6 @@ public class UnifiedAuthController extends BaseController {
         }
     }
 
-
-
     // ==================== 토큰 관리 ====================
 
     /**
@@ -201,59 +187,79 @@ public class UnifiedAuthController extends BaseController {
     @PostMapping("/refresh")
     @LogExecutionTime
     @Operation(summary = "토큰 갱신", description = "Refresh Token을 사용하여 새로운 Access Token을 발급합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "토큰 갱신 성공"),
-        @ApiResponse(responseCode = "401", description = "토큰 갱신 실패"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청")
-    })
-    public ResponseEntity<TokenDto> refreshToken(
-            @Parameter(description = "토큰 갱신 정보", required = true) 
-            @Valid @RequestBody RefreshTokenRequest request) {
-        log.info("토큰 갱신 요청");
-        
-        try {
-            // Refresh Token 검증
-            if (!jwtService.validateToken(request.getRefreshToken())) {
-                log.warn("토큰 갱신 실패: 유효하지 않은 Refresh Token");
-                return ResponseEntity.status(401).body(TokenDto.builder()
-                        .success(false)
-                        .message("유효하지 않은 Refresh Token입니다.")
-                        .build());
-            }
-            
-            // Refresh Token에서 사용자 정보 추출
-            String userId = jwtService.getUserIdFromToken(request.getRefreshToken());
-            String email = jwtService.getEmailFromToken(request.getRefreshToken());
-            
-            // 사용자 존재 확인
-            UserDto user = userService.getUserById(userId);
-            
-            // 새로운 Access Token 생성
-            String newAccessToken = jwtService.generateAccessToken(userId, email, user.getRole(), user.getName());
-            
-            // 새로운 Refresh Token 생성 (토큰 로테이션)
-            String newRefreshToken = jwtService.generateRefreshToken(userId, email);
-            
-            TokenDto tokenDto = TokenDto.builder()
-                    .success(true)
-                    .message("토큰 갱신 성공!")
-                    .accessToken(newAccessToken)
-                    .refreshToken(newRefreshToken)
-                    .tokenType("Bearer")
-                    .expiresIn(3600000L)
-                    .refreshExpiresIn(2592000000L)
-                    .user(user)
-                    .build();
-            
-            return ResponseEntity.ok(tokenDto);
-            
-        } catch (Exception e) {
-            log.error("토큰 갱신 처리 중 오류: {}", e.getMessage(), e);
+    public ResponseEntity<TokenDto> refreshToken(@Parameter(description = "토큰 갱신 정보", required = true)
+                                                     @Valid @RequestBody RefreshTokenRequest request) {
+
+        if (!jwtService.validateToken(request.getRefreshToken())) {
+            log.warn("토큰 갱신 실패: 유효하지 않은 Refresh Token");
             return ResponseEntity.status(401).body(TokenDto.builder()
                     .success(false)
-                    .message("토큰 갱신에 실패했습니다.")
+                    .message("유효하지 않은 Refresh Token입니다.")
                     .build());
         }
+
+        // Refresh Token에서 사용자 정보 추출
+        String userId = jwtService.getUserIdFromToken(request.getRefreshToken());
+        String email = jwtService.getEmailFromToken(request.getRefreshToken());
+
+        // 사용자 존재 확인
+        UserDto user = userService.getUserById(userId);
+
+        // 새로운 Access Token 생성
+        String newAccessToken = jwtService.generateAccessToken(userId, email, user.getRole(), user.getName());
+
+        // 새로운 Refresh Token 생성 (토큰 로테이션)
+        String newRefreshToken = jwtService.generateRefreshToken(userId, email);
+
+        TokenDto tokenDto = TokenDto.builder()
+                .success(true)
+                .message("토큰 갱신 성공!")
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .tokenType("Bearer")
+                .expiresIn(3600000L)
+                .refreshExpiresIn(2592000000L)
+                .user(user)
+                .build();
+
+        return ResponseEntity.ok(tokenDto);
+    }
+
+    // ==================== 이메일 인증 ====================
+
+    /**
+     * 이메일 인증 토큰 검증
+     */
+    @GetMapping("/verify")
+    @LogExecutionTime
+    @Operation(summary = "이메일 인증", description = "이메일 인증 토큰을 검증합니다.")
+    public ResponseEntity<ApiSuccess> verifyEmail(@RequestParam String token) {
+        boolean ok = emailVerificationService.verifyEmail(token);
+        String message = ok ? "이메일 인증이 완료되었습니다." : "유효하지 않거나 만료된 토큰입니다.";
+        return ResponseEntity.ok(ApiSuccess.of(message));
+    }
+
+    /**
+     * 인증 코드 발송
+     */
+    @PostMapping("/send-code")
+    @LogExecutionTime
+    @Operation(summary = "이메일 인증 코드 발송", description = "해당 이메일로 인증 코드를 발송합니다.")
+    public ResponseEntity<ApiSuccess> sendVerificationCode(@RequestParam String email) {
+        emailVerificationService.sendVerificationCode(email);
+        return ResponseEntity.ok(ApiSuccess.of("인증 코드가 발송되었습니다."));
+    }
+
+    /**
+     * 인증 코드 검증
+     */
+    @PostMapping("/verify-code")
+    @LogExecutionTime
+    @Operation(summary = "이메일 인증 코드 검증", description = "발송된 인증 코드를 검증합니다.")
+    public ResponseEntity<ApiSuccess> verifyCode(@RequestParam String email, @RequestParam String code) {
+        boolean ok = emailVerificationService.verifyCode(email, code);
+        String message = ok ? "인증 코드가 확인되었습니다." : "유효하지 않거나 만료된 코드입니다.";
+        return ResponseEntity.ok(ApiSuccess.of(message));
     }
 
     // ==================== 유틸리티 메서드 ====================
@@ -262,17 +268,13 @@ public class UnifiedAuthController extends BaseController {
      * 현재 로그인한 사용자의 이메일을 JWT 토큰에서 추출
      */
     private String getCurrentUserEmail(HttpServletRequest request) {
-        try {
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("유효한 Authorization 헤더가 없습니다.");
-            }
-            
-            String token = authHeader.substring(7);
-            return jwtService.extractEmailFromToken(token);
-        } catch (Exception e) {
-            log.error("JWT 토큰에서 이메일 추출 실패: {}", e.getMessage());
-            throw new IllegalArgumentException("인증 토큰이 유효하지 않습니다.");
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("유효한 Authorization 헤더가 없습니다.");
         }
+
+        String token = authHeader.substring(7);
+        return jwtService.extractEmailFromToken(token);
     }
 }

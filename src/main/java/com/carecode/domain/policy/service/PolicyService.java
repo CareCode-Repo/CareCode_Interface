@@ -7,6 +7,9 @@ import com.carecode.domain.policy.dto.*;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.entity.PolicyCategory;
 import com.carecode.domain.policy.repository.PolicyRepository;
+import com.carecode.domain.policy.mapper.PolicyMapper;
+import com.carecode.domain.policy.dto.PolicyResponse;
+import com.carecode.domain.policy.dto.PolicyDto;
 import com.carecode.domain.policy.repository.PolicyCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +20,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ public class PolicyService {
 
     private final PolicyRepository policyRepository;
     private final PolicyCategoryRepository policyCategoryRepository;
+    private final PolicyMapper policyMapper;
 
     /**
      * 정책 목록 조회
@@ -44,7 +46,7 @@ public class PolicyService {
         
         List<Policy> policies = policyRepository.findAll();
         return policies.stream()
-                .map(this::convertToDto)
+                .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -59,44 +61,70 @@ public class PolicyService {
         Policy policy = policyRepository.findById(policyId)
                 .orElseThrow(() -> new PolicyNotFoundException("정책을 찾을 수 없습니다: " + policyId));
         
-        return convertToDto(policy);
+        return policyMapper.toResponse(policy);
     }
 
     /**
      * 정책 검색
      */
     @LogExecutionTime
-    public PolicySearchResponseDto searchPolicies(PolicySearchRequestDto request) {
+    public PolicyResponse.PolicyList searchPolicies(PolicyRequest.Search request) {
         log.info("정책 검색: 키워드={}, 카테고리={}, 지역={}", 
                 request.getKeyword(), request.getCategory(), request.getLocation());
         
         Pageable pageable = PageRequest.of(
-                request.getPage() != null ? request.getPage() : 0, 
-                request.getSize() != null ? request.getSize() : 10, 
+                request.getPage(),
+                request.getSize(),
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
         
         Page<Policy> policyPage = policyRepository.findBySearchCriteria(
                 request.getKeyword(),
                 request.getCategory(),
-                request.getLocation(),
-                request.getMinAge(),
-                request.getMaxAge(),
+                request.getCity(),
+                null,
+                null,
                 pageable
         );
         
         List<PolicyDto> policies = policyPage.getContent().stream()
-                .map(this::convertToDto)
+                .map(policyMapper::toResponse)
+                .collect(Collectors.toList());
+
+        List<PolicyResponse.Policy> policiesResponse = policies.stream()
+                .map(dto -> PolicyResponse.Policy.builder()
+                        .id(dto.getId() != null ? dto.getId().toString() : null)
+                        .title(dto.getTitle())
+                        .description(dto.getDescription())
+                        .category(dto.getCategory())
+                        .subCategory(null)
+                        .city(null)
+                        .district(dto.getLocation())
+                        .targetAge(null)
+                        .incomeLevel(null)
+                        .benefitAmount(dto.getSupportAmount() != null ? dto.getSupportAmount().toString() : null)
+                        .applicationMethod(dto.getApplicationMethod())
+                        .requiredDocuments(dto.getRequiredDocuments())
+                        .contactInfo(dto.getContactInfo())
+                        .startDate(null)
+                        .endDate(null)
+                        .status(Boolean.TRUE.equals(dto.getIsActive()) ? "ACTIVE" : "INACTIVE")
+                        .viewCount(dto.getViewCount() != null ? dto.getViewCount() : 0)
+                        .createdAt(dto.getCreatedAt())
+                        .updatedAt(dto.getUpdatedAt())
+                        .build())
                 .collect(Collectors.toList());
         
-        return PolicySearchResponseDto.builder()
-                .policies(policies)
-                .totalElements(policyPage.getTotalElements())
-                .totalPages(policyPage.getTotalPages())
+        return PolicyResponse.PolicyList.builder()
+                .policies(policiesResponse)
+                .totalCount(policyPage.getTotalElements())
                 .currentPage(policyPage.getNumber())
-                .pageSize(policyPage.getSize())
+                .totalPages(policyPage.getTotalPages())
                 .hasNext(policyPage.hasNext())
                 .hasPrevious(policyPage.hasPrevious())
+                .category(request.getCategory())
+                .city(request.getCity())
+                .district(request.getDistrict())
                 .build();
     }
 
@@ -109,7 +137,7 @@ public class PolicyService {
         
         List<Policy> policies = policyRepository.findByPolicyType(category);
         return policies.stream()
-                .map(this::convertToDto)
+                .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -122,7 +150,7 @@ public class PolicyService {
         
         List<Policy> policies = policyRepository.findByTargetRegion(location);
         return policies.stream()
-                .map(this::convertToDto)
+                .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -135,7 +163,7 @@ public class PolicyService {
         
         List<Policy> policies = policyRepository.findByAgeRange(minAge, maxAge);
         return policies.stream()
-                .map(this::convertToDto)
+                .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -149,7 +177,7 @@ public class PolicyService {
         Pageable pageable = PageRequest.of(0, limit);
         List<Policy> policies = policyRepository.findPopularPolicies(pageable);
         return policies.stream()
-                .map(this::convertToDto)
+                .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -163,7 +191,7 @@ public class PolicyService {
         Pageable pageable = PageRequest.of(0, limit);
         List<Policy> policies = policyRepository.findLatestPolicies(pageable);
         return policies.stream()
-                .map(this::convertToDto)
+                .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -198,70 +226,20 @@ public class PolicyService {
      * 정책 통계 조회
      */
     @LogExecutionTime
-    public PolicySearchResponseDto.PolicyStats getPolicyStats() {
+    public PolicyResponse.Stats getPolicyStats() {
         log.info("정책 통계 조회");
-        
+
         long totalPolicies = policyRepository.count();
         long totalViews = policyRepository.getTotalViewCount();
-        List<CategoryStats> categoryStats = policyRepository.getCategoryStats();
-        
-        return PolicySearchResponseDto.PolicyStats.builder()
+        List<PolicyResponse.CategoryStats> categoryStats = policyRepository.getCategoryStats();
+
+        return PolicyResponse.Stats.builder()
                 .totalPolicies(totalPolicies)
                 .totalViews(totalViews)
                 .categoryStats(categoryStats)
                 .build();
     }
 
-    /**
-     * Entity를 DTO로 변환
-     */
-    private PolicyDto convertToDto(Policy policy) {
-        return PolicyDto.builder()
-                .id(policy.getId())
-                .title(policy.getTitle())
-                .description(policy.getDescription())
-                .category(policy.getPolicyCategory() != null ? policy.getPolicyCategory().getName() : policy.getPolicyType())
-                .location(policy.getTargetRegion()) // location 필드가 없으므로 targetRegion 사용
-                .minAge(policy.getTargetAgeMin()) // minAge 필드가 없으므로 targetAgeMin 사용
-                .maxAge(policy.getTargetAgeMax()) // maxAge 필드가 없으므로 targetAgeMax 사용
-                .supportAmount(policy.getBenefitAmount()) // supportAmount 필드가 없으므로 benefitAmount 사용
-                .applicationPeriod(formatApplicationPeriod(policy.getApplicationStartDate(), policy.getApplicationEndDate()))
-                .eligibilityCriteria(null) // eligibilityCriteria 필드가 엔티티에 없음
-                .applicationMethod(policy.getApplicationUrl()) // applicationMethod 필드가 없으므로 applicationUrl 사용
-                .requiredDocuments(policy.getRequiredDocuments())
-                .contactInfo(policy.getContactInfo())
-                .websiteUrl(formatWebsiteUrl(policy.getApplicationUrl())) // websiteUrl 필드가 없으므로 applicationUrl 사용
-                .viewCount(0) // viewCount 필드가 엔티티에 없으므로 0으로 설정
-                .isActive(policy.getIsActive())
-                .createdAt(policy.getCreatedAt())
-                .updatedAt(policy.getUpdatedAt())
-                .build();
-    }
-    
-    /**
-     * 신청 기간 포맷팅
-     */
-    private String formatApplicationPeriod(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null && endDate == null) {
-            return "상시 신청";
-        } else if (startDate == null) {
-            return "~ " + endDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"));
-        } else if (endDate == null) {
-            return startDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd")) + " ~";
-        } else {
-            return startDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd")) + " ~ " + endDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"));
-        }
-    }
-    
-    /**
-     * 웹사이트 URL 포맷팅
-     */
-    private String formatWebsiteUrl(String applicationUrl) {
-        if (applicationUrl == null || applicationUrl.trim().isEmpty()) {
-            return "해당 정책 홈페이지";
-        }
-        return applicationUrl;
-    }
     
     // ========== 정책 카테고리 관련 메서드 ==========
     
@@ -269,7 +247,7 @@ public class PolicyService {
      * 정책 카테고리 목록 조회
      */
     @LogExecutionTime
-    public List<PolicyCategoryDto> getAllPolicyCategories() {
+    public List<PolicyDto> getAllPolicyCategories() {
         log.info("정책 카테고리 목록 조회");
         
         List<PolicyCategory> categories = policyCategoryRepository.findByIsActiveTrueOrderByDisplayOrderAsc();
@@ -282,7 +260,7 @@ public class PolicyService {
      * 정책 카테고리 상세 조회
      */
     @LogExecutionTime
-    public PolicyCategoryDto getPolicyCategoryById(Long categoryId) {
+    public PolicyDto getPolicyCategoryById(Long categoryId) {
         log.info("정책 카테고리 상세 조회: 카테고리ID={}", categoryId);
         
         PolicyCategory category = policyCategoryRepository.findById(categoryId)
@@ -295,7 +273,7 @@ public class PolicyService {
      * 정책 카테고리 생성
      */
     @Transactional
-    public PolicyCategoryDto createPolicyCategory(PolicyCategoryDto request) {
+    public PolicyDto createPolicyCategory(PolicyDto request) {
         log.info("정책 카테고리 생성: 이름={}", request.getName());
         
         if (policyCategoryRepository.existsByName(request.getName())) {
@@ -316,7 +294,7 @@ public class PolicyService {
      * 정책 카테고리 수정
      */
     @Transactional
-    public PolicyCategoryDto updatePolicyCategory(Long categoryId, PolicyCategoryDto request) {
+    public PolicyDto updatePolicyCategory(Long categoryId, PolicyDto request) {
         log.info("정책 카테고리 수정: 카테고리ID={}", categoryId);
         
         PolicyCategory category = policyCategoryRepository.findById(categoryId)
@@ -354,15 +332,15 @@ public class PolicyService {
         
         List<Policy> policies = category.getPolicies();
         return policies.stream()
-                .map(this::convertToDto)
+                .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
     /**
      * PolicyCategory를 DTO로 변환
      */
-    private PolicyCategoryDto convertToCategoryDto(PolicyCategory category) {
-        return PolicyCategoryDto.builder()
+    private PolicyDto convertToCategoryDto(PolicyCategory category) {
+        return PolicyDto.builder()
                 .id(category.getId())
                 .name(category.getName())
                 .description(category.getDescription())
