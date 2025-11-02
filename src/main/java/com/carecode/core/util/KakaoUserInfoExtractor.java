@@ -16,17 +16,14 @@ public class KakaoUserInfoExtractor {
      * 카카오 사용자 정보에서 닉네임 추출
      */
     public String extractNickname(Map<String, Object> attributes) {
-        try {
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            if (kakaoAccount != null && kakaoAccount.containsKey("profile")) {
-                Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
-                if (profile != null) {
-                    return (String) profile.get("nickname");
-                }
+        Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+        if (kakaoAccount != null && kakaoAccount.containsKey("profile")) {
+            Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
+            if (profile != null) {
+                return (String) profile.get("nickname");
             }
-        } catch (Exception e) {
-            log.warn("카카오 닉네임 추출 실패: {}", e.getMessage());
         }
+
         return null;
     }
 
@@ -34,17 +31,14 @@ public class KakaoUserInfoExtractor {
      * 카카오 사용자 정보에서 프로필 이미지 URL 추출
      */
     public String extractProfileImageUrl(Map<String, Object> attributes) {
-        try {
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            if (kakaoAccount != null && kakaoAccount.containsKey("profile")) {
-                Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
-                if (profile != null) {
-                    return (String) profile.get("profile_image_url");
-                }
+        Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+        if (kakaoAccount != null && kakaoAccount.containsKey("profile")) {
+            Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
+            if (profile != null) {
+                return (String) profile.get("profile_image_url");
             }
-        } catch (Exception e) {
-            log.warn("카카오 프로필 이미지 URL 추출 실패: {}", e.getMessage());
         }
+
         return null;
     }
 
@@ -65,14 +59,11 @@ public class KakaoUserInfoExtractor {
      * 카카오 사용자 정보에서 이메일 추출
      */
     public String extractEmail(Map<String, Object> attributes) {
-        try {
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            if (kakaoAccount != null) {
-                return (String) kakaoAccount.get("email");
-            }
-        } catch (Exception e) {
-            log.warn("카카오 이메일 추출 실패: {}", e.getMessage());
+        Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+        if (kakaoAccount != null) {
+            return (String) kakaoAccount.get("email");
         }
+
         return null;
     }
 

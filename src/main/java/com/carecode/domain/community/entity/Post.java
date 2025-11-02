@@ -173,47 +173,4 @@ public class Post {
     public void clearTags() {
         tags.clear();
     }
-    
-    /**
-     * 게시글 카테고리 Enum
-     */
-    public enum PostCategory {
-        GENERAL("일반"),
-        QUESTION("질문"),
-        SHARE("공유"),
-        REVIEW("후기"),
-        NEWS("뉴스"),
-        EVENT("이벤트"),
-        NOTICE("공지사항");
-        
-        private final String displayName;
-        
-        PostCategory(String displayName) {
-            this.displayName = displayName;
-        }
-        
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-    
-    /**
-     * 게시글 상태 Enum
-     */
-    public enum PostStatus {
-        DRAFT("임시저장"),
-        PUBLISHED("발행"),
-        HIDDEN("숨김"),
-        DELETED("삭제");
-        
-        private final String displayName;
-        
-        PostStatus(String displayName) {
-            this.displayName = displayName;
-        }
-        
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
 } 

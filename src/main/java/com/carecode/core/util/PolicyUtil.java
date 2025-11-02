@@ -5,7 +5,6 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * 육아 정책 관련 유틸리티 클래스
- * 정책 정보 처리 및 검증에 활용
  */
 public class PolicyUtil {
 

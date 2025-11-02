@@ -12,6 +12,7 @@ import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import com.carecode.domain.careFacility.mapper.CareFacilityMapper;
 import com.carecode.core.util.LocationUtil;
+import com.carecode.core.util.CommonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -99,12 +100,12 @@ public class CareFacilityService {
                     .city("서울특별시") // 서울시 API이므로 고정
                     .district((String) facilityData.get("district"))
                     .address((String) facilityData.get("address"))
-                    .latitude(parseDouble(facilityData.get("latitude")))
-                    .longitude(parseDouble(facilityData.get("longitude")))
+                    .latitude(CommonUtil.parseDouble(facilityData.get("latitude")))
+                    .longitude(CommonUtil.parseDouble(facilityData.get("longitude")))
                     .website((String) facilityData.get("websiteUrl"))
                     .ageRange((String) facilityData.get("ageGroup"))
                     .operatingHours(formatOperatingHours(facilityData))
-                    .tuitionFee(parseInteger(facilityData.get("rentFee")))
+                    .tuitionFee(CommonUtil.parseInteger(facilityData.get("rentFee")))
                     .isActive(true)
                     .isPublic(true) // 공공데이터는 주로 공립 시설
                     .subsidyAvailable((Boolean) facilityData.get("isFree"))
@@ -123,12 +124,12 @@ public class CareFacilityService {
             existingFacility.setFacilityType(mapServiceTypeToFacilityType((String) facilityData.get("serviceType")));
             existingFacility.setDistrict((String) facilityData.get("district"));
             existingFacility.setAddress((String) facilityData.get("address"));
-            existingFacility.setLatitude(parseDouble(facilityData.get("latitude")));
-            existingFacility.setLongitude(parseDouble(facilityData.get("longitude")));
+            existingFacility.setLatitude(CommonUtil.parseDouble(facilityData.get("latitude")));
+            existingFacility.setLongitude(CommonUtil.parseDouble(facilityData.get("longitude")));
             existingFacility.setWebsite((String) facilityData.get("websiteUrl"));
             existingFacility.setAgeRange((String) facilityData.get("ageGroup"));
             existingFacility.setOperatingHours(formatOperatingHours(facilityData));
-            existingFacility.setTuitionFee(parseInteger(facilityData.get("rentFee")));
+            existingFacility.setTuitionFee(CommonUtil.parseInteger(facilityData.get("rentFee")));
             existingFacility.setSubsidyAvailable((Boolean) facilityData.get("isFree"));
             existingFacility.setDescription(generateDescription(facilityData));
             existingFacility.setUpdatedAt(LocalDateTime.now());
@@ -214,36 +215,6 @@ public class CareFacilityService {
         }
         
         return description.toString();
-    }
-
-    /**
-     * Double 파싱 헬퍼 메서드
-     */
-    private Double parseDouble(Object value) {
-        if (value == null || value.toString().trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return Double.parseDouble(value.toString());
-        } catch (NumberFormatException e) {
-            log.warn("Double 파싱 실패: {}", value);
-            return null;
-        }
-    }
-
-    /**
-     * Integer 파싱 헬퍼 메서드
-     */
-    private Integer parseInteger(Object value) {
-        if (value == null || value.toString().trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(value.toString());
-        } catch (NumberFormatException e) {
-            log.warn("Integer 파싱 실패: {}", value);
-            return null;
-        }
     }
 
     /**

@@ -16,7 +16,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
-import com.carecode.core.conponents.JsonMapComponent;
+import com.carecode.core.components.JsonMapComponent;
 
 @Controller
 @RequestMapping("/admin")
@@ -44,6 +44,7 @@ public class AdminDashboardController {
         List<Map<String, String>> recentActivities = new ArrayList<>();
         List<User> allUsers = userRepository.findAll();
         allUsers.sort(Comparator.comparing(User::getCreatedAt).reversed());
+
         for (int i = 0; i < Math.min(2, allUsers.size()); i++) {
             User user = allUsers.get(i);
             recentActivities.add(Map.of(
@@ -52,8 +53,10 @@ public class AdminDashboardController {
                 "time", user.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
             ));
         }
+
         List<Hospital> allHospitals = hospitalRepository.findAll();
         allHospitals.sort(Comparator.comparing(Hospital::getCreatedAt).reversed());
+
         for (int i = 0; i < Math.min(2, allHospitals.size()); i++) {
             Hospital hospital = allHospitals.get(i);
             recentActivities.add(Map.of(
@@ -62,8 +65,10 @@ public class AdminDashboardController {
                 "time", hospital.getCreatedAt() != null ? hospital.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "-"
             ));
         }
+
         List<Policy> allPolicies = policyRepository.findAll();
         allPolicies.sort(Comparator.comparing(Policy::getCreatedAt).reversed());
+
         for (int i = 0; i < Math.min(1, allPolicies.size()); i++) {
             Policy policy = allPolicies.get(i);
             recentActivities.add(Map.of(
@@ -72,6 +77,7 @@ public class AdminDashboardController {
                 "time", policy.getCreatedAt() != null ? policy.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "-"
             ));
         }
+
         // 최신순 정렬
         recentActivities = recentActivities.stream()
                 .sorted(Comparator.comparing(m -> m.get("time"), Comparator.reverseOrder()))
@@ -82,6 +88,7 @@ public class AdminDashboardController {
         // 3. 가입자 추이 (최근 6개월)
         Map<String, Long> userTrend = new LinkedHashMap<>();
         LocalDate now = LocalDate.now();
+
         for (int i = 5; i >= 0; i--) {
             LocalDate monthVal = now.minusMonths(i).withDayOfMonth(1);
             String labelVal = monthVal.format(DateTimeFormatter.ofPattern("yyyy-MM"));
@@ -92,6 +99,7 @@ public class AdminDashboardController {
                     .count();
             userTrend.put(labelVal, count);
         }
+
         dashboardData.put("userTrendLabels", new ArrayList<>(userTrend.keySet()));
         dashboardData.put("userTrendData", new ArrayList<>(userTrend.values()));
 

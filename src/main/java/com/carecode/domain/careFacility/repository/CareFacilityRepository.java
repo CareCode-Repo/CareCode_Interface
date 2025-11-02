@@ -189,4 +189,22 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
             @Param("facilityType") FacilityType facilityType,
             @Param("address") String address,
             org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * 모든 시설 조회 (Reviews와 함께 Fetch Join으로 N+1 문제 방지)
+     */
+    @Query("SELECT DISTINCT cf FROM CareFacility cf LEFT JOIN FETCH cf.reviews")
+    List<CareFacility> findAllWithReviews();
+
+    /**
+     * 활성화된 시설 목록 조회 (Reviews와 함께)
+     */
+    @Query("SELECT DISTINCT cf FROM CareFacility cf LEFT JOIN FETCH cf.reviews WHERE cf.isActive = true")
+    List<CareFacility> findActiveWithReviews();
+
+    /**
+     * ID로 시설 조회 (Reviews와 함께)
+     */
+    @Query("SELECT cf FROM CareFacility cf LEFT JOIN FETCH cf.reviews WHERE cf.id = :id")
+    Optional<CareFacility> findByIdWithReviews(@Param("id") Long id);
 } 

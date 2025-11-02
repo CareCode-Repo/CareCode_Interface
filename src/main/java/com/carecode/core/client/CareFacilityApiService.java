@@ -40,7 +40,6 @@ public class CareFacilityApiService {
         // 서울시 API는 한 번에 최대 1000건까지만 요청 가능
         if (numOfRows > 1000) {
             numOfRows = 1000;
-            log.warn("한 번에 최대 1000건까지만 요청 가능합니다. numOfRows를 1000으로 조정합니다.");
         }
 
         // 서울시 API는 파라미터가 URL 경로에 포함됨
@@ -50,8 +49,6 @@ public class CareFacilityApiService {
 
         // 서울시 공공데이터 API 엔드포인트 (경로 파라미터 포함)
         String endpoint = "TnFcltySttusInfo1004/" + startIndex + "/" + endIndex + "/";
-
-        log.info("보육시설 API 호출 시작: endpoint={}, startIndex={}, endIndex={}", endpoint, startIndex, endIndex);
 
         // 서울시 API는 쿼리 파라미터가 없음
         String response = publicDataApiClient.get(endpoint, null, String.class);
@@ -68,7 +65,7 @@ public class CareFacilityApiService {
     private Map<String, Object> parseAndRefineResponse(String rawResponse, String serviceName) {
         try {
             log.debug("원본 응답: {}", rawResponse);
-            
+
             // 응답이 너무 짧으면 빈 데이터로 간주
             if (rawResponse == null || rawResponse.trim().length() < 50) {
                 log.warn("응답이 너무 짧습니다. 빈 데이터로 처리합니다: {}", rawResponse);

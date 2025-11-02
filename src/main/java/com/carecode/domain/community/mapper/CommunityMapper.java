@@ -70,8 +70,8 @@ public class CommunityMapper {
         response.setViewCount(post.getViewCount());
         response.setLikeCount(post.getLikeCount());
         response.setCommentCount(post.getCommentCount());
-        response.setIsLiked(false); // TODO: 실제 좋아요 상태 확인
-        response.setIsBookmarked(false); // TODO: 실제 북마크 상태 확인
+        response.setIsLiked(false); // Service 레벨에서 사용자별로 업데이트 필요 (CommunityService.isLikedByUser 참조)
+        response.setIsBookmarked(false); // Service 레벨에서 사용자별로 업데이트 필요 (CommunityService.isBookmarkedByUser 참조)
         
         // PostDetailResponse의 추가 필드들 설정
         response.setComments(commentResponses);
@@ -94,7 +94,7 @@ public class CommunityMapper {
                 .authorId(comment.getAuthor().getId().toString())
                 .createdAt(comment.getCreatedAt().format(DATE_FORMATTER))
                 .likeCount(comment.getLikeCount())
-                .isLiked(false) // TODO: 실제 좋아요 상태 확인
+                .isLiked(false) // Service 레벨에서 사용자별로 업데이트 필요
                 .parentCommentId(comment.getParentComment() != null ? comment.getParentComment().getId() : null)
                 .replies(replies)
                 .build();

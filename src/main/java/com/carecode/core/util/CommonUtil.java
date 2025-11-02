@@ -124,8 +124,6 @@ public class CommonUtil {
 
         paramMap.put("LOGIN_USER_SESSION", request.getSession().getId());
 
-        //System.out.println("paramMap=[" + paramMap.toString() + "]");
-
         return paramMap;
     }
 
@@ -598,5 +596,59 @@ public class CommonUtil {
     public static String getCurrentAlarmDate(String dateFormat) {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat);
         return simpleDateFormat.format(new Date());
+    }
+
+    /**
+     * Object를 Double로 안전하게 파싱
+     *
+     * @param value 파싱할 값
+     * @return 파싱된 Double 값, 실패 시 null
+     */
+    public static Double parseDouble(Object value) {
+        if (value == null || value.toString().trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(value.toString());
+        } catch (NumberFormatException e) {
+            System.err.println("Double 파싱 실패: " + value);
+            return null;
+        }
+    }
+
+    /**
+     * Object를 Integer로 안전하게 파싱
+     *
+     * @param value 파싱할 값
+     * @return 파싱된 Integer 값, 실패 시 null
+     */
+    public static Integer parseInteger(Object value) {
+        if (value == null || value.toString().trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (NumberFormatException e) {
+            System.err.println("Integer 파싱 실패: " + value);
+            return null;
+        }
+    }
+
+    /**
+     * Object를 Long으로 안전하게 파싱
+     *
+     * @param value 파싱할 값
+     * @return 파싱된 Long 값, 실패 시 null
+     */
+    public static Long parseLong(Object value) {
+        if (value == null || value.toString().trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(value.toString());
+        } catch (NumberFormatException e) {
+            System.err.println("Long 파싱 실패: " + value);
+            return null;
+        }
     }
 }

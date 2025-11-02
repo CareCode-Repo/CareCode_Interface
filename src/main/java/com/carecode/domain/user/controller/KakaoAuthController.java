@@ -48,11 +48,6 @@ public class KakaoAuthController extends BaseController {
     @PostMapping("/login")
     @LogExecutionTime
     @Operation(summary = "카카오 OAuth 로그인/회원가입", description = "카카오 인증 코드를 받아 로그인하거나 신규 사용자를 생성합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "로그인/회원가입 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
     public ResponseEntity<Map<String, Object>> kakaoLogin(
             @Parameter(description = "카카오 인증 코드", required = true) @RequestParam String code,
             HttpServletResponse response) {
@@ -109,20 +104,7 @@ public class KakaoAuthController extends BaseController {
     @PostMapping("/complete-registration")
     @LogExecutionTime
     @Operation(summary = "카카오 신규 사용자 가입 완료", description = "카카오 로그인 후 신규 사용자의 이름과 역할을 설정하여 가입을 완료합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "가입 완료 성공",
-            content = @Content(schema = @Schema(implementation = UserDto.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public ResponseEntity<UserDto> completeRegistration(
-            @Parameter(description = "가입 완료 정보", required = true) 
-            @Valid @RequestBody KakaoRegistrationRequest request,
-            HttpServletRequest httpRequest) {
-        log.info("카카오 신규 사용자 가입 완료: name={}, role={}", request.getName(), request.getRole());
-        
+    public ResponseEntity<UserDto> completeRegistration(@Parameter(description = "가입 완료 정보", required = true) @Valid @RequestBody KakaoRegistrationRequest request, HttpServletRequest httpRequest) {
         try {
             // JWT 토큰에서 이메일을 추출
             String email = getCurrentUserEmail(httpRequest);
@@ -148,10 +130,6 @@ public class KakaoAuthController extends BaseController {
     @GetMapping("/login-url")
     @LogExecutionTime
     @Operation(summary = "카카오 로그인 URL 생성", description = "카카오 OAuth 로그인을 위한 URL을 생성합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "로그인 URL 생성 성공"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
     public ResponseEntity<Map<String, Object>> getKakaoLoginUrl() {
         try {
             log.info("카카오 로그인 URL 생성 요청");
@@ -183,20 +161,15 @@ public class KakaoAuthController extends BaseController {
      * 현재 로그인한 사용자의 이메일을 JWT 토큰에서 추출
      */
     private String getCurrentUserEmail(HttpServletRequest request) {
-        try {
-            // Authorization 헤더에서 토큰 추출
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("유효한 Authorization 헤더가 없습니다.");
-            }
-            
-            String token = authHeader.substring(7); // "Bearer " 제거
-            
-            // JWT 토큰에서 이메일 추출
-            return jwtService.extractEmailFromToken(token);
-        } catch (Exception e) {
-            log.error("JWT 토큰에서 이메일 추출 실패: {}", e.getMessage());
-            throw new IllegalArgumentException("인증 토큰이 유효하지 않습니다.");
+        // Authorization 헤더에서 토큰 추출
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("유효한 Authorization 헤더가 없습니다.");
         }
+
+        String token = authHeader.substring(7); // "Bearer " 제거
+
+        // JWT 토큰에서 이메일 추출
+        return jwtService.extractEmailFromToken(token);
     }
 }

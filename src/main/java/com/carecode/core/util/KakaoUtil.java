@@ -46,8 +46,6 @@ public class KakaoUtil {
             throw new IllegalArgumentException("인증 코드가 비어있습니다.");
         }
         
-        log.info("카카오 액세스 토큰 요청 시작: code={}", accessCode.substring(0, Math.min(10, accessCode.length())) + "...");
-        
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
@@ -59,9 +57,6 @@ public class KakaoUtil {
         params.add("redirect_uri", redirectUri);
         params.add("code", accessCode);
 
-        log.info("카카오 토큰 요청 파라미터: client_id={}, redirect_uri={}, code={}...", 
-                clientId, redirectUri, accessCode.substring(0, Math.min(10, accessCode.length())) + "...");
-
         HttpEntity<MultiValueMap<String, String>> kakaoTokenRequest = new HttpEntity<>(params, headers);
 
         try {
@@ -72,12 +67,9 @@ public class KakaoUtil {
                     String.class
             );
             
-            log.info("카카오 토큰 응답 상태: {}", response.getStatusCode());
-            
             if (!response.getStatusCode().is2xxSuccessful()) {
                 String errorBody = response.getBody();
-                log.error("카카오 토큰 요청 실패: status={}, body={}", response.getStatusCode(), errorBody);
-                
+
                 if (errorBody != null && errorBody.contains("invalid_grant")) {
                     throw new RuntimeException("인증 코드가 유효하지 않습니다. 새로운 인증 코드를 사용해주세요.");
                 } else if (errorBody != null && errorBody.contains("KOE320")) {
@@ -93,7 +85,6 @@ public class KakaoUtil {
                 throw new RuntimeException("카카오 액세스 토큰이 비어있습니다.");
             }
             
-            log.info("카카오 액세스 토큰 발급 완료: {}", oAuthToken.getAccess_token().substring(0, Math.min(10, oAuthToken.getAccess_token().length())) + "...");
             return oAuthToken;
             
         } catch (RestClientException e) {

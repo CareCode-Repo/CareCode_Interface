@@ -27,7 +27,8 @@ public class PublicDataApiService {
      * @return 육아 시설 정보
      */
     public PublicDataResponse<Object> getChildcareFacilities(String region, int pageNo, int numOfRows) {
-        Map<String, String> params = new HashMap<>();
+        HashMap<String, String> params = new HashMap<>();
+
         params.put("pageNo", String.valueOf(pageNo));
         params.put("numOfRows", String.valueOf(numOfRows));
         params.put("type", "json");

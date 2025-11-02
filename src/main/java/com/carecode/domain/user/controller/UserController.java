@@ -123,10 +123,6 @@ public class UserController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
-    // ==================== 사용자 통계 ====================
-
-    // (중복 제거) 사용자 통계 조회는 하단의 UserResponse.UserStats 버전만 유지
-
     // ==================== 사용자 위치 관리 ====================
 
     /**
@@ -143,10 +139,6 @@ public class UserController extends BaseController {
         UserDto updatedUser = userFacade.updateUserLocation(userId, latitude, longitude);
         return ResponseEntity.ok(updatedUser);
     }
-
-    // ==================== 사용자 검색 ====================
-
-    // (중복 제거) 사용자 검색은 하단의 UserResponse.UserSearch 버전만 유지
 
     // ==================== 회원 탈퇴 ====================
 

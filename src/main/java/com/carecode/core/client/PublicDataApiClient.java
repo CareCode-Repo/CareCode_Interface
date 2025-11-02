@@ -69,23 +69,19 @@ public class PublicDataApiClient {
      * @return API 응답
      */
     public <T> T post(String endpoint, Object requestBody, Class<T> responseType) {
-        try {
-            String url = baseUrl + endpoint;
-            HttpHeaders headers = new HttpHeaders();
+        String url = baseUrl + endpoint;
+        HttpHeaders headers = new HttpHeaders();
 
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("serviceKey", apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("serviceKey", apiKey);
 
-            HttpEntity<Object> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<T> response = restTemplate.postForEntity(url, entity, responseType);
+        HttpEntity<Object> entity = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<T> response = restTemplate.postForEntity(url, entity, responseType);
 
-            if (response.getStatusCode() == HttpStatus.OK) {
-                return response.getBody();
-            } else {
-                throw new RuntimeException("API POST 호출 실패: " + response.getStatusCode());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("API POST 호출 중 오류 발생", e);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return response.getBody();
+        } else {
+            throw new RuntimeException("API POST 호출 실패: " + response.getStatusCode());
         }
     }
 
@@ -97,11 +93,8 @@ public class PublicDataApiClient {
      * @param responseType 응답 타입
      * @return API 응답
      */
-    public <T> T getWithHeaders(String endpoint, Map<String, String> params, 
-                               Map<String, String> headers, Class<T> responseType) {
-        UriComponentsBuilder builder = UriComponentsBuilder
-                .fromHttpUrl(baseUrl + endpoint)
-                .queryParam("serviceKey", apiKey);
+    public <T> T getWithHeaders(String endpoint, Map<String, String> params, Map<String, String> headers, Class<T> responseType) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl + endpoint).queryParam("serviceKey", apiKey);
 
         if (params != null) {
             params.forEach(builder::queryParam);

@@ -138,43 +138,4 @@ public class User {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    
-    /**
-     * 사용자 성별 Enum
-     */
-    public enum Gender {
-        MALE("남성"),
-        FEMALE("여성"),
-        OTHER("기타");
-        
-        private final String displayName;
-        
-        Gender(String displayName) {
-            this.displayName = displayName;
-        }
-        
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-    
-    /**
-     * 사용자 역할 Enum
-     */
-    public enum UserRole {
-        PARENT("부모"),
-        CAREGIVER("보육사"),
-        ADMIN("관리자"),
-        GUEST("게스트");
-        
-        private final String displayName;
-        
-        UserRole(String displayName) {
-            this.displayName = displayName;
-        }
-        
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
 } 

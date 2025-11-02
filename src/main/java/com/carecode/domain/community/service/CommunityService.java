@@ -10,7 +10,11 @@ import com.carecode.domain.community.entity.Tag;
 import com.carecode.domain.community.repository.CommentRepository;
 import com.carecode.domain.community.repository.PostRepository;
 import com.carecode.domain.community.repository.TagRepository;
+import com.carecode.domain.community.repository.PostLikeRepository;
+import com.carecode.domain.community.repository.BookmarkRepository;
 import com.carecode.domain.community.mapper.CommunityMapper;
+import com.carecode.domain.community.entity.PostLike;
+import com.carecode.domain.community.entity.Bookmark;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +43,8 @@ public class CommunityService {
     private final CommentRepository commentRepository;
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
+    private final PostLikeRepository postLikeRepository;
+    private final BookmarkRepository bookmarkRepository;
     private final CommunityMapper communityMapper;
     
     /**
@@ -465,5 +471,145 @@ public class CommunityService {
                 .hasNext(postPage.hasNext())
                 .hasPrevious(postPage.hasPrevious())
                 .build();
+    }
+
+    /**
+     * 좋아요 토글
+     */
+    public boolean toggleLike(Long postId, Long userId) {
+        log.info("좋아요 토글 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다: " + postId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+
+        // 이미 좋아요를 눌렀는지 확인
+        if (postLikeRepository.existsByPostAndUser(post, user)) {
+            // 좋아요 취소
+            postLikeRepository.deleteByPostAndUser(post, user);
+            log.info("좋아요 취소됨 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+            return false;
+        } else {
+            // 좋아요 추가
+            PostLike postLike = PostLike.builder()
+                    .post(post)
+                    .user(user)
+                    .build();
+            postLikeRepository.save(postLike);
+            log.info("좋아요 추가됨 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+            return true;
+        }
+    }
+
+    /**
+     * 북마크 토글
+     */
+    public boolean toggleBookmark(Long postId, Long userId) {
+        log.info("북마크 토글 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다: " + postId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+
+        // 이미 북마크했는지 확인
+        if (bookmarkRepository.existsByPostAndUser(post, user)) {
+            // 북마크 취소
+            bookmarkRepository.deleteByPostAndUser(post, user);
+            log.info("북마크 취소됨 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+            return false;
+        } else {
+            // 북마크 추가
+            Bookmark bookmark = Bookmark.builder()
+                    .post(post)
+                    .user(user)
+                    .build();
+            bookmarkRepository.save(bookmark);
+            log.info("북마크 추가됨 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+            return true;
+        }
+    }
+
+    /**
+     * 사용자가 특정 게시글에 좋아요를 눌렀는지 확인
+     */
+    @Transactional(readOnly = true)
+    public boolean isLikedByUser(Long postId, Long userId) {
+        if (userId == null) {
+            return false;
+        }
+
+        Post post = postRepository.findById(postId).orElse(null);
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (post == null || user == null) {
+            return false;
+        }
+
+        return postLikeRepository.existsByPostAndUser(post, user);
+    }
+
+    /**
+     * 사용자가 특정 게시글을 북마크했는지 확인
+     */
+    @Transactional(readOnly = true)
+    public boolean isBookmarkedByUser(Long postId, Long userId) {
+        if (userId == null) {
+            return false;
+        }
+
+        Post post = postRepository.findById(postId).orElse(null);
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (post == null || user == null) {
+            return false;
+        }
+
+        return bookmarkRepository.existsByPostAndUser(post, user);
+    }
+
+    /**
+     * 특정 게시글의 좋아요 개수 조회
+     */
+    @Transactional(readOnly = true)
+    public long getLikeCount(Long postId) {
+        Post post = postRepository.findById(postId).orElse(null);
+        if (post == null) {
+            return 0;
+        }
+        return postLikeRepository.countByPost(post);
+    }
+
+    /**
+     * 특정 게시글의 북마크 개수 조회
+     */
+    @Transactional(readOnly = true)
+    public long getBookmarkCount(Long postId) {
+        Post post = postRepository.findById(postId).orElse(null);
+        if (post == null) {
+            return 0;
+        }
+        return bookmarkRepository.countByPost(post);
+    }
+
+    /**
+     * 현재 로그인한 사용자 ID 가져오기
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        String username = authentication.getName();
+        if (username == null || username.equals("anonymousUser")) {
+            return null;
+        }
+
+        User user = userRepository.findByEmail(username).orElse(null);
+        return user != null ? user.getId() : null;
     }
 } 
