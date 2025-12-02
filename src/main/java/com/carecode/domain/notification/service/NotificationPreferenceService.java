@@ -2,8 +2,11 @@ package com.carecode.domain.notification.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.notification.dto.NotificationRequest;
-import com.carecode.domain.notification.dto.NotificationResponse;
+import com.carecode.domain.notification.dto.request.NotificationRequest;
+import com.carecode.domain.notification.dto.request.NotificationRegisterPushTokenRequest;
+import com.carecode.domain.notification.dto.request.NotificationUpdateSettingsRequest;
+import com.carecode.domain.notification.dto.response.NotificationResponse;
+import com.carecode.domain.notification.dto.response.NotificationSettingsResponse;
 import com.carecode.domain.notification.entity.NotificationPreference;
 import com.carecode.domain.notification.entity.Notification;
 import com.carecode.domain.notification.repository.NotificationPreferenceRepository;
@@ -36,7 +39,7 @@ public class NotificationPreferenceService {
      * 사용자별 알림 설정 목록 조회
      */
     @LogExecutionTime
-    public List<NotificationResponse.Settings> getUserPreferences(String userId) {
+    public List<NotificationSettingsResponse> getUserPreferences(String userId) {
         log.info("사용자별 알림 설정 조회: 사용자ID={}", userId);
         
         try {
@@ -58,7 +61,7 @@ public class NotificationPreferenceService {
      * 특정 알림 타입 설정 조회
      */
     @LogExecutionTime
-    public NotificationResponse.Settings getPreferenceByType(String userId, Notification.NotificationType notificationType) {
+    public NotificationSettingsResponse getPreferenceByType(String userId, Notification.NotificationType notificationType) {
         log.info("알림 타입별 설정 조회: 사용자ID={}, 타입={}", userId, notificationType);
         
         try {
@@ -80,7 +83,7 @@ public class NotificationPreferenceService {
      */
     @LogExecutionTime
     @Transactional
-    public NotificationResponse.Settings savePreference(String userId, NotificationResponse.Settings preferenceDto) {
+    public NotificationSettingsResponse savePreference(String userId, NotificationSettingsResponse preferenceDto) {
         log.info("알림 설정 저장: 사용자ID={}, 타입={}", userId, preferenceDto.getNotificationType());
         
         try {
@@ -107,7 +110,7 @@ public class NotificationPreferenceService {
      */
     @LogExecutionTime
     @Transactional
-    public NotificationResponse.Settings updateChannelPreference(String userId, String notificationType, String channel, boolean enabled) {
+    public NotificationSettingsResponse updateChannelPreference(String userId, String notificationType, String channel, boolean enabled) {
         log.info("채널별 설정 업데이트: 사용자ID={}, 타입={}, 채널={}, 활성화={}", userId, notificationType, channel, enabled);
         
         try {
@@ -186,7 +189,7 @@ public class NotificationPreferenceService {
      * 특정 알림 타입의 활성화된 설정 조회
      */
     @LogExecutionTime
-    public List<NotificationResponse.Settings> getEnabledPreferencesByType(Notification.NotificationType notificationType) {
+    public List<NotificationSettingsResponse> getEnabledPreferencesByType(Notification.NotificationType notificationType) {
         log.info("알림 타입별 활성화된 설정 조회: 타입={}", notificationType);
         
         try {
@@ -222,7 +225,7 @@ public class NotificationPreferenceService {
     /**
      * 새 설정 생성
      */
-    private NotificationPreference createNewPreference(User user, NotificationResponse.Settings preferenceDto) {
+    private NotificationPreference createNewPreference(User user, NotificationSettingsResponse preferenceDto) {
         return NotificationPreference.builder()
                 .user(user)
                 .notificationType(Notification.NotificationType.valueOf(preferenceDto.getNotificationType()))
@@ -239,7 +242,7 @@ public class NotificationPreferenceService {
     /**
      * 설정 업데이트
      */
-    private void updatePreference(NotificationPreference preference, NotificationResponse.Settings preferenceDto) {
+    private void updatePreference(NotificationPreference preference, NotificationSettingsResponse preferenceDto) {
         preference.setEmailEnabled(preferenceDto.getEmailEnabled());
         preference.setPushEnabled(preferenceDto.getPushEnabled());
         preference.setSmsEnabled(preferenceDto.getSmsEnabled());
@@ -265,8 +268,8 @@ public class NotificationPreferenceService {
     /**
      * DTO 변환
      */
-    private NotificationResponse.Settings convertToDto(NotificationPreference preference) {
-        return NotificationResponse.Settings.builder()
+    private NotificationSettingsResponse convertToDto(NotificationPreference preference) {
+        return NotificationSettingsResponse.builder()
                 .id(preference.getId())
                 .userId(preference.getUser().getUserId())
                 .notificationType(preference.getNotificationType().name())
@@ -286,7 +289,7 @@ public class NotificationPreferenceService {
      * 푸시 알림 토큰 등록
      */
     @Transactional
-    public void registerPushToken(String userId, NotificationRequest.RegisterPushToken request) {
+    public void registerPushToken(String userId, NotificationRegisterPushTokenRequest request) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
 
@@ -320,7 +323,7 @@ public class NotificationPreferenceService {
      * 알림 설정 수정
      */
     @Transactional
-    public void updateSettings(String userId, NotificationRequest.UpdateSettings request) {
+    public void updateSettings(String userId, NotificationUpdateSettingsRequest request) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
 

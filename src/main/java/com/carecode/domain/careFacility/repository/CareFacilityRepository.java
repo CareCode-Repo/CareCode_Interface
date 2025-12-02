@@ -1,6 +1,6 @@
 package com.carecode.domain.careFacility.repository;
 
-import com.carecode.domain.careFacility.dto.TypeStats;
+import com.carecode.domain.careFacility.dto.response.TypeStats;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.careFacility.entity.FacilityType;
 import org.springframework.data.jpa.repository.JpaRepository;

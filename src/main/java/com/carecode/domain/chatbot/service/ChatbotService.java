@@ -2,8 +2,12 @@ package com.carecode.domain.chatbot.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.chatbot.dto.ChatbotRequestDto;
-import com.carecode.domain.chatbot.dto.ChatbotResponseDto;
+import com.carecode.domain.chatbot.dto.request.ChatbotRequestDto;
+import com.carecode.domain.chatbot.dto.response.ChatbotMessageResponse;
+import com.carecode.domain.chatbot.dto.request.ChatbotMessageRequest;
+import com.carecode.domain.chatbot.dto.response.ChatbotMessageResponse;
+import com.carecode.domain.chatbot.dto.response.ChatbotChatHistoryDtoResponse;
+import com.carecode.domain.chatbot.dto.response.ChatbotSessionDtoResponse;
 import com.carecode.domain.chatbot.entity.ChatMessage;
 import com.carecode.domain.chatbot.entity.ChatSession;
 import com.carecode.domain.chatbot.repository.ChatMessageRepository;
@@ -100,7 +104,7 @@ public class ChatbotService {
      */
     @LogExecutionTime
     @Transactional
-    public ChatbotResponseDto processMessage(ChatbotRequestDto.ChatbotRequest request) {
+    public ChatbotMessageResponse processMessage(ChatbotMessageRequest request) {
         log.info("챗봇 메시지 처리: 사용자ID={}, 메시지={}", request.getUserId(), request.getMessage());
         
         try {
@@ -124,7 +128,7 @@ public class ChatbotService {
             // 세션 업데이트
             updateSession(session, request.getMessage());
             
-            return ChatbotResponseDto.builder()
+            return ChatbotMessageResponse.builder()
                     .messageId(chatMessage.getId())
                     .response(response)
                     .intentType(intentType.name())
@@ -147,7 +151,7 @@ public class ChatbotService {
      * 대화 기록 조회
      */
     @LogExecutionTime
-    public List<ChatbotResponseDto.ChatHistoryResponse> getChatHistory(String userId, String sessionId, int page, int size) {
+    public List<ChatbotChatHistoryDtoResponse> getChatHistory(String userId, String sessionId, int page, int size) {
         log.info("대화 기록 조회: 사용자ID={}, 세션ID={}", userId, sessionId);
         
         try {
@@ -177,7 +181,7 @@ public class ChatbotService {
      * 세션 목록 조회
      */
     @LogExecutionTime
-    public List<ChatbotResponseDto.SessionResponse> getSessions(String userId, int page, int size) {
+    public List<ChatbotSessionDtoResponse> getSessions(String userId, int page, int size) {
         log.info("세션 목록 조회: 사용자ID={}", userId);
         
         try {
@@ -476,8 +480,8 @@ public class ChatbotService {
     /**
      * 대화 기록 응답 변환
      */
-    private ChatbotResponseDto.ChatHistoryResponse convertToHistoryResponse(ChatMessage message) {
-        return ChatbotResponseDto.ChatHistoryResponse.builder()
+    private ChatbotChatHistoryDtoResponse convertToHistoryResponse(ChatMessage message) {
+        return ChatbotChatHistoryDtoResponse.builder()
                 .messageId(message.getId())
                 .message(message.getMessage())
                 .response(message.getResponse())
@@ -493,8 +497,8 @@ public class ChatbotService {
     /**
      * 세션 응답 변환
      */
-    private ChatbotResponseDto.SessionResponse convertToSessionResponse(ChatSession session) {
-        return ChatbotResponseDto.SessionResponse.builder()
+    private ChatbotSessionDtoResponse convertToSessionResponse(ChatSession session) {
+        return ChatbotSessionDtoResponse.builder()
                 .sessionId(session.getSessionId())
                 .title(session.getTitle())
                 .description(session.getDescription())

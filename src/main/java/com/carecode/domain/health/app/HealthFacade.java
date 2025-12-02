@@ -1,7 +1,18 @@
 package com.carecode.domain.health.app;
 
-import com.carecode.domain.health.dto.HealthRequest;
-import com.carecode.domain.health.dto.HealthResponse;
+import com.carecode.domain.health.dto.request.HealthRequest;
+import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
+import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
+import com.carecode.domain.health.dto.request.HealthCreateHospitalReviewRequest;
+import com.carecode.domain.health.dto.request.HealthUpdateHospitalReviewRequest;
+import com.carecode.domain.health.dto.response.HealthResponse;
+import com.carecode.domain.health.dto.response.HealthRecordResponse;
+import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
+import com.carecode.domain.health.dto.response.CheckupScheduleResponse;
+import com.carecode.domain.health.dto.response.HealthStatsResponse;
+import com.carecode.domain.health.dto.response.HealthAlertResponse;
+import com.carecode.domain.health.dto.response.HospitalInfoResponse;
+import com.carecode.domain.health.dto.response.HospitalReviewResponse;
 import com.carecode.domain.health.service.HealthService;
 import com.carecode.domain.health.entity.Hospital;
 import com.carecode.domain.health.entity.HospitalLike;
@@ -33,22 +44,22 @@ public class HealthFacade {
     // ==================== 건강 기록 관리 ====================
 
     @Transactional
-    public HealthResponse.HealthRecordResponse createHealthRecord(HealthRequest.CreateHealthRecord request) {
+    public HealthRecordResponse createHealthRecord(HealthCreateHealthRecordRequest request) {
         return healthService.createHealthRecord(request);
     }
 
     @Transactional(readOnly = true)
-    public HealthResponse.HealthRecordResponse getHealthRecordById(Long recordId) {
+    public HealthRecordResponse getHealthRecordById(Long recordId) {
         return healthService.getHealthRecordById(recordId);
     }
 
     @Transactional(readOnly = true)
-    public List<HealthResponse.HealthRecordResponse> getHealthRecordsByUserId(String userId) {
+    public List<HealthRecordResponse> getHealthRecordsByUserId(String userId) {
         return healthService.getHealthRecordsByUserId(userId);
     }
 
     @Transactional
-    public HealthResponse.HealthRecordResponse updateHealthRecord(Long recordId, HealthRequest.UpdateHealthRecord request) {
+    public HealthRecordResponse updateHealthRecord(Long recordId, HealthUpdateHealthRecordRequest request) {
         return healthService.updateHealthRecord(recordId, request);
     }
 
@@ -58,34 +69,34 @@ public class HealthFacade {
     }
 
     @Transactional(readOnly = true)
-    public HealthResponse.HealthStatsResponse getHealthStatistics(String userId) {
+    public HealthStatsResponse getHealthStatistics(String userId) {
         return healthService.getHealthStatistics(userId);
     }
 
     @Transactional(readOnly = true)
-    public List<HealthResponse.VaccineScheduleResponse> getVaccineSchedule(String childId) {
+    public List<VaccineScheduleResponse> getVaccineSchedule(String childId) {
         return healthService.getVaccineSchedule(childId);
     }
 
     @Transactional(readOnly = true)
-    public List<HealthResponse.CheckupScheduleResponse> getCheckupSchedule(String childId) {
+    public List<CheckupScheduleResponse> getCheckupSchedule(String childId) {
         return healthService.getCheckupSchedule(childId);
     }
 
     @Transactional(readOnly = true)
-    public List<HealthResponse.HealthAlertResponse> getHealthAlerts(String userId) {
+    public List<HealthAlertResponse> getHealthAlerts(String userId) {
         return healthService.getHealthAlerts(userId);
     }
 
     // ==================== 건강 분석 및 리포트 ====================
 
     @Transactional(readOnly = true)
-    public Map<String, Object> analyzeHealthStatus(HealthRequest.CreateHealthRecord request) {
+    public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request) {
         return healthService.analyzeHealthStatus(request);
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> generateHealthReport(HealthRequest.CreateHealthRecord request) {
+    public Map<String, Object> generateHealthReport(HealthCreateHealthRecordRequest request) {
         return healthService.generateHealthReport(request);
     }
 
@@ -109,14 +120,14 @@ public class HealthFacade {
     // ==================== 병원 관리 ====================
 
     @Transactional(readOnly = true)
-    public List<HealthResponse.Hospital> getAllHospitals() {
+    public List<HospitalInfoResponse> getAllHospitals() {
         return hospitalRepository.findAll().stream()
                 .map(hospitalMapper::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public HealthResponse.Hospital getHospitalById(Long id) {
+    public HospitalInfoResponse getHospitalById(Long id) {
         Hospital hospital = hospitalRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("병원을 찾을 수 없습니다: " + id));
         return hospitalMapper.toResponse(hospital);
@@ -164,7 +175,7 @@ public class HealthFacade {
     }
 
     @Transactional(readOnly = true)
-    public List<HealthResponse.Hospital> getNearbyHospitals(double lat, double lng, double radius) {
+    public List<HospitalInfoResponse> getNearbyHospitals(double lat, double lng, double radius) {
         // 반경을 미터 단위로 변환 (km -> m)
         double radiusInMeters = radius * 1000;
         
@@ -174,14 +185,14 @@ public class HealthFacade {
     }
 
     @Transactional(readOnly = true)
-    public List<HealthResponse.Hospital> getHospitalsByType(String type) {
+    public List<HospitalInfoResponse> getHospitalsByType(String type) {
         return hospitalRepository.findByType(type).stream()
                 .map(hospitalMapper::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<HealthResponse.Hospital> getPopularHospitals(int limit) {
+    public List<HospitalInfoResponse> getPopularHospitals(int limit) {
         return hospitalRepository.findAll().stream()
                 .sorted((h1, h2) -> Long.compare(
                         hospitalLikeRepository.countByHospitalId(h2.getId()),
@@ -194,14 +205,14 @@ public class HealthFacade {
     // ==================== 병원 리뷰 관리 ====================
 
     @Transactional(readOnly = true)
-    public List<HealthResponse.HospitalReview> getHospitalReviews(Long hospitalId) {
+    public List<HospitalReviewResponse> getHospitalReviews(Long hospitalId) {
         return hospitalReviewRepository.findByHospitalId(hospitalId).stream()
                 .map(hospitalReviewMapper::toResponse)
                 .toList();
     }
 
     @Transactional
-    public HealthResponse.HospitalReview createHospitalReview(Long hospitalId, Long userId, Integer rating, String content) {
+    public HospitalReviewResponse createHospitalReview(Long hospitalId, Long userId, Integer rating, String content) {
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new IllegalArgumentException("병원을 찾을 수 없습니다: " + hospitalId));
         
@@ -217,7 +228,7 @@ public class HealthFacade {
     }
 
     @Transactional
-    public HealthResponse.HospitalReview updateHospitalReview(Long reviewId, Long userId, Integer rating, String content) {
+    public HospitalReviewResponse updateHospitalReview(Long reviewId, Long userId, Integer rating, String content) {
         HospitalReview review = hospitalReviewRepository.findById(reviewId)
                 .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다: " + reviewId));
         

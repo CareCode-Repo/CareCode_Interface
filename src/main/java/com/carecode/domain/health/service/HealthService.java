@@ -2,8 +2,19 @@ package com.carecode.domain.health.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.health.dto.HealthRequest;
-import com.carecode.domain.health.dto.HealthResponse;
+import com.carecode.domain.health.dto.request.HealthRequest;
+import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
+import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
+import com.carecode.domain.health.dto.request.HealthCreateChildRequest;
+import com.carecode.domain.health.dto.response.HealthResponse;
+import com.carecode.domain.health.dto.response.HealthRecordResponse;
+import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
+import com.carecode.domain.health.dto.response.CheckupScheduleResponse;
+import com.carecode.domain.health.dto.response.HealthStatsResponse;
+import com.carecode.domain.health.dto.response.HealthAlertResponse;
+import com.carecode.domain.health.dto.response.ChildInfoResponse;
+import com.carecode.domain.health.dto.response.GrowthTrendResponse;
+import com.carecode.domain.health.dto.response.GrowthDataResponse;
 import com.carecode.domain.health.entity.HealthRecord;
 import com.carecode.domain.health.repository.HealthRecordRepository;
 import com.carecode.domain.user.entity.Child;
@@ -52,7 +63,7 @@ public class HealthService {
      */
     @LogExecutionTime
     @Transactional
-    public HealthResponse.HealthRecordResponse createHealthRecord(HealthRequest.CreateHealthRecord request) {
+    public HealthRecordResponse createHealthRecord(HealthCreateHealthRecordRequest request) {
         log.info("건강 기록 생성: 아이ID={}, 제목={}", request.getChildId(), request.getTitle());
         
         try {
@@ -77,7 +88,7 @@ public class HealthService {
      * 건강 기록 조회
      */
     @LogExecutionTime
-    public HealthResponse.HealthRecordResponse getHealthRecordById(Long recordId) {
+    public HealthRecordResponse getHealthRecordById(Long recordId) {
         log.info("건강 기록 조회: 기록ID={}", recordId);
         
         try {
@@ -95,7 +106,7 @@ public class HealthService {
      * 사용자별 건강 기록 조회 (DTO 반환)
      */
     @LogExecutionTime
-    public List<HealthResponse.HealthRecordResponse> getHealthRecordsByUserId(String userId) {
+    public List<HealthRecordResponse> getHealthRecordsByUserId(String userId) {
         log.info("사용자별 건강 기록 조회: 사용자ID={}", userId);
         try {
             List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
@@ -138,7 +149,7 @@ public class HealthService {
      */
     @LogExecutionTime
     @Transactional
-    public HealthResponse.HealthRecordResponse updateHealthRecord(Long recordId, HealthRequest.UpdateHealthRecord request) {
+    public HealthRecordResponse updateHealthRecord(Long recordId, HealthUpdateHealthRecordRequest request) {
         HealthRecord record = healthRecordRepository.findById(recordId)
                 .orElseThrow(() -> new IllegalArgumentException("건강 기록을 찾을 수 없습니다: " + recordId));
         
@@ -172,7 +183,7 @@ public class HealthService {
      * 건강 기록 목록 조회 (페이징)
      */
     @LogExecutionTime
-    public List<HealthResponse.HealthRecordResponse> getHealthRecords(Long childId, int page, int size) {
+    public List<HealthRecordResponse> getHealthRecords(Long childId, int page, int size) {
         log.info("건강 기록 목록 조회 - 아동 ID: {}", childId);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "recordDate"));
@@ -187,7 +198,7 @@ public class HealthService {
      * 기간별 건강 기록 조회
      */
     @LogExecutionTime
-    public List<HealthResponse.HealthRecordResponse> getHealthRecordsByDateRange(Long childId, LocalDate startDate, LocalDate endDate) {
+    public List<HealthRecordResponse> getHealthRecordsByDateRange(Long childId, LocalDate startDate, LocalDate endDate) {
         log.info("기간별 건강 기록 조회 - 아동 ID: {}, 시작일: {}, 종료일: {}", childId, startDate, endDate);
         
         List<HealthRecord> records = healthRecordRepository.findByChildIdAndRecordDateBetweenOrderByRecordDateDesc(
@@ -204,7 +215,7 @@ public class HealthService {
      * 아동 정보 조회
      */
     @LogExecutionTime
-    public HealthResponse.Child getChildById(Long childId) {
+    public ChildInfoResponse getChildById(Long childId) {
         log.info("아동 정보 조회 - 아동 ID: {}", childId);
         
         Child child = childRepository.findById(childId)
@@ -217,7 +228,7 @@ public class HealthService {
      * 사용자별 아동 목록 조회
      */
     @LogExecutionTime
-    public List<HealthResponse.Child> getChildrenByUserId(Long userId) {
+    public List<ChildInfoResponse> getChildrenByUserId(Long userId) {
         log.info("사용자별 아동 목록 조회 - 사용자 ID: {}", userId);
         
         List<Child> children = childRepository.findByUserIdOrderByCreatedAtDesc(userId);
@@ -230,7 +241,7 @@ public class HealthService {
      * 아동 정보 생성
      */
     @Transactional
-    public HealthResponse.Child createChild(HealthRequest.CreateChild request) {
+    public ChildInfoResponse createChild(HealthCreateChildRequest request) {
         log.info("아동 정보 생성 - 사용자 ID: {}, 이름: {}", request.getUserId(), request.getName());
         
         User user = userRepository.findById(request.getUserId())
@@ -253,7 +264,7 @@ public class HealthService {
      * 성장 추이 조회
      */
     @LogExecutionTime
-    public HealthResponse.GrowthTrend getGrowthTrend(Long childId, int months) {
+    public GrowthTrendResponse getGrowthTrend(Long childId, int months) {
         log.info("성장 추이 조회 - 아동 ID: {}, 개월: {}", childId, months);
         
         LocalDate endDate = LocalDate.now();
@@ -262,10 +273,10 @@ public class HealthService {
         List<HealthRecord> records = healthRecordRepository.findByChildIdAndRecordDateBetweenOrderByRecordDateAsc(
                 childId, startDate, endDate);
         
-        return HealthResponse.GrowthTrend.builder()
+        return GrowthTrendResponse.builder()
                 .childId(childId.toString())
                 .childName("아동") // 실제로는 Child 엔티티에서 조회
-                .growthData(records.stream().map(r -> HealthResponse.GrowthData.builder()
+                .growthData(records.stream().map(r -> GrowthDataResponse.builder()
                         .date(r.getRecordDate().toString())
                         .height(r.getHeight())
                         .weight(r.getWeight())
@@ -281,7 +292,7 @@ public class HealthService {
      * 건강 상태 분석
      */
     @LogExecutionTime
-    public Map<String, Object> analyzeHealthStatus(HealthRequest.CreateHealthRecord request) {
+    public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request) {
         Child child = childRepository.findById(Long.valueOf(request.getChildId()))
                 .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다: " + request.getChildId()));
         
@@ -302,7 +313,7 @@ public class HealthService {
      * 건강 리포트 생성
      */
     @LogExecutionTime
-    public Map<String, Object> generateHealthReport(HealthRequest.CreateHealthRecord request) {
+    public Map<String, Object> generateHealthReport(HealthCreateHealthRecordRequest request) {
         Child child = childRepository.findById(Long.valueOf(request.getChildId()))
                 .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다: " + request.getChildId()));
 
@@ -323,13 +334,13 @@ public class HealthService {
      * 건강 통계 조회
      */
     @LogExecutionTime
-    public HealthResponse.HealthStatsResponse getHealthStatistics(String userId) {
+    public HealthStatsResponse getHealthStatistics(String userId) {
         log.info("건강 통계 조회: 사용자ID={}", userId);
         
         try {
             List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
             
-            return HealthResponse.HealthStatsResponse.builder()
+            return HealthStatsResponse.builder()
                     .totalRecords(records.size())
                     .completedVaccines(countCompletedVaccines(records))
                     .pendingVaccines(countPendingVaccines(records))
@@ -350,7 +361,7 @@ public class HealthService {
      * 예방접종 스케줄 조회
      */
     @LogExecutionTime
-    public List<HealthResponse.VaccineScheduleResponse> getVaccineSchedule(String childId) {
+    public List<VaccineScheduleResponse> getVaccineSchedule(String childId) {
         log.info("예방접종 스케줄 조회: 아동ID={}", childId);
         
         try {
@@ -370,7 +381,7 @@ public class HealthService {
      * 건강 검진 스케줄 조회
      */
     @LogExecutionTime
-    public List<HealthResponse.CheckupScheduleResponse> getCheckupSchedule(String childId) {
+    public List<CheckupScheduleResponse> getCheckupSchedule(String childId) {
         log.info("건강 검진 스케줄 조회: 아동ID={}", childId);
         
         try {
@@ -390,7 +401,7 @@ public class HealthService {
      * 건강 알림 조회
      */
     @LogExecutionTime
-    public List<HealthResponse.HealthAlertResponse> getHealthAlerts(String userId) {
+    public List<HealthAlertResponse> getHealthAlerts(String userId) {
         log.info("건강 알림 조회: 사용자ID={}", userId);
         
         try {
@@ -410,7 +421,7 @@ public class HealthService {
      * 건강 알림 설정
      */
     @LogExecutionTime
-    public void setHealthAlert(HealthRequest.CreateHealthRecord request) {
+    public void setHealthAlert(HealthCreateHealthRecordRequest request) {
         log.info("건강 알림 설정: 아이ID={}", request.getChildId());
 
         try {
@@ -428,7 +439,7 @@ public class HealthService {
      * 건강 목표 설정
      */
     @LogExecutionTime
-    public void setHealthGoal(HealthRequest.CreateHealthRecord request) {
+    public void setHealthGoal(HealthCreateHealthRecordRequest request) {
         try {
             // 실제로는 건강 목표를 저장
             log.info("건강 목표가 설정되었습니다: 아이ID={}", request.getChildId());
@@ -525,8 +536,8 @@ public class HealthService {
     /**
      * 예방접종 스케줄 응답 DTO 변환
      */
-    private HealthResponse.VaccineScheduleResponse convertToVaccineScheduleResponse(HealthRecord record) {
-        return HealthResponse.VaccineScheduleResponse.builder()
+    private VaccineScheduleResponse convertToVaccineScheduleResponse(HealthRecord record) {
+        return VaccineScheduleResponse.builder()
                 .vaccineName(record.getTitle())
                 .description(record.getDescription())
                 .recommendedAge(null) // 나이 정보는 별도 계산 필요
@@ -540,8 +551,8 @@ public class HealthService {
     /**
      * 건강 검진 스케줄 응답 DTO 변환
      */
-    private HealthResponse.CheckupScheduleResponse convertToCheckupScheduleResponse(HealthRecord record) {
-        return HealthResponse.CheckupScheduleResponse.builder()
+    private CheckupScheduleResponse convertToCheckupScheduleResponse(HealthRecord record) {
+        return CheckupScheduleResponse.builder()
                 .checkupName(record.getTitle())
                 .description(record.getDescription())
                 .recommendedAge(null) // 나이 정보는 별도 계산 필요
@@ -555,8 +566,8 @@ public class HealthService {
     /**
      * 건강 알림 응답 DTO 변환
      */
-    private HealthResponse.HealthAlertResponse convertToHealthAlertResponse(HealthRecord record) {
-        return HealthResponse.HealthAlertResponse.builder()
+    private HealthAlertResponse convertToHealthAlertResponse(HealthRecord record) {
+        return HealthAlertResponse.builder()
                 .alertId(record.getId().toString())
                 .alertType(record.getRecordType().name())
                 .title(record.getTitle())

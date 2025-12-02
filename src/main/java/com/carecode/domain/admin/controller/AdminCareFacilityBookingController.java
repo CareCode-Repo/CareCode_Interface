@@ -1,11 +1,14 @@
 package com.carecode.domain.admin.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.annotation.RequireAdminRole;
 import com.carecode.core.controller.BaseController;
-import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.careFacility.dto.CareFacilityBookingDto;
+import com.carecode.domain.admin.dto.AdminBookingDetailResponse;
+import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
+import com.carecode.domain.admin.dto.AdminBookingSearchRequest;
+import com.carecode.domain.admin.dto.AdminBookingSearchResponse;
+import com.carecode.domain.admin.dto.AdminStatusUpdateRequest;
+import com.carecode.domain.admin.dto.AdminBookingStatsResponse;
 import com.carecode.domain.admin.service.CareFacilityBookingAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +19,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
  * 관리자용 육아 시설 예약 관리 컨트롤러
- * Thymeleaf 기반 관리자 대시보드 제공
  */
 @Slf4j
 @Controller
@@ -27,15 +29,13 @@ public class AdminCareFacilityBookingController extends BaseController {
 
     private final CareFacilityBookingAdminService adminBookingService;
 
-    /**
-     * 예약 목록 페이지
-     */
+    // 예약 목록 페이지
     @GetMapping
     @LogExecutionTime
     public String bookingList(@RequestParam(defaultValue = "0") Integer page, @RequestParam(defaultValue = "20") Integer size,
                               @RequestParam(required = false) Long facilityId, @RequestParam(required = false) String status,
                               @RequestParam(required = false) String keyword, Model model) {
-        CareFacilityBookingDto.AdminBookingSearchRequest request = CareFacilityBookingDto.AdminBookingSearchRequest.builder()
+        AdminBookingSearchRequest request = AdminBookingSearchRequest.builder()
             .page(page)
             .size(size)
             .facilityId(facilityId)
@@ -43,7 +43,7 @@ public class AdminCareFacilityBookingController extends BaseController {
             .keyword(keyword)
             .build();
             
-        CareFacilityBookingDto.AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
+        AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
             
         model.addAttribute("bookings", response.getBookings());
         model.addAttribute("pagination", response);
@@ -58,7 +58,7 @@ public class AdminCareFacilityBookingController extends BaseController {
     @GetMapping("/{bookingId}")
     @LogExecutionTime
     public String bookingDetail(@PathVariable Long bookingId, Model model) {
-        CareFacilityBookingDto.AdminBookingDetailResponse booking = adminBookingService.getBookingDetail(bookingId);
+        AdminBookingDetailResponse booking = adminBookingService.getBookingDetail(bookingId);
         model.addAttribute("booking", booking);
         return "admin/facilities/bookings/detail";
     }
@@ -72,7 +72,7 @@ public class AdminCareFacilityBookingController extends BaseController {
                                       @RequestParam(required = false) String reason,
                                       RedirectAttributes redirectAttributes) {
 
-        CareFacilityBookingDto.AdminStatusUpdateRequest request = CareFacilityBookingDto.AdminStatusUpdateRequest.builder()
+        AdminStatusUpdateRequest request = AdminStatusUpdateRequest.builder()
             .status(status)
             .reason(reason)
             .build();
@@ -101,7 +101,7 @@ public class AdminCareFacilityBookingController extends BaseController {
     @GetMapping("/statistics")
     @LogExecutionTime
     public String bookingStatistics(Model model) {
-        CareFacilityBookingDto.AdminBookingStatsResponse stats = adminBookingService.getBookingStats();
+        AdminBookingStatsResponse stats = adminBookingService.getBookingStats();
         model.addAttribute("stats", stats);
         return "admin/facilities/bookings/statistics";
     }
@@ -112,7 +112,7 @@ public class AdminCareFacilityBookingController extends BaseController {
     @GetMapping("/today")
     @LogExecutionTime
     public String todayBookings(@RequestParam(defaultValue = "0") Integer page, @RequestParam(defaultValue = "20") Integer size, Model model) {
-        CareFacilityBookingDto.AdminBookingSearchRequest request = CareFacilityBookingDto.AdminBookingSearchRequest.builder()
+        AdminBookingSearchRequest request = AdminBookingSearchRequest.builder()
                 .page(page)
                 .size(size)
                 .build();
@@ -121,7 +121,7 @@ public class AdminCareFacilityBookingController extends BaseController {
         request.setStartDate(java.time.LocalDateTime.now().toLocalDate().atStartOfDay());
         request.setEndDate(java.time.LocalDateTime.now().toLocalDate().atTime(23, 59, 59));
             
-        CareFacilityBookingDto.AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
+        AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
             
         model.addAttribute("bookings", response.getBookings());
         model.addAttribute("pagination", response);
@@ -137,13 +137,13 @@ public class AdminCareFacilityBookingController extends BaseController {
     @LogExecutionTime
     public String facilityBookings(@PathVariable Long facilityId, @RequestParam(defaultValue = "0") Integer page,
                                    @RequestParam(defaultValue = "20") Integer size, Model model) {
-        CareFacilityBookingDto.AdminBookingSearchRequest request = CareFacilityBookingDto.AdminBookingSearchRequest.builder()
+        AdminBookingSearchRequest request = AdminBookingSearchRequest.builder()
                 .facilityId(facilityId)
                 .page(page)
                 .size(size)
                 .build();
 
-        CareFacilityBookingDto.AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
+        AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
 
         model.addAttribute("bookings", response.getBookings());
         model.addAttribute("pagination", response);
@@ -159,13 +159,13 @@ public class AdminCareFacilityBookingController extends BaseController {
     @LogExecutionTime
     public String statusBookings(@PathVariable String status, @RequestParam(defaultValue = "0") Integer page,
                                  @RequestParam(defaultValue = "20") Integer size, Model model) {
-        CareFacilityBookingDto.AdminBookingSearchRequest request = CareFacilityBookingDto.AdminBookingSearchRequest.builder()
+        AdminBookingSearchRequest request = AdminBookingSearchRequest.builder()
                 .status(status)
                 .page(page)
                 .size(size)
                 .build();
             
-        CareFacilityBookingDto.AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
+        AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
             
         model.addAttribute("bookings", response.getBookings());
         model.addAttribute("pagination", response);
@@ -180,7 +180,7 @@ public class AdminCareFacilityBookingController extends BaseController {
     @GetMapping("/create")
     @LogExecutionTime
     public String createBookingForm(Model model) {
-        model.addAttribute("bookingRequest", new CareFacilityBookingDto.CreateBookingRequest());
+        model.addAttribute("bookingRequest", new CreateBookingRequest());
         return "admin/facilities/bookings/create";
     }
 
@@ -190,7 +190,7 @@ public class AdminCareFacilityBookingController extends BaseController {
     @GetMapping("/{bookingId}/edit")
     @LogExecutionTime
     public String editBookingForm(@PathVariable Long bookingId, Model model) {
-        CareFacilityBookingDto.AdminBookingDetailResponse booking = adminBookingService.getBookingDetail(bookingId);
+        AdminBookingDetailResponse booking = adminBookingService.getBookingDetail(bookingId);
         model.addAttribute("booking", booking);
         return "admin/facilities/bookings/edit";
     }
@@ -202,26 +202,26 @@ public class AdminCareFacilityBookingController extends BaseController {
     @LogExecutionTime
     public String bookingDashboard(Model model) {
         // 통계 정보
-        CareFacilityBookingDto.AdminBookingStatsResponse stats = adminBookingService.getBookingStats();
+        AdminBookingStatsResponse stats = adminBookingService.getBookingStats();
         model.addAttribute("stats", stats);
 
         // 최근 예약 목록 (최근 10개)
-        CareFacilityBookingDto.AdminBookingSearchRequest recentRequest = CareFacilityBookingDto.AdminBookingSearchRequest.builder()
+        AdminBookingSearchRequest recentRequest = AdminBookingSearchRequest.builder()
                 .page(0)
                 .size(10)
                 .build();
-        CareFacilityBookingDto.AdminBookingSearchResponse recentBookings = adminBookingService.searchBookings(recentRequest);
+        AdminBookingSearchResponse recentBookings = adminBookingService.searchBookings(recentRequest);
         model.addAttribute("recentBookings", recentBookings.getBookings());
 
         // 오늘의 예약 (최근 5개)
-        CareFacilityBookingDto.AdminBookingSearchRequest todayRequest = CareFacilityBookingDto.AdminBookingSearchRequest.builder()
+        AdminBookingSearchRequest todayRequest = AdminBookingSearchRequest.builder()
                 .page(0)
                 .size(5)
                 .build();
         todayRequest.setStartDate(java.time.LocalDateTime.now().toLocalDate().atStartOfDay());
         todayRequest.setEndDate(java.time.LocalDateTime.now().toLocalDate().atTime(23, 59, 59));
 
-        CareFacilityBookingDto.AdminBookingSearchResponse todayBookings = adminBookingService.searchBookings(todayRequest);
+        AdminBookingSearchResponse todayBookings = adminBookingService.searchBookings(todayRequest);
         model.addAttribute("todayBookings", todayBookings.getBookings());
 
         return "admin/facilities/bookings/dashboard";

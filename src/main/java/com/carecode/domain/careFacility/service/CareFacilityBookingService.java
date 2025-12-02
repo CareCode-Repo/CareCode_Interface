@@ -2,7 +2,9 @@ package com.carecode.domain.careFacility.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.careFacility.dto.CareFacilityBookingDto;
+import com.carecode.domain.careFacility.dto.response.BookingResponse;
+import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
+import com.carecode.domain.careFacility.dto.request.UpdateBookingRequest;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.careFacility.entity.CareFacilityBooking;
 import com.carecode.domain.careFacility.repository.CareFacilityBookingRepository;
@@ -41,7 +43,7 @@ public class CareFacilityBookingService {
      */
     @LogExecutionTime
     @Transactional
-    public CareFacilityBookingDto.BookingResponse createBooking(Long facilityId, CareFacilityBookingDto.CreateBookingRequest request, UserDetails userDetails) {
+    public BookingResponse createBooking(Long facilityId, CreateBookingRequest request, UserDetails userDetails) {
         // 시설 조회
         CareFacility careFacility = careFacilityRepository.findById(facilityId)
                 .orElseThrow(() -> new CareServiceException("시설을 찾을 수 없습니다: " + facilityId));
@@ -84,7 +86,7 @@ public class CareFacilityBookingService {
      * 예약 조회
      */
     @LogExecutionTime
-    public CareFacilityBookingDto.BookingResponse getBookingById(Long bookingId, UserDetails userDetails) {
+    public BookingResponse getBookingById(Long bookingId, UserDetails userDetails) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
 
@@ -100,39 +102,27 @@ public class CareFacilityBookingService {
      * 사용자별 예약 목록 조회
      */
     @LogExecutionTime
-    public List<CareFacilityBookingDto.BookingResponse> getUserBookings(UserDetails userDetails) {
-        try {
-            User user = userRepository.findByUserId(userDetails.getUsername())
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userDetails.getUsername()));
+    public List<BookingResponse> getUserBookings(UserDetails userDetails) {
+        User user = userRepository.findByUserId(userDetails.getUsername())
+                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userDetails.getUsername()));
 
-            List<CareFacilityBooking> bookings = bookingRepository.findByUserIdOrderByStartTimeDesc(user.getUserId());
+        List<CareFacilityBooking> bookings = bookingRepository.findByUserIdOrderByStartTimeDesc(user.getUserId());
 
-            return bookings.stream()
-                    .map(this::convertToDto)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("사용자별 예약 목록 조회 실패: {}", e.getMessage(), e);
-            throw new CareServiceException("예약 목록 조회 중 오류가 발생했습니다.", e);
-        }
+        return bookings.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     /**
      * 시설별 예약 목록 조회
      */
     @LogExecutionTime
-    public List<CareFacilityBookingDto.BookingResponse> getFacilityBookings(Long facilityId) {
-        log.info("시설별 예약 목록 조회: 시설ID={}", facilityId);
-        
-        try {
-            List<CareFacilityBooking> bookings = bookingRepository.findByFacilityIdOrderByStartTimeAsc(facilityId);
-            
-            return bookings.stream()
-                    .map(this::convertToDto)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("시설별 예약 목록 조회 실패: {}", e.getMessage(), e);
-            throw new CareServiceException("예약 목록 조회 중 오류가 발생했습니다.", e);
-        }
+    public List<BookingResponse> getFacilityBookings(Long facilityId) {
+        List<CareFacilityBooking> bookings = bookingRepository.findByFacilityIdOrderByStartTimeAsc(facilityId);
+
+        return bookings.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -140,7 +130,7 @@ public class CareFacilityBookingService {
      */
     @LogExecutionTime
     @Transactional
-    public CareFacilityBookingDto.BookingResponse updateBookingStatus(Long bookingId, String status, UserDetails userDetails) {
+    public BookingResponse updateBookingStatus(Long bookingId, String status, UserDetails userDetails) {
             CareFacilityBooking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
             
@@ -193,7 +183,7 @@ public class CareFacilityBookingService {
      */
     @LogExecutionTime
     @Transactional
-    public CareFacilityBookingDto.BookingResponse updateBooking(Long bookingId, CareFacilityBookingDto.UpdateBookingRequest request, UserDetails userDetails) {
+    public BookingResponse updateBooking(Long bookingId, UpdateBookingRequest request, UserDetails userDetails) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
 
@@ -234,36 +224,24 @@ public class CareFacilityBookingService {
      * 오늘 예약 목록 조회
      */
     @LogExecutionTime
-    public List<CareFacilityBookingDto.BookingResponse> getTodayBookings() {
-        try {
-            List<CareFacilityBooking> bookings = bookingRepository.findTodayBookings();
-            
-            return bookings.stream()
-                    .map(this::convertToDto)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("오늘 예약 목록 조회 실패: {}", e.getMessage(), e);
-            throw new CareServiceException("오늘 예약 목록 조회 중 오류가 발생했습니다.", e);
-        }
+    public List<BookingResponse> getTodayBookings() {
+        List<CareFacilityBooking> bookings = bookingRepository.findTodayBookings();
+
+        return bookings.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     /**
      * 시설별 오늘 예약 목록 조회
      */
     @LogExecutionTime
-    public List<CareFacilityBookingDto.BookingResponse> getTodayBookingsByFacility(Long facilityId) {
-        log.info("시설별 오늘 예약 목록 조회: 시설ID={}", facilityId);
-        
-        try {
-            List<CareFacilityBooking> bookings = bookingRepository.findTodayBookingsByFacility(facilityId);
-            
-            return bookings.stream()
-                    .map(this::convertToDto)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("시설별 오늘 예약 목록 조회 실패: {}", e.getMessage(), e);
-            throw new CareServiceException("시설별 오늘 예약 목록 조회 중 오류가 발생했습니다.", e);
-        }
+    public List<BookingResponse> getTodayBookingsByFacility(Long facilityId) {
+        List<CareFacilityBooking> bookings = bookingRepository.findTodayBookingsByFacility(facilityId);
+
+        return bookings.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -274,8 +252,7 @@ public class CareFacilityBookingService {
         LocalDateTime startTime = scheduledDateTime.minusHours(1);
         LocalDateTime endTime = scheduledDateTime.plusHours(1);
         
-        List<CareFacilityBooking> conflictingBookings = bookingRepository
-                .findByFacilityIdAndStartTimeBetween(facilityId, startTime, endTime);
+        List<CareFacilityBooking> conflictingBookings = bookingRepository.findByFacilityIdAndStartTimeBetween(facilityId, startTime, endTime);
         
         if (!conflictingBookings.isEmpty()) {
             throw new CareServiceException("해당 시간에 이미 예약이 있습니다. 다른 시간을 선택해주세요.");
@@ -285,8 +262,8 @@ public class CareFacilityBookingService {
     /**
      * DTO 변환
      */
-    private CareFacilityBookingDto.BookingResponse convertToDto(CareFacilityBooking booking) {
-        return CareFacilityBookingDto.BookingResponse.builder()
+    private BookingResponse convertToDto(CareFacilityBooking booking) {
+        return BookingResponse.builder()
                 .id(booking.getId())
                 .facilityId(booking.getFacility().getId())
                 .facilityName(booking.getFacility().getName())

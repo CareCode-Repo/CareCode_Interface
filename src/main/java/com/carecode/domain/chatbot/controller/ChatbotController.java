@@ -4,8 +4,12 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.chatbot.dto.ChatbotRequestDto;
-import com.carecode.domain.chatbot.dto.ChatbotResponseDto;
+import com.carecode.domain.chatbot.dto.request.ChatbotRequestDto;
+import com.carecode.domain.chatbot.dto.request.ChatbotMessageRequest;
+import com.carecode.domain.chatbot.dto.response.ChatbotMessageResponse;
+import com.carecode.domain.chatbot.dto.response.ChatbotChatHistoryDtoResponse;
+import com.carecode.domain.chatbot.dto.response.ChatbotSessionDtoResponse;
+import com.carecode.domain.chatbot.dto.response.ChatbotFeedbackDtoResponse;
 import com.carecode.domain.chatbot.service.ChatbotService;
 import com.carecode.domain.chatbot.app.ChatbotFacade;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,12 +47,12 @@ public class ChatbotController extends BaseController {
     @PostMapping("/chat")
     @LogExecutionTime
     @Operation(summary = "챗봇 메시지 전송", description = "챗봇과 대화를 시작합니다.")
-    public ResponseEntity<ChatbotResponseDto> sendMessage(
-            @Parameter(description = "챗봇 요청 정보", required = true) @RequestBody ChatbotRequestDto.ChatbotRequest request) {
+    public ResponseEntity<ChatbotMessageResponse> sendMessage(
+            @Parameter(description = "챗봇 요청 정보", required = true) @RequestBody ChatbotMessageRequest request) {
         log.info("챗봇 메시지 전송: 사용자ID={}, 메시지={}", request.getUserId(), request.getMessage());
         
         try {
-            ChatbotResponseDto response = chatbotFacade.processMessage(request);
+            ChatbotMessageResponse response = chatbotFacade.processMessage(request);
             return ResponseEntity.ok(response);
         } catch (CareServiceException e) {
             log.error("챗봇 처리 오류: {}", e.getMessage());
@@ -65,7 +69,7 @@ public class ChatbotController extends BaseController {
     @GetMapping("/history")
     @LogExecutionTime
     @Operation(summary = "대화 기록 조회", description = "사용자의 챗봇 대화 기록을 조회합니다.")
-    public ResponseEntity<List<ChatbotResponseDto.ChatHistoryResponse>> getChatHistory(
+    public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> getChatHistory(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "세션 ID") @RequestParam(required = false) String sessionId,
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") int page,
@@ -73,7 +77,7 @@ public class ChatbotController extends BaseController {
         log.info("대화 기록 조회: 사용자ID={}, 세션ID={}, 페이지={}, 크기={}", userId, sessionId, page, size);
         
         try {
-            List<ChatbotResponseDto.ChatHistoryResponse> history = chatbotFacade.getChatHistory(userId, sessionId, page, size);
+            List<ChatbotChatHistoryDtoResponse> history = chatbotFacade.getChatHistory(userId, sessionId, page, size);
             return ResponseEntity.ok(history);
         } catch (CareServiceException e) {
             log.error("대화 기록 조회 오류: {}", e.getMessage());
@@ -87,14 +91,14 @@ public class ChatbotController extends BaseController {
     @GetMapping("/sessions")
     @LogExecutionTime
     @Operation(summary = "세션 목록 조회", description = "사용자의 챗봇 세션 목록을 조회합니다.")
-    public ResponseEntity<List<ChatbotResponseDto.SessionResponse>> getSessions(
+    public ResponseEntity<List<ChatbotSessionDtoResponse>> getSessions(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
         log.info("세션 목록 조회: 사용자ID={}, 페이지={}, 크기={}", userId, page, size);
         
         try {
-            List<ChatbotResponseDto.SessionResponse> sessions = chatbotFacade.getSessions(userId, page, size);
+            List<ChatbotSessionDtoResponse> sessions = chatbotFacade.getSessions(userId, page, size);
             return ResponseEntity.ok(sessions);
         } catch (CareServiceException e) {
             log.error("세션 목록 조회 오류: {}", e.getMessage());
@@ -108,14 +112,14 @@ public class ChatbotController extends BaseController {
     @PostMapping("/feedback")
     @LogExecutionTime
     @Operation(summary = "메시지 피드백 처리", description = "챗봇 메시지에 대한 피드백을 처리합니다.")
-    public ResponseEntity<ChatbotResponseDto.FeedbackResponse> processFeedback(
+    public ResponseEntity<ChatbotFeedbackDtoResponse> processFeedback(
             @Parameter(description = "메시지 ID", required = true) @RequestParam Long messageId,
             @Parameter(description = "도움됨 여부", required = true) @RequestParam boolean isHelpful) {
         log.info("메시지 피드백 처리: 메시지ID={}, 도움됨={}", messageId, isHelpful);
         
         try {
             chatbotFacade.processFeedback(messageId, isHelpful);
-            ChatbotResponseDto.FeedbackResponse response = ChatbotResponseDto.FeedbackResponse.builder()
+            ChatbotFeedbackDtoResponse response = ChatbotFeedbackDtoResponse.builder()
                     .messageId(messageId)
                     .isHelpful(isHelpful)
                     .message("피드백이 성공적으로 처리되었습니다.")

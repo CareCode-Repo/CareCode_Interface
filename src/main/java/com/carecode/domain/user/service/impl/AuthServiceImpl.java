@@ -1,7 +1,11 @@
 package com.carecode.domain.user.service.impl;
 
 import com.carecode.core.util.KakaoUtil;
-import com.carecode.domain.user.dto.KakaoDto;
+import com.carecode.domain.user.dto.response.KakaoOAuthToken;
+import com.carecode.domain.user.dto.response.KakaoProfile;
+import com.carecode.domain.user.dto.response.KakaoAccount;
+import com.carecode.domain.user.dto.response.KakaoProfileInfo;
+import com.carecode.domain.user.dto.response.KakaoProperties;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.UserRepository;
 import com.carecode.domain.user.service.AuthService;
@@ -41,13 +45,13 @@ public class AuthServiceImpl implements AuthService {
             }
             
             // 1. 카카오 액세스 토큰 요청
-            KakaoDto.OAuthToken oAuthToken = kakaoUtil.requestToken(accessCode);
+            KakaoOAuthToken oAuthToken = kakaoUtil.requestToken(accessCode);
             if (oAuthToken == null || oAuthToken.getAccess_token() == null) {
                 throw new RuntimeException("카카오 액세스 토큰을 받지 못했습니다.");
             }
             
             // 2. 카카오 사용자 정보 요청
-            KakaoDto.KakaoProfile kakaoProfile = kakaoUtil.requestProfile(oAuthToken);
+            KakaoProfile kakaoProfile = kakaoUtil.requestProfile(oAuthToken);
             if (kakaoProfile == null || kakaoProfile.getKakao_account() == null) {
                 throw new RuntimeException("카카오 사용자 정보를 받지 못했습니다.");
             }
@@ -134,10 +138,10 @@ public class AuthServiceImpl implements AuthService {
     /**
      * 이메일 추출 (null 안전)
      */
-    private String extractEmail(KakaoDto.KakaoProfile kakaoProfile) {
+    private String extractEmail(KakaoProfile kakaoProfile) {
         try {
             // kakao_account에서 이메일 추출
-            KakaoDto.KakaoProfile.KakaoAccount kakaoAccount = kakaoProfile.getKakao_account();
+            KakaoAccount kakaoAccount = kakaoProfile.getKakao_account();
             if (kakaoAccount != null && kakaoAccount.getEmail() != null) {
                 return kakaoAccount.getEmail();
             }
@@ -152,10 +156,10 @@ public class AuthServiceImpl implements AuthService {
     /**
      * 닉네임 추출 (null 안전)
      */
-    private String extractNickname(KakaoDto.KakaoProfile kakaoProfile) {
+    private String extractNickname(KakaoProfile kakaoProfile) {
         try {
             // 1. kakao_account.profile에서 닉네임 추출
-            KakaoDto.KakaoProfile.KakaoAccount kakaoAccount = kakaoProfile.getKakao_account();
+            KakaoAccount kakaoAccount = kakaoProfile.getKakao_account();
             if (kakaoAccount != null && kakaoAccount.getProfile() != null) {
                 String nickname = kakaoAccount.getProfile().getNickname();
                 if (nickname != null && !nickname.trim().isEmpty()) {
@@ -164,7 +168,7 @@ public class AuthServiceImpl implements AuthService {
             }
             
             // 2. properties에서 닉네임 추출
-            KakaoDto.KakaoProfile.Properties properties = kakaoProfile.getProperties();
+            KakaoProperties properties = kakaoProfile.getProperties();
             if (properties != null && properties.getNickname() != null) {
                 String nickname = properties.getNickname();
                 if (!nickname.trim().isEmpty()) {
@@ -182,7 +186,7 @@ public class AuthServiceImpl implements AuthService {
     /**
      * 신규 사용자 생성
      */
-    private User createNewUser(KakaoDto.KakaoProfile kakaoProfile, String email, String providerId, String nickname) {
+    private User createNewUser(KakaoProfile kakaoProfile, String email, String providerId, String nickname) {
         User newUser = User.builder()
                 .name(nickname) // 카카오 닉네임 사용
                 .email(email)

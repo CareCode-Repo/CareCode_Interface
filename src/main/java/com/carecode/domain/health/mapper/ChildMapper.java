@@ -1,15 +1,16 @@
 package com.carecode.domain.health.mapper;
 
 import com.carecode.core.util.ResponseMapper;
-import com.carecode.domain.health.dto.HealthResponse;
+import com.carecode.domain.health.dto.response.HealthResponse;
+import com.carecode.domain.health.dto.response.ChildInfoResponse;
 import com.carecode.domain.user.entity.Child;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ChildMapper implements ResponseMapper<Child, HealthResponse.Child> {
+public class ChildMapper implements ResponseMapper<Child, ChildInfoResponse> {
     @Override
-    public HealthResponse.Child toResponse(Child child) {
-        return HealthResponse.Child.builder()
+    public ChildInfoResponse toResponse(Child child) {
+        return ChildInfoResponse.builder()
                 .id(child.getId())
                 .userId(child.getUser().getId())
                 .name(child.getName())

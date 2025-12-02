@@ -1,7 +1,7 @@
 package com.carecode.domain.user.mapper;
 
-import com.carecode.domain.user.dto.UserDto;
-import com.carecode.domain.user.dto.UserUpdateRequestDto;
+import com.carecode.domain.user.dto.response.UserDto;
+import com.carecode.domain.user.dto.request.UserUpdateRequestDto;
 import com.carecode.domain.user.entity.User;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;

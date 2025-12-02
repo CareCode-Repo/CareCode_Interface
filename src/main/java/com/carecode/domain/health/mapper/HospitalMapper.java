@@ -1,15 +1,16 @@
 package com.carecode.domain.health.mapper;
 
 import com.carecode.core.util.ResponseMapper;
-import com.carecode.domain.health.dto.HealthResponse;
+import com.carecode.domain.health.dto.response.HealthResponse;
+import com.carecode.domain.health.dto.response.HospitalInfoResponse;
 import com.carecode.domain.health.entity.Hospital;
 import org.springframework.stereotype.Component;
 
 @Component
-public class HospitalMapper implements ResponseMapper<Hospital, HealthResponse.Hospital> {
+public class HospitalMapper implements ResponseMapper<Hospital, HospitalInfoResponse> {
     @Override
-    public HealthResponse.Hospital toResponse(Hospital hospital) {
-        return HealthResponse.Hospital.builder()
+    public HospitalInfoResponse toResponse(Hospital hospital) {
+        return HospitalInfoResponse.builder()
                 .id(hospital.getId())
                 .name(hospital.getName())
                 .type(hospital.getType())

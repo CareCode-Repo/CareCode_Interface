@@ -1,131 +1,19 @@
 package com.carecode.domain.chatbot.dto;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-
 /**
  * 챗봇 응답 DTO들
+ * @deprecated 내부 클래스들이 별도 파일로 분리되었습니다.
+ *             각각의 DTO 클래스를 직접 사용하세요.
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Deprecated
 public class ChatbotResponseDto {
-    
-    private Long messageId;
-    private String response;
-    private String intentType;
-    private Double confidence;
-    private String sessionId;
-    private LocalDateTime timestamp;
-    
-    /**
-     * 대화 기록 응답 DTO
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class ChatHistoryResponse {
-        private Long messageId;
-        private String message;
-        private String response;
-        private String messageType;
-        private String intentType;
-        private Double confidence;
-        private String sessionId;
-        private Boolean isHelpful;
-        private LocalDateTime createdAt;
-    }
-    
-    /**
-     * 세션 응답 DTO
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class SessionResponse {
-        private String sessionId;
-        private String title;
-        private String description;
-        private String status;
-        private Integer messageCount;
-        private LocalDateTime lastActivityAt;
-        private LocalDateTime createdAt;
-    }
-    
-    /**
-     * 피드백 응답 DTO
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class FeedbackResponse {
-        private Long messageId;
-        private Boolean isHelpful;
-        private String message;
-        private LocalDateTime updatedAt;
-    }
-    
-    /**
-     * 관련 정보 DTO
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class RelatedInfoDto {
-        private String title;
-        private String description;
-        private String url;
-        private String category;
-    }
-    
-    /**
-     * 지식 베이스 응답 DTO
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class KnowledgeBaseResponse {
-        private String entryId;
-        private String title;
-        private String content;
-        private String category;
-        private Integer minAge;
-        private Integer maxAge;
-        private Double relevanceScore;
-    }
-    
-    /**
-     * 챗봇 통계 응답 DTO
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class ChatbotStatsResponse {
-        private Integer totalSessions;
-        private Integer activeSessions;
-        private Double averageRating;
-        private Map<String, Integer> categoryDistribution;
-        private Map<String, Integer> ageGroupDistribution;
-    }
-} 
+    // 이 클래스는 더 이상 사용되지 않습니다.
+    // 다음 클래스들을 사용하세요:
+    // - ChatbotMessageResponse (기본 응답)
+    // - ChatbotChatHistoryDtoResponse (ChatHistoryResponse 대신)
+    // - ChatbotSessionDtoResponse (SessionResponse 대신)
+    // - ChatbotFeedbackDtoResponse (FeedbackResponse 대신)
+    // - ChatbotRelatedInfoDtoResponse (RelatedInfoDto 대신)
+    // - ChatbotKnowledgeBaseDtoResponse (KnowledgeBaseResponse 대신)
+    // - ChatbotStatsDtoResponse (ChatbotStatsResponse 대신)
+}

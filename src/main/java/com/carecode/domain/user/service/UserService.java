@@ -3,9 +3,10 @@ package com.carecode.domain.user.service;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.exception.UserNotFoundException;
-import com.carecode.domain.user.dto.LoginRequestDto;
-import com.carecode.domain.user.dto.PasswordChangeRequestDto;
-import com.carecode.domain.user.dto.UserDto;
+import com.carecode.domain.user.dto.request.LoginRequestDto;
+import com.carecode.domain.user.dto.request.PasswordChangeRequestDto;
+import com.carecode.domain.user.dto.response.UserDto;
+import com.carecode.domain.user.dto.response.UserStatsResponse;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -117,8 +118,6 @@ public class UserService {
             headers.set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
             HttpEntity<String> entity = new HttpEntity<>(headers);
             
-            log.info("카카오 API 호출: URL=https://kapi.kakao.com/v2/user/me");
-            log.debug("요청 헤더: {}", headers);
             
             ResponseEntity<Map> response = restTemplate.exchange(
                 "https://kapi.kakao.com/v2/user/me",
@@ -126,8 +125,6 @@ public class UserService {
                 entity,
                 Map.class
             );
-            
-            log.info("카카오 API 응답 상태: {}", response.getStatusCode());
             
             Map<String, Object> body = response.getBody();
             Map<String, Object> userInfo = new HashMap<>();
@@ -172,7 +169,7 @@ public class UserService {
      * 사용자 통계 조회
      */
     @LogExecutionTime
-    public com.carecode.domain.user.dto.UserResponse.UserStats getUserStatistics() {
+    public UserStatsResponse getUserStatistics() {
         List<User> allUsers = userRepository.findAll();
         long totalUsers = allUsers.size();
         long activeUsers = allUsers.stream().filter(u -> Boolean.TRUE.equals(u.getIsActive())).count();
@@ -193,7 +190,7 @@ public class UserService {
                 .filter(u -> u.getCreatedAt() != null && !u.getCreatedAt().isBefore(startOfMonth))
                 .count();
 
-        return com.carecode.domain.user.dto.UserResponse.UserStats.builder()
+        return UserStatsResponse.builder()
                 .totalUsers(totalUsers)
                 .activeUsers(activeUsers)
                 .verifiedUsers(verifiedUsers)

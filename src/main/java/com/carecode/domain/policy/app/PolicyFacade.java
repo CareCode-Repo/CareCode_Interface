@@ -1,8 +1,11 @@
 package com.carecode.domain.policy.app;
 
-import com.carecode.domain.policy.dto.PolicyRequest;
-import com.carecode.domain.policy.dto.PolicyResponse;
+import com.carecode.domain.policy.dto.request.PolicyRequest;
+import com.carecode.domain.policy.dto.request.PolicySearchRequest;
+import com.carecode.domain.policy.dto.response.PolicyResponse;
 import com.carecode.domain.policy.dto.PolicyDto;
+import com.carecode.domain.policy.dto.response.PolicyListResponse;
+import com.carecode.domain.policy.dto.response.PolicyStatsSimpleResponse;
 import com.carecode.domain.policy.service.PolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,7 +26,7 @@ public class PolicyFacade {
     public PolicyDto getPolicyById(Long policyId) { return policyService.getPolicyById(policyId); }
 
     @Transactional(readOnly = true)
-    public PolicyResponse.PolicyList searchPolicies(PolicyRequest.Search request) { return policyService.searchPolicies(request); }
+    public PolicyListResponse searchPolicies(PolicySearchRequest request) { return policyService.searchPolicies(request); }
 
     @Transactional(readOnly = true)
     public List<PolicyDto> getPoliciesByCategory(String category) { return policyService.getPoliciesByCategory(category); }
@@ -47,7 +50,7 @@ public class PolicyFacade {
     public List<String> getPolicyCategories() { return policyService.getPolicyCategories(); }
 
     @Transactional(readOnly = true)
-    public PolicyResponse.Stats getPolicyStats() { return policyService.getPolicyStats(); }
+    public PolicyStatsSimpleResponse getPolicyStats() { return policyService.getPolicyStats(); }
 }
 
 

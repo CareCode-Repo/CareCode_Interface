@@ -1,6 +1,7 @@
 package com.carecode.domain.user.service;
 
-import com.carecode.domain.user.dto.TokenDto;
+import com.carecode.domain.user.dto.response.TokenDto;
+import com.carecode.domain.user.dto.response.TokenValidationResponse;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -171,10 +172,10 @@ public class JwtService {
     /**
      * 토큰 검증 및 정보 추출
      */
-    public TokenDto.TokenValidationResponse validateTokenAndExtractInfo(String token) {
+    public TokenValidationResponse validateTokenAndExtractInfo(String token) {
         try {
             if (!validateToken(token)) {
-                return TokenDto.TokenValidationResponse.builder()
+                return TokenValidationResponse.builder()
                         .valid(false)
                         .message("유효하지 않은 토큰입니다.")
                         .build();

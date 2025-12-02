@@ -1,8 +1,13 @@
 package com.carecode.domain.careFacility.app;
 
-import com.carecode.domain.careFacility.dto.CareFacilityBookingDto;
-import com.carecode.domain.careFacility.dto.CareFacilityRequest;
-import com.carecode.domain.careFacility.dto.CareFacilityResponse;
+import com.carecode.domain.careFacility.dto.response.BookingResponse;
+import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
+import com.carecode.domain.careFacility.dto.request.UpdateBookingRequest;
+import com.carecode.domain.careFacility.dto.request.CareFacilityRequest;
+import com.carecode.domain.careFacility.dto.request.CareFacilitySearchRequest;
+import com.carecode.domain.careFacility.dto.response.CareFacilityInfo;
+import com.carecode.domain.careFacility.dto.response.CareFacilityListResponse;
+import com.carecode.domain.careFacility.dto.response.CareFacilityStatsResponse;
 import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.service.CareFacilityBookingService;
 import com.carecode.domain.careFacility.service.CareFacilityService;
@@ -21,52 +26,52 @@ public class CareFacilityFacade {
     private final CareFacilityBookingService bookingService;
 
     @Transactional(readOnly = true)
-    public List<CareFacilityResponse.CareFacility> getAllCareFacilities() {
+    public List<CareFacilityInfo> getAllCareFacilities() {
         return careFacilityService.getAllCareFacilities();
     }
 
     @Transactional(readOnly = true)
-    public CareFacilityResponse.CareFacility getCareFacilityById(Long id) {
+    public CareFacilityInfo getCareFacilityById(Long id) {
         return careFacilityService.getCareFacilityById(id);
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityResponse.CareFacility> getCareFacilitiesByType(FacilityType facilityType) {
+    public List<CareFacilityInfo> getCareFacilitiesByType(FacilityType facilityType) {
         return careFacilityService.getCareFacilitiesByType(facilityType);
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityResponse.CareFacility> getCareFacilitiesByLocation(String location) {
+    public List<CareFacilityInfo> getCareFacilitiesByLocation(String location) {
         return careFacilityService.getCareFacilitiesByLocation(location);
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityResponse.CareFacility> getCareFacilitiesByAgeRange(Integer minAge, Integer maxAge) {
+    public List<CareFacilityInfo> getCareFacilitiesByAgeRange(Integer minAge, Integer maxAge) {
         return careFacilityService.getCareFacilitiesByAgeRange(minAge, maxAge);
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityResponse.CareFacility> getCareFacilitiesByOperatingHours(String operatingHours) {
+    public List<CareFacilityInfo> getCareFacilitiesByOperatingHours(String operatingHours) {
         return careFacilityService.getCareFacilitiesByOperatingHours(operatingHours);
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityResponse.CareFacility> getPopularCareFacilities(Integer limit) {
+    public List<CareFacilityInfo> getPopularCareFacilities(Integer limit) {
         return careFacilityService.getPopularCareFacilities(limit);
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityResponse.CareFacility> getNewCareFacilities(Integer limit) {
+    public List<CareFacilityInfo> getNewCareFacilities(Integer limit) {
         return careFacilityService.getNewCareFacilities(limit);
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityResponse.CareFacility> getCareFacilitiesWithinRadius(Double lat, Double lon, Double radius) {
+    public List<CareFacilityInfo> getCareFacilitiesWithinRadius(Double lat, Double lon, Double radius) {
         return careFacilityService.getCareFacilitiesWithinRadius(lat, lon, radius);
     }
 
     @Transactional(readOnly = true)
-    public CareFacilityResponse.CareFacilityList searchCareFacilities(CareFacilityRequest.Search request) {
+    public CareFacilityListResponse searchCareFacilities(CareFacilitySearchRequest request) {
         return careFacilityService.searchCareFacilities(request);
     }
 
@@ -81,32 +86,32 @@ public class CareFacilityFacade {
     }
 
     @Transactional(readOnly = true)
-    public CareFacilityResponse.CareFacilityStats getFacilityStats() {
+    public CareFacilityStatsResponse getFacilityStats() {
         return careFacilityService.getFacilityStats();
     }
 
     @Transactional
-    public CareFacilityBookingDto.BookingResponse createBooking(Long facilityId, CareFacilityBookingDto.CreateBookingRequest request, UserDetails userDetails) {
+    public BookingResponse createBooking(Long facilityId, CreateBookingRequest request, UserDetails userDetails) {
         return bookingService.createBooking(facilityId, request, userDetails);
     }
 
     @Transactional(readOnly = true)
-    public CareFacilityBookingDto.BookingResponse getBookingById(Long bookingId, UserDetails userDetails) {
+    public BookingResponse getBookingById(Long bookingId, UserDetails userDetails) {
         return bookingService.getBookingById(bookingId, userDetails);
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityBookingDto.BookingResponse> getUserBookings(UserDetails userDetails) {
+    public List<BookingResponse> getUserBookings(UserDetails userDetails) {
         return bookingService.getUserBookings(userDetails);
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityBookingDto.BookingResponse> getFacilityBookings(Long facilityId) {
+    public List<BookingResponse> getFacilityBookings(Long facilityId) {
         return bookingService.getFacilityBookings(facilityId);
     }
 
     @Transactional
-    public CareFacilityBookingDto.BookingResponse updateBookingStatus(Long bookingId, String status, UserDetails userDetails) {
+    public BookingResponse updateBookingStatus(Long bookingId, String status, UserDetails userDetails) {
         return bookingService.updateBookingStatus(bookingId, status, userDetails);
     }
 
@@ -116,17 +121,17 @@ public class CareFacilityFacade {
     }
 
     @Transactional
-    public CareFacilityBookingDto.BookingResponse updateBooking(Long bookingId, CareFacilityBookingDto.UpdateBookingRequest request, UserDetails userDetails) {
+    public BookingResponse updateBooking(Long bookingId, UpdateBookingRequest request, UserDetails userDetails) {
         return bookingService.updateBooking(bookingId, request, userDetails);
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityBookingDto.BookingResponse> getTodayBookings() {
+    public List<BookingResponse> getTodayBookings() {
         return bookingService.getTodayBookings();
     }
 
     @Transactional(readOnly = true)
-    public List<CareFacilityBookingDto.BookingResponse> getTodayBookingsByFacility(Long facilityId) {
+    public List<BookingResponse> getTodayBookingsByFacility(Long facilityId) {
         return bookingService.getTodayBookingsByFacility(facilityId);
     }
 }
