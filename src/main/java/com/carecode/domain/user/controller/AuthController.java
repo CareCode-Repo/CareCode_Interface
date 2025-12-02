@@ -1,6 +1,7 @@
 package com.carecode.domain.user.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.annotation.RateLimit;
 import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.domain.user.dto.request.LoginRequestDto;
@@ -13,23 +14,16 @@ import com.carecode.domain.user.service.EmailVerificationService;
 import com.carecode.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import com.carecode.core.handler.ApiSuccess;
 
 /**
@@ -55,128 +49,94 @@ public class AuthController extends BaseController {
      * 일반 로그인
      */
     @PostMapping("/login")
-    @LogExecutionTime
+    @LogExecutionTime(warnThreshold = 1000)
+    @RateLimit(requests = 5, windowSeconds = 60, message = "로그인 시도 횟수를 초과했습니다. 1분 후 다시 시도해주세요.")
     @Operation(summary = "일반 로그인", description = "이메일과 비밀번호로 로그인합니다.")
-    public ResponseEntity<TokenDto> login(@Parameter(description = "로그인 정보", required = true)
-                                              @Valid @RequestBody LoginRequestDto request) {
-        try {
-            User userEntity = userService.getUserEntityByEmail(request.getEmail());
-            
-            // 비밀번호 검증
-            if (!passwordEncoder.matches(request.getPassword(), userEntity.getPassword())) {
-                log.warn("로그인 실패: 비밀번호 불일치 - 이메일={}", request.getEmail());
-                return ResponseEntity.status(401).body(TokenDto.builder()
-                        .success(false)
-                        .message("비밀번호가 일치하지 않습니다.")
-                        .build());
-            }
-            
-            // 사용자 활성 상태 확인
-            if (!userEntity.getIsActive()) {
-                log.warn("로그인 실패: 비활성 사용자 - 이메일={}", request.getEmail());
-                return ResponseEntity.status(401).body(TokenDto.builder()
-                        .success(false)
-                        .message("비활성화된 사용자입니다.")
-                        .build());
-            }
-            
-            // 마지막 로그인 시간 업데이트
-            userEntity.setLastLoginAt(LocalDateTime.now());
-            userEntity.setUpdatedAt(LocalDateTime.now());
-            userService.saveUser(userEntity);
-            
-            // JWT 토큰 생성
-            String accessToken = jwtService.generateAccessToken(
-                userEntity.getUserId(), 
-                userEntity.getEmail(), 
-                userEntity.getRole().name(),
-                userEntity.getName() // name 포함
-            );
-            
-            String refreshToken = jwtService.generateRefreshToken(
-                userEntity.getUserId(), 
-                userEntity.getEmail()
-            );
-            
-            TokenDto tokenDto = TokenDto.builder()
-                    .success(true)
-                    .message("로그인 성공!")
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .tokenType("Bearer")
-                    .expiresIn(3600000L)
-                    .refreshExpiresIn(2592000000L)
-                    .user(userService.convertToDto(userEntity))
-                    .build();
-            
-            return ResponseEntity.ok(tokenDto);
+    public ResponseEntity<TokenDto> login(@Parameter(description = "로그인 정보", required = true) @Valid @RequestBody LoginRequestDto request) {
+        User userEntity = userService.getUserEntityByEmail(request.getEmail());
 
-        } catch (UserNotFoundException e) {
-            log.warn("로그인 실패: 사용자를 찾을 수 없음 - 이메일={}", request.getEmail());
+        // 비밀번호 검증
+        if (!passwordEncoder.matches(request.getPassword(), userEntity.getPassword())) {
+            log.warn("로그인 실패: 비밀번호 불일치 - 이메일={}", request.getEmail());
             return ResponseEntity.status(401).body(TokenDto.builder()
                     .success(false)
-                    .message("이메일 또는 비밀번호가 올바르지 않습니다.")
-                    .build());
-        } catch (Exception e) {
-            log.error("로그인 처리 중 오류: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(TokenDto.builder()
-                    .success(false)
-                    .message("로그인 처리 중 오류가 발생했습니다.")
+                    .message("비밀번호가 일치하지 않습니다.")
                     .build());
         }
+
+        // 사용자 활성 상태 확인
+        if (!userEntity.getIsActive()) {
+            log.warn("로그인 실패: 비활성 사용자 - 이메일={}", request.getEmail());
+            return ResponseEntity.status(401).body(TokenDto.builder()
+                    .success(false)
+                    .message("비활성화된 사용자입니다.")
+                    .build());
+        }
+
+        // 마지막 로그인 시간 업데이트
+        userEntity.setLastLoginAt(LocalDateTime.now());
+        userEntity.setUpdatedAt(LocalDateTime.now());
+        userService.saveUser(userEntity);
+
+        // JWT 토큰 생성
+        String accessToken = jwtService.generateAccessToken(
+            userEntity.getUserId(),
+            userEntity.getEmail(),
+            userEntity.getRole().name(),
+            userEntity.getName() // name 포함
+        );
+
+        String refreshToken = jwtService.generateRefreshToken(
+            userEntity.getUserId(),
+            userEntity.getEmail()
+        );
+
+        TokenDto tokenDto = TokenDto.builder()
+                .success(true)
+                .message("로그인 성공!")
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(3600000L)
+                .refreshExpiresIn(2592000000L)
+                .user(userService.convertToDto(userEntity))
+                .build();
+
+        return ResponseEntity.ok(tokenDto);
     }
 
-    /**
-     * 회원가입
-     */
+    // 회원가입
     @PostMapping("/register")
     @LogExecutionTime
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
-    public ResponseEntity<TokenDto> register(@Parameter(description = "회원가입 정보", required = true)
-                                                 @Valid @RequestBody UserDto request) {
+    public ResponseEntity<TokenDto> register(@Parameter(description = "회원가입 정보", required = true) @Valid @RequestBody UserDto request) {
+        UserDto createdUser = userService.createUser(request);
 
-        try {
-            UserDto createdUser = userService.createUser(request);
-            
-            // JWT 토큰 생성
-            String accessToken = jwtService.generateAccessToken(
-                createdUser.getUserId(), 
-                createdUser.getEmail(), 
-                createdUser.getRole(),
-                createdUser.getName() // name 포함
-            );
-            
-            String refreshToken = jwtService.generateRefreshToken(
-                createdUser.getUserId(), 
-                createdUser.getEmail()
-            );
-            
-            TokenDto tokenDto = TokenDto.builder()
-                    .success(true)
-                    .message("회원가입 성공!")
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .tokenType("Bearer")
-                    .expiresIn(3600000L)
-                    .refreshExpiresIn(2592000000L)
-                    .user(createdUser)
-                    .build();
-            
-            return ResponseEntity.ok(tokenDto);
-            
-        } catch (IllegalArgumentException e) {
-            log.warn("회원가입 실패: {}", e.getMessage());
-            return ResponseEntity.status(400).body(TokenDto.builder()
-                    .success(false)
-                    .message(e.getMessage())
-                    .build());
-        } catch (Exception e) {
-            log.error("회원가입 처리 중 오류: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(TokenDto.builder()
-                    .success(false)
-                    .message("회원가입 처리 중 오류가 발생했습니다.")
-                    .build());
-        }
+        // JWT 토큰 생성
+        String accessToken = jwtService.generateAccessToken(
+            createdUser.getUserId(),
+            createdUser.getEmail(),
+            createdUser.getRole(),
+            createdUser.getName() // name 포함
+        );
+
+        String refreshToken = jwtService.generateRefreshToken(
+            createdUser.getUserId(),
+            createdUser.getEmail()
+        );
+
+        TokenDto tokenDto = TokenDto.builder()
+                .success(true)
+                .message("회원가입 성공!")
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(3600000L)
+                .refreshExpiresIn(2592000000L)
+                .user(createdUser)
+                .build();
+
+        return ResponseEntity.ok(tokenDto);
     }
 
     // ==================== 토큰 관리 ====================
@@ -187,11 +147,9 @@ public class AuthController extends BaseController {
     @PostMapping("/refresh")
     @LogExecutionTime
     @Operation(summary = "토큰 갱신", description = "Refresh Token을 사용하여 새로운 Access Token을 발급합니다.")
-    public ResponseEntity<TokenDto> refreshToken(@Parameter(description = "토큰 갱신 정보", required = true)
-                                                     @Valid @RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<TokenDto> refreshToken(@Parameter(description = "토큰 갱신 정보", required = true) @Valid @RequestBody RefreshTokenRequest request) {
 
         if (!jwtService.validateToken(request.getRefreshToken())) {
-            log.warn("토큰 갱신 실패: 유효하지 않은 Refresh Token");
             return ResponseEntity.status(401).body(TokenDto.builder()
                     .success(false)
                     .message("유효하지 않은 Refresh Token입니다.")
@@ -227,9 +185,7 @@ public class AuthController extends BaseController {
 
     // ==================== 이메일 인증 ====================
 
-    /**
-     * 이메일 인증 토큰 검증
-     */
+    // 이메일 인증 토큰 검증
     @GetMapping("/verify")
     @LogExecutionTime
     @Operation(summary = "이메일 인증", description = "이메일 인증 토큰을 검증합니다.")
@@ -239,9 +195,7 @@ public class AuthController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.of(message));
     }
 
-    /**
-     * 인증 코드 발송
-     */
+    // 인증 코드 발송
     @PostMapping("/send-code")
     @LogExecutionTime
     @Operation(summary = "이메일 인증 코드 발송", description = "해당 이메일로 인증 코드를 발송합니다.")
@@ -250,9 +204,7 @@ public class AuthController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.of("인증 코드가 발송되었습니다."));
     }
 
-    /**
-     * 인증 코드 검증
-     */
+    // 인증 코드 검증
     @PostMapping("/verify-code")
     @LogExecutionTime
     @Operation(summary = "이메일 인증 코드 검증", description = "발송된 인증 코드를 검증합니다.")
@@ -264,9 +216,7 @@ public class AuthController extends BaseController {
 
     // ==================== 유틸리티 메서드 ====================
 
-    /**
-     * 현재 로그인한 사용자의 이메일을 JWT 토큰에서 추출
-     */
+    // 현재 로그인한 사용자의 이메일을 JWT 토큰에서 추출
     private String getCurrentUserEmail(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
 

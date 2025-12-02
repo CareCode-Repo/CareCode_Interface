@@ -7,6 +7,7 @@ import com.carecode.domain.user.dto.response.KakaoAccount;
 import com.carecode.domain.user.dto.response.KakaoProfileInfo;
 import com.carecode.domain.user.dto.response.KakaoProperties;
 import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.entity.UserRole;
 import com.carecode.domain.user.repository.UserRepository;
 import com.carecode.domain.user.service.AuthService;
 import com.carecode.domain.user.service.JwtService;
@@ -190,7 +191,7 @@ public class AuthServiceImpl implements AuthService {
         User newUser = User.builder()
                 .name(nickname) // 카카오 닉네임 사용
                 .email(email)
-                .role(User.UserRole.PARENT) // 기본 역할 (나중에 변경 가능)
+                .role(UserRole.PARENT) // 기본 역할 (나중에 변경 가능)
                 .provider("kakao")
                 .providerId(providerId)
                 .password(null) // 카카오 사용자는 비밀번호 불필요
