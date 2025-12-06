@@ -1,7 +1,7 @@
 package com.carecode.domain.policy.mapper;
 
 import com.carecode.core.util.ResponseMapper;
-import com.carecode.domain.policy.dto.PolicyDto;
+import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.entity.Policy;
 import org.springframework.stereotype.Component;
 

@@ -3,7 +3,7 @@ package com.carecode.domain.policy.app;
 import com.carecode.domain.policy.dto.request.PolicyRequest;
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
 import com.carecode.domain.policy.dto.response.PolicyResponse;
-import com.carecode.domain.policy.dto.PolicyDto;
+import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.dto.response.PolicyListResponse;
 import com.carecode.domain.policy.dto.response.PolicyStatsSimpleResponse;
 import com.carecode.domain.policy.service.PolicyService;
@@ -51,6 +51,12 @@ public class PolicyFacade {
 
     @Transactional(readOnly = true)
     public PolicyStatsSimpleResponse getPolicyStats() { return policyService.getPolicyStats(); }
+
+    @Transactional(readOnly = true)
+    public List<PolicyDto> getPoliciesByChildAge(Integer childAge) { return policyService.getPoliciesByChildAge(childAge); }
+
+    @Transactional(readOnly = true)
+    public List<PolicyDto> getActivePoliciesByDate() { return policyService.getActivePoliciesByDate(); }
 }
 
 

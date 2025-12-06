@@ -5,7 +5,7 @@ import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.PolicyNotFoundException;
-import com.carecode.domain.policy.dto.PolicyDto;
+import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.dto.request.PolicyRequest;
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
 import com.carecode.domain.policy.dto.response.PolicyResponse;
@@ -295,6 +295,43 @@ public class PolicyController extends BaseController {
             return ResponseEntity.ok(stats);
         } catch (CareServiceException e) {
             log.error("정책 통계 조회 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 아이 연령별 정책 조회
+     */
+    @GetMapping("/child-age")
+    @LogExecutionTime
+    @Operation(summary = "아이 연령별 정책 조회", description = "특정 연령의 아이에게 해당하는 정책을 조회합니다.")
+    public ResponseEntity<List<PolicyDto>> getPoliciesByChildAge(
+            @Parameter(description = "아이 연령", required = true) @RequestParam Integer childAge) {
+        log.info("아이 연령별 정책 조회: 아이 연령={}", childAge);
+        
+        try {
+            List<PolicyDto> policies = policyFacade.getPoliciesByChildAge(childAge);
+            return ResponseEntity.ok(policies);
+        } catch (CareServiceException e) {
+            log.error("아이 연령별 정책 조회 오류: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 신청 기간이 유효한 정책 조회
+     */
+    @GetMapping("/active")
+    @LogExecutionTime
+    @Operation(summary = "신청 기간이 유효한 정책 조회", description = "현재 신청 기간 내에 있는 정책을 조회합니다.")
+    public ResponseEntity<List<PolicyDto>> getActivePoliciesByDate() {
+        log.info("신청 기간이 유효한 정책 조회");
+        
+        try {
+            List<PolicyDto> policies = policyFacade.getActivePoliciesByDate();
+            return ResponseEntity.ok(policies);
+        } catch (CareServiceException e) {
+            log.error("신청 기간이 유효한 정책 조회 오류: {}", e.getMessage());
             throw e;
         }
     }
