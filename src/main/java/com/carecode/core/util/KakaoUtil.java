@@ -1,7 +1,7 @@
 package com.carecode.core.util;
 
-import com.carecode.domain.user.dto.KakaoOAuthToken;
-import com.carecode.domain.user.dto.KakaoProfile;
+import com.carecode.domain.user.dto.response.KakaoOAuthToken;
+import com.carecode.domain.user.dto.response.KakaoProfile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
