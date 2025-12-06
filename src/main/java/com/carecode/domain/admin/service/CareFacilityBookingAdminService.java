@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 
 /**
  * 관리자용 육아 시설 예약 서비스 클래스
- * 관리자 전용 예약 관리 기능을 제공
  */
 @Slf4j
 @Service
@@ -43,9 +42,7 @@ public class CareFacilityBookingAdminService {
     private final CareFacilityBookingRepository bookingRepository;
     private final UserRepository userRepository;
 
-    /**
-     * 전체 예약 목록 조회 (페이징)
-     */
+    // 전체 예약 목록 조회 (페이징)
     @LogExecutionTime
     public AdminBookingSearchResponse getAllBookings(
         AdminBookingSearchRequest request) {
@@ -74,9 +71,7 @@ public class CareFacilityBookingAdminService {
                     
     }
 
-    /**
-     * 조건별 예약 검색
-     */
+    // 조건별 예약 검색
     @LogExecutionTime
     public AdminBookingSearchResponse searchBookings(AdminBookingSearchRequest request) {
 
@@ -132,9 +127,7 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 예약 상세 조회
-     */
+    // 예약 상세 조회
     @LogExecutionTime
     public AdminBookingDetailResponse getBookingDetail(Long bookingId) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
@@ -143,9 +136,7 @@ public class CareFacilityBookingAdminService {
         return convertToAdminDetailResponse(booking);
     }
 
-    /**
-     * 예약 상태 변경
-     */
+    // 예약 상태 변경
     @LogExecutionTime
     @Transactional
     public AdminBookingDetailResponse updateBookingStatus(Long bookingId,
@@ -166,9 +157,7 @@ public class CareFacilityBookingAdminService {
             return convertToAdminDetailResponse(savedBooking);
     }
 
-    /**
-     * 예약 삭제
-     */
+    // 예약 삭제
     @LogExecutionTime
     @Transactional
     public void deleteBooking(Long bookingId) {
@@ -178,9 +167,7 @@ public class CareFacilityBookingAdminService {
         bookingRepository.delete(booking);
     }
 
-    /**
-     * 예약 통계 조회
-     */
+    // 예약 통계 조회
     @LogExecutionTime
     public AdminBookingStatsResponse getBookingStats() {
         // 전체 통계
@@ -228,9 +215,7 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 상태별 분포 조회
-     */
+    // 상태별 분포 조회
     private List<StatusDistribution> getStatusDistribution() {
         long total = bookingRepository.count();
         if (total == 0) return List.of();
@@ -243,9 +228,7 @@ public class CareFacilityBookingAdminService {
         );
     }
 
-    /**
-     * 타입별 분포 조회
-     */
+    // 타입별 분포 조회
     private List<TypeDistribution> getTypeDistribution() {
         long total = bookingRepository.count();
         if (total == 0) return List.of();
@@ -257,9 +240,7 @@ public class CareFacilityBookingAdminService {
         );
     }
 
-    /**
-     * 시설별 분포 조회
-     */
+    // 시설별 분포 조회
     private List<FacilityDistribution> getFacilityDistribution() {
         List<Object[]> facilityStats = bookingRepository.getFacilityBookingStats();
         long total = bookingRepository.count();
@@ -274,9 +255,7 @@ public class CareFacilityBookingAdminService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 일별 예약 수 조회
-     */
+    // 일별 예약 수 조회
     private List<DailyBookingCount> getDailyBookingCounts() {
         List<Object[]> dailyStats = bookingRepository.getDailyBookingCounts();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -289,9 +268,7 @@ public class CareFacilityBookingAdminService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 상태별 분포 생성
-     */
+    // 상태별 분포 생성
     private StatusDistribution createStatusDistribution(String status, String display, long count, long total) {
         return StatusDistribution.builder()
                 .status(status)
@@ -301,9 +278,7 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 타입별 분포 생성
-     */
+    // 타입별 분포 생성
     private TypeDistribution createTypeDistribution(String type, String display, long count, long total) {
         return TypeDistribution.builder()
                 .bookingType(type)
@@ -313,9 +288,7 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 관리자용 목록 응답 변환
-     */
+    // 관리자용 목록 응답 변환
     private AdminBookingListResponse convertToAdminListResponse(CareFacilityBooking booking) {
         return AdminBookingListResponse.builder()
                 .id(booking.getId())
@@ -332,9 +305,7 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 관리자용 상세 응답 변환
-     */
+    // 관리자용 상세 응답 변환
     private AdminBookingDetailResponse convertToAdminDetailResponse(CareFacilityBooking booking) {
         User user = userRepository.findByUserId(booking.getUserId()).orElse(null);
         
@@ -368,9 +339,7 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 사용자명 조회
-     */
+    // 사용자명 조회
     private String getUserName(String userId) {
         return userRepository.findByUserId(userId)
                 .map(User::getName)
