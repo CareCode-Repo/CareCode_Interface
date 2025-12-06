@@ -1,10 +1,10 @@
 package com.carecode.domain.community.app;
 
-import com.carecode.domain.community.dto.request.response.CommunityRequest;
-import com.carecode.domain.community.dto.request.response.CommunityCreatePostRequest;
-import com.carecode.domain.community.dto.request.response.CommunityUpdatePostRequest;
-import com.carecode.domain.community.dto.request.response.CommunityCreateCommentRequest;
-import com.carecode.domain.community.dto.request.response.CommunityUpdateCommentRequest;
+import com.carecode.domain.community.dto.request.CommunityRequest;
+import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
+import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
+import com.carecode.domain.community.dto.request.CommunityCreateCommentRequest;
+import com.carecode.domain.community.dto.request.CommunityUpdateCommentRequest;
 import com.carecode.domain.community.dto.response.CommunityResponse;
 import com.carecode.domain.community.dto.response.CommunityPostResponse;
 import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
@@ -26,8 +26,8 @@ public class CommunityFacade {
 
     // ===== Posts =====
     @Transactional(readOnly = true)
-    public CommunityPageResponse<CommunityPostResponse> getAllPosts(int page, int size) {
-        return communityService.getAllPosts(page, size);
+    public CommunityPageResponse<CommunityPostResponse> getAllPosts(int page, int size, String sortBy, String sortDirection) {
+        return communityService.getAllPosts(page, size, sortBy, sortDirection);
     }
 
     @Transactional(readOnly = true)
@@ -91,6 +91,37 @@ public class CommunityFacade {
     @Transactional(readOnly = true)
     public List<CommunityTagResponse> getAllTags() {
         return communityService.getAllTags();
+    }
+
+    // ===== 좋아요 및 북마크 =====
+    @Transactional
+    public boolean toggleLike(Long postId, Long userId) {
+        return communityService.toggleLike(postId, userId);
+    }
+
+    @Transactional
+    public boolean toggleBookmark(Long postId, Long userId) {
+        return communityService.toggleBookmark(postId, userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommunityPostResponse> getLikedPosts(Long userId) {
+        return communityService.getLikedPosts(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommunityPostResponse> getBookmarkedPosts(Long userId) {
+        return communityService.getBookmarkedPosts(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public long getLikeCount(Long postId) {
+        return communityService.getLikeCount(postId);
+    }
+
+    @Transactional(readOnly = true)
+    public long getBookmarkCount(Long postId) {
+        return communityService.getBookmarkCount(postId);
     }
 }
 

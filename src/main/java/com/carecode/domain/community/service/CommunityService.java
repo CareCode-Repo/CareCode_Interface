@@ -2,12 +2,12 @@ package com.carecode.domain.community.service;
 
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.domain.community.dto.request.response.CommunityRequest;
-import com.carecode.domain.community.dto.request.response.CommunityCreatePostRequest;
-import com.carecode.domain.community.dto.request.response.CommunityUpdatePostRequest;
-import com.carecode.domain.community.dto.request.response.CommunityCreateCommentRequest;
-import com.carecode.domain.community.dto.request.response.CommunityUpdateCommentRequest;
-import com.carecode.domain.community.dto.request.response.CommunityCreateTagRequest;
+import com.carecode.domain.community.dto.request.CommunityRequest;
+import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
+import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
+import com.carecode.domain.community.dto.request.CommunityCreateCommentRequest;
+import com.carecode.domain.community.dto.request.CommunityUpdateCommentRequest;
+import com.carecode.domain.community.dto.request.CommunityCreateTagRequest;
 import com.carecode.domain.community.dto.response.CommunityResponse;
 import com.carecode.domain.community.dto.response.CommunityPostResponse;
 import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
@@ -16,6 +16,7 @@ import com.carecode.domain.community.dto.response.CommunityTagResponse;
 import com.carecode.domain.community.dto.response.CommunityPageResponse;
 import com.carecode.domain.community.entity.Comment;
 import com.carecode.domain.community.entity.Post;
+import com.carecode.domain.community.entity.PostCategory;
 import com.carecode.domain.community.entity.Tag;
 import com.carecode.domain.community.repository.CommentRepository;
 import com.carecode.domain.community.repository.PostRepository;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.Page;
@@ -60,10 +62,13 @@ public class CommunityService {
     /**
      * 게시글 목록 조회 (페이징)
      */
-    public CommunityPageResponse<CommunityPostResponse> getAllPosts(int page, int size) {
-        log.info("게시글 목록 조회 - 페이지: {}, 크기: {}", page, size);
+    public CommunityPageResponse<CommunityPostResponse> getAllPosts(int page, int size, String sortBy, String sortDirection) {
+        log.info("게시글 목록 조회 - 페이지: {}, 크기: {}, 정렬: {}, 방향: {}", page, size, sortBy, sortDirection);
         try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Sort sort = com.carecode.core.util.SortUtil.createSort(
+                sortBy, sortDirection, "createdAt", Sort.Direction.DESC
+            );
+            Pageable pageable = PageRequest.of(page, size, sort);
             Page<Post> postPage = postRepository.findAll(pageable);
             
             List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
@@ -117,7 +122,7 @@ public class CommunityService {
             User author = getCurrentUser();
             
             // 카테고리 매핑
-            Post.PostCategory category = mapCategory(request.getCategory());
+            PostCategory category = mapCategory(request.getCategory());
             
             Post post = Post.builder()
                     .title(request.getTitle())
@@ -380,36 +385,36 @@ public class CommunityService {
     /**
      * 카테고리 매핑 메서드
      */
-    private Post.PostCategory mapCategory(String category) {
+    private PostCategory mapCategory(String category) {
         if (category == null) {
-            return Post.PostCategory.GENERAL;
+            return PostCategory.GENERAL;
         }
         
         switch (category.toUpperCase()) {
             case "PARENTING":
             case "육아팁":
             case "정보공유":
-                return Post.PostCategory.SHARE;
+                return PostCategory.SHARE;
             case "질문":
             case "고민상담":
-                return Post.PostCategory.QUESTION;
+                return PostCategory.QUESTION;
             case "일상":
             case "GENERAL":
-                return Post.PostCategory.GENERAL;
+                return PostCategory.GENERAL;
             case "후기":
             case "REVIEW":
-                return Post.PostCategory.REVIEW;
+                return PostCategory.REVIEW;
             case "뉴스":
             case "NEWS":
-                return Post.PostCategory.NEWS;
+                return PostCategory.NEWS;
             case "이벤트":
             case "EVENT":
-                return Post.PostCategory.EVENT;
+                return PostCategory.EVENT;
             case "공지사항":
             case "NOTICE":
-                return Post.PostCategory.NOTICE;
+                return PostCategory.NOTICE;
             default:
-                return Post.PostCategory.GENERAL;
+                return PostCategory.GENERAL;
         }
     }
 
@@ -603,6 +608,38 @@ public class CommunityService {
             return 0;
         }
         return bookmarkRepository.countByPost(post);
+    }
+
+    /**
+     * 사용자가 좋아요한 게시글 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<CommunityPostResponse> getLikedPosts(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        List<PostLike> likes = postLikeRepository.findByUser(user);
+        List<Post> posts = likes.stream()
+                .map(PostLike::getPost)
+                .collect(Collectors.toList());
+        
+        return communityMapper.toPostResponseList(posts);
+    }
+
+    /**
+     * 사용자가 북마크한 게시글 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<CommunityPostResponse> getBookmarkedPosts(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        List<Bookmark> bookmarks = bookmarkRepository.findByUser(user);
+        List<Post> posts = bookmarks.stream()
+                .map(Bookmark::getPost)
+                .collect(Collectors.toList());
+        
+        return communityMapper.toPostResponseList(posts);
     }
 
     /**

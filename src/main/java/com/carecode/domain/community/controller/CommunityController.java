@@ -3,11 +3,11 @@ package com.carecode.domain.community.controller;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
-import com.carecode.domain.community.dto.request.response.CommunityRequest;
-import com.carecode.domain.community.dto.request.response.CommunityCreatePostRequest;
-import com.carecode.domain.community.dto.request.response.CommunityUpdatePostRequest;
-import com.carecode.domain.community.dto.request.response.CommunityCreateCommentRequest;
-import com.carecode.domain.community.dto.request.response.CommunityUpdateCommentRequest;
+import com.carecode.domain.community.dto.request.CommunityRequest;
+import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
+import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
+import com.carecode.domain.community.dto.request.CommunityCreateCommentRequest;
+import com.carecode.domain.community.dto.request.CommunityUpdateCommentRequest;
 import com.carecode.domain.community.dto.response.CommunityResponse;
 import com.carecode.domain.community.dto.response.CommunityPostResponse;
 import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
@@ -24,10 +24,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.carecode.core.handler.ApiSuccess;
 import java.util.Date;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * 커뮤니티 API 컨트롤러
@@ -51,8 +54,10 @@ public class CommunityController extends BaseController {
     @Operation(summary = "게시글 목록 조회", description = "커뮤니티 게시글 목록을 페이징으로 조회합니다.")
     public ResponseEntity<CommunityPageResponse<CommunityPostResponse>> getAllPosts(
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "페이지당 항목 수", example = "10") @RequestParam(defaultValue = "10") int size) {
-        CommunityPageResponse<CommunityPostResponse> posts = communityFacade.getAllPosts(page, size);
+            @Parameter(description = "페이지당 항목 수", example = "10") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "정렬 필드 (createdAt, viewCount, likeCount 등)", example = "createdAt") @RequestParam(required = false) String sortBy,
+            @Parameter(description = "정렬 방향 (ASC, DESC)", example = "DESC") @RequestParam(required = false) String sortDirection) {
+        CommunityPageResponse<CommunityPostResponse> posts = communityFacade.getAllPosts(page, size, sortBy, sortDirection);
         return ResponseEntity.ok(posts);
     }
 
@@ -210,6 +215,104 @@ public class CommunityController extends BaseController {
     public ResponseEntity<List<CommunityTagResponse>> getAllTags() {
         List<CommunityTagResponse> tags = communityFacade.getAllTags();
         return ResponseEntity.ok(tags);
+    }
+
+    // ==================== 좋아요 및 북마크 기능 ====================
+
+    /**
+     * 게시글 좋아요 토글
+     */
+    @PostMapping("/posts/{postId}/like")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "게시글 좋아요", description = "게시글에 좋아요를 추가하거나 제거합니다.")
+    public ResponseEntity<Map<String, Object>> toggleLike(
+            @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = Long.parseLong(userDetails.getUsername());
+        boolean isLiked = communityFacade.toggleLike(postId, userId);
+        long likeCount = communityFacade.getLikeCount(postId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("isLiked", isLiked);
+        response.put("likeCount", likeCount);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 게시글 북마크 토글
+     */
+    @PostMapping("/posts/{postId}/bookmark")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "게시글 북마크", description = "게시글을 북마크에 추가하거나 제거합니다.")
+    public ResponseEntity<Map<String, Object>> toggleBookmark(
+            @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = Long.parseLong(userDetails.getUsername());
+        boolean isBookmarked = communityFacade.toggleBookmark(postId, userId);
+        long bookmarkCount = communityFacade.getBookmarkCount(postId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("isBookmarked", isBookmarked);
+        response.put("bookmarkCount", bookmarkCount);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 사용자가 좋아요한 게시글 목록 조회
+     */
+    @GetMapping("/posts/liked")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "좋아요한 게시글 목록", description = "현재 사용자가 좋아요한 게시글 목록을 조회합니다.")
+    public ResponseEntity<List<CommunityPostResponse>> getLikedPosts(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = Long.parseLong(userDetails.getUsername());
+        List<CommunityPostResponse> posts = communityFacade.getLikedPosts(userId);
+        return ResponseEntity.ok(posts);
+    }
+
+    /**
+     * 사용자가 북마크한 게시글 목록 조회
+     */
+    @GetMapping("/posts/bookmarked")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "북마크한 게시글 목록", description = "현재 사용자가 북마크한 게시글 목록을 조회합니다.")
+    public ResponseEntity<List<CommunityPostResponse>> getBookmarkedPosts(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = Long.parseLong(userDetails.getUsername());
+        List<CommunityPostResponse> posts = communityFacade.getBookmarkedPosts(userId);
+        return ResponseEntity.ok(posts);
+    }
+
+    /**
+     * 게시글 좋아요 수 조회
+     */
+    @GetMapping("/posts/{postId}/like-count")
+    @LogExecutionTime
+    @Operation(summary = "게시글 좋아요 수", description = "특정 게시글의 좋아요 수를 조회합니다.")
+    public ResponseEntity<Map<String, Long>> getLikeCount(
+            @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
+        long count = communityFacade.getLikeCount(postId);
+        Map<String, Long> response = new HashMap<>();
+        response.put("likeCount", count);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 게시글 북마크 수 조회
+     */
+    @GetMapping("/posts/{postId}/bookmark-count")
+    @LogExecutionTime
+    @Operation(summary = "게시글 북마크 수", description = "특정 게시글의 북마크 수를 조회합니다.")
+    public ResponseEntity<Map<String, Long>> getBookmarkCount(
+            @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
+        long count = communityFacade.getBookmarkCount(postId);
+        Map<String, Long> response = new HashMap<>();
+        response.put("bookmarkCount", count);
+        return ResponseEntity.ok(response);
     }
 
 } 
