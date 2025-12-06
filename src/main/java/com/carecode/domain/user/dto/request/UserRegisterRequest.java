@@ -1,6 +1,6 @@
 package com.carecode.domain.user.dto.request;
 
-import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.entity.Gender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -38,7 +38,7 @@ public class UserRegisterRequest {
     private String phoneNumber;
     
     private LocalDate birthDate;
-    private User.Gender gender;
+    private Gender gender;
     private String address;
     private Double latitude;
     private Double longitude;

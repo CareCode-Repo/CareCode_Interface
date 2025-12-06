@@ -1,6 +1,6 @@
 package com.carecode.domain.user.dto.request;
 
-import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.entity.Gender;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -29,7 +29,7 @@ public class UserUpdateProfileRequest {
     private String phoneNumber;
     
     private LocalDate birthDate;
-    private User.Gender gender;
+    private Gender gender;
     
     @Size(max = 200, message = "주소는 200자 이하여야 합니다")
     private String address;
