@@ -185,7 +185,7 @@ public class JwtService {
             String email = getEmailFromToken(token);
             String role = getRoleFromToken(token);
 
-            return TokenDto.TokenValidationResponse.builder()
+            return TokenValidationResponse.builder()
                     .valid(true)
                     .userId(userId)
                     .email(email)
@@ -194,7 +194,7 @@ public class JwtService {
                     .build();
         } catch (Exception e) {
             log.error("토큰 검증 중 오류 발생: {}", e.getMessage());
-            return TokenDto.TokenValidationResponse.builder()
+            return TokenValidationResponse.builder()
                     .valid(false)
                     .message("토큰 검증 중 오류가 발생했습니다.")
                     .build();
