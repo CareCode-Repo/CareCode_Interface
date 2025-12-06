@@ -37,6 +37,41 @@ public class ChatbotFacade {
     public void processFeedback(Long messageId, boolean isHelpful) {
         chatbotService.processFeedback(messageId, isHelpful);
     }
+
+    @Transactional(readOnly = true)
+    public List<ChatbotChatHistoryDtoResponse> getMessagesByIntentType(String userId, com.carecode.domain.chatbot.entity.ChatMessage.IntentType intentType) {
+        return chatbotService.getMessagesByIntentType(userId, intentType);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatbotChatHistoryDtoResponse> getMessagesByDateRange(String userId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        return chatbotService.getMessagesByDateRange(userId, startDate, endDate);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatbotChatHistoryDtoResponse> getMessagesByHelpfulStatus(String userId, Boolean isHelpful) {
+        return chatbotService.getMessagesByHelpfulStatus(userId, isHelpful);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatbotChatHistoryDtoResponse> searchMessagesByKeyword(String userId, String keyword) {
+        return chatbotService.searchMessagesByKeyword(userId, keyword);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatbotSessionDtoResponse> getSessionsByStatus(String userId, com.carecode.domain.chatbot.entity.ChatSession.SessionStatus status) {
+        return chatbotService.getSessionsByStatus(userId, status);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatbotSessionDtoResponse> getSessionsByDateRange(String userId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        return chatbotService.getSessionsByDateRange(userId, startDate, endDate);
+    }
+
+    @Transactional(readOnly = true)
+    public long getSessionCountByUser(String userId) {
+        return chatbotService.getSessionCountByUser(userId);
+    }
 }
 
 

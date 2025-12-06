@@ -131,4 +131,111 @@ public class ChatbotController extends BaseController {
             throw e;
         }
     }
+
+    // ==================== 챗봇 필터링 기능 ====================
+
+    /**
+     * 의도 타입별 메시지 조회
+     */
+    @GetMapping("/messages/intent")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "의도 타입별 메시지 조회", description = "특정 의도 타입의 메시지를 조회합니다.")
+    public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> getMessagesByIntentType(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "의도 타입 (GREETING, QUESTION, COMPLAINT, THANKS, GOODBYE, HEALTH_INFO, UNKNOWN)", required = true) @RequestParam String intentType) {
+        List<ChatbotChatHistoryDtoResponse> messages = chatbotFacade.getMessagesByIntentType(
+                userId, com.carecode.domain.chatbot.entity.ChatMessage.IntentType.valueOf(intentType));
+        return ResponseEntity.ok(messages);
+    }
+
+    /**
+     * 기간별 메시지 조회
+     */
+    @GetMapping("/messages/date-range")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "기간별 메시지 조회", description = "특정 기간의 메시지를 조회합니다.")
+    public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> getMessagesByDateRange(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "시작일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String startDate,
+            @Parameter(description = "종료일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String endDate) {
+        List<ChatbotChatHistoryDtoResponse> messages = chatbotFacade.getMessagesByDateRange(
+                userId, java.time.LocalDateTime.parse(startDate), java.time.LocalDateTime.parse(endDate));
+        return ResponseEntity.ok(messages);
+    }
+
+    /**
+     * 도움됨 여부별 메시지 조회
+     */
+    @GetMapping("/messages/helpful")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "도움됨 여부별 메시지 조회", description = "도움됨/도움 안됨 여부별 메시지를 조회합니다.")
+    public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> getMessagesByHelpfulStatus(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "도움됨 여부", required = true) @RequestParam Boolean isHelpful) {
+        List<ChatbotChatHistoryDtoResponse> messages = chatbotFacade.getMessagesByHelpfulStatus(userId, isHelpful);
+        return ResponseEntity.ok(messages);
+    }
+
+    /**
+     * 키워드로 메시지 검색
+     */
+    @GetMapping("/messages/search")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "키워드로 메시지 검색", description = "키워드로 메시지를 검색합니다.")
+    public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> searchMessagesByKeyword(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "검색 키워드", required = true) @RequestParam String keyword) {
+        List<ChatbotChatHistoryDtoResponse> messages = chatbotFacade.searchMessagesByKeyword(userId, keyword);
+        return ResponseEntity.ok(messages);
+    }
+
+    /**
+     * 상태별 세션 조회
+     */
+    @GetMapping("/sessions/status")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "상태별 세션 조회", description = "특정 상태의 세션을 조회합니다.")
+    public ResponseEntity<List<ChatbotSessionDtoResponse>> getSessionsByStatus(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "세션 상태 (ACTIVE, INACTIVE, CLOSED)", required = true) @RequestParam String status) {
+        List<ChatbotSessionDtoResponse> sessions = chatbotFacade.getSessionsByStatus(
+                userId, com.carecode.domain.chatbot.entity.ChatSession.SessionStatus.valueOf(status));
+        return ResponseEntity.ok(sessions);
+    }
+
+    /**
+     * 기간별 세션 조회
+     */
+    @GetMapping("/sessions/date-range")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "기간별 세션 조회", description = "특정 기간의 세션을 조회합니다.")
+    public ResponseEntity<List<ChatbotSessionDtoResponse>> getSessionsByDateRange(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "시작일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String startDate,
+            @Parameter(description = "종료일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String endDate) {
+        List<ChatbotSessionDtoResponse> sessions = chatbotFacade.getSessionsByDateRange(
+                userId, java.time.LocalDateTime.parse(startDate), java.time.LocalDateTime.parse(endDate));
+        return ResponseEntity.ok(sessions);
+    }
+
+    /**
+     * 사용자별 세션 수 조회
+     */
+    @GetMapping("/sessions/count")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "사용자별 세션 수 조회", description = "사용자의 전체 세션 수를 조회합니다.")
+    public ResponseEntity<Map<String, Long>> getSessionCountByUser(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        long count = chatbotFacade.getSessionCountByUser(userId);
+        Map<String, Long> response = new java.util.HashMap<>();
+        response.put("sessionCount", count);
+        return ResponseEntity.ok(response);
+    }
 } 

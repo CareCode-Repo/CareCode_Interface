@@ -3,7 +3,6 @@ package com.carecode.domain.chatbot.service;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.domain.chatbot.dto.request.ChatbotRequestDto;
-import com.carecode.domain.chatbot.dto.response.ChatbotMessageResponse;
 import com.carecode.domain.chatbot.dto.request.ChatbotMessageRequest;
 import com.carecode.domain.chatbot.dto.response.ChatbotMessageResponse;
 import com.carecode.domain.chatbot.dto.response.ChatbotChatHistoryDtoResponse;
@@ -13,6 +12,7 @@ import com.carecode.domain.chatbot.entity.ChatSession;
 import com.carecode.domain.chatbot.repository.ChatMessageRepository;
 import com.carecode.domain.chatbot.repository.ChatSessionRepository;
 import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.entity.UserRole;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * 챗봇 서비스 클래스
@@ -223,6 +224,219 @@ public class ChatbotService {
     }
 
     /**
+     * 의도 타입별 메시지 조회
+     */
+    @LogExecutionTime
+    public List<ChatbotChatHistoryDtoResponse> getMessagesByIntentType(String userId, ChatMessage.IntentType intentType) {
+        log.info("의도 타입별 메시지 조회: 사용자ID={}, 의도타입={}", userId, intentType);
+        
+        try {
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            
+            List<ChatMessage> messages = chatMessageRepository.findByUserAndIntentTypeOrderByCreatedAtDesc(user, intentType);
+            
+            return messages.stream()
+                    .map(this::convertToHistoryResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("의도 타입별 메시지 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("의도 타입별 메시지 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 기간별 메시지 조회
+     */
+    @LogExecutionTime
+    public List<ChatbotChatHistoryDtoResponse> getMessagesByDateRange(String userId, LocalDateTime startDate, LocalDateTime endDate) {
+        log.info("기간별 메시지 조회: 사용자ID={}, 시작일={}, 종료일={}", userId, startDate, endDate);
+        
+        try {
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            
+            List<ChatMessage> messages = chatMessageRepository.findByUserAndDateRange(user, startDate, endDate);
+            
+            return messages.stream()
+                    .map(this::convertToHistoryResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("기간별 메시지 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("기간별 메시지 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 도움됨 여부별 메시지 조회
+     */
+    @LogExecutionTime
+    public List<ChatbotChatHistoryDtoResponse> getMessagesByHelpfulStatus(String userId, Boolean isHelpful) {
+        log.info("도움됨 여부별 메시지 조회: 사용자ID={}, 도움됨={}", userId, isHelpful);
+        
+        try {
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            
+            List<ChatMessage> messages = chatMessageRepository.findByUserAndIsHelpfulOrderByCreatedAtDesc(user, isHelpful);
+            
+            return messages.stream()
+                    .map(this::convertToHistoryResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("도움됨 여부별 메시지 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("도움됨 여부별 메시지 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 키워드로 메시지 검색
+     */
+    @LogExecutionTime
+    public List<ChatbotChatHistoryDtoResponse> searchMessagesByKeyword(String userId, String keyword) {
+        log.info("키워드로 메시지 검색: 사용자ID={}, 키워드={}", userId, keyword);
+        
+        try {
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            
+            List<ChatMessage> messages = chatMessageRepository.findByUserAndKeyword(user, keyword);
+            
+            return messages.stream()
+                    .map(this::convertToHistoryResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("키워드로 메시지 검색 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("키워드로 메시지 검색 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 상태별 세션 조회
+     */
+    @LogExecutionTime
+    public List<ChatbotSessionDtoResponse> getSessionsByStatus(String userId, ChatSession.SessionStatus status) {
+        log.info("상태별 세션 조회: 사용자ID={}, 상태={}", userId, status);
+        
+        try {
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            
+            List<ChatSession> sessions = chatSessionRepository.findByUserAndStatusOrderByCreatedAtDesc(user, status);
+            
+            return sessions.stream()
+                    .map(this::convertToSessionResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("상태별 세션 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("상태별 세션 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 기간별 세션 조회
+     */
+    @LogExecutionTime
+    public List<ChatbotSessionDtoResponse> getSessionsByDateRange(String userId, LocalDateTime startDate, LocalDateTime endDate) {
+        log.info("기간별 세션 조회: 사용자ID={}, 시작일={}, 종료일={}", userId, startDate, endDate);
+        
+        try {
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            
+            List<ChatSession> sessions = chatSessionRepository.findByUserAndDateRange(user, startDate, endDate);
+            
+            return sessions.stream()
+                    .map(this::convertToSessionResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("기간별 세션 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("기간별 세션 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 사용자별 세션 수 조회
+     */
+    @LogExecutionTime
+    public long getSessionCountByUser(String userId) {
+        log.info("사용자별 세션 수 조회: 사용자ID={}", userId);
+        
+        try {
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            
+            return chatSessionRepository.countByUser(user);
+        } catch (Exception e) {
+            log.error("사용자별 세션 수 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("사용자별 세션 수 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 제목으로 세션 검색
+     */
+    @LogExecutionTime
+    public List<ChatbotSessionDtoResponse> searchSessionsByTitle(String userId, String keyword) {
+        log.info("제목으로 세션 검색: 사용자ID={}, 키워드={}", userId, keyword);
+        
+        try {
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            
+            List<ChatSession> sessions = chatSessionRepository.findByUserAndTitleContaining(user, keyword);
+            
+            return sessions.stream()
+                    .map(this::convertToSessionResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("제목으로 세션 검색 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("제목으로 세션 검색 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 메시지 수 많은 순으로 세션 조회
+     */
+    @LogExecutionTime
+    public List<ChatbotSessionDtoResponse> getSessionsByMessageCount(String userId, int page, int size) {
+        log.info("메시지 수 많은 순으로 세션 조회: 사용자ID={}, 페이지={}, 크기={}", userId, page, size);
+        
+        try {
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            
+            Pageable pageable = PageRequest.of(page, size);
+            List<ChatSession> sessions = chatSessionRepository.findByUserOrderByMessageCountDesc(user, pageable);
+            
+            return sessions.stream()
+                    .map(this::convertToSessionResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("메시지 수 많은 순으로 세션 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("메시지 수 많은 순으로 세션 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 상태별 세션 수 조회
+     */
+    @LogExecutionTime
+    public long getSessionCountByStatus(String userId, ChatSession.SessionStatus status) {
+        log.info("상태별 세션 수 조회: 사용자ID={}, 상태={}", userId, status);
+        
+        try {
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            
+            return chatSessionRepository.countByUserAndStatus(user, status);
+        } catch (Exception e) {
+            log.error("상태별 세션 수 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw new CareServiceException("상태별 세션 수 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
      * 세션 생성 또는 조회
      */
     private ChatSession getOrCreateSession(User user, String sessionId) {
@@ -264,7 +478,7 @@ public class ChatbotService {
                 .email("guest@" + userId + ".temp")
                 .password("temp_password_123") // 임시 비밀번호 설정
                 .phoneNumber("000-0000-0000")
-                .role(User.UserRole.GUEST)
+                .role(UserRole.GUEST)
                 .isActive(true)
                 .emailVerified(false)
                 .createdAt(LocalDateTime.now())
