@@ -404,4 +404,69 @@ public class NotificationController extends BaseController {
 
         return ResponseEntity.ok(status);
     }
+
+    // ==================== 알림 필터링 기능 ====================
+
+    /**
+     * 알림 타입별 조회
+     */
+    @GetMapping("/type")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "알림 타입별 조회", description = "특정 타입의 알림을 조회합니다.")
+    public ResponseEntity<List<NotificationInfoResponse>> getNotificationsByType(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "알림 타입 (SYSTEM, POLICY, FACILITY, COMMUNITY, CHATBOT, HEALTH)", required = true) @RequestParam String notificationType) {
+        List<NotificationInfoResponse> notifications = notificationFacade.getNotificationsByType(
+                userId, com.carecode.domain.notification.entity.Notification.NotificationType.valueOf(notificationType));
+        return ResponseEntity.ok(notifications);
+    }
+
+    /**
+     * 기간별 알림 조회
+     */
+    @GetMapping("/date-range")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "기간별 알림 조회", description = "특정 기간의 알림을 조회합니다.")
+    public ResponseEntity<List<NotificationInfoResponse>> getNotificationsByDateRange(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "시작일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String startDate,
+            @Parameter(description = "종료일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String endDate) {
+        List<NotificationInfoResponse> notifications = notificationFacade.getNotificationsByDateRange(
+                userId, java.time.LocalDateTime.parse(startDate), java.time.LocalDateTime.parse(endDate));
+        return ResponseEntity.ok(notifications);
+    }
+
+    /**
+     * 사용자별 전체 알림 개수 조회
+     */
+    @GetMapping("/count")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "전체 알림 개수 조회", description = "사용자의 전체 알림 개수를 조회합니다.")
+    public ResponseEntity<Map<String, Long>> getTotalNotificationCount(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        long count = notificationFacade.getTotalNotificationCount(userId);
+        Map<String, Long> response = new java.util.HashMap<>();
+        response.put("totalCount", count);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 읽음 상태별 알림 개수 조회
+     */
+    @GetMapping("/count-by-status")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "읽음 상태별 알림 개수 조회", description = "읽음/읽지 않음 상태별 알림 개수를 조회합니다.")
+    public ResponseEntity<Map<String, Long>> getNotificationCountByReadStatus(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "읽음 여부 (true: 읽음, false: 읽지 않음)", required = true) @RequestParam boolean isRead) {
+        long count = notificationFacade.getNotificationCountByReadStatus(userId, isRead);
+        Map<String, Long> response = new java.util.HashMap<>();
+        response.put("count", count);
+        response.put("isRead", isRead ? 1L : 0L);
+        return ResponseEntity.ok(response);
+    }
 } 

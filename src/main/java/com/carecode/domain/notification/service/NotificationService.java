@@ -403,6 +403,54 @@ public class NotificationService {
     }
 
     /**
+     * 알림 타입별 조회
+     */
+    @LogExecutionTime
+    public List<NotificationInfoResponse> getNotificationsByType(Long userId, Notification.NotificationType notificationType) {
+        log.info("알림 타입별 조회 - 사용자 ID: {}, 타입: {}", userId, notificationType);
+        
+        List<Notification> notifications = notificationRepository.findByUserIdAndNotificationTypeOrderByCreatedAtDesc(userId, notificationType);
+        
+        return notifications.stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 기간별 알림 조회
+     */
+    @LogExecutionTime
+    public List<NotificationInfoResponse> getNotificationsByDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
+        log.info("기간별 알림 조회 - 사용자 ID: {}, 시작일: {}, 종료일: {}", userId, startDate, endDate);
+        
+        List<Notification> notifications = notificationRepository.findByDateRange(userId, startDate, endDate);
+        
+        return notifications.stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 사용자별 전체 알림 개수 조회
+     */
+    @LogExecutionTime
+    public long getTotalNotificationCount(Long userId) {
+        log.info("사용자별 전체 알림 개수 조회 - 사용자 ID: {}", userId);
+        
+        return notificationRepository.countByUserId(userId);
+    }
+
+    /**
+     * 읽음/읽지 않음별 알림 개수 조회
+     */
+    @LogExecutionTime
+    public long getNotificationCountByReadStatus(Long userId, boolean isRead) {
+        log.info("읽음 상태별 알림 개수 조회 - 사용자 ID: {}, 읽음: {}", userId, isRead);
+        
+        return notificationRepository.countByUserIdAndIsRead(userId, isRead);
+    }
+
+    /**
      * 알림 통계 조회
      */
     @Transactional(readOnly = true)

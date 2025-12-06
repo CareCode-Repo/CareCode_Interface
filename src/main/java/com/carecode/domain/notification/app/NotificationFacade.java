@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import com.carecode.domain.user.repository.UserRepository;
+import com.carecode.domain.user.entity.User;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ public class NotificationFacade {
 
     private final NotificationService notificationService;
     private final NotificationPreferenceService preferenceService;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public List<NotificationInfoResponse> getNotificationsByUserId(String userId) {
@@ -115,6 +118,34 @@ public class NotificationFacade {
     @Transactional
     public void updateSettings(String userId, NotificationUpdateSettingsRequest request) {
         preferenceService.updateSettings(userId, request);
+    }
+
+    @Transactional(readOnly = true)
+    public List<NotificationInfoResponse> getNotificationsByType(String userId, com.carecode.domain.notification.entity.Notification.NotificationType notificationType) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return notificationService.getNotificationsByType(user.getId(), notificationType);
+    }
+
+    @Transactional(readOnly = true)
+    public List<NotificationInfoResponse> getNotificationsByDateRange(String userId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return notificationService.getNotificationsByDateRange(user.getId(), startDate, endDate);
+    }
+
+    @Transactional(readOnly = true)
+    public long getTotalNotificationCount(String userId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return notificationService.getTotalNotificationCount(user.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public long getNotificationCountByReadStatus(String userId, boolean isRead) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return notificationService.getNotificationCountByReadStatus(user.getId(), isRead);
     }
 
     /**
