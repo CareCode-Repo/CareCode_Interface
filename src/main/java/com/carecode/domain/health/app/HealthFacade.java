@@ -13,6 +13,9 @@ import com.carecode.domain.health.dto.response.HealthStatsResponse;
 import com.carecode.domain.health.dto.response.HealthAlertResponse;
 import com.carecode.domain.health.dto.response.HospitalInfoResponse;
 import com.carecode.domain.health.dto.response.HospitalReviewResponse;
+import com.carecode.core.exception.HospitalNotFoundException;
+import com.carecode.core.exception.HospitalReviewNotFoundException;
+import com.carecode.core.exception.HospitalReviewAccessDeniedException;
 import com.carecode.domain.health.service.HealthService;
 import com.carecode.domain.health.entity.Hospital;
 import com.carecode.domain.health.entity.HospitalLike;
@@ -24,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 import com.carecode.domain.health.mapper.HospitalMapper;
 import com.carecode.domain.health.mapper.HospitalReviewMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -42,101 +44,111 @@ public class HealthFacade {
     private final HospitalReviewMapper hospitalReviewMapper;
 
     // ==================== 건강 기록 관리 ====================
+    // 트랜잭션은 Service 계층에서 관리하므로 Facade에서는 제거
 
-    @Transactional
     public HealthRecordResponse createHealthRecord(HealthCreateHealthRecordRequest request) {
         return healthService.createHealthRecord(request);
     }
 
-    @Transactional(readOnly = true)
     public HealthRecordResponse getHealthRecordById(Long recordId) {
         return healthService.getHealthRecordById(recordId);
     }
 
-    @Transactional(readOnly = true)
     public List<HealthRecordResponse> getHealthRecordsByUserId(String userId) {
         return healthService.getHealthRecordsByUserId(userId);
     }
 
-    @Transactional
     public HealthRecordResponse updateHealthRecord(Long recordId, HealthUpdateHealthRecordRequest request) {
         return healthService.updateHealthRecord(recordId, request);
     }
 
-    @Transactional
     public void deleteHealthRecord(Long recordId) {
         healthService.deleteHealthRecord(recordId);
     }
 
-    @Transactional(readOnly = true)
     public HealthStatsResponse getHealthStatistics(String userId) {
         return healthService.getHealthStatistics(userId);
     }
 
-    @Transactional(readOnly = true)
     public List<VaccineScheduleResponse> getVaccineSchedule(String childId) {
         return healthService.getVaccineSchedule(childId);
     }
 
-    @Transactional(readOnly = true)
     public List<CheckupScheduleResponse> getCheckupSchedule(String childId) {
         return healthService.getCheckupSchedule(childId);
     }
 
-    @Transactional(readOnly = true)
     public List<HealthAlertResponse> getHealthAlerts(String userId) {
         return healthService.getHealthAlerts(userId);
     }
 
+    public List<HealthRecordResponse> getHealthRecordsByDateRangeAsc(Long childId, LocalDate startDate, LocalDate endDate) {
+        return healthService.getHealthRecordsByDateRangeAsc(childId, startDate, endDate);
+    }
+
+    public List<HealthRecordResponse> getHealthRecordsByType(Long childId, com.carecode.domain.health.entity.HealthRecord.RecordType recordType) {
+        return healthService.getHealthRecordsByType(childId, recordType);
+    }
+
+    public List<com.carecode.domain.health.dto.response.ChildInfoResponse> getChildrenByAgeRange(Long userId, Integer minAge, Integer maxAge) {
+        return healthService.getChildrenByAgeRange(userId, minAge, maxAge);
+    }
+
+    public List<com.carecode.domain.health.dto.response.ChildInfoResponse> getChildrenByGender(Long userId, String gender) {
+        return healthService.getChildrenByGender(userId, gender);
+    }
+
+    public List<com.carecode.domain.health.dto.response.ChildInfoResponse> getChildrenWithSpecialNeeds(Long userId) {
+        return healthService.getChildrenWithSpecialNeeds(userId);
+    }
+
+    public List<com.carecode.domain.health.dto.response.ChildInfoResponse> searchChildrenByName(Long userId, String name) {
+        return healthService.searchChildrenByName(userId, name);
+    }
+
     // ==================== 건강 분석 및 리포트 ====================
 
-    @Transactional(readOnly = true)
     public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request) {
         return healthService.analyzeHealthStatus(request);
     }
 
-    @Transactional(readOnly = true)
     public Map<String, Object> generateHealthReport(HealthCreateHealthRecordRequest request) {
         return healthService.generateHealthReport(request);
     }
 
-    @Transactional(readOnly = true)
     public Map<String, Object> getHealthGoals(String userId) {
         return healthService.getHealthGoals(userId);
     }
 
-    @Transactional(readOnly = true)
     public List<Map<String, Object>> getHealthChart(String userId, String type, String from, String to) {
         LocalDate fromDate = from != null ? LocalDate.parse(from) : null;
         LocalDate toDate = to != null ? LocalDate.parse(to) : null;
         return healthService.getHealthChart(userId, type, fromDate, toDate);
     }
 
-    @Transactional(readOnly = true)
     public Map<String, Object> checkSystemHealth() {
         return healthService.checkSystemHealth();
     }
 
     // ==================== 병원 관리 ====================
+    // 병원 관련 작업은 Facade에서 직접 처리하므로 트랜잭션 필요
+    // 하지만 Service 계층으로 이동하는 것이 더 나음 (향후 개선)
 
-    @Transactional(readOnly = true)
     public List<HospitalInfoResponse> getAllHospitals() {
         return hospitalRepository.findAll().stream()
                 .map(hospitalMapper::toResponse)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public HospitalInfoResponse getHospitalById(Long id) {
         Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("병원을 찾을 수 없습니다: " + id));
+                .orElseThrow(() -> new HospitalNotFoundException(id));
         return hospitalMapper.toResponse(hospital);
     }
 
-    @Transactional
     public boolean likeHospital(Long id, Long userId) {
         Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("병원을 찾을 수 없습니다: " + id));
+                .orElseThrow(() -> new HospitalNotFoundException(id));
         
         // 이미 좋아요를 누른 경우 false 반환
         if (hospitalLikeRepository.existsByHospitalIdAndUserId(id, userId)) {
@@ -152,10 +164,9 @@ public class HealthFacade {
         return true;
     }
 
-    @Transactional
     public boolean unlikeHospital(Long id, Long userId) {
         Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("병원을 찾을 수 없습니다: " + id));
+                .orElseThrow(() -> new HospitalNotFoundException(id));
         
         // 좋아요를 누르지 않은 경우 false 반환
         if (!hospitalLikeRepository.existsByHospitalIdAndUserId(id, userId)) {
@@ -166,15 +177,13 @@ public class HealthFacade {
         return true;
     }
 
-    @Transactional(readOnly = true)
     public long getLikeCount(Long id) {
         Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("병원을 찾을 수 없습니다: " + id));
+                .orElseThrow(() -> new HospitalNotFoundException(id));
         
         return hospitalLikeRepository.countByHospitalId(id);
     }
 
-    @Transactional(readOnly = true)
     public List<HospitalInfoResponse> getNearbyHospitals(double lat, double lng, double radius) {
         // 반경을 미터 단위로 변환 (km -> m)
         double radiusInMeters = radius * 1000;
@@ -184,14 +193,12 @@ public class HealthFacade {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public List<HospitalInfoResponse> getHospitalsByType(String type) {
         return hospitalRepository.findByType(type).stream()
                 .map(hospitalMapper::toResponse)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public List<HospitalInfoResponse> getPopularHospitals(int limit) {
         return hospitalRepository.findAll().stream()
                 .sorted((h1, h2) -> Long.compare(
@@ -204,17 +211,15 @@ public class HealthFacade {
 
     // ==================== 병원 리뷰 관리 ====================
 
-    @Transactional(readOnly = true)
     public List<HospitalReviewResponse> getHospitalReviews(Long hospitalId) {
         return hospitalReviewRepository.findByHospitalId(hospitalId).stream()
                 .map(hospitalReviewMapper::toResponse)
                 .toList();
     }
 
-    @Transactional
     public HospitalReviewResponse createHospitalReview(Long hospitalId, Long userId, Integer rating, String content) {
         Hospital hospital = hospitalRepository.findById(hospitalId)
-                .orElseThrow(() -> new IllegalArgumentException("병원을 찾을 수 없습니다: " + hospitalId));
+                .orElseThrow(() -> new HospitalNotFoundException(hospitalId));
         
         HospitalReview review = HospitalReview.builder()
                 .hospital(hospital)
@@ -227,13 +232,12 @@ public class HealthFacade {
         return hospitalReviewMapper.toResponse(savedReview);
     }
 
-    @Transactional
     public HospitalReviewResponse updateHospitalReview(Long reviewId, Long userId, Integer rating, String content) {
         HospitalReview review = hospitalReviewRepository.findById(reviewId)
-                .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다: " + reviewId));
+                .orElseThrow(() -> new HospitalReviewNotFoundException(reviewId));
         
         if (!review.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("리뷰를 수정할 권한이 없습니다.");
+            throw new HospitalReviewAccessDeniedException("리뷰를 수정할 권한이 없습니다.");
         }
         
         review.setRating(rating);
@@ -243,13 +247,12 @@ public class HealthFacade {
         return hospitalReviewMapper.toResponse(updatedReview);
     }
 
-    @Transactional
     public void deleteHospitalReview(Long reviewId, Long userId) {
         HospitalReview review = hospitalReviewRepository.findById(reviewId)
-                .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다: " + reviewId));
+                .orElseThrow(() -> new HospitalReviewNotFoundException(reviewId));
         
         if (!review.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("리뷰를 삭제할 권한이 없습니다.");
+            throw new HospitalReviewAccessDeniedException("리뷰를 삭제할 권한이 없습니다.");
         }
         
         hospitalReviewRepository.delete(review);
