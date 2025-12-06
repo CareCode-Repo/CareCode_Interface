@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import com.carecode.domain.chatbot.dto.response.ChatMessageDto;
+
 import java.util.List;
 
 /**
