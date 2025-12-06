@@ -260,6 +260,60 @@ public class CareFacilityBookingService {
     }
 
     /**
+     * 예약 타입별 예약 목록 조회
+     */
+    @LogExecutionTime
+    public List<BookingResponse> getBookingsByType(CareFacilityBooking.BookingType bookingType) {
+        log.info("예약 타입별 예약 목록 조회: 타입={}", bookingType);
+        
+        List<CareFacilityBooking> bookings = bookingRepository.findByBookingTypeOrderByStartTimeAsc(bookingType);
+        
+        return bookings.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 취소된 예약 목록 조회 (기간별)
+     */
+    @LogExecutionTime
+    public List<BookingResponse> getCancelledBookings(CareFacilityBooking.BookingStatus status, 
+                                                       LocalDateTime startDate, 
+                                                       LocalDateTime endDate) {
+        log.info("취소된 예약 목록 조회: 상태={}, 시작일={}, 종료일={}", status, startDate, endDate);
+        
+        List<CareFacilityBooking> bookings = bookingRepository.findByStatusAndCancelledAtBetweenOrderByCancelledAtDesc(
+                status, startDate, endDate);
+        
+        return bookings.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 관리자용 복합 검색
+     */
+    @LogExecutionTime
+    public Page<BookingResponse> searchBookings(Long facilityId,
+                                                 String userId,
+                                                 CareFacilityBooking.BookingType bookingType,
+                                                 CareFacilityBooking.BookingStatus status,
+                                                 LocalDateTime startDate,
+                                                 LocalDateTime endDate,
+                                                 String keyword,
+                                                 int page,
+                                                 int size) {
+        log.info("예약 복합 검색: 시설ID={}, 사용자ID={}, 타입={}, 상태={}, 키워드={}", 
+                facilityId, userId, bookingType, status, keyword);
+        
+        Pageable pageable = PageRequest.of(page, size);
+        Page<CareFacilityBooking> bookings = bookingRepository.findBySearchCriteria(
+                facilityId, userId, bookingType, status, startDate, endDate, keyword, pageable);
+        
+        return bookings.map(this::convertToDto);
+    }
+
+    /**
      * DTO 변환
      */
     private BookingResponse convertToDto(CareFacilityBooking booking) {

@@ -3,7 +3,6 @@ package com.carecode.domain.careFacility.app;
 import com.carecode.domain.careFacility.dto.response.BookingResponse;
 import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
 import com.carecode.domain.careFacility.dto.request.UpdateBookingRequest;
-import com.carecode.domain.careFacility.dto.request.CareFacilityRequest;
 import com.carecode.domain.careFacility.dto.request.CareFacilitySearchRequest;
 import com.carecode.domain.careFacility.dto.response.CareFacilityInfo;
 import com.carecode.domain.careFacility.dto.response.CareFacilityListResponse;
@@ -133,6 +132,53 @@ public class CareFacilityFacade {
     @Transactional(readOnly = true)
     public List<BookingResponse> getTodayBookingsByFacility(Long facilityId) {
         return bookingService.getTodayBookingsByFacility(facilityId);
+    }
+
+    // ==================== 고급 검색 기능 ====================
+
+    @Transactional(readOnly = true)
+    public List<CareFacilityInfo> recommendFacilitiesByChildAge(Integer childAge) {
+        return careFacilityService.recommendFacilitiesByChildAge(childAge);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CareFacilityInfo> getFacilitiesByMinRating(Double minRating) {
+        return careFacilityService.getFacilitiesByMinRating(minRating);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CareFacilityInfo> getFacilitiesWithAvailableSpots(Integer minSpots) {
+        return careFacilityService.getFacilitiesWithAvailableSpots(minSpots);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CareFacilityInfo> getFacilitiesByMaxTuitionFee(Integer maxFee) {
+        return careFacilityService.getFacilitiesByMaxTuitionFee(maxFee);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CareFacilityInfo> searchFacilitiesByKeyword(String keyword) {
+        return careFacilityService.searchFacilitiesByKeyword(keyword);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CareFacilityInfo> searchFacilitiesAdvanced(
+            com.carecode.domain.careFacility.entity.FacilityType facilityType,
+            Boolean isPublic,
+            Boolean subsidyAvailable,
+            Double minRating,
+            Integer minAvailableSpots,
+            Integer maxTuitionFee,
+            Integer childAge) {
+        return careFacilityService.searchFacilitiesAdvanced(
+                facilityType, isPublic, subsidyAvailable, minRating,
+                minAvailableSpots, maxTuitionFee, childAge
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public CareFacilityInfo getFacilityByIdWithReviews(Long facilityId) {
+        return careFacilityService.getFacilityByIdWithReviews(facilityId);
     }
 }
 
