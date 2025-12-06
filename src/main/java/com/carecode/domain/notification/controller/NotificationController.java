@@ -4,8 +4,18 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.notification.dto.NotificationRequest;
-import com.carecode.domain.notification.dto.NotificationResponse;
+import com.carecode.domain.notification.dto.request.NotificationRequest;
+import com.carecode.domain.notification.dto.request.NotificationCreateRequest;
+import com.carecode.domain.notification.dto.request.NotificationMarkAsReadRequest;
+import com.carecode.domain.notification.dto.request.NotificationRegisterPushTokenRequest;
+import com.carecode.domain.notification.dto.request.NotificationUpdateSettingsRequest;
+import com.carecode.domain.notification.dto.request.NotificationSendTestRequest;
+import com.carecode.domain.notification.dto.response.NotificationResponse;
+import com.carecode.domain.notification.dto.response.NotificationInfoResponse;
+import com.carecode.domain.notification.dto.response.NotificationSettingsResponse;
+import com.carecode.domain.notification.dto.response.NotificationStatsResponse;
+import com.carecode.domain.notification.dto.response.NotificationTemplateResponse;
+import com.carecode.domain.notification.dto.response.NotificationDeliveryStatusResponse;
 import com.carecode.domain.notification.app.NotificationFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,8 +54,8 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 목록 조회", description = "사용자의 알림 목록을 조회합니다.")
-    public ResponseEntity<List<NotificationResponse.Notification>> getAllNotifications(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-        List<NotificationResponse.Notification> notifications = notificationFacade.getNotificationsByUserId(userId);
+    public ResponseEntity<List<NotificationInfoResponse>> getAllNotifications(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        List<NotificationInfoResponse> notifications = notificationFacade.getNotificationsByUserId(userId);
         return ResponseEntity.ok(notifications);
     }
 
@@ -56,9 +66,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 상세 조회", description = "특정 알림의 상세 정보를 조회합니다.")
-    public ResponseEntity<NotificationResponse.Notification> getNotification(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
+    public ResponseEntity<NotificationInfoResponse> getNotification(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
 
-        NotificationResponse.Notification notification = notificationFacade.getNotificationById(notificationId);
+        NotificationInfoResponse notification = notificationFacade.getNotificationById(notificationId);
 
         return ResponseEntity.ok(notification);
     }
@@ -70,9 +80,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 생성", description = "새로운 알림을 생성합니다.")
-    public ResponseEntity<NotificationResponse.Notification> createNotification(@Parameter(description = "알림 정보", required = true) @RequestBody NotificationRequest.Create request) {
+    public ResponseEntity<NotificationInfoResponse> createNotification(@Parameter(description = "알림 정보", required = true) @RequestBody NotificationCreateRequest request) {
 
-        NotificationResponse.Notification notification = notificationFacade.createNotification(request);
+        NotificationInfoResponse notification = notificationFacade.createNotification(request);
 
         return ResponseEntity.ok(notification);
     }
@@ -84,10 +94,10 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 수정", description = "기존 알림을 수정합니다.")
-    public ResponseEntity<NotificationResponse.Notification> updateNotification(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId,
-                                                                                @Parameter(description = "수정할 알림 정보", required = true) @RequestBody NotificationRequest.Create request) {
+    public ResponseEntity<NotificationInfoResponse> updateNotification(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId,
+                                                                                @Parameter(description = "수정할 알림 정보", required = true) @RequestBody NotificationCreateRequest request) {
 
-        NotificationResponse.Notification notification = notificationFacade.updateNotification(notificationId, request);
+        NotificationInfoResponse notification = notificationFacade.updateNotification(notificationId, request);
 
         return ResponseEntity.ok(notification);
     }
@@ -141,9 +151,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "읽지 않은 알림 조회", description = "사용자의 읽지 않은 알림 목록을 조회합니다.")
-    public ResponseEntity<List<NotificationResponse.Notification>> getUnreadNotifications(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+    public ResponseEntity<List<NotificationInfoResponse>> getUnreadNotifications(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
 
-        List<NotificationResponse.Notification> notifications = notificationFacade.getUnreadNotifications(userId);
+        List<NotificationInfoResponse> notifications = notificationFacade.getUnreadNotifications(userId);
 
         return ResponseEntity.ok(notifications);
     }
@@ -198,9 +208,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 설정 목록 조회", description = "사용자의 알림 설정 목록을 조회합니다.")
-    public ResponseEntity<List<NotificationResponse.Settings>> getNotificationPreferences(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+    public ResponseEntity<List<NotificationSettingsResponse>> getNotificationPreferences(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
 
-        List<NotificationResponse.Settings> preferences = notificationFacade.getUserPreferences(userId);
+        List<NotificationSettingsResponse> preferences = notificationFacade.getUserPreferences(userId);
 
         return ResponseEntity.ok(preferences);
     }
@@ -212,9 +222,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "특정 알림 타입 설정 조회", description = "사용자의 특정 알림 타입 설정을 조회합니다.")
-    public ResponseEntity<NotificationResponse.Settings> getNotificationPreferenceByType(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+    public ResponseEntity<NotificationSettingsResponse> getNotificationPreferenceByType(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
                                                                                          @Parameter(description = "알림 타입", required = true) @PathVariable String notificationType) {
-        NotificationResponse.Settings preference = notificationFacade.getPreferenceByType(userId, notificationType);
+        NotificationSettingsResponse preference = notificationFacade.getPreferenceByType(userId, notificationType);
 
         return ResponseEntity.ok(preference);
     }
@@ -226,10 +236,10 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "전체 알림 설정 업데이트", description = "사용자의 모든 알림 설정을 한 번에 업데이트합니다.")
-    public ResponseEntity<NotificationResponse.Settings> updateNotificationPreferences(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
-                                                                                       @Parameter(description = "알림 설정", required = true) @RequestBody NotificationResponse.Settings preferenceDto) {
+    public ResponseEntity<NotificationSettingsResponse> updateNotificationPreferences(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+                                                                                       @Parameter(description = "알림 설정", required = true) @RequestBody NotificationSettingsResponse preferenceDto) {
 
-        NotificationResponse.Settings updatedPreference = notificationFacade.savePreference(userId, preferenceDto);
+        NotificationSettingsResponse updatedPreference = notificationFacade.savePreference(userId, preferenceDto);
 
         return ResponseEntity.ok(updatedPreference);
     }
@@ -241,10 +251,10 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 설정 저장", description = "사용자의 알림 설정을 저장합니다.")
-    public ResponseEntity<NotificationResponse.Settings> saveNotificationPreference(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
-                                                                                    @Parameter(description = "알림 설정", required = true) @RequestBody NotificationResponse.Settings preferenceDto) {
+    public ResponseEntity<NotificationSettingsResponse> saveNotificationPreference(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+                                                                                    @Parameter(description = "알림 설정", required = true) @RequestBody NotificationSettingsResponse preferenceDto) {
 
-        NotificationResponse.Settings savedPreference = notificationFacade.savePreference(userId, preferenceDto);
+        NotificationSettingsResponse savedPreference = notificationFacade.savePreference(userId, preferenceDto);
 
         return ResponseEntity.ok(savedPreference);
     }
@@ -256,12 +266,12 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "채널별 설정 업데이트", description = "사용자의 특정 알림 타입의 채널별 설정을 업데이트합니다.")
-    public ResponseEntity<NotificationResponse.Settings> updateChannelPreference(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+    public ResponseEntity<NotificationSettingsResponse> updateChannelPreference(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
                                                                                  @Parameter(description = "알림 타입", required = true) @PathVariable String notificationType,
                                                                                  @Parameter(description = "채널", required = true) @PathVariable String channel,
                                                                                  @Parameter(description = "활성화 여부", required = true) @RequestParam boolean enabled) {
 
-        NotificationResponse.Settings updatedPreference = notificationFacade.updateChannelPreference(userId, notificationType, channel, enabled);
+        NotificationSettingsResponse updatedPreference = notificationFacade.updateChannelPreference(userId, notificationType, channel, enabled);
 
         return ResponseEntity.ok(updatedPreference);
     }
@@ -301,7 +311,7 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 읽음 처리", description = "알림을 읽음으로 표시합니다.")
-    public ResponseEntity<ApiSuccess> markAsRead(@Parameter(description = "읽음 처리 요청", required = true) @RequestBody NotificationRequest.MarkAsRead request) {
+    public ResponseEntity<ApiSuccess> markAsRead(@Parameter(description = "읽음 처리 요청", required = true) @RequestBody NotificationMarkAsReadRequest request) {
 
         notificationFacade.markAsRead(request);
 
@@ -316,7 +326,7 @@ public class NotificationController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "푸시 알림 토큰 등록", description = "사용자의 푸시 알림 토큰을 등록합니다.")
     public ResponseEntity<ApiSuccess> registerPushToken(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
-                                                        @Parameter(description = "푸시 토큰 등록 요청", required = true) @RequestBody NotificationRequest.RegisterPushToken request) {
+                                                        @Parameter(description = "푸시 토큰 등록 요청", required = true) @RequestBody NotificationRegisterPushTokenRequest request) {
 
         notificationFacade.registerPushToken(userId, request);
 
@@ -331,7 +341,7 @@ public class NotificationController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "알림 설정 수정", description = "사용자의 알림 설정을 수정합니다.")
     public ResponseEntity<ApiSuccess> updateSettings(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
-                                                     @Parameter(description = "설정 수정 요청", required = true) @RequestBody NotificationRequest.UpdateSettings request) {
+                                                     @Parameter(description = "설정 수정 요청", required = true) @RequestBody NotificationUpdateSettingsRequest request) {
 
         notificationFacade.updateSettings(userId, request);
 
@@ -346,7 +356,7 @@ public class NotificationController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "테스트 알림 발송", description = "테스트 알림을 발송합니다.")
     public ResponseEntity<ApiSuccess> sendTestNotification(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
-                                                           @Parameter(description = "테스트 알림 요청", required = true) @RequestBody NotificationRequest.SendTest request) {
+                                                           @Parameter(description = "테스트 알림 요청", required = true) @RequestBody NotificationSendTestRequest request) {
 
         notificationFacade.sendTestNotification(userId, request);
 
@@ -360,9 +370,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 통계 조회", description = "사용자의 알림 통계를 조회합니다.")
-    public ResponseEntity<NotificationResponse.Stats> getNotificationStats(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+    public ResponseEntity<NotificationStatsResponse> getNotificationStats(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
 
-        NotificationResponse.Stats stats = notificationFacade.getNotificationStats(userId);
+        NotificationStatsResponse stats = notificationFacade.getNotificationStats(userId);
 
         return ResponseEntity.ok(stats);
     }
@@ -374,9 +384,9 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 템플릿 조회", description = "알림 템플릿 목록을 조회합니다.")
-    public ResponseEntity<List<NotificationResponse.Template>> getNotificationTemplates(@Parameter(description = "알림 타입", required = false) @RequestParam(required = false) String type) {
+    public ResponseEntity<List<NotificationTemplateResponse>> getNotificationTemplates(@Parameter(description = "알림 타입", required = false) @RequestParam(required = false) String type) {
 
-        List<NotificationResponse.Template> templates = notificationFacade.getNotificationTemplates(type);
+        List<NotificationTemplateResponse> templates = notificationFacade.getNotificationTemplates(type);
 
         return ResponseEntity.ok(templates);
     }
@@ -388,10 +398,75 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 전송 상태 조회", description = "특정 알림의 전송 상태를 조회합니다.")
-    public ResponseEntity<NotificationResponse.DeliveryStatus> getDeliveryStatus(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
+    public ResponseEntity<NotificationDeliveryStatusResponse> getDeliveryStatus(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
 
-        NotificationResponse.DeliveryStatus status = notificationFacade.getDeliveryStatus(notificationId);
+        NotificationDeliveryStatusResponse status = notificationFacade.getDeliveryStatus(notificationId);
 
         return ResponseEntity.ok(status);
+    }
+
+    // ==================== 알림 필터링 기능 ====================
+
+    /**
+     * 알림 타입별 조회
+     */
+    @GetMapping("/type")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "알림 타입별 조회", description = "특정 타입의 알림을 조회합니다.")
+    public ResponseEntity<List<NotificationInfoResponse>> getNotificationsByType(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "알림 타입 (SYSTEM, POLICY, FACILITY, COMMUNITY, CHATBOT, HEALTH)", required = true) @RequestParam String notificationType) {
+        List<NotificationInfoResponse> notifications = notificationFacade.getNotificationsByType(
+                userId, com.carecode.domain.notification.entity.Notification.NotificationType.valueOf(notificationType));
+        return ResponseEntity.ok(notifications);
+    }
+
+    /**
+     * 기간별 알림 조회
+     */
+    @GetMapping("/date-range")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "기간별 알림 조회", description = "특정 기간의 알림을 조회합니다.")
+    public ResponseEntity<List<NotificationInfoResponse>> getNotificationsByDateRange(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "시작일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String startDate,
+            @Parameter(description = "종료일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String endDate) {
+        List<NotificationInfoResponse> notifications = notificationFacade.getNotificationsByDateRange(
+                userId, java.time.LocalDateTime.parse(startDate), java.time.LocalDateTime.parse(endDate));
+        return ResponseEntity.ok(notifications);
+    }
+
+    /**
+     * 사용자별 전체 알림 개수 조회
+     */
+    @GetMapping("/count")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "전체 알림 개수 조회", description = "사용자의 전체 알림 개수를 조회합니다.")
+    public ResponseEntity<Map<String, Long>> getTotalNotificationCount(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+        long count = notificationFacade.getTotalNotificationCount(userId);
+        Map<String, Long> response = new java.util.HashMap<>();
+        response.put("totalCount", count);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 읽음 상태별 알림 개수 조회
+     */
+    @GetMapping("/count-by-status")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "읽음 상태별 알림 개수 조회", description = "읽음/읽지 않음 상태별 알림 개수를 조회합니다.")
+    public ResponseEntity<Map<String, Long>> getNotificationCountByReadStatus(
+            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
+            @Parameter(description = "읽음 여부 (true: 읽음, false: 읽지 않음)", required = true) @RequestParam boolean isRead) {
+        long count = notificationFacade.getNotificationCountByReadStatus(userId, isRead);
+        Map<String, Long> response = new java.util.HashMap<>();
+        response.put("count", count);
+        response.put("isRead", isRead ? 1L : 0L);
+        return ResponseEntity.ok(response);
     }
 } 

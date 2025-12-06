@@ -1,6 +1,6 @@
 package com.carecode.domain.user.service;
 
-import com.carecode.domain.user.dto.UserDto;
+import com.carecode.domain.user.dto.response.UserDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

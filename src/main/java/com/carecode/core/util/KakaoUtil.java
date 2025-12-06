@@ -1,6 +1,7 @@
 package com.carecode.core.util;
 
-import com.carecode.domain.user.dto.KakaoDto;
+import com.carecode.domain.user.dto.response.KakaoOAuthToken;
+import com.carecode.domain.user.dto.response.KakaoProfile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,7 +42,7 @@ public class KakaoUtil {
     /**
      * 카카오 액세스 토큰 요청
      */
-    public KakaoDto.OAuthToken requestToken(String accessCode) {
+    public KakaoOAuthToken requestToken(String accessCode) {
         if (accessCode == null || accessCode.trim().isEmpty()) {
             throw new IllegalArgumentException("인증 코드가 비어있습니다.");
         }
@@ -79,7 +80,7 @@ public class KakaoUtil {
                 }
             }
 
-            KakaoDto.OAuthToken oAuthToken = objectMapper.readValue(response.getBody(), KakaoDto.OAuthToken.class);
+            KakaoOAuthToken oAuthToken = objectMapper.readValue(response.getBody(), KakaoOAuthToken.class);
             
             if (oAuthToken.getAccess_token() == null || oAuthToken.getAccess_token().trim().isEmpty()) {
                 throw new RuntimeException("카카오 액세스 토큰이 비어있습니다.");
@@ -102,7 +103,7 @@ public class KakaoUtil {
     /**
      * 카카오 사용자 프로필 요청
      */
-    public KakaoDto.KakaoProfile requestProfile(KakaoDto.OAuthToken oAuthToken) {
+    public KakaoProfile requestProfile(KakaoOAuthToken oAuthToken) {
         if (oAuthToken == null || oAuthToken.getAccess_token() == null) {
             throw new IllegalArgumentException("유효하지 않은 OAuth 토큰입니다.");
         }
@@ -129,7 +130,7 @@ public class KakaoUtil {
                 throw new RuntimeException("카카오 프로필 요청 실패: " + response.getStatusCode() + " - " + response.getBody());
             }
 
-            KakaoDto.KakaoProfile kakaoProfile = objectMapper.readValue(response.getBody(), KakaoDto.KakaoProfile.class);
+            KakaoProfile kakaoProfile = objectMapper.readValue(response.getBody(), KakaoProfile.class);
             
             if (kakaoProfile.getId() == null) {
                 throw new RuntimeException("카카오 사용자 ID가 비어있습니다.");

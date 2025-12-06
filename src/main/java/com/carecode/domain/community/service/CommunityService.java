@@ -2,10 +2,21 @@ package com.carecode.domain.community.service;
 
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.domain.community.dto.CommunityRequest;
-import com.carecode.domain.community.dto.CommunityResponse;
+import com.carecode.domain.community.dto.request.CommunityRequest;
+import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
+import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
+import com.carecode.domain.community.dto.request.CommunityCreateCommentRequest;
+import com.carecode.domain.community.dto.request.CommunityUpdateCommentRequest;
+import com.carecode.domain.community.dto.request.CommunityCreateTagRequest;
+import com.carecode.domain.community.dto.response.CommunityResponse;
+import com.carecode.domain.community.dto.response.CommunityPostResponse;
+import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
+import com.carecode.domain.community.dto.response.CommunityCommentResponse;
+import com.carecode.domain.community.dto.response.CommunityTagResponse;
+import com.carecode.domain.community.dto.response.CommunityPageResponse;
 import com.carecode.domain.community.entity.Comment;
 import com.carecode.domain.community.entity.Post;
+import com.carecode.domain.community.entity.PostCategory;
 import com.carecode.domain.community.entity.Tag;
 import com.carecode.domain.community.repository.CommentRepository;
 import com.carecode.domain.community.repository.PostRepository;
@@ -23,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.Page;
@@ -50,15 +62,18 @@ public class CommunityService {
     /**
      * 게시글 목록 조회 (페이징)
      */
-    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> getAllPosts(int page, int size) {
-        log.info("게시글 목록 조회 - 페이지: {}, 크기: {}", page, size);
+    public CommunityPageResponse<CommunityPostResponse> getAllPosts(int page, int size, String sortBy, String sortDirection) {
+        log.info("게시글 목록 조회 - 페이지: {}, 크기: {}, 정렬: {}, 방향: {}", page, size, sortBy, sortDirection);
         try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Sort sort = com.carecode.core.util.SortUtil.createSort(
+                sortBy, sortDirection, "createdAt", Sort.Direction.DESC
+            );
+            Pageable pageable = PageRequest.of(page, size, sort);
             Page<Post> postPage = postRepository.findAll(pageable);
             
-            List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+            List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
             
-            return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+            return CommunityPageResponse.<CommunityPostResponse>builder()
                     .content(postResponses)
                     .page(postPage.getNumber())
                     .size(postPage.getSize())
@@ -80,7 +95,7 @@ public class CommunityService {
     /**
      * 게시글 상세 조회
      */
-    public CommunityResponse.PostDetailResponse getPostById(Long postId) {
+    public CommunityPostDetailResponse getPostById(Long postId) {
         log.info("게시글 상세 조회 - 게시글 ID: {}", postId);
         try {
             Post post = postRepository.findById(postId)
@@ -102,12 +117,12 @@ public class CommunityService {
     /**
      * 게시글 작성
      */
-    public CommunityResponse.PostResponse createPost(CommunityRequest.CreatePost request) {
+    public CommunityPostResponse createPost(CommunityCreatePostRequest request) {
             // 현재 인증된 사용자 가져오기
             User author = getCurrentUser();
             
             // 카테고리 매핑
-            Post.PostCategory category = mapCategory(request.getCategory());
+            PostCategory category = mapCategory(request.getCategory());
             
             Post post = Post.builder()
                     .title(request.getTitle())
@@ -131,7 +146,7 @@ public class CommunityService {
     /**
      * 게시글 수정
      */
-    public CommunityResponse.PostResponse updatePost(Long postId, CommunityRequest.UpdatePost request) {
+    public CommunityPostResponse updatePost(Long postId, CommunityUpdatePostRequest request) {
         log.info("게시글 수정 - 게시글 ID: {}", postId);
         try {
             Post post = postRepository.findById(postId)
@@ -176,7 +191,7 @@ public class CommunityService {
     /**
      * 게시글의 댓글 목록 조회
      */
-    public List<CommunityResponse.CommentResponse> getCommentsByPostId(Long postId) {
+    public List<CommunityCommentResponse> getCommentsByPostId(Long postId) {
         log.info("댓글 목록 조회 - 게시글 ID: {}", postId);
         try {
             // 게시글 존재 확인
@@ -197,7 +212,7 @@ public class CommunityService {
     /**
      * 댓글 작성
      */
-    public CommunityResponse.CommentResponse createComment(Long postId, CommunityRequest.CreateComment request) {
+    public CommunityCommentResponse createComment(Long postId, CommunityCreateCommentRequest request) {
         log.info("댓글 작성 - 게시글 ID: {}, 부모 댓글 ID: {}", postId, request.getParentCommentId());
         try {
             Post post = postRepository.findById(postId)
@@ -238,7 +253,7 @@ public class CommunityService {
     /**
      * 댓글 수정
      */
-    public CommunityResponse.CommentResponse updateComment(Long commentId, CommunityRequest.UpdateComment request) {
+    public CommunityCommentResponse updateComment(Long commentId, CommunityUpdateCommentRequest request) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
 
@@ -271,7 +286,7 @@ public class CommunityService {
     /**
      * 태그 목록 조회
      */
-    public List<CommunityResponse.TagResponse> getAllTags() {
+    public List<CommunityTagResponse> getAllTags() {
         List<Tag> tags = tagRepository.findByIsActiveTrue();
         return communityMapper.toTagResponseList(tags);
     }
@@ -279,7 +294,7 @@ public class CommunityService {
     /**
      * 태그 검색
      */
-    public List<CommunityResponse.TagResponse> searchTags(String keyword) {
+    public List<CommunityTagResponse> searchTags(String keyword) {
         List<Tag> tags = tagRepository.findByNameContainingAndIsActiveTrue(keyword);
         return communityMapper.toTagResponseList(tags);
     }
@@ -287,7 +302,7 @@ public class CommunityService {
     /**
      * 태그 생성
      */
-    public CommunityResponse.TagResponse createTag(CommunityRequest.CreateTag request) {
+    public CommunityTagResponse createTag(CommunityCreateTagRequest request) {
         if (tagRepository.existsByName(request.getName())) {
             throw new CareServiceException("이미 존재하는 태그입니다: " + request.getName());
         }
@@ -324,7 +339,7 @@ public class CommunityService {
     /**
      * 게시글의 태그 목록 조회
      */
-    public List<CommunityResponse.TagResponse> getTagsByPostId(Long postId) {
+    public List<CommunityTagResponse> getTagsByPostId(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
         return communityMapper.toTagResponseList(post.getTags());
@@ -333,7 +348,7 @@ public class CommunityService {
     /**
      * 태그별 게시글 목록 조회
      */
-    public List<CommunityResponse.PostResponse> getPostsByTagId(Long tagId) {
+    public List<CommunityPostResponse> getPostsByTagId(Long tagId) {
         Tag tag = tagRepository.findById(tagId)
                 .orElseThrow(() -> new ResourceNotFoundException("태그를 찾을 수 없습니다. ID: " + tagId));
         return communityMapper.toPostResponseList(postRepository.findByTagsContaining(tag));
@@ -370,49 +385,49 @@ public class CommunityService {
     /**
      * 카테고리 매핑 메서드
      */
-    private Post.PostCategory mapCategory(String category) {
+    private PostCategory mapCategory(String category) {
         if (category == null) {
-            return Post.PostCategory.GENERAL;
+            return PostCategory.GENERAL;
         }
         
         switch (category.toUpperCase()) {
             case "PARENTING":
             case "육아팁":
             case "정보공유":
-                return Post.PostCategory.SHARE;
+                return PostCategory.SHARE;
             case "질문":
             case "고민상담":
-                return Post.PostCategory.QUESTION;
+                return PostCategory.QUESTION;
             case "일상":
             case "GENERAL":
-                return Post.PostCategory.GENERAL;
+                return PostCategory.GENERAL;
             case "후기":
             case "REVIEW":
-                return Post.PostCategory.REVIEW;
+                return PostCategory.REVIEW;
             case "뉴스":
             case "NEWS":
-                return Post.PostCategory.NEWS;
+                return PostCategory.NEWS;
             case "이벤트":
             case "EVENT":
-                return Post.PostCategory.EVENT;
+                return PostCategory.EVENT;
             case "공지사항":
             case "NOTICE":
-                return Post.PostCategory.NOTICE;
+                return PostCategory.NOTICE;
             default:
-                return Post.PostCategory.GENERAL;
+                return PostCategory.GENERAL;
         }
     }
 
     /**
      * 게시글 검색 (페이징)
      */
-    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> searchPosts(String keyword, int page, int size) {
+    public CommunityPageResponse<CommunityPostResponse> searchPosts(String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Post> postPage = postRepository.findByKeyword(keyword, pageable);
 
-        List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+        List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
 
-        return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+        return CommunityPageResponse.<CommunityPostResponse>builder()
                 .content(postResponses)
                 .page(postPage.getNumber())
                 .size(postPage.getSize())
@@ -430,13 +445,13 @@ public class CommunityService {
     /**
      * 인기 게시글 조회 (페이징)
      */
-    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> getPopularPosts(int page, int size) {
+    public CommunityPageResponse<CommunityPostResponse> getPopularPosts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Post> postPage = postRepository.findPopularPosts(pageable);
 
-        List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+        List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
 
-        return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+        return CommunityPageResponse.<CommunityPostResponse>builder()
                 .content(postResponses)
                 .page(postPage.getNumber())
                 .size(postPage.getSize())
@@ -454,13 +469,13 @@ public class CommunityService {
     /**
      * 최신 게시글 조회 (페이징)
      */
-    public CommunityResponse.PageResponse<CommunityResponse.PostResponse> getLatestPosts(int page, int size) {
+    public CommunityPageResponse<CommunityPostResponse> getLatestPosts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Post> postPage = postRepository.findLatestPosts(pageable);
 
-        List<CommunityResponse.PostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+        List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
 
-        return CommunityResponse.PageResponse.<CommunityResponse.PostResponse>builder()
+        return CommunityPageResponse.<CommunityPostResponse>builder()
                 .content(postResponses)
                 .page(postPage.getNumber())
                 .size(postPage.getSize())
@@ -593,6 +608,38 @@ public class CommunityService {
             return 0;
         }
         return bookmarkRepository.countByPost(post);
+    }
+
+    /**
+     * 사용자가 좋아요한 게시글 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<CommunityPostResponse> getLikedPosts(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        List<PostLike> likes = postLikeRepository.findByUser(user);
+        List<Post> posts = likes.stream()
+                .map(PostLike::getPost)
+                .collect(Collectors.toList());
+        
+        return communityMapper.toPostResponseList(posts);
+    }
+
+    /**
+     * 사용자가 북마크한 게시글 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<CommunityPostResponse> getBookmarkedPosts(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        List<Bookmark> bookmarks = bookmarkRepository.findByUser(user);
+        List<Post> posts = bookmarks.stream()
+                .map(Bookmark::getPost)
+                .collect(Collectors.toList());
+        
+        return communityMapper.toPostResponseList(posts);
     }
 
     /**

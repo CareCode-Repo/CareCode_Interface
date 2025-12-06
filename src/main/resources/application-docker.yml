@@ -1,0 +1,15 @@
+# Docker 환경 설정
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mariadb://carecode-mariadb:3306/carecode}
+    username: ${DB_USERNAME:carecode}
+    password: ${DB_PASSWORD:carecode!123}
+  redis:
+    host: ${REDIS_HOST:carecode-redis}
+    port: ${REDIS_PORT:6379}
+
+logging:
+  level:
+    root: INFO
+    com.carecode: INFO
+

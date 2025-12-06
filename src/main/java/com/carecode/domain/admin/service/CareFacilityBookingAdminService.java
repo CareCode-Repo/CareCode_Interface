@@ -2,7 +2,16 @@ package com.carecode.domain.admin.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.careFacility.dto.CareFacilityBookingDto;
+import com.carecode.domain.admin.dto.AdminBookingDetailResponse;
+import com.carecode.domain.admin.dto.AdminBookingListResponse;
+import com.carecode.domain.careFacility.dto.response.StatusDistribution;
+import com.carecode.domain.careFacility.dto.response.TypeDistribution;
+import com.carecode.domain.careFacility.dto.response.FacilityDistribution;
+import com.carecode.domain.careFacility.dto.response.DailyBookingCount;
+import com.carecode.domain.admin.dto.AdminBookingSearchRequest;
+import com.carecode.domain.admin.dto.AdminBookingSearchResponse;
+import com.carecode.domain.admin.dto.AdminStatusUpdateRequest;
+import com.carecode.domain.admin.dto.AdminBookingStatsResponse;
 import com.carecode.domain.careFacility.entity.CareFacilityBooking;
 import com.carecode.domain.careFacility.repository.CareFacilityBookingRepository;
 import com.carecode.domain.user.entity.User;
@@ -17,14 +26,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * 관리자용 육아 시설 예약 서비스 클래스
- * 관리자 전용 예약 관리 기능을 제공
  */
 @Slf4j
 @Service
@@ -35,12 +42,10 @@ public class CareFacilityBookingAdminService {
     private final CareFacilityBookingRepository bookingRepository;
     private final UserRepository userRepository;
 
-    /**
-     * 전체 예약 목록 조회 (페이징)
-     */
+    // 전체 예약 목록 조회 (페이징)
     @LogExecutionTime
-    public CareFacilityBookingDto.AdminBookingSearchResponse getAllBookings(
-        CareFacilityBookingDto.AdminBookingSearchRequest request) {
+    public AdminBookingSearchResponse getAllBookings(
+        AdminBookingSearchRequest request) {
 
         Pageable pageable = PageRequest.of(
                 request.getPage() != null ? request.getPage() : 0,
@@ -50,11 +55,11 @@ public class CareFacilityBookingAdminService {
 
         Page<CareFacilityBooking> bookingPage = bookingRepository.findAll(pageable);
 
-        List<CareFacilityBookingDto.AdminBookingListResponse> bookings = bookingPage.getContent().stream()
+        List<AdminBookingListResponse> bookings = bookingPage.getContent().stream()
                 .map(this::convertToAdminListResponse)
                 .collect(Collectors.toList());
 
-        return CareFacilityBookingDto.AdminBookingSearchResponse.builder()
+        return AdminBookingSearchResponse.builder()
                 .bookings(bookings)
                 .totalElements(bookingPage.getTotalElements())
                 .totalPages(bookingPage.getTotalPages())
@@ -66,11 +71,9 @@ public class CareFacilityBookingAdminService {
                     
     }
 
-    /**
-     * 조건별 예약 검색
-     */
+    // 조건별 예약 검색
     @LogExecutionTime
-    public CareFacilityBookingDto.AdminBookingSearchResponse searchBookings(CareFacilityBookingDto.AdminBookingSearchRequest request) {
+    public AdminBookingSearchResponse searchBookings(AdminBookingSearchRequest request) {
 
         Pageable pageable = PageRequest.of(
                 request.getPage() != null ? request.getPage() : 0,
@@ -109,11 +112,11 @@ public class CareFacilityBookingAdminService {
                 pageable
         );
 
-        List<CareFacilityBookingDto.AdminBookingListResponse> bookings = bookingPage.getContent().stream()
+        List<AdminBookingListResponse> bookings = bookingPage.getContent().stream()
                 .map(this::convertToAdminListResponse)
                 .collect(Collectors.toList());
 
-        return CareFacilityBookingDto.AdminBookingSearchResponse.builder()
+        return AdminBookingSearchResponse.builder()
                 .bookings(bookings)
                 .totalElements(bookingPage.getTotalElements())
                 .totalPages(bookingPage.getTotalPages())
@@ -124,24 +127,20 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 예약 상세 조회
-     */
+    // 예약 상세 조회
     @LogExecutionTime
-    public CareFacilityBookingDto.AdminBookingDetailResponse getBookingDetail(Long bookingId) {
+    public AdminBookingDetailResponse getBookingDetail(Long bookingId) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
 
         return convertToAdminDetailResponse(booking);
     }
 
-    /**
-     * 예약 상태 변경
-     */
+    // 예약 상태 변경
     @LogExecutionTime
     @Transactional
-    public CareFacilityBookingDto.AdminBookingDetailResponse updateBookingStatus(Long bookingId,
-                                                                                 CareFacilityBookingDto.AdminStatusUpdateRequest request) {
+    public AdminBookingDetailResponse updateBookingStatus(Long bookingId,
+                                                                                 AdminStatusUpdateRequest request) {
             CareFacilityBooking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
             
@@ -158,9 +157,7 @@ public class CareFacilityBookingAdminService {
             return convertToAdminDetailResponse(savedBooking);
     }
 
-    /**
-     * 예약 삭제
-     */
+    // 예약 삭제
     @LogExecutionTime
     @Transactional
     public void deleteBooking(Long bookingId) {
@@ -170,11 +167,9 @@ public class CareFacilityBookingAdminService {
         bookingRepository.delete(booking);
     }
 
-    /**
-     * 예약 통계 조회
-     */
+    // 예약 통계 조회
     @LogExecutionTime
-    public CareFacilityBookingDto.AdminBookingStatsResponse getBookingStats() {
+    public AdminBookingStatsResponse getBookingStats() {
         // 전체 통계
         long totalBookings = bookingRepository.count();
         long pendingBookings = bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.PENDING);
@@ -192,18 +187,18 @@ public class CareFacilityBookingAdminService {
                 (double) completedBookings / totalBookings * 100 : 0.0;
 
         // 상태별 분포
-        List<CareFacilityBookingDto.StatusDistribution> statusDistribution = getStatusDistribution();
+        List<StatusDistribution> statusDistribution = getStatusDistribution();
 
         // 타입별 분포
-        List<CareFacilityBookingDto.TypeDistribution> typeDistribution = getTypeDistribution();
+        List<TypeDistribution> typeDistribution = getTypeDistribution();
 
         // 시설별 분포
-        List<CareFacilityBookingDto.FacilityDistribution> facilityDistribution = getFacilityDistribution();
+        List<FacilityDistribution> facilityDistribution = getFacilityDistribution();
 
         // 일별 예약 수
-        List<CareFacilityBookingDto.DailyBookingCount> dailyBookingCounts = getDailyBookingCounts();
+        List<DailyBookingCount> dailyBookingCounts = getDailyBookingCounts();
 
-        return CareFacilityBookingDto.AdminBookingStatsResponse.builder()
+        return AdminBookingStatsResponse.builder()
                 .totalBookings(totalBookings)
                 .pendingBookings(pendingBookings)
                 .confirmedBookings(confirmedBookings)
@@ -220,10 +215,8 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 상태별 분포 조회
-     */
-    private List<CareFacilityBookingDto.StatusDistribution> getStatusDistribution() {
+    // 상태별 분포 조회
+    private List<StatusDistribution> getStatusDistribution() {
         long total = bookingRepository.count();
         if (total == 0) return List.of();
         
@@ -235,10 +228,8 @@ public class CareFacilityBookingAdminService {
         );
     }
 
-    /**
-     * 타입별 분포 조회
-     */
-    private List<CareFacilityBookingDto.TypeDistribution> getTypeDistribution() {
+    // 타입별 분포 조회
+    private List<TypeDistribution> getTypeDistribution() {
         long total = bookingRepository.count();
         if (total == 0) return List.of();
         
@@ -249,15 +240,13 @@ public class CareFacilityBookingAdminService {
         );
     }
 
-    /**
-     * 시설별 분포 조회
-     */
-    private List<CareFacilityBookingDto.FacilityDistribution> getFacilityDistribution() {
+    // 시설별 분포 조회
+    private List<FacilityDistribution> getFacilityDistribution() {
         List<Object[]> facilityStats = bookingRepository.getFacilityBookingStats();
         long total = bookingRepository.count();
         
         return facilityStats.stream()
-                .map(stat -> CareFacilityBookingDto.FacilityDistribution.builder()
+                .map(stat -> FacilityDistribution.builder()
                         .facilityId((Long) stat[0])
                         .facilityName((String) stat[1])
                         .count((Long) stat[2])
@@ -266,26 +255,22 @@ public class CareFacilityBookingAdminService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 일별 예약 수 조회
-     */
-    private List<CareFacilityBookingDto.DailyBookingCount> getDailyBookingCounts() {
+    // 일별 예약 수 조회
+    private List<DailyBookingCount> getDailyBookingCounts() {
         List<Object[]> dailyStats = bookingRepository.getDailyBookingCounts();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         
         return dailyStats.stream()
-                .map(stat -> CareFacilityBookingDto.DailyBookingCount.builder()
+                .map(stat -> DailyBookingCount.builder()
                         .date(((LocalDate) stat[0]).format(formatter))
                         .count((Long) stat[1])
                         .build())
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 상태별 분포 생성
-     */
-    private CareFacilityBookingDto.StatusDistribution createStatusDistribution(String status, String display, long count, long total) {
-        return CareFacilityBookingDto.StatusDistribution.builder()
+    // 상태별 분포 생성
+    private StatusDistribution createStatusDistribution(String status, String display, long count, long total) {
+        return StatusDistribution.builder()
                 .status(status)
                 .statusDisplay(display)
                 .count(count)
@@ -293,11 +278,9 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 타입별 분포 생성
-     */
-    private CareFacilityBookingDto.TypeDistribution createTypeDistribution(String type, String display, long count, long total) {
-        return CareFacilityBookingDto.TypeDistribution.builder()
+    // 타입별 분포 생성
+    private TypeDistribution createTypeDistribution(String type, String display, long count, long total) {
+        return TypeDistribution.builder()
                 .bookingType(type)
                 .bookingTypeDisplay(display)
                 .count(count)
@@ -305,11 +288,9 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 관리자용 목록 응답 변환
-     */
-    private CareFacilityBookingDto.AdminBookingListResponse convertToAdminListResponse(CareFacilityBooking booking) {
-        return CareFacilityBookingDto.AdminBookingListResponse.builder()
+    // 관리자용 목록 응답 변환
+    private AdminBookingListResponse convertToAdminListResponse(CareFacilityBooking booking) {
+        return AdminBookingListResponse.builder()
                 .id(booking.getId())
                 .facilityId(booking.getFacility().getId())
                 .facilityName(booking.getFacility().getName())
@@ -324,13 +305,11 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 관리자용 상세 응답 변환
-     */
-    private CareFacilityBookingDto.AdminBookingDetailResponse convertToAdminDetailResponse(CareFacilityBooking booking) {
+    // 관리자용 상세 응답 변환
+    private AdminBookingDetailResponse convertToAdminDetailResponse(CareFacilityBooking booking) {
         User user = userRepository.findByUserId(booking.getUserId()).orElse(null);
         
-        return CareFacilityBookingDto.AdminBookingDetailResponse.builder()
+        return AdminBookingDetailResponse.builder()
                 .id(booking.getId())
                 .facilityId(booking.getFacility().getId())
                 .facilityName(booking.getFacility().getName())
@@ -360,9 +339,7 @@ public class CareFacilityBookingAdminService {
                 .build();
     }
 
-    /**
-     * 사용자명 조회
-     */
+    // 사용자명 조회
     private String getUserName(String userId) {
         return userRepository.findByUserId(userId)
                 .map(User::getName)

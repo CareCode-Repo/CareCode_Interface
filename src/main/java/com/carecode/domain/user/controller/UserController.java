@@ -3,9 +3,11 @@ package com.carecode.domain.user.controller;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
-import com.carecode.domain.user.dto.UserDto;
-import com.carecode.domain.user.dto.UserProfileUpdateDto;
-import com.carecode.domain.user.dto.UserUpdateRequestDto;
+import com.carecode.domain.user.dto.response.UserDto;
+import com.carecode.domain.user.dto.response.UserProfileUpdateDto;
+import com.carecode.domain.user.dto.response.UserProfileCompletionResponse;
+import com.carecode.domain.user.dto.response.UserProfileMissingFields;
+import com.carecode.domain.user.dto.request.UserUpdateRequestDto;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.service.UserService;
 import com.carecode.domain.user.app.UserFacade;
@@ -28,7 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import com.carecode.core.handler.ApiSuccess;
-import com.carecode.domain.user.dto.UserResponse;
+import com.carecode.domain.user.dto.response.UserResponse;
+import com.carecode.domain.user.dto.response.UserStatsResponse;
+import com.carecode.domain.user.dto.response.UserSearchResponse;
+import com.carecode.domain.user.dto.response.UserListResponse;
+import com.carecode.domain.user.dto.response.UserInfoResponse;
 
 /**
  * 통합 사용자 관리 컨트롤러
@@ -102,10 +108,10 @@ public class UserController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "프로필 완성도 체크", description = "사용자 프로필의 완성도를 확인합니다.")
     @SecurityRequirement(name = "Bearer Authentication")
-    public ResponseEntity<UserProfileUpdateDto.ProfileCompletionResponse> checkProfileCompletion() {
+    public ResponseEntity<UserProfileCompletionResponse> checkProfileCompletion() {
         String currentUserEmail = getCurrentUserEmail();
         User user = userFacade.getUserEntityByEmail(currentUserEmail);
-        UserProfileUpdateDto.ProfileCompletionResponse completion = calculateProfileCompletion(user);
+        UserProfileCompletionResponse completion = calculateProfileCompletion(user);
         return ResponseEntity.ok(completion);
     }
 
@@ -251,8 +257,8 @@ public class UserController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "사용자 통계 조회", description = "전체 사용자 통계를 조회합니다.")
     @SecurityRequirement(name = "Bearer Authentication")
-    public ResponseEntity<UserResponse.UserStats> getUserStatistics() {
-        UserResponse.UserStats stats = userService.getUserStatistics();
+    public ResponseEntity<UserStatsResponse> getUserStatistics() {
+        UserStatsResponse stats = userService.getUserStatistics();
         return ResponseEntity.ok(stats);
     }
 
@@ -264,7 +270,7 @@ public class UserController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "사용자 검색", description = "키워드로 사용자를 검색합니다.")
     @SecurityRequirement(name = "Bearer Authentication")
-    public ResponseEntity<UserResponse.UserSearch> searchUsers(@Parameter(description = "검색 키워드", required = true) @RequestParam String keyword,
+    public ResponseEntity<UserSearchResponse> searchUsers(@Parameter(description = "검색 키워드", required = true) @RequestParam String keyword,
                                                                @Parameter(description = "검색 타입", required = false) @RequestParam(required = false) String type) {
         
         List<UserDto> users;
@@ -274,7 +280,7 @@ public class UserController extends BaseController {
             users = userService.searchUsers(keyword);
         }
         
-        UserResponse.UserSearch searchResult = UserResponse.UserSearch.builder()
+        UserSearchResponse searchResult = UserSearchResponse.builder()
                 .users(users.stream().map(this::convertToUserInfo).collect(Collectors.toList()))
                 .totalCount(users.size())
                 .searchKeyword(keyword)
@@ -292,9 +298,9 @@ public class UserController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "활성 사용자 목록", description = "활성화된 사용자 목록을 조회합니다.")
     @SecurityRequirement(name = "Bearer Authentication")
-    public ResponseEntity<UserResponse.UserList> getActiveUsers() {
+    public ResponseEntity<UserListResponse> getActiveUsers() {
         List<UserDto> users = userService.getActiveUsers();
-        UserResponse.UserList userList = UserResponse.UserList.builder()
+        UserListResponse userList = UserListResponse.builder()
                 .users(users.stream().map(this::convertToUserInfo).collect(Collectors.toList()))
                 .totalCount(users.size())
                 .currentPage(0)
@@ -313,9 +319,9 @@ public class UserController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "사용자 유형별 조회", description = "특정 유형의 사용자들을 조회합니다.")
     @SecurityRequirement(name = "Bearer Authentication")
-    public ResponseEntity<UserResponse.UserList> getUsersByType(@Parameter(description = "사용자 유형", required = true) @PathVariable String userType) {
+    public ResponseEntity<UserListResponse> getUsersByType(@Parameter(description = "사용자 유형", required = true) @PathVariable String userType) {
         List<UserDto> users = userService.getUsersByType(userType);
-        UserResponse.UserList userList = UserResponse.UserList.builder()
+        UserListResponse userList = UserListResponse.builder()
                 .users(users.stream().map(this::convertToUserInfo).collect(Collectors.toList()))
                 .totalCount(users.size())
                 .currentPage(0)
@@ -334,9 +340,9 @@ public class UserController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "지역별 사용자 조회", description = "특정 지역의 사용자들을 조회합니다.")
     @SecurityRequirement(name = "Bearer Authentication")
-    public ResponseEntity<UserResponse.UserList> getUsersByRegion(@Parameter(description = "지역", required = true) @PathVariable String region) {
+    public ResponseEntity<UserListResponse> getUsersByRegion(@Parameter(description = "지역", required = true) @PathVariable String region) {
         List<UserDto> users = userService.getUsersByRegion(region);
-        UserResponse.UserList userList = UserResponse.UserList.builder()
+        UserListResponse userList = UserListResponse.builder()
                 .users(users.stream().map(this::convertToUserInfo).collect(Collectors.toList()))
                 .totalCount(users.size())
                 .currentPage(0)
@@ -355,9 +361,9 @@ public class UserController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "인증된 사용자 목록", description = "이메일 인증이 완료된 사용자 목록을 조회합니다.")
     @SecurityRequirement(name = "Bearer Authentication")
-    public ResponseEntity<UserResponse.UserList> getVerifiedUsers() {
+    public ResponseEntity<UserListResponse> getVerifiedUsers() {
         List<UserDto> users = userService.getVerifiedUsers();
-        UserResponse.UserList userList = UserResponse.UserList.builder()
+        UserListResponse userList = UserListResponse.builder()
                 .users(users.stream().map(this::convertToUserInfo).collect(Collectors.toList()))
                 .totalCount(users.size())
                 .currentPage(0)
@@ -376,9 +382,9 @@ public class UserController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "최근 활동 사용자 목록", description = "최근에 활동한 사용자 목록을 조회합니다.")
     @SecurityRequirement(name = "Bearer Authentication")
-    public ResponseEntity<UserResponse.UserList> getRecentlyActiveUsers() {
+    public ResponseEntity<UserListResponse> getRecentlyActiveUsers() {
         List<UserDto> users = userService.getRecentlyActiveUsers();
-        UserResponse.UserList userList = UserResponse.UserList.builder()
+        UserListResponse userList = UserListResponse.builder()
                 .users(users.stream().map(this::convertToUserInfo).collect(Collectors.toList()))
                 .totalCount(users.size())
                 .currentPage(0)
@@ -505,9 +511,9 @@ public class UserController extends BaseController {
     /**
      * 프로필 완성도 계산
      */
-    private UserProfileUpdateDto.ProfileCompletionResponse calculateProfileCompletion(User user) {
-        UserProfileUpdateDto.ProfileCompletionResponse.MissingFields missingFields = 
-                UserProfileUpdateDto.ProfileCompletionResponse.MissingFields.builder()
+    private UserProfileCompletionResponse calculateProfileCompletion(User user) {
+        UserProfileMissingFields missingFields = 
+                UserProfileMissingFields.builder()
                         .needsRealName(isBlank(user.getName()) || user.getName().contains("_"))
                         .needsPhoneNumber(isBlank(user.getPhoneNumber()))
                         .needsBirthDate(user.getBirthDate() == null)
@@ -534,7 +540,7 @@ public class UserController extends BaseController {
             message = String.format("프로필 완성도: %d%% (%d개 항목 추가 필요)", percentage, totalFields - completedFields);
         }
         
-        return UserProfileUpdateDto.ProfileCompletionResponse.builder()
+        return UserProfileCompletionResponse.builder()
                 .isComplete(isComplete)
                 .completionPercentage(percentage)
                 .message(message)
@@ -550,10 +556,10 @@ public class UserController extends BaseController {
     }
 
     /**
-     * UserDto를 UserResponse.UserInfo로 변환
+     * UserDto를 UserInfoResponse로 변환
      */
-    private UserResponse.UserInfo convertToUserInfo(UserDto userDto) {
-        return UserResponse.UserInfo.builder()
+    private UserInfoResponse convertToUserInfo(UserDto userDto) {
+        return UserInfoResponse.builder()
                 .id(userDto.getId())
                 .userId(userDto.getUserId())
                 .email(userDto.getEmail())

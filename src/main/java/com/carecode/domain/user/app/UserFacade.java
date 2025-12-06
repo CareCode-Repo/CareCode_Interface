@@ -1,7 +1,8 @@
 package com.carecode.domain.user.app;
 
-import com.carecode.domain.user.dto.UserDto;
-import com.carecode.domain.user.dto.UserResponse;
+import com.carecode.domain.user.dto.response.UserDto;
+import com.carecode.domain.user.dto.response.UserResponse;
+import com.carecode.domain.user.dto.response.UserStatsResponse;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class UserFacade {
     }
 
     @Transactional(readOnly = true)
-    public UserResponse.UserStats getUserStatistics() {
+    public UserStatsResponse getUserStatistics() {
         return userService.getUserStatistics();
     }
 

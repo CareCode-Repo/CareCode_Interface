@@ -1,6 +1,7 @@
 package com.carecode.domain.policy.repository;
 
-import com.carecode.domain.policy.dto.PolicyResponse;
+import com.carecode.domain.policy.dto.response.PolicyResponse;
+import com.carecode.domain.policy.dto.response.PolicyCategoryStatsResponse;
 import com.carecode.domain.policy.entity.Policy;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -122,9 +123,9 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
     /**
      * 카테고리별 통계 조회
      */
-    @Query("SELECT new com.carecode.domain.policy.dto.PolicyResponse$CategoryStats(" +
+    @Query("SELECT new com.carecode.domain.policy.dto.PolicyCategoryStatsResponse(" +
            "p.policyType, COUNT(p), 0.0, 0) " +
            "FROM Policy p WHERE p.isActive = true " +
            "GROUP BY p.policyType")
-    List<PolicyResponse.CategoryStats> getCategoryStats();
+    List<PolicyCategoryStatsResponse> getCategoryStats();
 } 

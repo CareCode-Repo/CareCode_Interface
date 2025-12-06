@@ -1,6 +1,10 @@
 package com.carecode.domain.community.mapper;
 
-import com.carecode.domain.community.dto.CommunityResponse;
+import com.carecode.domain.community.dto.response.CommunityResponse;
+import com.carecode.domain.community.dto.response.CommunityPostResponse;
+import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
+import com.carecode.domain.community.dto.response.CommunityCommentResponse;
+import com.carecode.domain.community.dto.response.CommunityTagResponse;
 import com.carecode.domain.community.entity.Comment;
 import com.carecode.domain.community.entity.Post;
 import com.carecode.domain.community.entity.Tag;
@@ -28,9 +32,9 @@ public class CommunityMapper {
     /**
      * Post 엔티티를 PostResponse DTO로 변환
      */
-    public CommunityResponse.PostResponse toPostResponse(Post post) {
+    public CommunityPostResponse toPostResponse(Post post) {
         List<String> tagNames = post.getTags() != null ? post.getTags().stream().map(Tag::getName).toList() : List.of();
-        return CommunityResponse.PostResponse.builder()
+        return CommunityPostResponse.builder()
                 .postId(post.getId())
                 .title(post.getTitle())
                 .content(post.getContent())
@@ -51,14 +55,14 @@ public class CommunityMapper {
     /**
      * Post 엔티티를 PostDetailResponse DTO로 변환
      */
-    public CommunityResponse.PostDetailResponse toPostDetailResponse(Post post) {
+    public CommunityPostDetailResponse toPostDetailResponse(Post post) {
         List<Comment> comments = commentRepository.findByPostIdAndParentCommentIsNull(post.getId());
-        List<CommunityResponse.CommentResponse> commentResponses = comments.stream()
+        List<CommunityCommentResponse> commentResponses = comments.stream()
                 .map(this::toCommentResponse)
                 .collect(Collectors.toList());
         
         // PostResponse의 기본 필드들 설정
-        CommunityResponse.PostDetailResponse response = new CommunityResponse.PostDetailResponse();
+        CommunityPostDetailResponse response = new CommunityPostDetailResponse();
         response.setPostId(post.getId());
         response.setTitle(post.getTitle());
         response.setContent(post.getContent());
@@ -82,12 +86,12 @@ public class CommunityMapper {
     /**
      * Comment 엔티티를 CommentResponse DTO로 변환
      */
-    public CommunityResponse.CommentResponse toCommentResponse(Comment comment) {
-        List<CommunityResponse.CommentResponse> replies = comment.getReplies().stream()
+    public CommunityCommentResponse toCommentResponse(Comment comment) {
+        List<CommunityCommentResponse> replies = comment.getReplies().stream()
                 .map(this::toCommentResponse)
                 .collect(Collectors.toList());
         
-        return CommunityResponse.CommentResponse.builder()
+        return CommunityCommentResponse.builder()
                 .commentId(comment.getId())
                 .content(comment.getContent())
                 .authorName(comment.getAuthorName())
@@ -103,8 +107,8 @@ public class CommunityMapper {
     /**
      * Tag 엔티티를 TagResponse DTO로 변환
      */
-    public CommunityResponse.TagResponse toTagResponse(Tag tag) {
-        return CommunityResponse.TagResponse.builder()
+    public CommunityTagResponse toTagResponse(Tag tag) {
+        return CommunityTagResponse.builder()
                 .id(tag.getId())
                 .name(tag.getName())
                 .description(tag.getDescription())
@@ -115,7 +119,7 @@ public class CommunityMapper {
     /**
      * Post 엔티티 리스트를 PostResponse DTO 리스트로 변환
      */
-    public List<CommunityResponse.PostResponse> toPostResponseList(List<Post> posts) {
+    public List<CommunityPostResponse> toPostResponseList(List<Post> posts) {
         return posts.stream()
                 .map(this::toPostResponse)
                 .collect(Collectors.toList());
@@ -124,7 +128,7 @@ public class CommunityMapper {
     /**
      * Comment 엔티티 리스트를 CommentResponse DTO 리스트로 변환
      */
-    public List<CommunityResponse.CommentResponse> toCommentResponseList(List<Comment> comments) {
+    public List<CommunityCommentResponse> toCommentResponseList(List<Comment> comments) {
         return comments.stream()
                 .map(this::toCommentResponse)
                 .collect(Collectors.toList());
@@ -133,7 +137,7 @@ public class CommunityMapper {
     /**
      * Tag 엔티티 리스트를 TagResponse DTO 리스트로 변환
      */
-    public List<CommunityResponse.TagResponse> toTagResponseList(List<Tag> tags) {
+    public List<CommunityTagResponse> toTagResponseList(List<Tag> tags) {
         return tags.stream()
                 .map(this::toTagResponse)
                 .collect(Collectors.toList());

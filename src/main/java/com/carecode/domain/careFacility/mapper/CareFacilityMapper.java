@@ -1,15 +1,15 @@
 package com.carecode.domain.careFacility.mapper;
 
 import com.carecode.core.util.ResponseMapper;
-import com.carecode.domain.careFacility.dto.CareFacilityResponse;
+import com.carecode.domain.careFacility.dto.response.CareFacilityInfo;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CareFacilityMapper implements ResponseMapper<CareFacility, CareFacilityResponse.CareFacility> {
+public class CareFacilityMapper implements ResponseMapper<CareFacility, CareFacilityInfo> {
     @Override
-    public CareFacilityResponse.CareFacility toResponse(CareFacility facility) {
-        return CareFacilityResponse.CareFacility.builder()
+    public CareFacilityInfo toResponse(CareFacility facility) {
+        return CareFacilityInfo.builder()
                 .id(facility.getId())
                 .name(facility.getName())
                 .facilityType(facility.getFacilityType() != null ? facility.getFacilityType().name() : null)

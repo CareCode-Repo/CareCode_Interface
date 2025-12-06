@@ -3,10 +3,14 @@ package com.carecode.domain.user.service;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.exception.UserNotFoundException;
-import com.carecode.domain.user.dto.LoginRequestDto;
-import com.carecode.domain.user.dto.PasswordChangeRequestDto;
-import com.carecode.domain.user.dto.UserDto;
+import com.carecode.core.util.ValidationUtil;
+import com.carecode.domain.user.dto.request.LoginRequestDto;
+import com.carecode.domain.user.dto.request.PasswordChangeRequestDto;
+import com.carecode.domain.user.dto.response.UserDto;
+import com.carecode.domain.user.dto.response.UserStatsResponse;
 import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.entity.UserRole;
+import com.carecode.domain.user.entity.Gender;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -117,8 +121,6 @@ public class UserService {
             headers.set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
             HttpEntity<String> entity = new HttpEntity<>(headers);
             
-            log.info("카카오 API 호출: URL=https://kapi.kakao.com/v2/user/me");
-            log.debug("요청 헤더: {}", headers);
             
             ResponseEntity<Map> response = restTemplate.exchange(
                 "https://kapi.kakao.com/v2/user/me",
@@ -126,8 +128,6 @@ public class UserService {
                 entity,
                 Map.class
             );
-            
-            log.info("카카오 API 응답 상태: {}", response.getStatusCode());
             
             Map<String, Object> body = response.getBody();
             Map<String, Object> userInfo = new HashMap<>();
@@ -172,7 +172,7 @@ public class UserService {
      * 사용자 통계 조회
      */
     @LogExecutionTime
-    public com.carecode.domain.user.dto.UserResponse.UserStats getUserStatistics() {
+    public UserStatsResponse getUserStatistics() {
         List<User> allUsers = userRepository.findAll();
         long totalUsers = allUsers.size();
         long activeUsers = allUsers.stream().filter(u -> Boolean.TRUE.equals(u.getIsActive())).count();
@@ -193,7 +193,7 @@ public class UserService {
                 .filter(u -> u.getCreatedAt() != null && !u.getCreatedAt().isBefore(startOfMonth))
                 .count();
 
-        return com.carecode.domain.user.dto.UserResponse.UserStats.builder()
+        return UserStatsResponse.builder()
                 .totalUsers(totalUsers)
                 .activeUsers(activeUsers)
                 .verifiedUsers(verifiedUsers)
@@ -229,9 +229,9 @@ public class UserService {
         }
         
         // 역할 유효성 검증
-        User.UserRole userRole;
+        UserRole userRole;
         try {
-            userRole = User.UserRole.valueOf(role);
+            userRole = UserRole.valueOf(role);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("유효하지 않은 역할입니다: " + role + ". 가능한 역할: PARENT, CAREGIVER, ADMIN, GUEST");
         }
@@ -282,10 +282,10 @@ public class UserService {
                 .name(userDto.getName())
                 .phoneNumber(userDto.getPhoneNumber())
                 .birthDate(userDto.getBirthDate())
-                .gender(userDto.getGender() != null ? User.Gender.valueOf(userDto.getGender()) : null)
+                .gender(userDto.getGender() != null ? Gender.valueOf(userDto.getGender()) : null)
                 .address(userDto.getAddress())
                 .profileImageUrl(userDto.getProfileImageUrl())
-                .role(User.UserRole.valueOf(role))
+                .role(UserRole.valueOf(role))
                 .provider(userDto.getProvider()) // OAuth 제공자 정보
                 .providerId(userDto.getProviderId()) // OAuth 제공자 ID
                 .isActive(true)
@@ -396,7 +396,7 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         
-        user.setRole(User.UserRole.valueOf(newRole));
+        user.setRole(UserRole.valueOf(newRole));
         user.setUpdatedAt(LocalDateTime.now());
         
         userRepository.save(user);
@@ -633,5 +633,92 @@ public class UserService {
         userRepository.save(user);
         
         log.info("사용자 계정 복구 완료: 사용자ID={}, 복구시간={}", userId, user.getUpdatedAt());
+    }
+
+    /**
+     * 역할별 사용자 조회
+     */
+    @LogExecutionTime
+    public List<UserDto> getUsersByRole(String role) {
+        log.info("역할별 사용자 조회: 역할={}", role);
+        
+        List<User> users = userRepository.findByRoleAndDeletedAtIsNull(role);
+        return users.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 지역별 사용자 조회
+     */
+    @LogExecutionTime
+    public List<UserDto> getUsersByLocation(String region) {
+        log.info("지역별 사용자 조회: 지역={}", region);
+        
+        List<User> users = userRepository.findByAddressContainingAndDeletedAtIsNull(region);
+        return users.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 이메일 인증된 사용자 조회
+     */
+    @LogExecutionTime
+    public List<UserDto> getEmailVerifiedUsers() {
+        log.info("이메일 인증된 사용자 조회");
+        
+        List<User> users = userRepository.findEmailVerifiedUsersNotDeleted();
+        return users.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * 최근 업데이트된 사용자 조회
+     */
+    @LogExecutionTime
+    public List<UserDto> getRecentlyUpdatedUsers(int days) {
+        log.info("최근 업데이트된 사용자 조회: {}일 이내", days);
+        
+        LocalDateTime dateTime = LocalDateTime.now().minusDays(days);
+        List<User> users = userRepository.findByUpdatedAtAfterAndDeletedAtIsNull(dateTime);
+        return users.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 활성 사용자 수 조회
+     */
+    @LogExecutionTime
+    public long getActiveUserCount() {
+        log.info("활성 사용자 수 조회");
+        
+        return userRepository.countActiveUsersNotDeleted();
+    }
+
+    /**
+     * 이메일 인증된 사용자 수 조회
+     */
+    @LogExecutionTime
+    public long getEmailVerifiedUserCount() {
+        log.info("이메일 인증된 사용자 수 조회");
+        
+        return userRepository.countEmailVerifiedUsersNotDeleted();
+    }
+
+    /**
+     * OAuth 제공자별 사용자 조회
+     */
+    @LogExecutionTime
+    public List<UserDto> getUsersByProvider(String provider) {
+        log.info("OAuth 제공자별 사용자 조회: 제공자={}", provider);
+        
+        List<User> users = userRepository.findByProviderAndDeletedAtIsNull(provider);
+        return users.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 } 

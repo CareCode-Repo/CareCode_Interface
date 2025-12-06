@@ -1,7 +1,8 @@
 package com.carecode.core.controller;
 
 import com.carecode.core.client.CareFacilityApiService;
-import com.carecode.domain.careFacility.dto.CareFacilityResponse;
+import com.carecode.domain.careFacility.dto.response.CareFacilityInfo;
+import com.carecode.domain.careFacility.dto.response.CareFacilityStatsResponse;
 import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.service.CareFacilityService;
 import com.carecode.domain.careFacility.entity.CareFacility;
@@ -179,12 +180,12 @@ public class CareFacilityApiController {
             log.info("DB 저장된 보육시설 목록 조회 요청: page={}, size={}", page, size);
             
             // CareFacilityService를 통해 DB에서 데이터 조회
-            List<CareFacilityResponse.CareFacility> facilities = careFacilityService.getAllCareFacilities();
+            List<CareFacilityInfo> facilities = careFacilityService.getAllCareFacilities();
             
             // 페이징 처리
             int start = page * size;
             int end = Math.min(start + size, facilities.size());
-            List<CareFacilityResponse.CareFacility> pagedFacilities = facilities.subList(start, end);
+            List<CareFacilityInfo> pagedFacilities = facilities.subList(start, end);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -214,7 +215,7 @@ public class CareFacilityApiController {
             log.info("보육시설 통계 조회 요청");
             
             // CareFacilityService를 통해 통계 조회
-            CareFacilityResponse.CareFacilityStats stats = careFacilityService.getFacilityStats();
+            CareFacilityStatsResponse stats = careFacilityService.getFacilityStats();
             
             return ResponseEntity.ok(Map.of(
                 "success", true,

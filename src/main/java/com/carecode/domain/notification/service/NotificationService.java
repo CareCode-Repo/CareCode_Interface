@@ -2,8 +2,15 @@ package com.carecode.domain.notification.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.notification.dto.NotificationRequest;
-import com.carecode.domain.notification.dto.NotificationResponse;
+import com.carecode.domain.notification.dto.request.NotificationRequest;
+import com.carecode.domain.notification.dto.request.NotificationCreateRequest;
+import com.carecode.domain.notification.dto.request.NotificationMarkAsReadRequest;
+import com.carecode.domain.notification.dto.request.NotificationSendTestRequest;
+import com.carecode.domain.notification.dto.response.NotificationResponse;
+import com.carecode.domain.notification.dto.response.NotificationInfoResponse;
+import com.carecode.domain.notification.dto.response.NotificationStatsResponse;
+import com.carecode.domain.notification.dto.response.NotificationTemplateResponse;
+import com.carecode.domain.notification.dto.response.NotificationDeliveryStatusResponse;
 import com.carecode.domain.notification.entity.Notification;
 import com.carecode.domain.notification.factory.NotificationStrategyFactory;
 import com.carecode.domain.notification.repository.NotificationRepository;
@@ -44,7 +51,7 @@ public class NotificationService {
      * 사용자별 알림 목록 조회
      */
     @LogExecutionTime
-    public List<NotificationResponse.Notification> getNotificationsByUserId(String userId) {
+    public List<NotificationInfoResponse> getNotificationsByUserId(String userId) {
         log.info("사용자별 알림 목록 조회 - 사용자 ID: {}", userId);
         
         try {
@@ -66,7 +73,7 @@ public class NotificationService {
      * 알림 상세 조회
      */
     @LogExecutionTime
-    public NotificationResponse.Notification getNotificationById(Long notificationId) {
+    public NotificationInfoResponse getNotificationById(Long notificationId) {
         log.info("알림 상세 조회 - 알림 ID: {}", notificationId);
         
         try {
@@ -84,7 +91,7 @@ public class NotificationService {
      * 알림 생성 (전략 패턴 사용)
      */
     @Transactional
-    public NotificationResponse.Notification createNotification(NotificationRequest.Create request) {
+    public NotificationInfoResponse createNotification(NotificationCreateRequest request) {
         log.info("알림 생성 - 사용자 ID: {}, 타입: {}, 제목: {}", 
                 request.getUserId(), request.getNotificationType(), request.getTitle());
         
@@ -118,7 +125,7 @@ public class NotificationService {
      * 알림 수정
      */
     @Transactional
-    public NotificationResponse.Notification updateNotification(Long notificationId, NotificationRequest.Create request) {
+    public NotificationInfoResponse updateNotification(Long notificationId, NotificationCreateRequest request) {
             Notification notification = notificationRepository.findById(notificationId)
                     .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다: " + notificationId));
             
@@ -178,7 +185,7 @@ public class NotificationService {
      * 읽지 않은 알림 조회
      */
     @LogExecutionTime
-    public List<NotificationResponse.Notification> getUnreadNotifications(String userId) {
+    public List<NotificationInfoResponse> getUnreadNotifications(String userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
 
@@ -269,7 +276,7 @@ public class NotificationService {
      * 사용자 알림 목록 조회 (페이지네이션)
      */
     @LogExecutionTime
-    public List<NotificationResponse.Notification> getUserNotifications(Long userId, int page, int size) {
+    public List<NotificationInfoResponse> getUserNotifications(Long userId, int page, int size) {
         log.info("사용자 알림 목록 조회 - 사용자 ID: {}", userId);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -312,12 +319,12 @@ public class NotificationService {
     }
 
     // Helper methods
-    private NotificationResponse.Notification convertToResponseDto(Notification notification) {
+    private NotificationInfoResponse convertToResponseDto(Notification notification) {
         // 전략을 사용하여 우선순위 결정
         NotificationStrategy strategy = strategyFactory.getStrategy(notification.getNotificationType().name());
         String priority = strategy.determinePriority(notification);
         
-        return NotificationResponse.Notification.builder()
+        return NotificationInfoResponse.builder()
                 .id(notification.getId())
                 .userId(notification.getUser().getUserId()) // String 타입으로 변경
                 .notificationType(notification.getNotificationType().name())
@@ -336,8 +343,8 @@ public class NotificationService {
     /**
      * DTO 변환 메서드
      */
-    private NotificationResponse.Notification convertToDto(Notification notification) {
-        return NotificationResponse.Notification.builder()
+    private NotificationInfoResponse convertToDto(Notification notification) {
+        return NotificationInfoResponse.builder()
                 .id(notification.getId())
                 .userId(notification.getUser().getUserId()) // String 타입으로 변경
                 .title(notification.getTitle())
@@ -366,7 +373,7 @@ public class NotificationService {
      * 알림 읽음 처리
      */
     @Transactional
-    public void markAsRead(NotificationRequest.MarkAsRead request) {
+    public void markAsRead(NotificationMarkAsReadRequest request) {
         if (request.getMarkAllAsRead() != null && request.getMarkAllAsRead()) {
             // 모든 알림을 읽음으로 처리
             notificationRepository.markAllAsRead();
@@ -380,7 +387,7 @@ public class NotificationService {
      * 테스트 알림 발송
      */
     @Transactional
-    public void sendTestNotification(String userId, NotificationRequest.SendTest request) {
+    public void sendTestNotification(String userId, NotificationSendTestRequest request) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
 
@@ -396,10 +403,58 @@ public class NotificationService {
     }
 
     /**
+     * 알림 타입별 조회
+     */
+    @LogExecutionTime
+    public List<NotificationInfoResponse> getNotificationsByType(Long userId, Notification.NotificationType notificationType) {
+        log.info("알림 타입별 조회 - 사용자 ID: {}, 타입: {}", userId, notificationType);
+        
+        List<Notification> notifications = notificationRepository.findByUserIdAndNotificationTypeOrderByCreatedAtDesc(userId, notificationType);
+        
+        return notifications.stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 기간별 알림 조회
+     */
+    @LogExecutionTime
+    public List<NotificationInfoResponse> getNotificationsByDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
+        log.info("기간별 알림 조회 - 사용자 ID: {}, 시작일: {}, 종료일: {}", userId, startDate, endDate);
+        
+        List<Notification> notifications = notificationRepository.findByDateRange(userId, startDate, endDate);
+        
+        return notifications.stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 사용자별 전체 알림 개수 조회
+     */
+    @LogExecutionTime
+    public long getTotalNotificationCount(Long userId) {
+        log.info("사용자별 전체 알림 개수 조회 - 사용자 ID: {}", userId);
+        
+        return notificationRepository.countByUserId(userId);
+    }
+
+    /**
+     * 읽음/읽지 않음별 알림 개수 조회
+     */
+    @LogExecutionTime
+    public long getNotificationCountByReadStatus(Long userId, boolean isRead) {
+        log.info("읽음 상태별 알림 개수 조회 - 사용자 ID: {}, 읽음: {}", userId, isRead);
+        
+        return notificationRepository.countByUserIdAndIsRead(userId, isRead);
+    }
+
+    /**
      * 알림 통계 조회
      */
     @Transactional(readOnly = true)
-    public NotificationResponse.Stats getNotificationStats(String userId) {
+    public NotificationStatsResponse getNotificationStats(String userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
 
@@ -411,7 +466,7 @@ public class NotificationService {
         Map<String, Integer> priorityDistribution = new HashMap<>();
         Map<String, Integer> dailyNotificationCount = new HashMap<>();
 
-        return NotificationResponse.Stats.builder()
+        return NotificationStatsResponse.builder()
                 .totalNotifications((int) totalCount)
                 .unreadCount((int) unreadCount)
                 .readCount((int) readCount)
@@ -425,11 +480,11 @@ public class NotificationService {
      * 알림 템플릿 조회
      */
     @Transactional(readOnly = true)
-    public List<NotificationResponse.Template> getNotificationTemplates(String type) {
-        List<NotificationResponse.Template> templates = new ArrayList<>();
+    public List<NotificationTemplateResponse> getNotificationTemplates(String type) {
+        List<NotificationTemplateResponse> templates = new ArrayList<>();
         
         // 기본 템플릿들
-        templates.add(NotificationResponse.Template.builder()
+        templates.add(NotificationTemplateResponse.builder()
                 .templateId("SYSTEM_UPDATE")
                 .templateName("시스템 업데이트")
                 .notificationType("SYSTEM")
@@ -439,7 +494,7 @@ public class NotificationService {
                 .isActive(true)
                 .build());
 
-        templates.add(NotificationResponse.Template.builder()
+        templates.add(NotificationTemplateResponse.builder()
                 .templateId("POLICY_CHANGE")
                 .templateName("정책 변경")
                 .notificationType("POLICY")
@@ -462,11 +517,11 @@ public class NotificationService {
      * 알림 전송 상태 조회
      */
     @Transactional(readOnly = true)
-    public NotificationResponse.DeliveryStatus getDeliveryStatus(Long notificationId) {
+    public NotificationDeliveryStatusResponse getDeliveryStatus(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new CareServiceException("알림을 찾을 수 없습니다: " + notificationId));
 
-        return NotificationResponse.DeliveryStatus.builder()
+        return NotificationDeliveryStatusResponse.builder()
                 .notificationId(notificationId)
                 .deliveryStatus("SENT")
                 .deliveryMethod("IN_APP")

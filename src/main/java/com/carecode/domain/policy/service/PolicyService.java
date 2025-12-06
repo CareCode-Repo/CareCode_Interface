@@ -3,13 +3,18 @@ package com.carecode.domain.policy.service;
 import com.carecode.core.annotation.CacheableResult;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.PolicyNotFoundException;
-import com.carecode.domain.policy.dto.*;
+import com.carecode.domain.policy.dto.response.*;
+import com.carecode.domain.policy.dto.request.PolicySearchRequest;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.entity.PolicyCategory;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.policy.mapper.PolicyMapper;
-import com.carecode.domain.policy.dto.PolicyResponse;
-import com.carecode.domain.policy.dto.PolicyDto;
+import com.carecode.domain.policy.dto.response.PolicyResponse;
+import com.carecode.domain.policy.dto.response.PolicyListResponse;
+import com.carecode.domain.policy.dto.response.PolicyInfoResponse;
+import com.carecode.domain.policy.dto.response.PolicyStatsSimpleResponse;
+import com.carecode.domain.policy.dto.response.PolicyCategoryStatsResponse;
+import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.repository.PolicyCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,15 +73,17 @@ public class PolicyService {
      * 정책 검색
      */
     @LogExecutionTime
-    public PolicyResponse.PolicyList searchPolicies(PolicyRequest.Search request) {
+    public PolicyListResponse searchPolicies(PolicySearchRequest request) {
         log.info("정책 검색: 키워드={}, 카테고리={}, 지역={}", 
                 request.getKeyword(), request.getCategory(), request.getLocation());
         
-        Pageable pageable = PageRequest.of(
-                request.getPage(),
-                request.getSize(),
-                Sort.by(Sort.Direction.DESC, "createdAt")
+        Sort sort = com.carecode.core.util.SortUtil.createSort(
+                request.getSortBy(), 
+                request.getSortDirection(), 
+                "createdAt", 
+                Sort.Direction.DESC
         );
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
         
         Page<Policy> policyPage = policyRepository.findBySearchCriteria(
                 request.getKeyword(),
@@ -91,8 +98,8 @@ public class PolicyService {
                 .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
 
-        List<PolicyResponse.Policy> policiesResponse = policies.stream()
-                .map(dto -> PolicyResponse.Policy.builder()
+        List<PolicyInfoResponse> policiesResponse = policies.stream()
+                .map(dto -> PolicyInfoResponse.builder()
                         .id(dto.getId() != null ? dto.getId().toString() : null)
                         .title(dto.getTitle())
                         .description(dto.getDescription())
@@ -115,7 +122,7 @@ public class PolicyService {
                         .build())
                 .collect(Collectors.toList());
         
-        return PolicyResponse.PolicyList.builder()
+        return PolicyListResponse.builder()
                 .policies(policiesResponse)
                 .totalCount(policyPage.getTotalElements())
                 .currentPage(policyPage.getNumber())
@@ -226,18 +233,44 @@ public class PolicyService {
      * 정책 통계 조회
      */
     @LogExecutionTime
-    public PolicyResponse.Stats getPolicyStats() {
+    public PolicyStatsSimpleResponse getPolicyStats() {
         log.info("정책 통계 조회");
 
         long totalPolicies = policyRepository.count();
         long totalViews = policyRepository.getTotalViewCount();
-        List<PolicyResponse.CategoryStats> categoryStats = policyRepository.getCategoryStats();
+        List<PolicyCategoryStatsResponse> categoryStats = policyRepository.getCategoryStats();
 
-        return PolicyResponse.Stats.builder()
+        return PolicyStatsSimpleResponse.builder()
                 .totalPolicies(totalPolicies)
                 .totalViews(totalViews)
                 .categoryStats(categoryStats)
                 .build();
+    }
+
+    /**
+     * 아이 연령별 정책 조회
+     */
+    @LogExecutionTime
+    public List<PolicyDto> getPoliciesByChildAge(Integer childAge) {
+        log.info("아이 연령별 정책 조회: 아이 연령={}", childAge);
+        
+        List<Policy> policies = policyRepository.findByChildAge(childAge);
+        return policies.stream()
+                .map(policyMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 신청 기간이 유효한 정책 조회
+     */
+    @LogExecutionTime
+    public List<PolicyDto> getActivePoliciesByDate() {
+        log.info("신청 기간이 유효한 정책 조회");
+        
+        List<Policy> policies = policyRepository.findActivePoliciesByDate(java.time.LocalDate.now());
+        return policies.stream()
+                .map(policyMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     

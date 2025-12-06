@@ -4,14 +4,15 @@ import com.carecode.core.annotation.CacheableResult;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.exception.CareFacilityNotFoundException;
-import com.carecode.domain.careFacility.dto.CareFacilityRequest;
-import com.carecode.domain.careFacility.dto.CareFacilityResponse;
-import com.carecode.domain.careFacility.dto.TypeStats;
+import com.carecode.domain.careFacility.dto.request.CareFacilitySearchRequest;
+import com.carecode.domain.careFacility.dto.response.CareFacilityInfo;
+import com.carecode.domain.careFacility.dto.response.CareFacilityListResponse;
+import com.carecode.domain.careFacility.dto.response.CareFacilityStatsResponse;
+import com.carecode.domain.careFacility.dto.response.TypeStats;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import com.carecode.domain.careFacility.mapper.CareFacilityMapper;
-import com.carecode.core.util.LocationUtil;
 import com.carecode.core.util.CommonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -221,7 +222,7 @@ public class CareFacilityService {
      * 돌봄 시설 목록 조회
      */
     @LogExecutionTime
-    public List<CareFacilityResponse.CareFacility> getAllCareFacilities() {
+    public List<CareFacilityInfo> getAllCareFacilities() {
 
         List<CareFacility> facilities = careFacilityRepository.findAll();
         return facilities.stream()
@@ -234,7 +235,7 @@ public class CareFacilityService {
      */
     @LogExecutionTime
     @CacheableResult(cacheName = "careFacility", key = "#facilityId")
-    public CareFacilityResponse.CareFacility getCareFacilityById(Long facilityId) {
+    public CareFacilityInfo getCareFacilityById(Long facilityId) {
         CareFacility facility = careFacilityRepository.findById(facilityId)
                 .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
         
@@ -246,12 +247,14 @@ public class CareFacilityService {
      */
     @LogExecutionTime
     @ValidateLocation
-    public CareFacilityResponse.CareFacilityList searchCareFacilities(CareFacilityRequest.Search request) {
-        Pageable pageable = PageRequest.of(
-                request.getPage(),
-                request.getSize(),
-                Sort.by(Sort.Direction.ASC, "name")
+    public CareFacilityListResponse searchCareFacilities(CareFacilitySearchRequest request) {
+        Sort sort = com.carecode.core.util.SortUtil.createSort(
+                request.getSortBy(),
+                request.getSortDirection(),
+                "name",
+                Sort.Direction.ASC
         );
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
         
         Page<CareFacility> facilityPage = careFacilityRepository.findBySearchCriteria(
                 request.getKeyword(),
@@ -260,11 +263,11 @@ public class CareFacilityService {
                 pageable
         );
         
-        List<CareFacilityResponse.CareFacility> facilities = facilityPage.getContent().stream()
+        List<CareFacilityInfo> facilities = facilityPage.getContent().stream()
                 .map(careFacilityMapper::toResponse)
                 .collect(Collectors.toList());
         
-        return CareFacilityResponse.CareFacilityList.builder()
+        return CareFacilityListResponse.builder()
                 .facilities(facilities)
                 .totalCount(facilityPage.getTotalElements())
                 .currentPage(facilityPage.getNumber())
@@ -278,7 +281,7 @@ public class CareFacilityService {
      * 시설 유형별 조회
      */
     @LogExecutionTime
-    public List<CareFacilityResponse.CareFacility> getCareFacilitiesByType(FacilityType facilityType) {
+    public List<CareFacilityInfo> getCareFacilitiesByType(FacilityType facilityType) {
         List<CareFacility> facilities = careFacilityRepository.findByFacilityType(facilityType);
         return facilities.stream()
                 .map(careFacilityMapper::toResponse)
@@ -290,7 +293,7 @@ public class CareFacilityService {
      */
     @LogExecutionTime
     @ValidateLocation
-    public List<CareFacilityResponse.CareFacility> getCareFacilitiesByLocation(String location) {
+    public List<CareFacilityInfo> getCareFacilitiesByLocation(String location) {
         List<CareFacility> facilities = careFacilityRepository.findByAddressContaining(location);
         return facilities.stream()
                 .map(careFacilityMapper::toResponse)
@@ -302,7 +305,7 @@ public class CareFacilityService {
      */
     @LogExecutionTime
     @ValidateLocation
-    public List<CareFacilityResponse.CareFacility> getCareFacilitiesWithinRadius(Double latitude, Double longitude, Double radius) {
+    public List<CareFacilityInfo> getCareFacilitiesWithinRadius(Double latitude, Double longitude, Double radius) {
         List<CareFacility> facilities = careFacilityRepository.findWithinRadius(latitude, longitude, radius);
         return facilities.stream()
                 .map(careFacilityMapper::toResponse)
@@ -313,7 +316,7 @@ public class CareFacilityService {
      * 연령대별 돌봄 시설 조회
      */
     @LogExecutionTime
-    public List<CareFacilityResponse.CareFacility> getCareFacilitiesByAgeRange(int minAge, int maxAge) {
+    public List<CareFacilityInfo> getCareFacilitiesByAgeRange(int minAge, int maxAge) {
         List<CareFacility> facilities = careFacilityRepository.findByAgeRange(minAge, maxAge);
         return facilities.stream()
                 .map(careFacilityMapper::toResponse)
@@ -324,7 +327,7 @@ public class CareFacilityService {
      * 운영 시간별 돌봄 시설 조회
      */
     @LogExecutionTime
-    public List<CareFacilityResponse.CareFacility> getCareFacilitiesByOperatingHours(String operatingHours) {
+    public List<CareFacilityInfo> getCareFacilitiesByOperatingHours(String operatingHours) {
         List<CareFacility> facilities = careFacilityRepository.findByOperatingHours(operatingHours);
         return facilities.stream()
                 .map(careFacilityMapper::toResponse)
@@ -335,7 +338,7 @@ public class CareFacilityService {
      * 인기 돌봄 시설 조회 (평점 기준)
      */
     @LogExecutionTime
-    public List<CareFacilityResponse.CareFacility> getPopularCareFacilities(int limit) {
+    public List<CareFacilityInfo> getPopularCareFacilities(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         List<CareFacility> facilities = careFacilityRepository.findPopularFacilities(pageable);
         return facilities.stream()
@@ -347,7 +350,7 @@ public class CareFacilityService {
      * 신규 돌봄 시설 조회
      */
     @LogExecutionTime
-    public List<CareFacilityResponse.CareFacility> getNewCareFacilities(int limit) {
+    public List<CareFacilityInfo> getNewCareFacilities(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         List<CareFacility> facilities = careFacilityRepository.findNewFacilities(pageable);
         return facilities.stream()
@@ -391,12 +394,12 @@ public class CareFacilityService {
      * 돌봄 시설 통계 조회
      */
     @LogExecutionTime
-    public CareFacilityResponse.CareFacilityStats getFacilityStats() {
+    public CareFacilityStatsResponse getFacilityStats() {
         long totalFacilities = careFacilityRepository.count();
         long totalViews = careFacilityRepository.getTotalViewCount();
         List<TypeStats> typeStats = careFacilityRepository.getTypeStats();
         
-        return CareFacilityResponse.CareFacilityStats.builder()
+        return CareFacilityStatsResponse.builder()
                 .totalFacilities(totalFacilities)
                 .totalBookings(0L)
                 .activeFacilities(0L)
@@ -406,6 +409,92 @@ public class CareFacilityService {
                 .thisWeekBookings(0L)
                 .thisMonthBookings(0L)
                 .build();
+    }
+
+    /**
+     * 아이 연령별 시설 추천
+     */
+    @LogExecutionTime
+    public List<CareFacilityInfo> recommendFacilitiesByChildAge(Integer childAge) {
+        List<CareFacility> facilities = careFacilityRepository.findByChildAge(childAge);
+        return facilities.stream()
+                .map(careFacilityMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 최소 평점 이상의 시설 조회
+     */
+    @LogExecutionTime
+    public List<CareFacilityInfo> getFacilitiesByMinRating(Double minRating) {
+        List<CareFacility> facilities = careFacilityRepository.findByMinRating(minRating);
+        return facilities.stream()
+                .map(careFacilityMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 빈 자리가 있는 시설 조회
+     */
+    @LogExecutionTime
+    public List<CareFacilityInfo> getFacilitiesWithAvailableSpots(Integer minSpots) {
+        List<CareFacility> facilities = careFacilityRepository.findByAvailableSpots(minSpots);
+        return facilities.stream()
+                .map(careFacilityMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 등록금 범위로 시설 조회
+     */
+    @LogExecutionTime
+    public List<CareFacilityInfo> getFacilitiesByMaxTuitionFee(Integer maxFee) {
+        List<CareFacility> facilities = careFacilityRepository.findByMaxTuitionFee(maxFee);
+        return facilities.stream()
+                .map(careFacilityMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 키워드로 시설 검색
+     */
+    @LogExecutionTime
+    public List<CareFacilityInfo> searchFacilitiesByKeyword(String keyword) {
+        List<CareFacility> facilities = careFacilityRepository.searchByKeyword(keyword);
+        return facilities.stream()
+                .map(careFacilityMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 복합 조건으로 시설 검색 (고급 검색)
+     */
+    @LogExecutionTime
+    public List<CareFacilityInfo> searchFacilitiesAdvanced(
+            FacilityType facilityType,
+            Boolean isPublic,
+            Boolean subsidyAvailable,
+            Double minRating,
+            Integer minAvailableSpots,
+            Integer maxTuitionFee,
+            Integer childAge) {
+        List<CareFacility> facilities = careFacilityRepository.searchFacilities(
+                facilityType, isPublic, subsidyAvailable, minRating,
+                minAvailableSpots, maxTuitionFee, childAge
+        );
+        return facilities.stream()
+                .map(careFacilityMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 리뷰와 함께 시설 상세 조회
+     */
+    @LogExecutionTime
+    public CareFacilityInfo getFacilityByIdWithReviews(Long facilityId) {
+        CareFacility facility = careFacilityRepository.findByIdWithReviews(facilityId)
+                .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
+        return careFacilityMapper.toResponse(facility);
     }
 
     /**

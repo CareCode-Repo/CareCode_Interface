@@ -2,8 +2,10 @@ package com.carecode.domain.health.mapper;
 
 import com.carecode.core.util.RequestMapper;
 import com.carecode.core.util.ResponseMapper;
-import com.carecode.domain.health.dto.HealthRequest;
-import com.carecode.domain.health.dto.HealthResponse;
+import com.carecode.domain.health.dto.request.HealthRequest;
+import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
+import com.carecode.domain.health.dto.response.HealthResponse;
+import com.carecode.domain.health.dto.response.HealthRecordResponse;
 import com.carecode.domain.health.entity.HealthRecord;
 import org.springframework.stereotype.Component;
 
@@ -11,10 +13,10 @@ import org.springframework.stereotype.Component;
  * HealthRecord 변환용 공통 매퍼
  */
 @Component
-public class HealthRecordMapper implements RequestMapper<HealthRequest.CreateHealthRecord, HealthRecord>, ResponseMapper<HealthRecord, HealthResponse.HealthRecordResponse> {
+public class HealthRecordMapper implements RequestMapper<HealthCreateHealthRecordRequest, HealthRecord>, ResponseMapper<HealthRecord, HealthRecordResponse> {
 
     @Override
-    public HealthRecord toEntity(HealthRequest.CreateHealthRecord request) {
+    public HealthRecord toEntity(HealthCreateHealthRecordRequest request) {
         HealthRecord.HealthRecordBuilder builder = HealthRecord.builder()
                 .recordType(HealthRecord.RecordType.valueOf(request.getRecordType()))
                 .title(request.getTitle())
@@ -28,8 +30,8 @@ public class HealthRecordMapper implements RequestMapper<HealthRequest.CreateHea
     }
 
     @Override
-    public HealthResponse.HealthRecordResponse toResponse(HealthRecord record) {
-        return HealthResponse.HealthRecordResponse.builder()
+    public HealthRecordResponse toResponse(HealthRecord record) {
+        return HealthRecordResponse.builder()
                 .id(record.getId())
                 .childId(record.getChild() != null ? record.getChild().getId().toString() : null)
                 .childName(record.getChild() != null ? record.getChild().getName() : null)

@@ -1,7 +1,17 @@
 package com.carecode.domain.notification.app;
 
-import com.carecode.domain.notification.dto.NotificationRequest;
-import com.carecode.domain.notification.dto.NotificationResponse;
+import com.carecode.domain.notification.dto.request.NotificationRequest;
+import com.carecode.domain.notification.dto.request.NotificationCreateRequest;
+import com.carecode.domain.notification.dto.request.NotificationMarkAsReadRequest;
+import com.carecode.domain.notification.dto.request.NotificationRegisterPushTokenRequest;
+import com.carecode.domain.notification.dto.request.NotificationUpdateSettingsRequest;
+import com.carecode.domain.notification.dto.request.NotificationSendTestRequest;
+import com.carecode.domain.notification.dto.response.NotificationResponse;
+import com.carecode.domain.notification.dto.response.NotificationInfoResponse;
+import com.carecode.domain.notification.dto.response.NotificationSettingsResponse;
+import com.carecode.domain.notification.dto.response.NotificationStatsResponse;
+import com.carecode.domain.notification.dto.response.NotificationTemplateResponse;
+import com.carecode.domain.notification.dto.response.NotificationDeliveryStatusResponse;
 import com.carecode.domain.notification.service.NotificationPreferenceService;
 import com.carecode.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import com.carecode.domain.user.repository.UserRepository;
+import com.carecode.domain.user.entity.User;
 
 @Service
 @RequiredArgsConstructor
@@ -17,24 +29,25 @@ public class NotificationFacade {
 
     private final NotificationService notificationService;
     private final NotificationPreferenceService preferenceService;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<NotificationResponse.Notification> getNotificationsByUserId(String userId) {
+    public List<NotificationInfoResponse> getNotificationsByUserId(String userId) {
         return notificationService.getNotificationsByUserId(userId);
     }
 
     @Transactional(readOnly = true)
-    public NotificationResponse.Notification getNotificationById(Long notificationId) {
+    public NotificationInfoResponse getNotificationById(Long notificationId) {
         return notificationService.getNotificationById(notificationId);
     }
 
     @Transactional
-    public NotificationResponse.Notification createNotification(NotificationRequest.Create request) {
+    public NotificationInfoResponse createNotification(NotificationCreateRequest request) {
         return notificationService.createNotification(request);
     }
 
     @Transactional
-    public NotificationResponse.Notification updateNotification(Long id, NotificationRequest.Create request) {
+    public NotificationInfoResponse updateNotification(Long id, NotificationCreateRequest request) {
         return notificationService.updateNotification(id, request);
     }
 
@@ -48,7 +61,7 @@ public class NotificationFacade {
     public void markAllAsRead(String userId) { notificationService.markAllAsRead(userId); }
 
     @Transactional(readOnly = true)
-    public List<NotificationResponse.Notification> getUnreadNotifications(String userId) {
+    public List<NotificationInfoResponse> getUnreadNotifications(String userId) {
         return notificationService.getUnreadNotifications(userId);
     }
 
@@ -62,18 +75,18 @@ public class NotificationFacade {
     public Map<String, Object> getNotificationStatistics(String userId) { return notificationService.getNotificationStatistics(userId); }
 
     @Transactional(readOnly = true)
-    public List<NotificationResponse.Settings> getUserPreferences(String userId) { return preferenceService.getUserPreferences(userId); }
+    public List<NotificationSettingsResponse> getUserPreferences(String userId) { return preferenceService.getUserPreferences(userId); }
 
     @Transactional(readOnly = true)
-    public NotificationResponse.Settings getPreferenceByType(String userId, String notificationType) {
+    public NotificationSettingsResponse getPreferenceByType(String userId, String notificationType) {
         return preferenceService.getPreferenceByType(userId, com.carecode.domain.notification.entity.Notification.NotificationType.valueOf(notificationType));
     }
 
     @Transactional
-    public NotificationResponse.Settings savePreference(String userId, NotificationResponse.Settings dto) { return preferenceService.savePreference(userId, dto); }
+    public NotificationSettingsResponse savePreference(String userId, NotificationSettingsResponse dto) { return preferenceService.savePreference(userId, dto); }
 
     @Transactional
-    public NotificationResponse.Settings updateChannelPreference(String userId, String notificationType, String channel, boolean enabled) {
+    public NotificationSettingsResponse updateChannelPreference(String userId, String notificationType, String channel, boolean enabled) {
         return preferenceService.updateChannelPreference(userId, notificationType, channel, enabled);
     }
 
@@ -87,7 +100,7 @@ public class NotificationFacade {
      * 알림 읽음 처리
      */
     @Transactional
-    public void markAsRead(NotificationRequest.MarkAsRead request) {
+    public void markAsRead(NotificationMarkAsReadRequest request) {
         notificationService.markAsRead(request);
     }
 
@@ -95,7 +108,7 @@ public class NotificationFacade {
      * 푸시 알림 토큰 등록
      */
     @Transactional
-    public void registerPushToken(String userId, NotificationRequest.RegisterPushToken request) {
+    public void registerPushToken(String userId, NotificationRegisterPushTokenRequest request) {
         preferenceService.registerPushToken(userId, request);
     }
 
@@ -103,15 +116,43 @@ public class NotificationFacade {
      * 알림 설정 수정
      */
     @Transactional
-    public void updateSettings(String userId, NotificationRequest.UpdateSettings request) {
+    public void updateSettings(String userId, NotificationUpdateSettingsRequest request) {
         preferenceService.updateSettings(userId, request);
+    }
+
+    @Transactional(readOnly = true)
+    public List<NotificationInfoResponse> getNotificationsByType(String userId, com.carecode.domain.notification.entity.Notification.NotificationType notificationType) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return notificationService.getNotificationsByType(user.getId(), notificationType);
+    }
+
+    @Transactional(readOnly = true)
+    public List<NotificationInfoResponse> getNotificationsByDateRange(String userId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return notificationService.getNotificationsByDateRange(user.getId(), startDate, endDate);
+    }
+
+    @Transactional(readOnly = true)
+    public long getTotalNotificationCount(String userId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return notificationService.getTotalNotificationCount(user.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public long getNotificationCountByReadStatus(String userId, boolean isRead) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return notificationService.getNotificationCountByReadStatus(user.getId(), isRead);
     }
 
     /**
      * 테스트 알림 발송
      */
     @Transactional
-    public void sendTestNotification(String userId, NotificationRequest.SendTest request) {
+    public void sendTestNotification(String userId, NotificationSendTestRequest request) {
         notificationService.sendTestNotification(userId, request);
     }
 
@@ -119,7 +160,7 @@ public class NotificationFacade {
      * 알림 통계 조회
      */
     @Transactional(readOnly = true)
-    public NotificationResponse.Stats getNotificationStats(String userId) {
+    public NotificationStatsResponse getNotificationStats(String userId) {
         return notificationService.getNotificationStats(userId);
     }
 
@@ -127,7 +168,7 @@ public class NotificationFacade {
      * 알림 템플릿 조회
      */
     @Transactional(readOnly = true)
-    public List<NotificationResponse.Template> getNotificationTemplates(String type) {
+    public List<NotificationTemplateResponse> getNotificationTemplates(String type) {
         return notificationService.getNotificationTemplates(type);
     }
 
@@ -135,7 +176,7 @@ public class NotificationFacade {
      * 알림 전송 상태 조회
      */
     @Transactional(readOnly = true)
-    public NotificationResponse.DeliveryStatus getDeliveryStatus(Long notificationId) {
+    public NotificationDeliveryStatusResponse getDeliveryStatus(Long notificationId) {
         return notificationService.getDeliveryStatus(notificationId);
     }
 }
