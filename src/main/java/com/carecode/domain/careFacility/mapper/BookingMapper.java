@@ -9,9 +9,9 @@ import com.carecode.domain.careFacility.entity.CareFacilityBooking;
  */
 public class BookingMapper {
 
-    /**
-     * Entity를 DTO로 변환
-     */
+
+    // Entity를 DTO로 변환
+
     public static BookingResponse fromEntity(CareFacilityBooking booking) {
         return BookingResponse.builder()
                 .id(booking.getId())
@@ -33,9 +33,9 @@ public class BookingMapper {
                 .build();
     }
 
-    /**
-     * Entity를 목록 DTO로 변환
-     */
+
+    // Entity를 목록 DTO로 변환
+
     public static BookingListResponse toListResponse(CareFacilityBooking booking) {
         return BookingListResponse.builder()
                 .id(booking.getId())
