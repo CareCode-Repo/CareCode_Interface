@@ -42,9 +42,9 @@ public class KakaoAuthController extends BaseController {
     private final UserService userService;
     private final JwtService jwtService;
 
-    /**
-     * 카카오 OAuth 로그인/회원가입
-     */
+
+    // 카카오 OAuth 로그인/회원가입
+
     @PostMapping("/login")
     @LogExecutionTime
     @Operation(summary = "카카오 OAuth 로그인/회원가입", description = "카카오 인증 코드를 받아 로그인하거나 신규 사용자를 생성합니다.")
@@ -98,9 +98,9 @@ public class KakaoAuthController extends BaseController {
         }
     }
 
-    /**
-     * 카카오 신규 사용자 가입 완료 (이름 및 역할 설정)
-     */
+
+    // 카카오 신규 사용자 가입 완료 (이름 및 역할 설정)
+
     @PostMapping("/complete-registration")
     @LogExecutionTime
     @Operation(summary = "카카오 신규 사용자 가입 완료", description = "카카오 로그인 후 신규 사용자의 이름과 역할을 설정하여 가입을 완료합니다.")
@@ -124,9 +124,9 @@ public class KakaoAuthController extends BaseController {
         }
     }
 
-    /**
-     * 카카오 로그인 URL 생성
-     */
+
+    // 카카오 로그인 URL 생성
+
     @GetMapping("/login-url")
     @LogExecutionTime
     @Operation(summary = "카카오 로그인 URL 생성", description = "카카오 OAuth 로그인을 위한 URL을 생성합니다.")
@@ -157,9 +157,9 @@ public class KakaoAuthController extends BaseController {
         }
     }
 
-    /**
-     * 현재 로그인한 사용자의 이메일을 JWT 토큰에서 추출
-     */
+
+    // 현재 로그인한 사용자의 이메일을 JWT 토큰에서 추출
+
     private String getCurrentUserEmail(HttpServletRequest request) {
         // Authorization 헤더에서 토큰 추출
         String authHeader = request.getHeader("Authorization");
