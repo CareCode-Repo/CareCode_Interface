@@ -38,9 +38,9 @@ public class CareFacilityBookingService {
     private final CareFacilityRepository careFacilityRepository;
     private final UserRepository userRepository;
 
-    /**
-     * 예약 생성
-     */
+
+    // 예약 생성
+
     @LogExecutionTime
     @Transactional
     public BookingResponse createBooking(Long facilityId, CreateBookingRequest request, UserDetails userDetails) {
@@ -82,9 +82,9 @@ public class CareFacilityBookingService {
         return convertToDto(savedBooking);
     }
 
-    /**
-     * 예약 조회
-     */
+
+    // 예약 조회
+
     @LogExecutionTime
     public BookingResponse getBookingById(Long bookingId, UserDetails userDetails) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
@@ -98,9 +98,9 @@ public class CareFacilityBookingService {
         return convertToDto(booking);
     }
 
-    /**
-     * 사용자별 예약 목록 조회
-     */
+
+    // 사용자별 예약 목록 조회
+
     @LogExecutionTime
     public List<BookingResponse> getUserBookings(UserDetails userDetails) {
         User user = userRepository.findByUserId(userDetails.getUsername())
@@ -113,9 +113,9 @@ public class CareFacilityBookingService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 시설별 예약 목록 조회
-     */
+
+    // 시설별 예약 목록 조회
+
     @LogExecutionTime
     public List<BookingResponse> getFacilityBookings(Long facilityId) {
         List<CareFacilityBooking> bookings = bookingRepository.findByFacilityIdOrderByStartTimeAsc(facilityId);
@@ -125,9 +125,9 @@ public class CareFacilityBookingService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 예약 상태 업데이트
-     */
+
+    // 예약 상태 업데이트
+
     @LogExecutionTime
     @Transactional
     public BookingResponse updateBookingStatus(Long bookingId, String status, UserDetails userDetails) {
@@ -152,9 +152,9 @@ public class CareFacilityBookingService {
             return convertToDto(savedBooking);
     }
 
-    /**
-     * 예약 취소
-     */
+
+    // 예약 취소
+
     @LogExecutionTime
     @Transactional
     public void cancelBooking(Long bookingId, UserDetails userDetails) {
@@ -178,9 +178,9 @@ public class CareFacilityBookingService {
         bookingRepository.save(booking);
     }
 
-    /**
-     * 예약 수정
-     */
+
+    // 예약 수정
+
     @LogExecutionTime
     @Transactional
     public BookingResponse updateBooking(Long bookingId, UpdateBookingRequest request, UserDetails userDetails) {
@@ -220,9 +220,9 @@ public class CareFacilityBookingService {
         return convertToDto(savedBooking);
     }
 
-    /**
-     * 오늘 예약 목록 조회
-     */
+
+    // 오늘 예약 목록 조회
+
     @LogExecutionTime
     public List<BookingResponse> getTodayBookings() {
         List<CareFacilityBooking> bookings = bookingRepository.findTodayBookings();
@@ -232,9 +232,9 @@ public class CareFacilityBookingService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 시설별 오늘 예약 목록 조회
-     */
+
+    // 시설별 오늘 예약 목록 조회
+
     @LogExecutionTime
     public List<BookingResponse> getTodayBookingsByFacility(Long facilityId) {
         List<CareFacilityBooking> bookings = bookingRepository.findTodayBookingsByFacility(facilityId);
@@ -244,11 +244,10 @@ public class CareFacilityBookingService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 예약 시간 중복 확인
-     */
+
+    // 예약 시간 중복 확인
+
     private void validateBookingTime(Long facilityId, LocalDateTime scheduledDateTime) {
-        // 예약 시간 전후 1시간 동안 중복 예약이 있는지 확인
         LocalDateTime startTime = scheduledDateTime.minusHours(1);
         LocalDateTime endTime = scheduledDateTime.plusHours(1);
         
@@ -259,63 +258,7 @@ public class CareFacilityBookingService {
         }
     }
 
-    /**
-     * 예약 타입별 예약 목록 조회
-     */
-    @LogExecutionTime
-    public List<BookingResponse> getBookingsByType(CareFacilityBooking.BookingType bookingType) {
-        log.info("예약 타입별 예약 목록 조회: 타입={}", bookingType);
-        
-        List<CareFacilityBooking> bookings = bookingRepository.findByBookingTypeOrderByStartTimeAsc(bookingType);
-        
-        return bookings.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 취소된 예약 목록 조회 (기간별)
-     */
-    @LogExecutionTime
-    public List<BookingResponse> getCancelledBookings(CareFacilityBooking.BookingStatus status, 
-                                                       LocalDateTime startDate, 
-                                                       LocalDateTime endDate) {
-        log.info("취소된 예약 목록 조회: 상태={}, 시작일={}, 종료일={}", status, startDate, endDate);
-        
-        List<CareFacilityBooking> bookings = bookingRepository.findByStatusAndCancelledAtBetweenOrderByCancelledAtDesc(
-                status, startDate, endDate);
-        
-        return bookings.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 관리자용 복합 검색
-     */
-    @LogExecutionTime
-    public Page<BookingResponse> searchBookings(Long facilityId,
-                                                 String userId,
-                                                 CareFacilityBooking.BookingType bookingType,
-                                                 CareFacilityBooking.BookingStatus status,
-                                                 LocalDateTime startDate,
-                                                 LocalDateTime endDate,
-                                                 String keyword,
-                                                 int page,
-                                                 int size) {
-        log.info("예약 복합 검색: 시설ID={}, 사용자ID={}, 타입={}, 상태={}, 키워드={}", 
-                facilityId, userId, bookingType, status, keyword);
-        
-        Pageable pageable = PageRequest.of(page, size);
-        Page<CareFacilityBooking> bookings = bookingRepository.findBySearchCriteria(
-                facilityId, userId, bookingType, status, startDate, endDate, keyword, pageable);
-        
-        return bookings.map(this::convertToDto);
-    }
-
-    /**
-     * DTO 변환
-     */
+    // DTO 변환
     private BookingResponse convertToDto(CareFacilityBooking booking) {
         return BookingResponse.builder()
                 .id(booking.getId())
