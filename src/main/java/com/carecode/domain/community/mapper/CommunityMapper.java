@@ -1,6 +1,5 @@
 package com.carecode.domain.community.mapper;
 
-import com.carecode.domain.community.dto.response.CommunityResponse;
 import com.carecode.domain.community.dto.response.CommunityPostResponse;
 import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
 import com.carecode.domain.community.dto.response.CommunityCommentResponse;
@@ -29,9 +28,9 @@ public class CommunityMapper {
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
-    /**
-     * Post 엔티티를 PostResponse DTO로 변환
-     */
+
+    // Post 엔티티를 PostResponse DTO로 변환
+
     public CommunityPostResponse toPostResponse(Post post) {
         List<String> tagNames = post.getTags() != null ? post.getTags().stream().map(Tag::getName).toList() : List.of();
         return CommunityPostResponse.builder()
@@ -52,9 +51,9 @@ public class CommunityMapper {
                 .build();
     }
     
-    /**
-     * Post 엔티티를 PostDetailResponse DTO로 변환
-     */
+
+    // Post 엔티티를 PostDetailResponse DTO로 변환
+
     public CommunityPostDetailResponse toPostDetailResponse(Post post) {
         List<Comment> comments = commentRepository.findByPostIdAndParentCommentIsNull(post.getId());
         List<CommunityCommentResponse> commentResponses = comments.stream()
@@ -83,9 +82,9 @@ public class CommunityMapper {
         return response;
     }
     
-    /**
-     * Comment 엔티티를 CommentResponse DTO로 변환
-     */
+
+    // Comment 엔티티를 CommentResponse DTO로 변환
+
     public CommunityCommentResponse toCommentResponse(Comment comment) {
         List<CommunityCommentResponse> replies = comment.getReplies().stream()
                 .map(this::toCommentResponse)
@@ -104,9 +103,9 @@ public class CommunityMapper {
                 .build();
     }
     
-    /**
-     * Tag 엔티티를 TagResponse DTO로 변환
-     */
+
+    // Tag 엔티티를 TagResponse DTO로 변환
+
     public CommunityTagResponse toTagResponse(Tag tag) {
         return CommunityTagResponse.builder()
                 .id(tag.getId())
@@ -116,27 +115,27 @@ public class CommunityMapper {
                 .build();
     }
     
-    /**
-     * Post 엔티티 리스트를 PostResponse DTO 리스트로 변환
-     */
+
+    // Post 엔티티 리스트를 PostResponse DTO 리스트로 변환
+
     public List<CommunityPostResponse> toPostResponseList(List<Post> posts) {
         return posts.stream()
                 .map(this::toPostResponse)
                 .collect(Collectors.toList());
     }
     
-    /**
-     * Comment 엔티티 리스트를 CommentResponse DTO 리스트로 변환
-     */
+
+    // Comment 엔티티 리스트를 CommentResponse DTO 리스트로 변환
+
     public List<CommunityCommentResponse> toCommentResponseList(List<Comment> comments) {
         return comments.stream()
                 .map(this::toCommentResponse)
                 .collect(Collectors.toList());
     }
     
-    /**
-     * Tag 엔티티 리스트를 TagResponse DTO 리스트로 변환
-     */
+
+    // Tag 엔티티 리스트를 TagResponse DTO 리스트로 변환
+
     public List<CommunityTagResponse> toTagResponseList(List<Tag> tags) {
         return tags.stream()
                 .map(this::toTagResponse)
