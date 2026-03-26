@@ -1,11 +1,9 @@
 package com.carecode.domain.community.app;
 
-import com.carecode.domain.community.dto.request.CommunityRequest;
 import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityCreateCommentRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdateCommentRequest;
-import com.carecode.domain.community.dto.response.CommunityResponse;
 import com.carecode.domain.community.dto.response.CommunityPostResponse;
 import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
 import com.carecode.domain.community.dto.response.CommunityCommentResponse;

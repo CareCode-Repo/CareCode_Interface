@@ -2,13 +2,10 @@ package com.carecode.domain.community.service;
 
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.domain.community.dto.request.CommunityRequest;
 import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityCreateCommentRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdateCommentRequest;
-import com.carecode.domain.community.dto.request.CommunityCreateTagRequest;
-import com.carecode.domain.community.dto.response.CommunityResponse;
 import com.carecode.domain.community.dto.response.CommunityPostResponse;
 import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
 import com.carecode.domain.community.dto.response.CommunityCommentResponse;
@@ -59,9 +56,9 @@ public class CommunityService {
     private final BookmarkRepository bookmarkRepository;
     private final CommunityMapper communityMapper;
     
-    /**
-     * 게시글 목록 조회 (페이징)
-     */
+
+    // 게시글 목록 조회 (페이징)
+
     public CommunityPageResponse<CommunityPostResponse> getAllPosts(int page, int size, String sortBy, String sortDirection) {
         log.info("게시글 목록 조회 - 페이지: {}, 크기: {}, 정렬: {}, 방향: {}", page, size, sortBy, sortDirection);
         try {
@@ -92,9 +89,9 @@ public class CommunityService {
     
     // 레거시 전체 조회 메서드 제거 (페이징 API로 일원화)
     
-    /**
-     * 게시글 상세 조회
-     */
+
+    // 게시글 상세 조회
+
     public CommunityPostDetailResponse getPostById(Long postId) {
         log.info("게시글 상세 조회 - 게시글 ID: {}", postId);
         try {
@@ -114,9 +111,9 @@ public class CommunityService {
         }
     }
     
-    /**
-     * 게시글 작성
-     */
+
+    // 게시글 작성
+
     public CommunityPostResponse createPost(CommunityCreatePostRequest request) {
             // 현재 인증된 사용자 가져오기
             User author = getCurrentUser();
@@ -143,9 +140,9 @@ public class CommunityService {
             return communityMapper.toPostResponse(savedPost);
     }
     
-    /**
-     * 게시글 수정
-     */
+
+    // 게시글 수정
+
     public CommunityPostResponse updatePost(Long postId, CommunityUpdatePostRequest request) {
         log.info("게시글 수정 - 게시글 ID: {}", postId);
         try {
@@ -166,9 +163,9 @@ public class CommunityService {
         }
     }
     
-    /**
-     * 게시글 삭제
-     */
+
+    // 게시글 삭제
+
     public void deletePost(Long postId) {
         log.info("게시글 삭제 - 게시글 ID: {}", postId);
         try {
@@ -188,9 +185,9 @@ public class CommunityService {
     
     // ========== 댓글 관련 메서드 ==========
     
-    /**
-     * 게시글의 댓글 목록 조회
-     */
+
+    // 게시글의 댓글 목록 조회
+
     public List<CommunityCommentResponse> getCommentsByPostId(Long postId) {
         log.info("댓글 목록 조회 - 게시글 ID: {}", postId);
         try {
@@ -209,9 +206,9 @@ public class CommunityService {
         }
     }
     
-    /**
-     * 댓글 작성
-     */
+
+    // 댓글 작성
+
     public CommunityCommentResponse createComment(Long postId, CommunityCreateCommentRequest request) {
         log.info("댓글 작성 - 게시글 ID: {}, 부모 댓글 ID: {}", postId, request.getParentCommentId());
         try {
@@ -250,9 +247,9 @@ public class CommunityService {
         }
     }
     
-    /**
-     * 댓글 수정
-     */
+
+    // 댓글 수정
+
     public CommunityCommentResponse updateComment(Long commentId, CommunityUpdateCommentRequest request) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
@@ -263,9 +260,9 @@ public class CommunityService {
         return communityMapper.toCommentResponse(updatedComment);
     }
     
-    /**
-     * 댓글 삭제
-     */
+
+    // 댓글 삭제
+
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
@@ -283,42 +280,17 @@ public class CommunityService {
     
     // ========== 태그 관련 메서드 ==========
     
-    /**
-     * 태그 목록 조회
-     */
+
+    // 태그 목록 조회
+
     public List<CommunityTagResponse> getAllTags() {
         List<Tag> tags = tagRepository.findByIsActiveTrue();
         return communityMapper.toTagResponseList(tags);
     }
     
-    /**
-     * 태그 검색
-     */
-    public List<CommunityTagResponse> searchTags(String keyword) {
-        List<Tag> tags = tagRepository.findByNameContainingAndIsActiveTrue(keyword);
-        return communityMapper.toTagResponseList(tags);
-    }
-    
-    /**
-     * 태그 생성
-     */
-    public CommunityTagResponse createTag(CommunityCreateTagRequest request) {
-        if (tagRepository.existsByName(request.getName())) {
-            throw new CareServiceException("이미 존재하는 태그입니다: " + request.getName());
-        }
 
-        Tag tag = Tag.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .build();
+    // 게시글에 태그 추가
 
-        Tag savedTag = tagRepository.save(tag);
-        return communityMapper.toTagResponse(savedTag);
-    }
-    
-    /**
-     * 게시글에 태그 추가
-     */
     private void addTagsToPost(Post post, List<String> tagNames) {
         for (String tagName : tagNames) {
             Tag tag = tagRepository.findByName(tagName)
@@ -328,35 +300,17 @@ public class CommunityService {
         postRepository.save(post);
     }
     
-    /**
-     * 태그가 없으면 생성
-     */
+
+    // 태그가 없으면 생성
+
     private Tag createTagIfNotExists(String tagName) {
         Tag tag = new Tag(tagName, "자동 생성된 태그");
         return tagRepository.save(tag);
     }
     
-    /**
-     * 게시글의 태그 목록 조회
-     */
-    public List<CommunityTagResponse> getTagsByPostId(Long postId) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
-        return communityMapper.toTagResponseList(post.getTags());
-    }
-    
-    /**
-     * 태그별 게시글 목록 조회
-     */
-    public List<CommunityPostResponse> getPostsByTagId(Long tagId) {
-        Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(() -> new ResourceNotFoundException("태그를 찾을 수 없습니다. ID: " + tagId));
-        return communityMapper.toPostResponseList(postRepository.findByTagsContaining(tag));
-    }
 
-    /**
-     * 현재 인증된 사용자 가져오기
-     */
+    // 현재 인증된 사용자 가져오기
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -382,9 +336,9 @@ public class CommunityService {
                 });
     }
 
-    /**
-     * 카테고리 매핑 메서드
-     */
+
+    // 카테고리 매핑 메서드
+
     private PostCategory mapCategory(String category) {
         if (category == null) {
             return PostCategory.GENERAL;
@@ -418,9 +372,9 @@ public class CommunityService {
         }
     }
 
-    /**
-     * 게시글 검색 (페이징)
-     */
+
+    // 게시글 검색 (페이징)
+
     public CommunityPageResponse<CommunityPostResponse> searchPosts(String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Post> postPage = postRepository.findByKeyword(keyword, pageable);
@@ -442,9 +396,9 @@ public class CommunityService {
     
     // 레거시 전체 검색 메서드 제거 (페이징 API로 일원화)
 
-    /**
-     * 인기 게시글 조회 (페이징)
-     */
+
+    // 인기 게시글 조회 (페이징)
+
     public CommunityPageResponse<CommunityPostResponse> getPopularPosts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Post> postPage = postRepository.findPopularPosts(pageable);
@@ -466,9 +420,9 @@ public class CommunityService {
 
     // 레거시 인기 게시글 리스트 메서드 제거 (페이징 API로 일원화)
 
-    /**
-     * 최신 게시글 조회 (페이징)
-     */
+
+    // 최신 게시글 조회 (페이징)
+
     public CommunityPageResponse<CommunityPostResponse> getLatestPosts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Post> postPage = postRepository.findLatestPosts(pageable);
@@ -488,9 +442,9 @@ public class CommunityService {
                 .build();
     }
 
-    /**
-     * 좋아요 토글
-     */
+
+    // 좋아요 토글
+
     public boolean toggleLike(Long postId, Long userId) {
         log.info("좋아요 토글 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
 
@@ -518,9 +472,9 @@ public class CommunityService {
         }
     }
 
-    /**
-     * 북마크 토글
-     */
+
+    // 북마크 토글
+
     public boolean toggleBookmark(Long postId, Long userId) {
         log.info("북마크 토글 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
 
@@ -548,47 +502,9 @@ public class CommunityService {
         }
     }
 
-    /**
-     * 사용자가 특정 게시글에 좋아요를 눌렀는지 확인
-     */
-    @Transactional(readOnly = true)
-    public boolean isLikedByUser(Long postId, Long userId) {
-        if (userId == null) {
-            return false;
-        }
 
-        Post post = postRepository.findById(postId).orElse(null);
-        User user = userRepository.findById(userId).orElse(null);
+    // 특정 게시글의 좋아요 개수 조회
 
-        if (post == null || user == null) {
-            return false;
-        }
-
-        return postLikeRepository.existsByPostAndUser(post, user);
-    }
-
-    /**
-     * 사용자가 특정 게시글을 북마크했는지 확인
-     */
-    @Transactional(readOnly = true)
-    public boolean isBookmarkedByUser(Long postId, Long userId) {
-        if (userId == null) {
-            return false;
-        }
-
-        Post post = postRepository.findById(postId).orElse(null);
-        User user = userRepository.findById(userId).orElse(null);
-
-        if (post == null || user == null) {
-            return false;
-        }
-
-        return bookmarkRepository.existsByPostAndUser(post, user);
-    }
-
-    /**
-     * 특정 게시글의 좋아요 개수 조회
-     */
     @Transactional(readOnly = true)
     public long getLikeCount(Long postId) {
         Post post = postRepository.findById(postId).orElse(null);
@@ -598,9 +514,9 @@ public class CommunityService {
         return postLikeRepository.countByPost(post);
     }
 
-    /**
-     * 특정 게시글의 북마크 개수 조회
-     */
+
+    // 특정 게시글의 북마크 개수 조회
+
     @Transactional(readOnly = true)
     public long getBookmarkCount(Long postId) {
         Post post = postRepository.findById(postId).orElse(null);
@@ -610,9 +526,9 @@ public class CommunityService {
         return bookmarkRepository.countByPost(post);
     }
 
-    /**
-     * 사용자가 좋아요한 게시글 목록 조회
-     */
+
+    // 사용자가 좋아요한 게시글 목록 조회
+
     @Transactional(readOnly = true)
     public List<CommunityPostResponse> getLikedPosts(Long userId) {
         User user = userRepository.findById(userId)
@@ -626,9 +542,9 @@ public class CommunityService {
         return communityMapper.toPostResponseList(posts);
     }
 
-    /**
-     * 사용자가 북마크한 게시글 목록 조회
-     */
+
+    // 사용자가 북마크한 게시글 목록 조회
+
     @Transactional(readOnly = true)
     public List<CommunityPostResponse> getBookmarkedPosts(Long userId) {
         User user = userRepository.findById(userId)
@@ -642,9 +558,9 @@ public class CommunityService {
         return communityMapper.toPostResponseList(posts);
     }
 
-    /**
-     * 현재 로그인한 사용자 ID 가져오기
-     */
+
+    // 현재 로그인한 사용자 ID 가져오기
+
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {

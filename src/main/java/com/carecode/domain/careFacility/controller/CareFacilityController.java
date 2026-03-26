@@ -196,9 +196,9 @@ public class CareFacilityController extends BaseController {
 
     // ==================== 고급 검색 기능 ====================
 
-    /**
-     * 아이 연령별 시설 추천
-     */
+
+    // 아이 연령별 시설 추천
+
     @GetMapping("/recommend/age")
     @LogExecutionTime
     @ValidateChildAge
@@ -209,9 +209,9 @@ public class CareFacilityController extends BaseController {
         return ResponseEntity.ok(facilities);
     }
 
-    /**
-     * 최소 평점 이상의 시설 조회
-     */
+
+    // 최소 평점 이상의 시설 조회
+
     @GetMapping("/rating")
     @LogExecutionTime
     @Operation(summary = "평점별 시설 조회", description = "최소 평점 이상의 육아 시설을 조회합니다.")
@@ -221,9 +221,9 @@ public class CareFacilityController extends BaseController {
         return ResponseEntity.ok(facilities);
     }
 
-    /**
-     * 빈 자리가 있는 시설 조회
-     */
+
+    // 빈 자리가 있는 시설 조회
+
     @GetMapping("/available-spots")
     @LogExecutionTime
     @Operation(summary = "빈 자리 있는 시설 조회", description = "최소 자리 수 이상의 빈 자리가 있는 시설을 조회합니다.")
@@ -233,9 +233,9 @@ public class CareFacilityController extends BaseController {
         return ResponseEntity.ok(facilities);
     }
 
-    /**
-     * 등록금 범위로 시설 조회
-     */
+
+    // 등록금 범위로 시설 조회
+
     @GetMapping("/tuition-fee")
     @LogExecutionTime
     @Operation(summary = "등록금 범위별 시설 조회", description = "최대 등록금 이하의 시설을 조회합니다.")
@@ -245,9 +245,9 @@ public class CareFacilityController extends BaseController {
         return ResponseEntity.ok(facilities);
     }
 
-    /**
-     * 키워드로 시설 검색
-     */
+
+    // 키워드로 시설 검색
+
     @GetMapping("/keyword")
     @LogExecutionTime
     @Operation(summary = "키워드 검색", description = "키워드로 시설명 또는 주소를 검색합니다.")
@@ -257,9 +257,9 @@ public class CareFacilityController extends BaseController {
         return ResponseEntity.ok(facilities);
     }
 
-    /**
-     * 고급 검색 (복합 조건)
-     */
+
+    // 고급 검색 (복합 조건)
+
     @PostMapping("/advanced-search")
     @LogExecutionTime
     @RequireAuthentication
@@ -278,9 +278,9 @@ public class CareFacilityController extends BaseController {
         return ResponseEntity.ok(facilities);
     }
 
-    /**
-     * 리뷰와 함께 시설 상세 조회
-     */
+
+    // 리뷰와 함께 시설 상세 조회
+
     @GetMapping("/{id}/with-reviews")
     @LogExecutionTime
     @Operation(summary = "시설 상세 조회 (리뷰 포함)", description = "리뷰 정보를 포함한 시설 상세 정보를 조회합니다.")

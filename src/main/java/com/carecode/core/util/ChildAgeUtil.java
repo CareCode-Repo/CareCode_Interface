@@ -9,9 +9,7 @@ import java.time.Period;
  */
 public class ChildAgeUtil {
 
-    /**
-     * 생년월일로부터 만 나이 계산
-     */
+    // 생년월일로부터 만 나이 계산
     public static int calculateAge(LocalDate birthDate) {
         if (birthDate == null) {
             return 0;
@@ -19,9 +17,7 @@ public class ChildAgeUtil {
         return Period.between(birthDate, LocalDate.now()).getYears();
     }
 
-    /**
-     * 생년월일로부터 개월 수 계산
-     */
+    // 생년월일로부터 개월 수 계산
     public static int calculateMonths(LocalDate birthDate) {
         if (birthDate == null) {
             return 0;
@@ -30,9 +26,7 @@ public class ChildAgeUtil {
         return period.getYears() * 12 + period.getMonths();
     }
 
-    /**
-     * 연령대 분류
-     */
+    // 연령대 분류
     public static String getAgeGroup(int age) {
         if (age < 1) {
             return "영아";
@@ -47,9 +41,7 @@ public class ChildAgeUtil {
         }
     }
 
-    /**
-     * 개월 수로 연령대 분류
-     */
+    // 개월 수로 연령대 분류
     public static String getAgeGroupByMonths(int months) {
         if (months < 12) {
             return "영아";
@@ -64,23 +56,18 @@ public class ChildAgeUtil {
         }
     }
 
-    /**
-     * 육아 정책 대상 연령인지 확인
-     */
+    // 육아 정책 대상 연령인지 확인
     public static boolean isPolicyEligible(int age) {
         return age >= 0 && age <= 12;
     }
 
-    /**
-     * 어린이집 대상 연령인지 확인
-     */
+    // 어린이집 대상 연령인지 확인
     public static boolean isDaycareEligible(int age) {
         return age >= 0 && age <= 5;
     }
 
-    /**
-     * 초등학교 대상 연령인지 확인
-     */
+
+    // 초등학교 대상 연령인지 확인
     public static boolean isElementaryEligible(int age) {
         return age >= 6 && age <= 12;
     }

@@ -2,9 +2,7 @@ package com.carecode.domain.health.mapper;
 
 import com.carecode.core.util.RequestMapper;
 import com.carecode.core.util.ResponseMapper;
-import com.carecode.domain.health.dto.request.HealthRequest;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
-import com.carecode.domain.health.dto.response.HealthResponse;
 import com.carecode.domain.health.dto.response.HealthRecordResponse;
 import com.carecode.domain.health.entity.HealthRecord;
 import org.springframework.stereotype.Component;

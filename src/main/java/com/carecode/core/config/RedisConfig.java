@@ -14,9 +14,9 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
     
-    /**
-     * 문자열 기반 RedisTemplate (Rate Limiting용)
-     */
+
+    // 문자열 기반 RedisTemplate (Rate Limiting용)
+
     @Bean
     public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, String> template = new RedisTemplate<>();
@@ -29,9 +29,9 @@ public class RedisConfig {
         return template;
     }
     
-    /**
-     * 객체 기반 RedisTemplate (캐싱용)
-     */
+
+    // 객체 기반 RedisTemplate (캐싱용)
+
     @Bean
     public RedisTemplate<String, Object> redisObjectTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();

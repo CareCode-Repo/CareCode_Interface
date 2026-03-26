@@ -68,16 +68,16 @@ public class NotificationPreference {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    /**
-     * 모든 채널이 비활성화되어 있는지 확인
-     */
+
+    // 모든 채널이 비활성화되어 있는지 확인
+
     public boolean isAllChannelsDisabled() {
         return !emailEnabled && !pushEnabled && !smsEnabled && !inAppEnabled;
     }
 
-    /**
-     * 특정 채널이 활성화되어 있는지 확인
-     */
+
+    // 특정 채널이 활성화되어 있는지 확인
+
     public boolean isChannelEnabled(String channel) {
         return switch (channel.toLowerCase()) {
             case "email" -> emailEnabled;

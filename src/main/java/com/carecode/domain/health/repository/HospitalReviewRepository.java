@@ -7,7 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface HospitalReviewRepository extends JpaRepository<HospitalReview, Long> {
-    List<HospitalReview> findByHospital(Hospital hospital);
     List<HospitalReview> findByHospitalId(Long hospitalId);
-    List<HospitalReview> findByUser(User user);
 }

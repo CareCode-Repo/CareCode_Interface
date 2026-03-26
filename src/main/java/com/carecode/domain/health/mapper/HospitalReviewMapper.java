@@ -1,7 +1,6 @@
 package com.carecode.domain.health.mapper;
 
 import com.carecode.core.util.ResponseMapper;
-import com.carecode.domain.health.dto.response.HealthResponse;
 import com.carecode.domain.health.dto.response.HospitalReviewResponse;
 import com.carecode.domain.health.entity.HospitalReview;
 import org.springframework.stereotype.Component;

@@ -4,7 +4,6 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
 import com.carecode.domain.user.dto.response.UserDto;
-import com.carecode.domain.user.dto.response.UserProfileUpdateDto;
 import com.carecode.domain.user.dto.response.UserProfileCompletionResponse;
 import com.carecode.domain.user.dto.response.UserProfileMissingFields;
 import com.carecode.domain.user.dto.request.UserUpdateRequestDto;
@@ -30,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import com.carecode.core.handler.ApiSuccess;
-import com.carecode.domain.user.dto.response.UserResponse;
 import com.carecode.domain.user.dto.response.UserStatsResponse;
 import com.carecode.domain.user.dto.response.UserSearchResponse;
 import com.carecode.domain.user.dto.response.UserListResponse;
@@ -54,9 +52,9 @@ public class UserController extends BaseController {
 
     // ==================== 사용자 프로필 ====================
 
-    /**
-     * 사용자 프로필 조회
-     */
+
+    // 사용자 프로필 조회
+
     @GetMapping("/{userId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -68,9 +66,9 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(user);
     }
 
-    /**
-     * 현재 사용자 프로필 조회
-     */
+
+    // 현재 사용자 프로필 조회
+
     @GetMapping("/profile")
     @LogExecutionTime
     @RequireAuthentication
@@ -83,9 +81,7 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userDto);
     }
 
-    /**
-     * 사용자 프로필 업데이트
-     */
+    // 사용자 프로필 업데이트
     @PutMapping("/{userId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -100,9 +96,7 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(updated);
     }
 
-    /**
-     * 프로필 완성도 체크
-     */
+    // 프로필 완성도 체크
     @GetMapping("/profile/completion")
     @LogExecutionTime
     @RequireAuthentication
@@ -115,9 +109,7 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(completion);
     }
 
-    /**
-     * 프로필 이미지 업데이트
-     */
+    // 프로필 이미지 업데이트
     @PutMapping("/{userId}/profile-image")
     @LogExecutionTime
     @RequireAuthentication
@@ -131,9 +123,9 @@ public class UserController extends BaseController {
 
     // ==================== 사용자 위치 관리 ====================
 
-    /**
-     * 사용자 위치 업데이트
-     */
+
+    // 사용자 위치 업데이트
+
     @PutMapping("/{userId}/location")
     @LogExecutionTime
     @RequireAuthentication
@@ -147,10 +139,7 @@ public class UserController extends BaseController {
     }
 
     // ==================== 회원 탈퇴 ====================
-
-    /**
-     * 회원 탈퇴 (계정 비활성화)
-     */
+    // 회원 탈퇴 (계정 비활성화)
     @PutMapping("/{userId}/deactivate")
     @LogExecutionTime
     @RequireAuthentication
@@ -161,9 +150,7 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.of("회원 탈퇴가 완료되었습니다."));
     }
 
-    /**
-     * 회원 탈퇴 (소프트 삭제)
-     */
+    // 회원 탈퇴 (소프트 삭제)
     @DeleteMapping("/{userId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -171,12 +158,11 @@ public class UserController extends BaseController {
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiSuccess> deleteUser(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
         userFacade.deleteUser(userId);
+
         return ResponseEntity.ok(ApiSuccess.of("회원 탈퇴가 완료되었습니다. 데이터는 보존되며 필요시 복구 가능합니다."));
     }
 
-    /**
-     * 계정 복구 (비활성화된 계정 재활성화)
-     */
+    // 계정 복구 (비활성화된 계정 재활성화)
     @PutMapping("/{userId}/reactivate")
     @LogExecutionTime
     @RequireAuthentication
@@ -184,18 +170,14 @@ public class UserController extends BaseController {
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiSuccess> reactivateUser(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
         userFacade.reactivateUser(userId);
+
         return ResponseEntity.ok(ApiSuccess.of("계정이 성공적으로 복구되었습니다."));
     }
 
     // ==================== 프로필 관리 ====================
 
-    // (중복 제거) 현재 사용자 프로필 조회는 상단의 userFacade 사용 버전만 유지
+    // 프로필 업데이트 (추가 정보 입력)
 
-    // (중복 제거) 프로필 완성도 체크는 상단의 userFacade 사용 버전만 유지
-
-    /**
-     * 프로필 업데이트 (추가 정보 입력)
-     */
     @PutMapping("/profile")
     @LogExecutionTime
     @RequireAuthentication
@@ -218,9 +200,7 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userDto);
     }
 
-    /**
-     * 닉네임 업데이트 (카카오 닉네임과 별도)
-     */
+    // 닉네임 업데이트 (카카오 닉네임과 별도)
     @PatchMapping("/profile/nickname")
     @LogExecutionTime
     @RequireAuthentication
@@ -249,9 +229,9 @@ public class UserController extends BaseController {
 
     // ==================== 사용자 관리 (관리자용) ====================
 
-    /**
-     * 사용자 통계 조회
-     */
+
+    // 사용자 통계 조회
+
     @GetMapping("/statistics")
     @LogExecutionTime
     @RequireAuthentication
@@ -262,9 +242,9 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(stats);
     }
 
-    /**
-     * 사용자 검색
-     */
+
+    // 사용자 검색
+
     @GetMapping("/search")
     @LogExecutionTime
     @RequireAuthentication
@@ -290,9 +270,9 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(searchResult);
     }
 
-    /**
-     * 활성 사용자 목록 조회
-     */
+
+    // 활성 사용자 목록 조회
+
     @GetMapping("/active")
     @LogExecutionTime
     @RequireAuthentication
@@ -311,9 +291,9 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userList);
     }
 
-    /**
-     * 사용자 유형별 조회
-     */
+
+    // 사용자 유형별 조회
+
     @GetMapping("/by-type/{userType}")
     @LogExecutionTime
     @RequireAuthentication
@@ -332,9 +312,9 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userList);
     }
 
-    /**
-     * 지역별 사용자 조회
-     */
+
+    // 지역별 사용자 조회
+
     @GetMapping("/by-region/{region}")
     @LogExecutionTime
     @RequireAuthentication
@@ -353,9 +333,9 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userList);
     }
 
-    /**
-     * 인증된 사용자 목록 조회
-     */
+
+    // 인증된 사용자 목록 조회
+
     @GetMapping("/verified")
     @LogExecutionTime
     @RequireAuthentication
@@ -374,9 +354,9 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userList);
     }
 
-    /**
-     * 최근 활동 사용자 목록 조회
-     */
+
+    // 최근 활동 사용자 목록 조회
+
     @GetMapping("/recently-active")
     @LogExecutionTime
     @RequireAuthentication
@@ -395,9 +375,9 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userList);
     }
 
-    /**
-     * 사용자 역할 변경
-     */
+
+    // 사용자 역할 변경
+
     @PutMapping("/{userId}/role")
     @LogExecutionTime
     @RequireAuthentication
@@ -420,9 +400,9 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.of("사용자 역할이 변경되었습니다"));
     }
 
-    /**
-     * 사용자 활성화
-     */
+
+    // 사용자 활성화
+
     @PutMapping("/{userId}/activate")
     @LogExecutionTime
     @RequireAuthentication
@@ -435,9 +415,9 @@ public class UserController extends BaseController {
 
     // ==================== 유틸리티 메서드 ====================
 
-    /**
-     * 현재 로그인한 사용자의 이메일을 가져오기
-     */
+
+    // 현재 로그인한 사용자의 이메일을 가져오기
+
     private String getCurrentUserEmail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -454,9 +434,9 @@ public class UserController extends BaseController {
         return authentication.getName();
     }
 
-    /**
-     * 사용자 프로필 업데이트
-     */
+
+    // 사용자 프로필 업데이트
+
     private void updateUserProfile(User user, UserUpdateRequestDto updateDto) {
         if (!isBlank(updateDto.getName())) {
             user.setName(updateDto.getName().trim());
@@ -481,9 +461,9 @@ public class UserController extends BaseController {
         }
     }
 
-    /**
-     * User Entity를 UserDto로 변환
-     */
+
+    // User Entity를 UserDto로 변환
+
     private UserDto convertToDto(User user) {
         return UserDto.builder()
                 .id(user.getId())
@@ -508,9 +488,9 @@ public class UserController extends BaseController {
                 .build();
     }
 
-    /**
-     * 프로필 완성도 계산
-     */
+
+    // 프로필 완성도 계산
+
     private UserProfileCompletionResponse calculateProfileCompletion(User user) {
         UserProfileMissingFields missingFields = 
                 UserProfileMissingFields.builder()
@@ -548,16 +528,16 @@ public class UserController extends BaseController {
                 .build();
     }
 
-    /**
-     * 문자열이 비어있는지 확인
-     */
+
+    // 문자열이 비어있는지 확인
+
     private boolean isBlank(String str) {
         return str == null || str.trim().isEmpty();
     }
 
-    /**
-     * UserDto를 UserInfoResponse로 변환
-     */
+
+    // UserDto를 UserInfoResponse로 변환
+
     private UserInfoResponse convertToUserInfo(UserDto userDto) {
         return UserInfoResponse.builder()
                 .id(userDto.getId())

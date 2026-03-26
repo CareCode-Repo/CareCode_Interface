@@ -23,9 +23,9 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class CustomizedResponseEntityExceptionHandler {
 
-    /**
-     * CareCodeException 계층의 예외 처리
-     */
+
+    // CareCodeException 계층의 예외 처리
+
     @ExceptionHandler(CareCodeException.class)
     public ResponseEntity<ErrorResponse> handleCareCodeException(CareCodeException ex, WebRequest request) {
         log.warn("CareCodeException 발생: {} - {}", ex.getErrorCode().getCode(), ex.getMessage());
@@ -41,9 +41,9 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-    /**
-     * UserNotFoundException 처리 (하위 호환성 유지)
-     */
+
+    // UserNotFoundException 처리 (하위 호환성 유지)
+
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) {
         log.warn("UserNotFoundException 발생: {}", ex.getMessage());
@@ -59,9 +59,9 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-    /**
-     * ResourceNotFoundException 처리 (하위 호환성 유지)
-     */
+
+    // ResourceNotFoundException 처리 (하위 호환성 유지)
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
         log.warn("ResourceNotFoundException 발생: {}", ex.getMessage());
@@ -77,9 +77,9 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-    /**
-     * BusinessException 처리 (하위 호환성 유지)
-     */
+
+    // BusinessException 처리 (하위 호환성 유지)
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex, WebRequest request) {
         log.warn("BusinessException 발생: {}", ex.getMessage());
@@ -95,9 +95,9 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-    /**
-     * CareServiceException 처리 (하위 호환성 유지)
-     */
+
+    // CareServiceException 처리 (하위 호환성 유지)
+
     @ExceptionHandler(CareServiceException.class)
     public ResponseEntity<ErrorResponse> handleCareServiceException(CareServiceException ex, WebRequest request) {
         log.error("CareServiceException 발생: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
@@ -117,9 +117,9 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-    /**
-     * PolicyNotFoundException 처리 (하위 호환성 유지)
-     */
+
+    // PolicyNotFoundException 처리 (하위 호환성 유지)
+
     @ExceptionHandler(PolicyNotFoundException.class)
     public ResponseEntity<ErrorResponse> handlePolicyNotFoundException(PolicyNotFoundException ex, WebRequest request) {
         log.warn("PolicyNotFoundException 발생: {}", ex.getMessage());
@@ -135,9 +135,9 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-    /**
-     * CareFacilityNotFoundException 처리 (하위 호환성 유지)
-     */
+
+    // CareFacilityNotFoundException 처리 (하위 호환성 유지)
+
     @ExceptionHandler(CareFacilityNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCareFacilityNotFoundException(CareFacilityNotFoundException ex, WebRequest request) {
         log.warn("CareFacilityNotFoundException 발생: {}", ex.getMessage());
@@ -153,9 +153,9 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-    /**
-     * Validation 예외 처리 (@Valid 실패)
-     */
+
+    // Validation 예외 처리 (@Valid 실패)
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex, WebRequest request) {
         log.warn("Validation 실패: {}", ex.getMessage());
@@ -184,9 +184,9 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-    /**
-     * IllegalArgumentException 처리
-     */
+
+    // IllegalArgumentException 처리
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         log.warn("IllegalArgumentException 발생: {}", ex.getMessage());
@@ -202,9 +202,9 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-    /**
-     * 모든 예외 처리 (최후의 수단)
-     */
+
+    // 모든 예외 처리 (최후의 수단)
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex, WebRequest request) {
         log.error("예상치 못한 예외 발생", ex);

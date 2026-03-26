@@ -20,9 +20,9 @@ public enum FacilityType {
         return displayName;
     }
 
-    /**
-     * 문자열을 FacilityType으로 안전하게 변환
-     */
+
+    // 문자열을 FacilityType으로 안전하게 변환
+
     public static FacilityType fromString(String type) {
         try {
             return FacilityType.valueOf(type.toUpperCase());

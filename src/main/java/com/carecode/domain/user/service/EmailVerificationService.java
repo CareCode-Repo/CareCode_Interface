@@ -105,11 +105,6 @@ public class EmailVerificationService {
         String savedCode = redisTemplate.opsForValue().get(key);
         if (savedCode != null && savedCode.equals(code)) {
             redisTemplate.delete(key);
-            // userRepository에서 emailVerified=true 처리
-            userRepository.findByEmail(email).ifPresent(user -> {
-                user.setEmailVerified(true);
-                userRepository.save(user);
-            });
             return true;
         }
         return false;

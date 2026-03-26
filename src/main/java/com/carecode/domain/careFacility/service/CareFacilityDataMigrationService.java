@@ -32,9 +32,9 @@ public class CareFacilityDataMigrationService implements CommandLineRunner {
         migrateHospitalDataToCareFacility();
     }
 
-    /**
-     * Hospital 데이터를 CareFacility로 마이그레이션
-     */
+
+    // Hospital 데이터를 CareFacility로 마이그레이션
+
     private void migrateHospitalDataToCareFacility() {
         // 이미 CareFacility 데이터가 있으면 마이그레이션 건너뛰기
         if (careFacilityRepository.count() > 0) {
@@ -56,9 +56,9 @@ public class CareFacilityDataMigrationService implements CommandLineRunner {
         }
     }
 
-    /**
-     * Hospital 데이터로부터 CareFacility 생성
-     */
+
+    // Hospital 데이터로부터 CareFacility 생성
+
     private CareFacility createCareFacilityFromHospital(Map<String, Object> hospital) {
         String name = (String) hospital.get("name");
         String address = (String) hospital.get("address");
@@ -100,9 +100,9 @@ public class CareFacilityDataMigrationService implements CommandLineRunner {
                 .build();
     }
 
-    /**
-     * 주소에서 시 추출
-     */
+
+    // 주소에서 시 추출
+
     private String extractCity(String address) {
         if (address == null) return "서울시";
         
@@ -118,9 +118,9 @@ public class CareFacilityDataMigrationService implements CommandLineRunner {
         return "서울시"; // 기본값
     }
 
-    /**
-     * 주소에서 구 추출
-     */
+
+    // 주소에서 구 추출
+
     private String extractDistrict(String address) {
         if (address == null) return "강남구";
         

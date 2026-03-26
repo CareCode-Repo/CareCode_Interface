@@ -135,10 +135,8 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("카카오 OAuth 처리 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
-    
-    /**
-     * 이메일 추출 (null 안전)
-     */
+
+    // 이메일 추출 (null 안전)
     private String extractEmail(KakaoProfile kakaoProfile) {
         try {
             // kakao_account에서 이메일 추출
@@ -154,9 +152,9 @@ public class AuthServiceImpl implements AuthService {
         return "kakao_" + kakaoProfile.getId() + "@kakao.com";
     }
     
-    /**
-     * 닉네임 추출 (null 안전)
-     */
+
+    // 닉네임 추출 (null 안전)
+
     private String extractNickname(KakaoProfile kakaoProfile) {
         try {
             // 1. kakao_account.profile에서 닉네임 추출
@@ -184,9 +182,9 @@ public class AuthServiceImpl implements AuthService {
         return "카카오사용자_" + kakaoProfile.getId();
     }
     
-    /**
-     * 신규 사용자 생성
-     */
+
+    // 신규 사용자 생성
+
     private User createNewUser(KakaoProfile kakaoProfile, String email, String providerId, String nickname) {
         User newUser = User.builder()
                 .name(nickname) // 카카오 닉네임 사용

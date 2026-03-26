@@ -1,8 +1,6 @@
 package com.carecode.domain.policy.app;
 
-import com.carecode.domain.policy.dto.request.PolicyRequest;
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
-import com.carecode.domain.policy.dto.response.PolicyResponse;
 import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.dto.response.PolicyListResponse;
 import com.carecode.domain.policy.dto.response.PolicyStatsSimpleResponse;

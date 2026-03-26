@@ -17,63 +17,63 @@ import java.util.List;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     
-    /**
-     * 사용자별 알림 목록 조회
-     */
+
+    // 사용자별 알림 목록 조회
+
     Page<Notification> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
     
-    /**
-     * 사용자별 알림 목록 조회 (전체)
-     */
+
+    // 사용자별 알림 목록 조회 (전체)
+
     List<Notification> findByUserIdOrderByCreatedAtDesc(Long userId);
     
-    /**
-     * 읽지 않은 알림 조회
-     */
+
+    // 읽지 않은 알림 조회
+
     List<Notification> findByUserIdAndIsReadFalse(Long userId);
     
-    /**
-     * 알림 타입별 조회
-     */
+
+    // 알림 타입별 조회
+
     List<Notification> findByUserIdAndNotificationTypeOrderByCreatedAtDesc(Long userId, Notification.NotificationType notificationType);
     
-    /**
-     * 기간별 알림 조회
-     */
+
+    // 기간별 알림 조회
+
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.createdAt BETWEEN :startDate AND :endDate")
     List<Notification> findByDateRange(@Param("userId") Long userId, 
                                       @Param("startDate") LocalDateTime startDate, 
                                       @Param("endDate") LocalDateTime endDate);
     
-    /**
-     * 사용자별 알림 개수 조회
-     */
+
+    // 사용자별 알림 개수 조회
+
     long countByUserId(Long userId);
     
-    /**
-     * 읽지 않은 알림 개수 조회
-     */
+
+    // 읽지 않은 알림 개수 조회
+
     long countByUserIdAndIsReadFalse(Long userId);
     
-    /**
-     * 알림 타입별 개수 조회
-     */
+
+    // 알림 타입별 개수 조회
+
     long countByUserIdAndNotificationType(Long userId, Notification.NotificationType notificationType);
 
-    /**
-     * 읽음/읽지 않음별 알림 개수 조회
-     */
+
+    // 읽음/읽지 않음별 알림 개수 조회
+
     long countByUserIdAndIsRead(Long userId, boolean isRead);
 
-    /**
-     * 모든 알림을 읽음으로 처리
-     */
+
+    // 모든 알림을 읽음으로 처리
+
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.isRead = false")
     void markAllAsRead();
 
-    /**
-     * 특정 알림들을 읽음으로 처리
-     */
+
+    // 특정 알림들을 읽음으로 처리
+
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.id IN :notificationIds")
     void markAsReadByIds(@Param("notificationIds") List<Long> notificationIds);
 } 

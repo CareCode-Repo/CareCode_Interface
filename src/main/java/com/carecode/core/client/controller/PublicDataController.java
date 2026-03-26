@@ -25,9 +25,9 @@ public class PublicDataController {
 
     private final PublicDataApiService publicDataApiService;
 
-    /**
-     * 육아 시설 정보 조회
-     */
+
+    // 육아 시설 정보 조회
+
     @GetMapping("/childcare-facilities")
     @Operation(summary = "육아 시설 정보 조회", description = "지역별 육아 관련 시설 정보를 조회합니다.")
     public ResponseEntity<PublicDataResponse<Object>> getChildcareFacilities(@Parameter(description = "지역명") @RequestParam(required = false) String region,
@@ -43,9 +43,9 @@ public class PublicDataController {
         }
     }
 
-    /**
-     * 보육 정책 정보 조회
-     */
+
+    // 보육 정책 정보 조회
+
     @GetMapping("/childcare-policies")
     @Operation(summary = "보육 정책 정보 조회", description = "보육 관련 정책 정보를 조회합니다.")
     public ResponseEntity<PublicDataResponse<Object>> getChildcarePolicies(@Parameter(description = "정책 유형") @RequestParam(required = false) String policyType,
@@ -61,9 +61,9 @@ public class PublicDataController {
         }
     }
 
-    /**
-     * 소아과 병원 정보 조회
-     */
+
+    // 소아과 병원 정보 조회
+
     @GetMapping("/pediatric-hospitals")
     @Operation(summary = "소아과 병원 정보 조회", description = "지역별 소아과 병원 정보를 조회합니다.")
     public ResponseEntity<PublicDataResponse<Object>> getPediatricHospitals(@Parameter(description = "지역명") @RequestParam(required = false) String region,
@@ -79,9 +79,9 @@ public class PublicDataController {
         }
     }
 
-    /**
-     * 육아 지원금 정보 조회
-     */
+
+    // 육아 지원금 정보 조회
+
     @GetMapping("/childcare-subsidies")
     @Operation(summary = "육아 지원금 정보 조회", description = "지역별 육아 지원금 정보를 조회합니다.")
     public ResponseEntity<PublicDataResponse<Object>> getChildcareSubsidies(@Parameter(description = "지역명") @RequestParam(required = false) String region,
@@ -97,9 +97,9 @@ public class PublicDataController {
         }
     }
 
-    /**
-     * 육아 교육 정보 조회
-     */
+
+    // 육아 교육 정보 조회
+
     @GetMapping("/childcare-education")
     @Operation(summary = "육아 교육 정보 조회", description = "육아 관련 교육 정보를 조회합니다.")
     public ResponseEntity<PublicDataResponse<Object>> getChildcareEducation(@Parameter(description = "교육 유형") @RequestParam(required = false) String educationType,
@@ -115,9 +115,9 @@ public class PublicDataController {
         }
     }
 
-    /**
-     * 커스텀 API 호출
-     */
+
+    // 커스텀 API 호출
+
     @GetMapping("/custom/{endpoint}")
     @Operation(summary = "커스텀 API 호출", description = "사용자 정의 엔드포인트로 공공데이터 API를 호출합니다.")
     public ResponseEntity<PublicDataResponse<Object>> callCustomApi(@Parameter(description = "API 엔드포인트") @PathVariable String endpoint,

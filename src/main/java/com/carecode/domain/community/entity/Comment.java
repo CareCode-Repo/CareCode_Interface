@@ -82,41 +82,41 @@ public class Comment {
         updatedAt = LocalDateTime.now();
     }
     
-    /**
-     * 댓글에 답글 추가
-     */
+
+    // 댓글에 답글 추가
+
     public void addReply(Comment reply) {
         replies.add(reply);
         reply.setParentComment(this);
     }
     
-    /**
-     * 댓글에서 답글 제거
-     */
+
+    // 댓글에서 답글 제거
+
     public void removeReply(Comment reply) {
         replies.remove(reply);
         reply.setParentComment(null);
     }
     
-    /**
-     * 좋아요 수 증가
-     */
+
+    // 좋아요 수 증가
+
     public void incrementLikeCount() {
         this.likeCount++;
     }
     
-    /**
-     * 좋아요 수 감소
-     */
+
+    // 좋아요 수 감소
+
     public void decrementLikeCount() {
         if (this.likeCount > 0) {
             this.likeCount--;
         }
     }
     
-    /**
-     * 댓글 상태 변경
-     */
+
+    // 댓글 상태 변경
+
     public void updateStatus(CommentStatus status) {
         this.status = status;
         if (status == CommentStatus.DELETED) {
@@ -124,30 +124,30 @@ public class Comment {
         }
     }
     
-    /**
-     * 댓글 내용 업데이트
-     */
+
+    // 댓글 내용 업데이트
+
     public void updateContent(String content) {
         this.content = content;
     }
     
-    /**
-     * 댓글인지 확인 (답글이 아닌 최상위 댓글)
-     */
+
+    // 댓글인지 확인 (답글이 아닌 최상위 댓글)
+
     public boolean isTopLevelComment() {
         return parentComment == null;
     }
     
-    /**
-     * 답글인지 확인
-     */
+
+    // 답글인지 확인
+
     public boolean isReply() {
         return parentComment != null;
     }
     
-    /**
-     * 댓글 상태 Enum
-     */
+
+    // 댓글 상태 Enum
+
     public enum CommentStatus {
         PUBLISHED("발행"),
         HIDDEN("숨김"),
