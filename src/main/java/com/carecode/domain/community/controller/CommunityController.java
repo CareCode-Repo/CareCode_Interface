@@ -3,12 +3,10 @@ package com.carecode.domain.community.controller;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
-import com.carecode.domain.community.dto.request.CommunityRequest;
 import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityCreateCommentRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdateCommentRequest;
-import com.carecode.domain.community.dto.response.CommunityResponse;
 import com.carecode.domain.community.dto.response.CommunityPostResponse;
 import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
 import com.carecode.domain.community.dto.response.CommunityCommentResponse;
@@ -46,9 +44,9 @@ public class CommunityController extends BaseController {
 
     private final CommunityFacade communityFacade;
 
-    /**
-     * 게시글 목록 조회 (페이징)
-     */
+
+    // 게시글 목록 조회 (페이징)
+
     @GetMapping("/posts")
     @LogExecutionTime
     @Operation(summary = "게시글 목록 조회", description = "커뮤니티 게시글 목록을 페이징으로 조회합니다.")
@@ -61,9 +59,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-    /**
-     * 게시글 상세 조회
-     */
+
+    // 게시글 상세 조회
+
     @GetMapping("/posts/{postId}")
     @LogExecutionTime
     @Operation(summary = "게시글 상세 조회", description = "특정 게시글의 상세 정보를 조회합니다.")
@@ -73,9 +71,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(post);
     }
 
-    /**
-     * 게시글 작성
-     */
+
+    // 게시글 작성
+
     @PostMapping("/posts")
     @LogExecutionTime
     @RequireAuthentication
@@ -86,9 +84,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(post);
     }
 
-    /**
-     * 게시글 수정
-     */
+
+    // 게시글 수정
+
     @PutMapping("/posts/{postId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -100,9 +98,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(post);
     }
 
-    /**
-     * 게시글 삭제
-     */
+
+    // 게시글 삭제
+
     @DeleteMapping("/posts/{postId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -113,9 +111,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("게시글이 삭제되었습니다.").build());
     }
 
-    /**
-     * 댓글 목록 조회
-     */
+
+    // 댓글 목록 조회
+
     @GetMapping("/posts/{postId}/comments")
     @LogExecutionTime
     @Operation(summary = "댓글 목록 조회", description = "특정 게시글의 댓글 목록을 조회합니다.")
@@ -125,9 +123,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(comments);
     }
 
-    /**
-     * 댓글 작성
-     */
+
+    // 댓글 작성
+
     @PostMapping("/posts/{postId}/comments")
     @LogExecutionTime
     @RequireAuthentication
@@ -139,9 +137,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(comment);
     }
 
-    /**
-     * 댓글 수정
-     */
+
+    // 댓글 수정
+
     @PutMapping("/comments/{commentId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -153,9 +151,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(comment);
     }
 
-    /**
-     * 댓글 삭제
-     */
+
+    // 댓글 삭제
+
     @DeleteMapping("/comments/{commentId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -166,9 +164,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("댓글이 삭제되었습니다.").build());
     }
 
-    /**
-     * 게시글 검색 (페이징)
-     */
+
+    // 게시글 검색 (페이징)
+
     @GetMapping("/search")
     @LogExecutionTime
     @Operation(summary = "게시글 검색", description = "키워드로 게시글을 페이징 검색합니다.")
@@ -180,9 +178,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-    /**
-     * 인기 게시글 조회 (페이징)
-     */
+
+    // 인기 게시글 조회 (페이징)
+
     @GetMapping("/popular")
     @LogExecutionTime
     @Operation(summary = "인기 게시글 조회", description = "인기 있는 게시글 목록을 페이징으로 조회합니다.")
@@ -193,9 +191,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-    /**
-     * 최신 게시글 조회 (페이징)
-     */
+
+    // 최신 게시글 조회 (페이징)
+
     @GetMapping("/latest")
     @LogExecutionTime
     @Operation(summary = "최신 게시글 조회", description = "최근 작성된 게시글 목록을 페이징으로 조회합니다.")
@@ -206,9 +204,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-    /**
-     * 태그 목록 조회
-     */
+
+    // 태그 목록 조회
+
     @GetMapping("/tags")
     @LogExecutionTime
     @Operation(summary = "태그 목록 조회", description = "커뮤니티 태그 목록을 조회합니다.")
@@ -219,9 +217,9 @@ public class CommunityController extends BaseController {
 
     // ==================== 좋아요 및 북마크 기능 ====================
 
-    /**
-     * 게시글 좋아요 토글
-     */
+
+    // 게시글 좋아요 토글
+
     @PostMapping("/posts/{postId}/like")
     @LogExecutionTime
     @RequireAuthentication
@@ -239,9 +237,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 게시글 북마크 토글
-     */
+
+    // 게시글 북마크 토글
+
     @PostMapping("/posts/{postId}/bookmark")
     @LogExecutionTime
     @RequireAuthentication
@@ -259,9 +257,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 사용자가 좋아요한 게시글 목록 조회
-     */
+
+    // 사용자가 좋아요한 게시글 목록 조회
+
     @GetMapping("/posts/liked")
     @LogExecutionTime
     @RequireAuthentication
@@ -273,9 +271,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-    /**
-     * 사용자가 북마크한 게시글 목록 조회
-     */
+
+    // 사용자가 북마크한 게시글 목록 조회
+
     @GetMapping("/posts/bookmarked")
     @LogExecutionTime
     @RequireAuthentication
@@ -287,9 +285,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-    /**
-     * 게시글 좋아요 수 조회
-     */
+
+    // 게시글 좋아요 수 조회
+
     @GetMapping("/posts/{postId}/like-count")
     @LogExecutionTime
     @Operation(summary = "게시글 좋아요 수", description = "특정 게시글의 좋아요 수를 조회합니다.")
@@ -301,9 +299,9 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 게시글 북마크 수 조회
-     */
+
+    // 게시글 북마크 수 조회
+
     @GetMapping("/posts/{postId}/bookmark-count")
     @LogExecutionTime
     @Operation(summary = "게시글 북마크 수", description = "특정 게시글의 북마크 수를 조회합니다.")
