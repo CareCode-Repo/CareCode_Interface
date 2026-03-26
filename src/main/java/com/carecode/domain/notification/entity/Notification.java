@@ -56,16 +56,16 @@ public class Notification {
         createdAt = LocalDateTime.now();
     }
     
-    /**
-     * 알림 읽음 처리
-     */
+
+    // 알림 읽음 처리
+
     public void markAsRead() {
         this.isRead = true;
     }
     
-    /**
-     * 알림 타입 Enum
-     */
+
+    // 알림 타입 Enum
+
     public enum NotificationType {
         POLICY("정책"),
         HEALTH("건강"),
