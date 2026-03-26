@@ -12,9 +12,7 @@ import java.util.Map;
 @Component
 public class KakaoUserInfoExtractor {
 
-    /**
-     * 카카오 사용자 정보에서 닉네임 추출
-     */
+    // 카카오 사용자 정보에서 닉네임 추출
     public String extractNickname(Map<String, Object> attributes) {
         Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
         if (kakaoAccount != null && kakaoAccount.containsKey("profile")) {
@@ -27,9 +25,7 @@ public class KakaoUserInfoExtractor {
         return null;
     }
 
-    /**
-     * 카카오 사용자 정보에서 프로필 이미지 URL 추출
-     */
+    // 카카오 사용자 정보에서 프로필 이미지 URL 추출
     public String extractProfileImageUrl(Map<String, Object> attributes) {
         Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
         if (kakaoAccount != null && kakaoAccount.containsKey("profile")) {
@@ -42,9 +38,8 @@ public class KakaoUserInfoExtractor {
         return null;
     }
 
-    /**
-     * 카카오 사용자 정보에서 ID 추출
-     */
+
+    // 카카오 사용자 정보에서 ID 추출
     public String extractKakaoId(Map<String, Object> attributes) {
         try {
             Object id = attributes.get("id");
@@ -55,9 +50,7 @@ public class KakaoUserInfoExtractor {
         return null;
     }
 
-    /**
-     * 카카오 사용자 정보에서 이메일 추출
-     */
+    // 카카오 사용자 정보에서 이메일 추출
     public String extractEmail(Map<String, Object> attributes) {
         Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
         if (kakaoAccount != null) {
@@ -67,9 +60,7 @@ public class KakaoUserInfoExtractor {
         return null;
     }
 
-    /**
-     * 고유한 사용자명 생성 (닉네임 + 카카오ID)
-     */
+    // 고유한 사용자명 생성 (닉네임 + 카카오ID)
     public String generateUniqueUserName(Map<String, Object> attributes) {
         String nickname = extractNickname(attributes);
         String kakaoId = extractKakaoId(attributes);
