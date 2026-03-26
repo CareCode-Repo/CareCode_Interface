@@ -52,9 +52,9 @@ public class AdminCareFacilityBookingController extends BaseController {
         return "admin/facilities/bookings/list";
     }
 
-    /**
-     * 예약 상세 페이지
-     */
+
+    // 예약 상세 페이지
+
     @GetMapping("/{bookingId}")
     @LogExecutionTime
     public String bookingDetail(@PathVariable Long bookingId, Model model) {
@@ -63,9 +63,9 @@ public class AdminCareFacilityBookingController extends BaseController {
         return "admin/facilities/bookings/detail";
     }
 
-    /**
-     * 예약 상태 변경
-     */
+
+    // 예약 상태 변경
+
     @PostMapping("/{bookingId}/status")
     @LogExecutionTime
     public String updateBookingStatus(@PathVariable Long bookingId, @RequestParam String status,
@@ -83,9 +83,9 @@ public class AdminCareFacilityBookingController extends BaseController {
         return "redirect:/admin/facilities/bookings/" + bookingId;
     }
 
-    /**
-     * 예약 삭제
-     */
+
+    // 예약 삭제
+
     @PostMapping("/{bookingId}/delete")
     @LogExecutionTime
     public String deleteBooking(@PathVariable Long bookingId, RedirectAttributes redirectAttributes) {
@@ -95,9 +95,9 @@ public class AdminCareFacilityBookingController extends BaseController {
         return "redirect:/admin/facilities/bookings";
     }
 
-    /**
-     * 예약 통계 페이지
-     */
+
+    // 예약 통계 페이지
+
     @GetMapping("/statistics")
     @LogExecutionTime
     public String bookingStatistics(Model model) {
@@ -106,9 +106,9 @@ public class AdminCareFacilityBookingController extends BaseController {
         return "admin/facilities/bookings/statistics";
     }
 
-    /**
-     * 오늘의 예약 페이지
-     */
+
+    // 오늘의 예약 페이지
+
     @GetMapping("/today")
     @LogExecutionTime
     public String todayBookings(@RequestParam(defaultValue = "0") Integer page, @RequestParam(defaultValue = "20") Integer size, Model model) {
@@ -130,9 +130,9 @@ public class AdminCareFacilityBookingController extends BaseController {
         return "admin/facilities/bookings/today";
     }
 
-    /**
-     * 시설별 예약 페이지
-     */
+
+    // 시설별 예약 페이지
+
     @GetMapping("/facility/{facilityId}")
     @LogExecutionTime
     public String facilityBookings(@PathVariable Long facilityId, @RequestParam(defaultValue = "0") Integer page,
@@ -152,9 +152,9 @@ public class AdminCareFacilityBookingController extends BaseController {
         return "admin/facilities/bookings/facility";
     }
 
-    /**
-     * 상태별 예약 페이지
-     */
+
+    // 상태별 예약 페이지
+
     @GetMapping("/status/{status}")
     @LogExecutionTime
     public String statusBookings(@PathVariable String status, @RequestParam(defaultValue = "0") Integer page,
@@ -174,9 +174,9 @@ public class AdminCareFacilityBookingController extends BaseController {
         return "admin/facilities/bookings/status";
     }
 
-    /**
-     * 예약 생성 페이지 (관리자가 직접 예약 생성)
-     */
+
+    // 예약 생성 페이지 (관리자가 직접 예약 생성)
+
     @GetMapping("/create")
     @LogExecutionTime
     public String createBookingForm(Model model) {
@@ -184,9 +184,9 @@ public class AdminCareFacilityBookingController extends BaseController {
         return "admin/facilities/bookings/create";
     }
 
-    /**
-     * 예약 수정 페이지
-     */
+
+    // 예약 수정 페이지
+
     @GetMapping("/{bookingId}/edit")
     @LogExecutionTime
     public String editBookingForm(@PathVariable Long bookingId, Model model) {
@@ -195,9 +195,9 @@ public class AdminCareFacilityBookingController extends BaseController {
         return "admin/facilities/bookings/edit";
     }
 
-    /**
-     * 대시보드 메인 페이지 (예약 요약)
-     */
+
+    // 대시보드 메인 페이지 (예약 요약)
+
     @GetMapping("/dashboard")
     @LogExecutionTime
     public String bookingDashboard(Model model) {
