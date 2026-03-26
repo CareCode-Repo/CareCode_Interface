@@ -42,9 +42,8 @@ public class CareFacilityService {
     private final CareFacilityRepository careFacilityRepository;
     private final CareFacilityMapper careFacilityMapper;
 
-    /**
-     * 공공데이터 API에서 받아온 보육시설 데이터를 DB에 저장
-     */
+
+    // 공공데이터 API에서 받아온 보육시설 데이터를 DB에 저장
     @Transactional
     public void saveCareFacilitiesFromPublicData(Map<String, Object> publicData) {
             List<Map<String, Object>> facilities = (List<Map<String, Object>>) publicData.get("facilities");
@@ -90,9 +89,8 @@ public class CareFacilityService {
                     
     }
 
-    /**
-     * 공공데이터로부터 새로운 CareFacility 엔티티 생성
-     */
+
+    // 공공데이터로부터 새로운 CareFacility 엔티티 생성
     private CareFacility createCareFacilityFromPublicData(Map<String, Object> facilityData) {
             return CareFacility.builder()
                     .facilityCode((String) facilityData.get("facilityId"))
@@ -117,9 +115,9 @@ public class CareFacilityService {
                     
     }
 
-    /**
-     * 기존 CareFacility 엔티티를 공공데이터로 업데이트
-     */
+
+    // 기존 CareFacility 엔티티를 공공데이터로 업데이트
+
     private void updateCareFacilityFromPublicData(CareFacility existingFacility, Map<String, Object> facilityData) {
             existingFacility.setName((String) facilityData.get("facilityName"));
             existingFacility.setFacilityType(mapServiceTypeToFacilityType((String) facilityData.get("serviceType")));
@@ -138,9 +136,9 @@ public class CareFacilityService {
             careFacilityRepository.save(existingFacility);
     }
 
-    /**
-     * 서비스 타입을 FacilityType으로 매핑
-     */
+
+    // 서비스 타입을 FacilityType으로 매핑
+
     private FacilityType mapServiceTypeToFacilityType(String serviceType) {
         if (serviceType == null) {
             return FacilityType.OTHER;
@@ -160,9 +158,9 @@ public class CareFacilityService {
         }
     }
 
-    /**
-     * 운영시간 정보 포맷팅
-     */
+
+    // 운영시간 정보 포맷팅
+
     private String formatOperatingHours(Map<String, Object> facilityData) {
         StringBuilder hours = new StringBuilder();
         
@@ -188,9 +186,9 @@ public class CareFacilityService {
         return hours.toString();
     }
 
-    /**
-     * 시설 설명 생성
-     */
+
+    // 시설 설명 생성
+
     private String generateDescription(Map<String, Object> facilityData) {
         StringBuilder description = new StringBuilder();
         
@@ -218,9 +216,9 @@ public class CareFacilityService {
         return description.toString();
     }
 
-    /**
-     * 돌봄 시설 목록 조회
-     */
+
+    // 돌봄 시설 목록 조회
+
     @LogExecutionTime
     public List<CareFacilityInfo> getAllCareFacilities() {
 
@@ -230,9 +228,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 돌봄 시설 상세 조회
-     */
+
+    // 돌봄 시설 상세 조회
+
     @LogExecutionTime
     @CacheableResult(cacheName = "careFacility", key = "#facilityId")
     public CareFacilityInfo getCareFacilityById(Long facilityId) {
@@ -242,9 +240,9 @@ public class CareFacilityService {
         return careFacilityMapper.toResponse(facility);
     }
 
-    /**
-     * 돌봄 시설 검색
-     */
+
+    // 돌봄 시설 검색
+
     @LogExecutionTime
     @ValidateLocation
     public CareFacilityListResponse searchCareFacilities(CareFacilitySearchRequest request) {
@@ -277,9 +275,9 @@ public class CareFacilityService {
                 .build();
     }
 
-    /**
-     * 시설 유형별 조회
-     */
+
+    // 시설 유형별 조회
+
     @LogExecutionTime
     public List<CareFacilityInfo> getCareFacilitiesByType(FacilityType facilityType) {
         List<CareFacility> facilities = careFacilityRepository.findByFacilityType(facilityType);
@@ -288,9 +286,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 지역별 돌봄 시설 조회
-     */
+
+    // 지역별 돌봄 시설 조회
+
     @LogExecutionTime
     @ValidateLocation
     public List<CareFacilityInfo> getCareFacilitiesByLocation(String location) {
@@ -300,9 +298,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 반경 내 돌봄 시설 조회
-     */
+
+    // 반경 내 돌봄 시설 조회
+
     @LogExecutionTime
     @ValidateLocation
     public List<CareFacilityInfo> getCareFacilitiesWithinRadius(Double latitude, Double longitude, Double radius) {
@@ -312,9 +310,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 연령대별 돌봄 시설 조회
-     */
+
+    // 연령대별 돌봄 시설 조회
+
     @LogExecutionTime
     public List<CareFacilityInfo> getCareFacilitiesByAgeRange(int minAge, int maxAge) {
         List<CareFacility> facilities = careFacilityRepository.findByAgeRange(minAge, maxAge);
@@ -323,9 +321,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 운영 시간별 돌봄 시설 조회
-     */
+
+    // 운영 시간별 돌봄 시설 조회
+
     @LogExecutionTime
     public List<CareFacilityInfo> getCareFacilitiesByOperatingHours(String operatingHours) {
         List<CareFacility> facilities = careFacilityRepository.findByOperatingHours(operatingHours);
@@ -334,9 +332,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 인기 돌봄 시설 조회 (평점 기준)
-     */
+
+    // 인기 돌봄 시설 조회 (평점 기준)
+
     @LogExecutionTime
     public List<CareFacilityInfo> getPopularCareFacilities(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
@@ -346,9 +344,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 신규 돌봄 시설 조회
-     */
+
+    // 신규 돌봄 시설 조회
+
     @LogExecutionTime
     public List<CareFacilityInfo> getNewCareFacilities(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
@@ -358,9 +356,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 돌봄 시설 조회수 증가
-     */
+
+    // 돌봄 시설 조회수 증가
+
     @Transactional
     public void incrementViewCount(Long facilityId) {
         CareFacility facility = careFacilityRepository.findById(facilityId)
@@ -371,9 +369,9 @@ public class CareFacilityService {
         careFacilityRepository.save(facility);
     }
 
-    /**
-     * 돌봄 시설 평점 업데이트
-     */
+
+    // 돌봄 시설 평점 업데이트
+
     @Transactional
     public void updateRating(Long facilityId, Double rating) {
         CareFacility facility = careFacilityRepository.findById(facilityId)
@@ -390,9 +388,9 @@ public class CareFacilityService {
         careFacilityRepository.save(facility);
     }
 
-    /**
-     * 돌봄 시설 통계 조회
-     */
+
+    // 돌봄 시설 통계 조회
+
     @LogExecutionTime
     public CareFacilityStatsResponse getFacilityStats() {
         long totalFacilities = careFacilityRepository.count();
@@ -411,9 +409,9 @@ public class CareFacilityService {
                 .build();
     }
 
-    /**
-     * 아이 연령별 시설 추천
-     */
+
+    // 아이 연령별 시설 추천
+
     @LogExecutionTime
     public List<CareFacilityInfo> recommendFacilitiesByChildAge(Integer childAge) {
         List<CareFacility> facilities = careFacilityRepository.findByChildAge(childAge);
@@ -422,9 +420,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 최소 평점 이상의 시설 조회
-     */
+
+    // 최소 평점 이상의 시설 조회
+
     @LogExecutionTime
     public List<CareFacilityInfo> getFacilitiesByMinRating(Double minRating) {
         List<CareFacility> facilities = careFacilityRepository.findByMinRating(minRating);
@@ -433,9 +431,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 빈 자리가 있는 시설 조회
-     */
+
+    // 빈 자리가 있는 시설 조회
+
     @LogExecutionTime
     public List<CareFacilityInfo> getFacilitiesWithAvailableSpots(Integer minSpots) {
         List<CareFacility> facilities = careFacilityRepository.findByAvailableSpots(minSpots);
@@ -444,9 +442,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 등록금 범위로 시설 조회
-     */
+
+    // 등록금 범위로 시설 조회
+
     @LogExecutionTime
     public List<CareFacilityInfo> getFacilitiesByMaxTuitionFee(Integer maxFee) {
         List<CareFacility> facilities = careFacilityRepository.findByMaxTuitionFee(maxFee);
@@ -455,9 +453,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 키워드로 시설 검색
-     */
+
+    // 키워드로 시설 검색
+
     @LogExecutionTime
     public List<CareFacilityInfo> searchFacilitiesByKeyword(String keyword) {
         List<CareFacility> facilities = careFacilityRepository.searchByKeyword(keyword);
@@ -466,9 +464,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 복합 조건으로 시설 검색 (고급 검색)
-     */
+
+    // 복합 조건으로 시설 검색 (고급 검색)
+
     @LogExecutionTime
     public List<CareFacilityInfo> searchFacilitiesAdvanced(
             FacilityType facilityType,
@@ -487,9 +485,9 @@ public class CareFacilityService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 리뷰와 함께 시설 상세 조회
-     */
+
+    // 리뷰와 함께 시설 상세 조회
+
     @LogExecutionTime
     public CareFacilityInfo getFacilityByIdWithReviews(Long facilityId) {
         CareFacility facility = careFacilityRepository.findByIdWithReviews(facilityId)
@@ -497,8 +495,8 @@ public class CareFacilityService {
         return careFacilityMapper.toResponse(facility);
     }
 
-    /**
-     * Entity를 DTO로 변환
-     */
+
+    // Entity를 DTO로 변환
+
     // 매핑은 CareFacilityMapper 사용
 } 
