@@ -1,11 +1,9 @@
 package com.carecode.domain.health.app;
 
-import com.carecode.domain.health.dto.request.HealthRequest;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthCreateHospitalReviewRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHospitalReviewRequest;
-import com.carecode.domain.health.dto.response.HealthResponse;
 import com.carecode.domain.health.dto.response.HealthRecordResponse;
 import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
 import com.carecode.domain.health.dto.response.CheckupScheduleResponse;
