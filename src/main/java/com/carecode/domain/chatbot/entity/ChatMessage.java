@@ -60,17 +60,13 @@ public class ChatMessage {
     @Column
     private LocalDateTime updatedAt;
 
-    /**
-     * 메시지 타입 (사용자/챗봇)
-     */
+    // 메시지 타입 (사용자/챗봇)
     public enum MessageType {
         USER,       // 사용자 메시지
         BOT         // 챗봇 응답
     }
 
-    /**
-     * 의도 타입 (챗봇이 이해한 사용자 의도)
-     */
+    // 의도 타입 (챗봇이 이해한 사용자 의도)
     public enum IntentType {
         GREETING,           // 인사
         QUESTION,           // 질문
