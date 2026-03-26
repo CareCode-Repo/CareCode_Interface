@@ -17,39 +17,39 @@ import java.util.Optional;
 @Repository
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
-    /**
-     * 특정 사용자가 특정 게시글을 북마크했는지 확인
-     */
+
+    // 특정 사용자가 특정 게시글을 북마크했는지 확인
+
     boolean existsByPostAndUser(Post post, User user);
 
-    /**
-     * 특정 사용자가 특정 게시글에 한 북마크 조회
-     */
+
+    // 특정 사용자가 특정 게시글에 한 북마크 조회
+
     Optional<Bookmark> findByPostAndUser(Post post, User user);
 
-    /**
-     * 특정 게시글의 북마크 개수
-     */
+
+    // 특정 게시글의 북마크 개수
+
     long countByPost(Post post);
 
-    /**
-     * 특정 사용자가 북마크한 게시글 목록
-     */
+
+    // 특정 사용자가 북마크한 게시글 목록
+
     List<Bookmark> findByUser(User user);
 
-    /**
-     * 특정 게시글의 모든 북마크 삭제
-     */
+
+    // 특정 게시글의 모든 북마크 삭제
+
     void deleteByPost(Post post);
 
-    /**
-     * 특정 사용자와 게시글의 북마크 삭제
-     */
+
+    // 특정 사용자와 게시글의 북마크 삭제
+
     void deleteByPostAndUser(Post post, User user);
 
-    /**
-     * 특정 게시글 목록에 대해 사용자가 북마크했는지 확인
-     */
+
+    // 특정 게시글 목록에 대해 사용자가 북마크했는지 확인
+
     @Query("SELECT b.post.id FROM Bookmark b WHERE b.user = :user AND b.post.id IN :postIds")
     List<Long> findBookmarkedPostIdsByUserAndPostIds(@Param("user") User user, @Param("postIds") List<Long> postIds);
 }
