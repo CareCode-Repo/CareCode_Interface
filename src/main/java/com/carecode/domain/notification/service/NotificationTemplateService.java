@@ -1,6 +1,5 @@
 package com.carecode.domain.notification.service;
 
-import com.carecode.domain.notification.dto.request.NotificationRequest;
 import com.carecode.domain.notification.dto.request.NotificationCreateRequest;
 import com.carecode.domain.notification.factory.NotificationStrategyFactory;
 import com.carecode.domain.user.entity.User;
@@ -23,9 +22,9 @@ public class NotificationTemplateService {
     
     private final NotificationStrategyFactory strategyFactory;
     
-    /**
-     * 시스템 업데이트 알림 템플릿
-     */
+
+    // 시스템 업데이트 알림 템플릿
+
     public NotificationCreateRequest createSystemUpdateTemplate(User user, String version, String features) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -36,9 +35,9 @@ public class NotificationTemplateService {
                 .build();
     }
     
-    /**
-     * 정책 변경 알림 템플릿
-     */
+
+    // 정책 변경 알림 템플릿
+
     public NotificationCreateRequest createPolicyChangeTemplate(User user, String policyName, String changeDetails) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -49,9 +48,9 @@ public class NotificationTemplateService {
                 .build();
     }
     
-    /**
-     * 커뮤니티 활동 알림 템플릿
-     */
+
+    // 커뮤니티 활동 알림 템플릿
+
     public NotificationCreateRequest createCommunityActivityTemplate(User user, String activityType, String content) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -62,9 +61,9 @@ public class NotificationTemplateService {
                 .build();
     }
     
-    /**
-     * 건강 기록 알림 템플릿
-     */
+
+    // 건강 기록 알림 템플릿
+
     public NotificationCreateRequest createHealthRecordTemplate(User user, String childName, String recordType) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -75,9 +74,9 @@ public class NotificationTemplateService {
                 .build();
     }
     
-    /**
-     * 예방접종 알림 템플릿
-     */
+
+    // 예방접종 알림 템플릿
+
     public NotificationCreateRequest createVaccinationReminderTemplate(User user, String childName, String vaccineName, String dueDate) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -88,9 +87,9 @@ public class NotificationTemplateService {
                 .build();
     }
     
-    /**
-     * 시설 추천 알림 템플릿
-     */
+
+    // 시설 추천 알림 템플릿
+
     public NotificationCreateRequest createFacilityRecommendationTemplate(User user, String facilityName, String reason) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -101,9 +100,9 @@ public class NotificationTemplateService {
                 .build();
     }
     
-    /**
-     * 챗봇 응답 알림 템플릿
-     */
+
+    // 챗봇 응답 알림 템플릿
+
     public NotificationCreateRequest createChatbotResponseTemplate(User user, String question, String answer) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -114,9 +113,9 @@ public class NotificationTemplateService {
                 .build();
     }
     
-    /**
-     * 긴급 알림 템플릿
-     */
+
+    // 긴급 알림 템플릿
+
     public NotificationCreateRequest createEmergencyTemplate(User user, String emergencyType, String details) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -127,9 +126,9 @@ public class NotificationTemplateService {
                 .build();
     }
     
-    /**
-     * 사용자 정의 알림 템플릿 생성
-     */
+
+    // 사용자 정의 알림 템플릿 생성
+
     public NotificationCreateRequest createCustomTemplate(User user, String type, String title, String message, String priority) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -140,9 +139,9 @@ public class NotificationTemplateService {
                 .build();
     }
     
-    /**
-     * 템플릿 유효성 검사
-     */
+
+    // 템플릿 유효성 검사
+
     public boolean validateTemplate(NotificationCreateRequest template) {
         if (template == null) return false;
         
@@ -171,9 +170,9 @@ public class NotificationTemplateService {
         return true;
     }
     
-    /**
-     * 템플릿 변수 치환
-     */
+
+    // 템플릿 변수 치환
+
     public String replaceTemplateVariables(String template, Map<String, String> variables) {
         String result = template;
         
@@ -184,9 +183,9 @@ public class NotificationTemplateService {
         return result;
     }
     
-    /**
-     * 기본 변수 맵 생성
-     */
+
+    // 기본 변수 맵 생성
+
     public Map<String, String> createDefaultVariables(User user) {
         Map<String, String> variables = new HashMap<>();
         variables.put("userName", user.getName());
