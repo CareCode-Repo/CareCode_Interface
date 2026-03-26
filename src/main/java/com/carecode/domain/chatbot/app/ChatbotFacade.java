@@ -1,15 +1,17 @@
 package com.carecode.domain.chatbot.app;
 
-import com.carecode.domain.chatbot.dto.request.ChatbotRequestDto;
 import com.carecode.domain.chatbot.dto.request.ChatbotMessageRequest;
 import com.carecode.domain.chatbot.dto.response.ChatbotMessageResponse;
 import com.carecode.domain.chatbot.dto.response.ChatbotChatHistoryDtoResponse;
 import com.carecode.domain.chatbot.dto.response.ChatbotSessionDtoResponse;
+import com.carecode.domain.chatbot.entity.ChatMessage;
+import com.carecode.domain.chatbot.entity.ChatSession;
 import com.carecode.domain.chatbot.service.ChatbotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -39,7 +41,7 @@ public class ChatbotFacade {
     }
 
     @Transactional(readOnly = true)
-    public List<ChatbotChatHistoryDtoResponse> getMessagesByIntentType(String userId, com.carecode.domain.chatbot.entity.ChatMessage.IntentType intentType) {
+    public List<ChatbotChatHistoryDtoResponse> getMessagesByIntentType(String userId, ChatMessage.IntentType intentType) {
         return chatbotService.getMessagesByIntentType(userId, intentType);
     }
 
@@ -59,12 +61,12 @@ public class ChatbotFacade {
     }
 
     @Transactional(readOnly = true)
-    public List<ChatbotSessionDtoResponse> getSessionsByStatus(String userId, com.carecode.domain.chatbot.entity.ChatSession.SessionStatus status) {
+    public List<ChatbotSessionDtoResponse> getSessionsByStatus(String userId, ChatSession.SessionStatus status) {
         return chatbotService.getSessionsByStatus(userId, status);
     }
 
     @Transactional(readOnly = true)
-    public List<ChatbotSessionDtoResponse> getSessionsByDateRange(String userId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+    public List<ChatbotSessionDtoResponse> getSessionsByDateRange(String userId, LocalDateTime startDate, LocalDateTime endDate) {
         return chatbotService.getSessionsByDateRange(userId, startDate, endDate);
     }
 
