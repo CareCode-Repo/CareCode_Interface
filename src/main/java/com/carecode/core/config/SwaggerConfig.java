@@ -61,9 +61,9 @@ public class SwaggerConfig {
                                 .description("기본 인증 정보를 입력하세요")));
     }
     
-    /**
-     * 환경별 서버 목록 생성
-     */
+
+    // 환경별 서버 목록 생성
+
     private List<Server> createServerList() {
         List<Server> servers = new ArrayList<>();
         
