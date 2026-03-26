@@ -7,6 +7,7 @@ import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import java.util.Optional;
  */
 @Slf4j
 @Service
+@Profile("dev")
 @RequiredArgsConstructor
 public class NotificationInitializationService implements CommandLineRunner {
 
@@ -29,9 +31,9 @@ public class NotificationInitializationService implements CommandLineRunner {
         createTestNotifications();
     }
 
-    /**
-     * 테스트용 알림 생성
-     */
+
+    // 테스트용 알림 생성
+
     @Transactional
     public void createTestNotifications() {
         try {
@@ -62,9 +64,9 @@ public class NotificationInitializationService implements CommandLineRunner {
         }
     }
 
-    /**
-     * 시스템 알림 생성
-     */
+
+    // 시스템 알림 생성
+
     private void createSystemNotification(User user) {
         Notification systemNotification = Notification.builder()
                 .user(user)
@@ -78,9 +80,9 @@ public class NotificationInitializationService implements CommandLineRunner {
         log.info("시스템 알림 생성 완료: {}", systemNotification.getTitle());
     }
 
-    /**
-     * 정책 알림 생성
-     */
+
+    // 정책 알림 생성
+
     private void createPolicyNotification(User user) {
         Notification policyNotification = Notification.builder()
                 .user(user)
@@ -94,9 +96,9 @@ public class NotificationInitializationService implements CommandLineRunner {
         log.info("정책 알림 생성 완료: {}", policyNotification.getTitle());
     }
 
-    /**
-     * 커뮤니티 알림 생성
-     */
+
+    // 커뮤니티 알림 생성
+
     private void createCommunityNotification(User user) {
         Notification communityNotification = Notification.builder()
                 .user(user)
