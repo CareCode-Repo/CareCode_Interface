@@ -57,7 +57,7 @@ public class PolicyDocument {
 
     @Builder
     public PolicyDocument(Policy policy, String documentUrl, String documentType,
-                         String fileName, Long fileSize, String description, Integer displayOrder) {
+                          String fileName, Long fileSize, String description, Integer displayOrder) {
         this.policy = policy;
         this.documentUrl = documentUrl;
         this.documentType = documentType;
@@ -68,7 +68,7 @@ public class PolicyDocument {
     }
 
     public void updateDocument(String documentUrl, String documentType, String fileName,
-                             Long fileSize, String description, Integer displayOrder) {
+                               Long fileSize, String description, Integer displayOrder) {
         this.documentUrl = documentUrl;
         this.documentType = documentType;
         this.fileName = fileName;
