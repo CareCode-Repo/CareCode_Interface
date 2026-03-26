@@ -59,9 +59,9 @@ public class ChatSession {
     @Column
     private LocalDateTime endedAt;
 
-    /**
-     * 세션 상태
-     */
+
+    // 세션 상태
+
     public enum SessionStatus {
         ACTIVE,     // 활성
         PAUSED,     // 일시정지
