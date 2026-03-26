@@ -34,30 +34,30 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    /**
-     * Access Token 생성
-     */
+
+    // Access Token 생성
+
     public String generateAccessToken(String userId, String email, String role) {
         return generateToken(userId, email, role, null, accessTokenExpiration);
     }
 
-    /**
-     * Access Token 생성 (name 포함)
-     */
+
+    // Access Token 생성 (name 포함)
+
     public String generateAccessToken(String userId, String email, String role, String name) {
         return generateToken(userId, email, role, name, accessTokenExpiration);
     }
 
-    /**
-     * Refresh Token 생성
-     */
+
+    // Refresh Token 생성
+
     public String generateRefreshToken(String userId, String email) {
         return generateToken(userId, email, null, null, refreshTokenExpiration);
     }
 
-    /**
-     * 토큰 생성
-     */
+
+    // 토큰 생성
+
     private String generateToken(String userId, String email, String role, String name, long expiration) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
@@ -80,59 +80,59 @@ public class JwtService {
                 .compact();
     }
 
-    /**
-     * 토큰에서 사용자 ID 추출
-     */
+
+    // 토큰에서 사용자 ID 추출
+
     public String getUserIdFromToken(String token) {
         return getClaimFromToken(token, "userId", String.class);
     }
 
-    /**
-     * 토큰에서 이메일 추출
-     */
+
+    // 토큰에서 이메일 추출
+
     public String getEmailFromToken(String token) {
         return getClaimFromToken(token, "email", String.class);
     }
     
-    /**
-     * 토큰에서 이메일 추출 (별칭 메서드)
-     */
+
+    // 토큰에서 이메일 추출 (별칭 메서드)
+
     public String extractEmailFromToken(String token) {
         return getEmailFromToken(token);
     }
 
-    /**
-     * 토큰에서 역할 추출
-     */
+
+    // 토큰에서 역할 추출
+
     public String getRoleFromToken(String token) {
         return getClaimFromToken(token, "role", String.class);
     }
 
-    /**
-     * 토큰에서 이름 추출
-     */
+
+    // 토큰에서 이름 추출
+
     public String getNameFromToken(String token) {
         return getClaimFromToken(token, "name", String.class);
     }
 
-    /**
-     * 토큰에서 만료 시간 추출
-     */
+
+    // 토큰에서 만료 시간 추출
+
     public Date getExpirationDateFromToken(String token) {
         return getClaimFromToken(token, Claims.EXPIRATION, Date.class);
     }
 
-    /**
-     * 토큰에서 특정 클레임 추출
-     */
+
+    // 토큰에서 특정 클레임 추출
+
     public <T> T getClaimFromToken(String token, String claimName, Class<T> requiredType) {
         final Claims claims = getAllClaimsFromToken(token);
         return claims.get(claimName, requiredType);
     }
 
-    /**
-     * 토큰에서 모든 클레임 추출
-     */
+
+    // 토큰에서 모든 클레임 추출
+
     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -141,9 +141,9 @@ public class JwtService {
                 .getBody();
     }
 
-    /**
-     * 토큰 만료 여부 확인
-     */
+
+    // 토큰 만료 여부 확인
+
     public Boolean isTokenExpired(String token) {
         try {
             final Date expiration = getExpirationDateFromToken(token);
@@ -153,9 +153,9 @@ public class JwtService {
         }
     }
 
-    /**
-     * 토큰 유효성 검증
-     */
+
+    // 토큰 유효성 검증
+
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -169,9 +169,9 @@ public class JwtService {
         }
     }
 
-    /**
-     * 토큰 검증 및 정보 추출
-     */
+
+    // 토큰 검증 및 정보 추출
+
     public TokenValidationResponse validateTokenAndExtractInfo(String token) {
         try {
             if (!validateToken(token)) {
@@ -201,9 +201,9 @@ public class JwtService {
         }
     }
 
-    /**
-     * 토큰 갱신
-     */
+
+    // 토큰 갱신
+
     public TokenDto refreshTokens(String refreshToken) {
         try {
             if (!validateToken(refreshToken)) {
@@ -235,9 +235,9 @@ public class JwtService {
         }
     }
 
-    /**
-     * 토큰에서 Authorization 헤더 추출
-     */
+
+    // 토큰에서 Authorization 헤더 추출
+
     public String extractTokenFromAuthorizationHeader(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             return authorizationHeader.substring(7);
