@@ -3,20 +3,13 @@ package com.carecode.domain.health.controller;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
-import com.carecode.domain.health.dto.request.HealthRequest;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthCreateHospitalReviewRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHospitalReviewRequest;
-import com.carecode.domain.health.dto.response.HealthResponse;
-import com.carecode.domain.health.dto.response.HealthRecordResponse;
-import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
-import com.carecode.domain.health.dto.response.CheckupScheduleResponse;
-import com.carecode.domain.health.dto.response.HealthStatsResponse;
-import com.carecode.domain.health.dto.response.HealthAlertResponse;
-import com.carecode.domain.health.dto.response.HospitalInfoResponse;
-import com.carecode.domain.health.dto.response.HospitalReviewResponse;
+import com.carecode.domain.health.dto.response.*;
 import com.carecode.domain.health.app.HealthFacade;
+import com.carecode.domain.health.entity.HealthRecord;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -45,9 +39,9 @@ public class HealthController extends BaseController {
 
     // ==================== 건강 정보 관리 ====================
 
-    /**
-     * 건강 정보 등록
-     */
+
+    // 건강 정보 등록
+
     @PostMapping("/records")
     @LogExecutionTime
     @RequireAuthentication
@@ -60,9 +54,9 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(record);
     }
 
-    /**
-     * 건강 정보 조회
-     */
+
+    // 건강 정보 조회
+
     @GetMapping("/records/{recordId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -74,9 +68,9 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(record);
     }
 
-    /**
-     * 사용자별 건강 정보 조회
-     */
+
+    // 사용자별 건강 정보 조회
+
     @GetMapping("/records/user/{userId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -88,9 +82,9 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(records);
     }
 
-    /**
-     * 건강 정보 수정
-     */
+
+    // 건강 정보 수정
+
     @PutMapping("/records/{recordId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -103,9 +97,9 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(record);
     }
 
-    /**
-     * 건강 정보 삭제
-     */
+
+    // 건강 정보 삭제
+
     @DeleteMapping("/records/{recordId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -119,9 +113,9 @@ public class HealthController extends BaseController {
 
     // ==================== 건강 통계 ====================
 
-    /**
-     * 건강 통계 조회
-     */
+
+    // 건강 통계 조회
+
     @GetMapping("/statistics")
     @LogExecutionTime
     @RequireAuthentication
@@ -133,9 +127,9 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(statistics);
     }
 
-    /**
-     * 예방접종 스케줄 조회
-     */
+
+    // 예방접종 스케줄 조회
+
     @GetMapping("/vaccines/schedule")
     @LogExecutionTime
     @RequireAuthentication
@@ -147,9 +141,9 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(schedule);
     }
 
-    /**
-     * 건강 검진 스케줄 조회
-     */
+
+    // 건강 검진 스케줄 조회
+
     @GetMapping("/checkups/schedule")
     @LogExecutionTime
     @RequireAuthentication
@@ -161,9 +155,9 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(schedule);
     }
 
-    /**
-     * 건강 알림 조회
-     */
+
+    // 건강 알림 조회
+
     @GetMapping("/alerts")
     @LogExecutionTime
     @RequireAuthentication
@@ -181,9 +175,7 @@ public class HealthController extends BaseController {
 
     // ==================== 병원 관리 ====================
 
-    /**
-     * 모든 병원 조회
-     */
+    // 모든 병원 조회
     @GetMapping("/hospitals")
     @LogExecutionTime
     @Operation(summary = "모든 병원 조회", description = "등록된 모든 병원 정보를 조회합니다.")
@@ -192,9 +184,8 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(hospitals);
     }
 
-    /**
-     * 병원 상세 조회
-     */
+
+    // 병원 상세 조회
     @GetMapping("/hospitals/{id}")
     @LogExecutionTime
     @Operation(summary = "병원 상세 조회", description = "특정 병원의 상세 정보를 조회합니다.")
@@ -205,24 +196,22 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(hospital);
     }
 
-    /**
-     * 근처 병원 조회
-     */
+
+    // 근처 병원 조회
     @GetMapping("/hospitals/nearby")
     @LogExecutionTime
     @Operation(summary = "근처 병원 조회", description = "위치 기반으로 근처 병원을 조회합니다.")
     public ResponseEntity<List<HospitalInfoResponse>> getNearbyHospitals(@Parameter(description = "위도", required = true) @RequestParam double lat,
-                                                                            @Parameter(description = "경도", required = true) @RequestParam double lng,
-                                                                            @Parameter(description = "반경(km)", required = true) @RequestParam double radius) {
+                                                                         @Parameter(description = "경도", required = true) @RequestParam double lng,
+                                                                         @Parameter(description = "반경(km)", required = true) @RequestParam double radius) {
 
         List<HospitalInfoResponse> hospitals = healthFacade.getNearbyHospitals(lat, lng, radius);
 
         return ResponseEntity.ok(hospitals);
     }
 
-    /**
-     * 병원 타입별 조회
-     */
+
+    // 병원 타입별 조회
     @GetMapping("/hospitals/type/{type}")
     @LogExecutionTime
     @Operation(summary = "병원 타입별 조회", description = "특정 타입의 병원들을 조회합니다.")
@@ -233,9 +222,9 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(hospitals);
     }
 
-    /**
-     * 병원 좋아요
-     */
+
+    // 병원 좋아요
+
     @PostMapping("/hospitals/{id}/like")
     @LogExecutionTime
     @RequireAuthentication
@@ -252,9 +241,8 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * 병원 좋아요 취소
-     */
+
+    // 병원 좋아요 취소
     @DeleteMapping("/hospitals/{id}/like")
     @LogExecutionTime
     @RequireAuthentication
@@ -271,9 +259,8 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * 병원 좋아요 수 조회
-     */
+
+    // 병원 좋아요 수 조회
     @GetMapping("/hospitals/{id}/likes")
     @LogExecutionTime
     @Operation(summary = "병원 좋아요 수 조회", description = "병원의 좋아요 수를 조회합니다.")
@@ -284,9 +271,8 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(likeCount);
     }
 
-    /**
-     * 인기 병원 조회
-     */
+
+    // 인기 병원 조회
     @GetMapping("/hospitals/popular")
     @LogExecutionTime
     @Operation(summary = "인기 병원 조회", description = "좋아요가 많은 인기 병원들을 조회합니다.")
@@ -299,25 +285,23 @@ public class HealthController extends BaseController {
 
     // ==================== 병원 리뷰 관리 ====================
 
-    /**
-     * 병원 리뷰 작성
-     */
+    // 병원 리뷰 작성
     @PostMapping("/hospitals/{id}/reviews")
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "병원 리뷰 작성", description = "병원에 리뷰를 작성합니다.")
     public ResponseEntity<HospitalReviewResponse> createHospitalReview(@Parameter(description = "병원 ID", required = true) @PathVariable Long id,
-                                                                              @Parameter(description = "리뷰 정보", required = true) @RequestBody HealthCreateHospitalReviewRequest request,
-                                                                              @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
+                                                                       @Parameter(description = "리뷰 정보", required = true) @RequestBody HealthCreateHospitalReviewRequest request,
+                                                                       @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
 
         HospitalReviewResponse review = healthFacade.createHospitalReview(id, userId, request.getRating(), request.getContent());
 
         return ResponseEntity.ok(review);
     }
 
-    /**
-     * 병원 리뷰 조회
-     */
+
+    // 병원 리뷰 조회
+
     @GetMapping("/hospitals/{id}/reviews")
     @LogExecutionTime
     @Operation(summary = "병원 리뷰 조회", description = "특정 병원의 모든 리뷰를 조회합니다.")
@@ -328,25 +312,25 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(reviews);
     }
 
-    /**
-     * 병원 리뷰 수정
-     */
+
+    // 병원 리뷰 수정
+
     @PutMapping("/hospitals/reviews/{reviewId}")
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "병원 리뷰 수정", description = "기존 병원 리뷰를 수정합니다.")
     public ResponseEntity<HospitalReviewResponse> updateHospitalReview(@Parameter(description = "리뷰 ID", required = true) @PathVariable Long reviewId,
-                                                                              @Parameter(description = "수정할 리뷰 정보", required = true) @RequestBody HealthUpdateHospitalReviewRequest request,
-                                                                              @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
+                                                                       @Parameter(description = "수정할 리뷰 정보", required = true) @RequestBody HealthUpdateHospitalReviewRequest request,
+                                                                       @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
 
         HospitalReviewResponse review = healthFacade.updateHospitalReview(reviewId, userId, request.getRating(), request.getContent());
 
         return ResponseEntity.ok(review);
     }
 
-    /**
-     * 병원 리뷰 삭제
-     */
+
+    // 병원 리뷰 삭제
+
     @DeleteMapping("/hospitals/reviews/{reviewId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -361,93 +345,74 @@ public class HealthController extends BaseController {
 
     // ==================== 건강 기록 필터링 기능 ====================
 
-    /**
-     * 기간별 건강 기록 조회 (오래된순)
-     */
+    // 기간별 건강 기록 조회 (오래된순)
     @GetMapping("/records/date-range-asc")
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "기간별 건강 기록 조회 (오래된순)", description = "특정 기간의 건강 기록을 오래된순으로 조회합니다.")
-    public ResponseEntity<List<HealthRecordResponse>> getHealthRecordsByDateRangeAsc(
-            @Parameter(description = "아동 ID", required = true) @RequestParam Long childId,
-            @Parameter(description = "시작일 (yyyy-MM-dd)", required = true) @RequestParam String startDate,
-            @Parameter(description = "종료일 (yyyy-MM-dd)", required = true) @RequestParam String endDate) {
-        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByDateRangeAsc(
-                childId, java.time.LocalDate.parse(startDate), java.time.LocalDate.parse(endDate));
+    public ResponseEntity<List<HealthRecordResponse>> getHealthRecordsByDateRangeAsc(@Parameter(description = "아동 ID", required = true) @RequestParam Long childId,
+                                                                                     @Parameter(description = "시작일 (yyyy-MM-dd)", required = true) @RequestParam String startDate,
+                                                                                     @Parameter(description = "종료일 (yyyy-MM-dd)", required = true) @RequestParam String endDate) {
+        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByDateRangeAsc(childId, LocalDate.parse(startDate), LocalDate.parse(endDate));
         return ResponseEntity.ok(records);
     }
 
-    /**
-     * 타입별 건강 기록 조회
-     */
+    // 타입별 건강 기록 조회
     @GetMapping("/records/type")
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "타입별 건강 기록 조회", description = "특정 타입의 건강 기록을 조회합니다.")
-    public ResponseEntity<List<HealthRecordResponse>> getHealthRecordsByType(
-            @Parameter(description = "아동 ID", required = true) @RequestParam Long childId,
-            @Parameter(description = "기록 타입 (VACCINATION, CHECKUP, MEDICATION, SYMPTOM, OTHER)", required = true) @RequestParam String recordType) {
-        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByType(
-                childId, com.carecode.domain.health.entity.HealthRecord.RecordType.valueOf(recordType));
+    public ResponseEntity<List<HealthRecordResponse>> getHealthRecordsByType(@Parameter(description = "아동 ID", required = true) @RequestParam Long childId,
+                                                                             @Parameter(description = "기록 타입 (VACCINATION, CHECKUP, MEDICATION, SYMPTOM, OTHER)", required = true) @RequestParam String recordType) {
+        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByType(childId, HealthRecord.RecordType.valueOf(recordType));
+
         return ResponseEntity.ok(records);
     }
 
     // ==================== 자녀 관리 기능 ====================
 
-    /**
-     * 연령 범위별 자녀 조회
-     */
+    // 연령 범위별 자녀 조회
     @GetMapping("/children/age-range")
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "연령 범위별 자녀 조회", description = "특정 연령 범위에 해당하는 자녀를 조회합니다.")
-    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenByAgeRange(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
-            @Parameter(description = "최소 연령", required = true) @RequestParam Integer minAge,
-            @Parameter(description = "최대 연령", required = true) @RequestParam Integer maxAge) {
-        List<com.carecode.domain.health.dto.response.ChildInfoResponse> children = healthFacade.getChildrenByAgeRange(userId, minAge, maxAge);
+    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenByAgeRange(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId, @Parameter(description = "최소 연령", required = true) @RequestParam Integer minAge, @Parameter(description = "최대 연령", required = true) @RequestParam Integer maxAge) {
+        List<ChildInfoResponse> children = healthFacade.getChildrenByAgeRange(userId, minAge, maxAge);
+
         return ResponseEntity.ok(children);
     }
 
-    /**
-     * 성별 자녀 조회
-     */
+    // 성별 자녀 조회
     @GetMapping("/children/gender")
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "성별 자녀 조회", description = "특정 성별의 자녀를 조회합니다.")
-    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenByGender(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
-            @Parameter(description = "성별 (MALE, FEMALE)", required = true) @RequestParam String gender) {
-        List<com.carecode.domain.health.dto.response.ChildInfoResponse> children = healthFacade.getChildrenByGender(userId, gender);
+    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenByGender(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
+                                                                                                               @Parameter(description = "성별 (MALE, FEMALE)", required = true) @RequestParam String gender) {
+        List<ChildInfoResponse> children = healthFacade.getChildrenByGender(userId, gender);
         return ResponseEntity.ok(children);
     }
 
-    /**
-     * 특별한 요구사항이 있는 자녀 조회
-     */
+    // 특별한 요구사항이 있는 자녀 조회
     @GetMapping("/children/special-needs")
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "특별한 요구사항이 있는 자녀 조회", description = "특별한 요구사항이 있는 자녀를 조회합니다.")
-    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenWithSpecialNeeds(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
-        List<com.carecode.domain.health.dto.response.ChildInfoResponse> children = healthFacade.getChildrenWithSpecialNeeds(userId);
+    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenWithSpecialNeeds(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
+        List<ChildInfoResponse> children = healthFacade.getChildrenWithSpecialNeeds(userId);
+
         return ResponseEntity.ok(children);
     }
 
-    /**
-     * 이름으로 자녀 검색
-     */
+    // 이름으로 자녀 검색
     @GetMapping("/children/search")
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "이름으로 자녀 검색", description = "이름으로 자녀를 검색합니다.")
-    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> searchChildrenByName(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
-            @Parameter(description = "검색할 이름", required = true) @RequestParam String name) {
-        List<com.carecode.domain.health.dto.response.ChildInfoResponse> children = healthFacade.searchChildrenByName(userId, name);
+    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> searchChildrenByName(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
+                                                                                                                @Parameter(description = "검색할 이름", required = true) @RequestParam String name) {
+        List<ChildInfoResponse> children = healthFacade.searchChildrenByName(userId, name);
+
         return ResponseEntity.ok(children);
     }
-
 }
