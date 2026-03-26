@@ -19,9 +19,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class AuthenticationAspect {
 
-    /**
-     * RequireAuthentication 어노테이션이 붙은 메서드 실행 전에 인증 상태를 확인
-     */
+
+    // RequireAuthentication 어노테이션이 붙은 메서드 실행 전에 인증 상태를 확인
+
     @Before("@annotation(requireAuthentication)")
     public void checkAuthentication(JoinPoint joinPoint, RequireAuthentication requireAuthentication) {
         log.debug("인증 상태 확인: {}", joinPoint.getSignature().getName());
