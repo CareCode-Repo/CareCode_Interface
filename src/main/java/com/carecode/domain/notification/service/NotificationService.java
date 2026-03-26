@@ -2,11 +2,9 @@ package com.carecode.domain.notification.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.notification.dto.request.NotificationRequest;
 import com.carecode.domain.notification.dto.request.NotificationCreateRequest;
 import com.carecode.domain.notification.dto.request.NotificationMarkAsReadRequest;
 import com.carecode.domain.notification.dto.request.NotificationSendTestRequest;
-import com.carecode.domain.notification.dto.response.NotificationResponse;
 import com.carecode.domain.notification.dto.response.NotificationInfoResponse;
 import com.carecode.domain.notification.dto.response.NotificationStatsResponse;
 import com.carecode.domain.notification.dto.response.NotificationTemplateResponse;
@@ -47,9 +45,9 @@ public class NotificationService {
     private final UserRepository userRepository;
     private final NotificationStrategyFactory strategyFactory;
     
-    /**
-     * 사용자별 알림 목록 조회
-     */
+
+    // 사용자별 알림 목록 조회
+
     @LogExecutionTime
     public List<NotificationInfoResponse> getNotificationsByUserId(String userId) {
         log.info("사용자별 알림 목록 조회 - 사용자 ID: {}", userId);
@@ -69,9 +67,9 @@ public class NotificationService {
         }
     }
 
-    /**
-     * 알림 상세 조회
-     */
+
+    // 알림 상세 조회
+
     @LogExecutionTime
     public NotificationInfoResponse getNotificationById(Long notificationId) {
         log.info("알림 상세 조회 - 알림 ID: {}", notificationId);
@@ -87,9 +85,9 @@ public class NotificationService {
         }
     }
 
-    /**
-     * 알림 생성 (전략 패턴 사용)
-     */
+
+    // 알림 생성 (전략 패턴 사용)
+
     @Transactional
     public NotificationInfoResponse createNotification(NotificationCreateRequest request) {
         log.info("알림 생성 - 사용자 ID: {}, 타입: {}, 제목: {}", 
@@ -121,9 +119,9 @@ public class NotificationService {
         }
     }
 
-    /**
-     * 알림 수정
-     */
+
+    // 알림 수정
+
     @Transactional
     public NotificationInfoResponse updateNotification(Long notificationId, NotificationCreateRequest request) {
             Notification notification = notificationRepository.findById(notificationId)
@@ -145,9 +143,9 @@ public class NotificationService {
             return convertToResponseDto(updatedNotification);
     }
 
-    /**
-     * 알림 삭제
-     */
+
+    // 알림 삭제
+
     @Transactional
     public void deleteNotification(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
@@ -156,9 +154,9 @@ public class NotificationService {
         notificationRepository.delete(notification);
     }
 
-    /**
-     * 알림 읽음 처리
-     */
+
+    // 알림 읽음 처리
+
     @Transactional
     public void markAsRead(Long notificationId) {
             Notification notification = notificationRepository.findById(notificationId)
@@ -168,9 +166,9 @@ public class NotificationService {
             notificationRepository.save(notification);
     }
 
-    /**
-     * 모든 알림 읽음 처리
-     */
+
+    // 모든 알림 읽음 처리
+
     @Transactional
     public void markAllAsRead(String userId) {
             User user = userRepository.findByUserId(userId)
@@ -181,9 +179,9 @@ public class NotificationService {
             notificationRepository.saveAll(unreadNotifications);
     }
 
-    /**
-     * 읽지 않은 알림 조회
-     */
+
+    // 읽지 않은 알림 조회
+
     @LogExecutionTime
     public List<NotificationInfoResponse> getUnreadNotifications(String userId) {
         User user = userRepository.findByUserId(userId)
@@ -196,9 +194,9 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 알림 설정 조회
-     */
+
+    // 알림 설정 조회
+
     @LogExecutionTime
     public Map<String, Object> getNotificationSettings(String userId) {
         User user = userRepository.findByUserId(userId)
@@ -216,9 +214,9 @@ public class NotificationService {
         return settings;
     }
 
-    /**
-     * 알림 설정 업데이트
-     */
+
+    // 알림 설정 업데이트
+
     @Transactional
     public Map<String, Object> updateNotificationSettings(String userId, Map<String, Object> settings) {
         log.info("알림 설정 업데이트 - 사용자 ID: {}", userId);
@@ -239,9 +237,9 @@ public class NotificationService {
         }
     }
 
-    /**
-     * 알림 통계 조회
-     */
+
+    // 알림 통계 조회
+
     @LogExecutionTime
     public Map<String, Object> getNotificationStatistics(String userId) {
         log.info("알림 통계 조회 - 사용자 ID: {}", userId);
@@ -272,51 +270,6 @@ public class NotificationService {
 
     // 기존 메서드들 (호환성을 위해 유지)
     
-    /**
-     * 사용자 알림 목록 조회 (페이지네이션)
-     */
-    @LogExecutionTime
-    public List<NotificationInfoResponse> getUserNotifications(Long userId, int page, int size) {
-        log.info("사용자 알림 목록 조회 - 사용자 ID: {}", userId);
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
-        
-        return notifications.getContent().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 읽지 않은 알림 개수 조회
-     */
-    @LogExecutionTime
-    public long getUnreadCount(Long userId) {
-        log.info("읽지 않은 알림 개수 조회 - 사용자 ID: {}", userId);
-        
-        return notificationRepository.countByUserIdAndIsReadFalse(userId);
-    }
-
-    /**
-     * 시스템 알림 발송 (전략 패턴 사용)
-     */
-    @Transactional
-    public void sendSystemNotification(Long userId, String title, String content, String type) {
-        log.info("시스템 알림 발송 - 사용자 ID: {}, 제목: {}", userId, title);
-        
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
-        
-        NotificationStrategy strategy = strategyFactory.getStrategy(type);
-        Notification notification = strategy.createNotification(user, title, content);
-        
-        if (strategy.validateNotification(notification)) {
-            notificationRepository.save(notification);
-            strategy.processNotification(notification);
-        } else {
-            throw new IllegalArgumentException("알림 유효성 검사에 실패했습니다.");
-        }
-    }
 
     // Helper methods
     private NotificationInfoResponse convertToResponseDto(Notification notification) {
@@ -340,9 +293,9 @@ public class NotificationService {
                 .build();
     }
 
-    /**
-     * DTO 변환 메서드
-     */
+
+    // DTO 변환 메서드
+
     private NotificationInfoResponse convertToDto(Notification notification) {
         return NotificationInfoResponse.builder()
                 .id(notification.getId())
@@ -355,9 +308,9 @@ public class NotificationService {
                 .build();
     }
 
-    /**
-     * 알림 타입별 분포 계산
-     */
+
+    // 알림 타입별 분포 계산
+
     private Map<String, Integer> calculateTypeDistribution(Long userId) {
         Map<String, Integer> distribution = new HashMap<>();
         
@@ -369,9 +322,9 @@ public class NotificationService {
         return distribution;
     }
 
-    /**
-     * 알림 읽음 처리
-     */
+
+    // 알림 읽음 처리
+
     @Transactional
     public void markAsRead(NotificationMarkAsReadRequest request) {
         if (request.getMarkAllAsRead() != null && request.getMarkAllAsRead()) {
@@ -383,9 +336,9 @@ public class NotificationService {
         }
     }
 
-    /**
-     * 테스트 알림 발송
-     */
+
+    // 테스트 알림 발송
+
     @Transactional
     public void sendTestNotification(String userId, NotificationSendTestRequest request) {
         User user = userRepository.findByUserId(userId)
@@ -402,9 +355,9 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
-    /**
-     * 알림 타입별 조회
-     */
+
+    // 알림 타입별 조회
+
     @LogExecutionTime
     public List<NotificationInfoResponse> getNotificationsByType(Long userId, Notification.NotificationType notificationType) {
         log.info("알림 타입별 조회 - 사용자 ID: {}, 타입: {}", userId, notificationType);
@@ -416,9 +369,9 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 기간별 알림 조회
-     */
+
+    // 기간별 알림 조회
+
     @LogExecutionTime
     public List<NotificationInfoResponse> getNotificationsByDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
         log.info("기간별 알림 조회 - 사용자 ID: {}, 시작일: {}, 종료일: {}", userId, startDate, endDate);
@@ -430,9 +383,9 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 사용자별 전체 알림 개수 조회
-     */
+
+    // 사용자별 전체 알림 개수 조회
+
     @LogExecutionTime
     public long getTotalNotificationCount(Long userId) {
         log.info("사용자별 전체 알림 개수 조회 - 사용자 ID: {}", userId);
@@ -440,9 +393,9 @@ public class NotificationService {
         return notificationRepository.countByUserId(userId);
     }
 
-    /**
-     * 읽음/읽지 않음별 알림 개수 조회
-     */
+
+    // 읽음/읽지 않음별 알림 개수 조회
+
     @LogExecutionTime
     public long getNotificationCountByReadStatus(Long userId, boolean isRead) {
         log.info("읽음 상태별 알림 개수 조회 - 사용자 ID: {}, 읽음: {}", userId, isRead);
@@ -450,9 +403,9 @@ public class NotificationService {
         return notificationRepository.countByUserIdAndIsRead(userId, isRead);
     }
 
-    /**
-     * 알림 통계 조회
-     */
+
+    // 알림 통계 조회
+
     @Transactional(readOnly = true)
     public NotificationStatsResponse getNotificationStats(String userId) {
         User user = userRepository.findByUserId(userId)
@@ -476,9 +429,9 @@ public class NotificationService {
                 .build();
     }
 
-    /**
-     * 알림 템플릿 조회
-     */
+
+    // 알림 템플릿 조회
+
     @Transactional(readOnly = true)
     public List<NotificationTemplateResponse> getNotificationTemplates(String type) {
         List<NotificationTemplateResponse> templates = new ArrayList<>();
@@ -513,9 +466,9 @@ public class NotificationService {
         return templates;
     }
 
-    /**
-     * 알림 전송 상태 조회
-     */
+
+    // 알림 전송 상태 조회
+
     @Transactional(readOnly = true)
     public NotificationDeliveryStatusResponse getDeliveryStatus(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
