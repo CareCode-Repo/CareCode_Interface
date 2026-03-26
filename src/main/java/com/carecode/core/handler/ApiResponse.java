@@ -24,9 +24,9 @@ public class ApiResponse<T> {
     private T data;
     private LocalDateTime timestamp;
 
-    /**
-     * 성공 응답 생성
-     */
+
+    // 성공 응답 생성
+
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
                 .code("SUCCESS")
@@ -36,9 +36,9 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    /**
-     * 성공 응답 생성 (커스텀 메시지)
-     */
+
+    // 성공 응답 생성 (커스텀 메시지)
+
     public static <T> ApiResponse<T> success(T data, String message) {
         return ApiResponse.<T>builder()
                 .code("SUCCESS")
@@ -48,9 +48,9 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    /**
-     * 성공 응답 생성 (데이터 없음)
-     */
+
+    // 성공 응답 생성 (데이터 없음)
+
     public static <T> ApiResponse<T> success() {
         return ApiResponse.<T>builder()
                 .code("SUCCESS")
@@ -59,9 +59,9 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    /**
-     * 실패 응답 생성
-     */
+
+    // 실패 응답 생성
+
     public static <T> ApiResponse<T> error(String code, String message) {
         return ApiResponse.<T>builder()
                 .code(code)
