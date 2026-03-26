@@ -27,15 +27,15 @@ public class CareFacilityApiService {
     @Value("${public.data.api.key}")
     private String apiKey;
 
-    /**
-     * 보육시설 정보 조회 (서울시 공공데이터 API)
-     * 서울시 API는 지역별 필터링을 지원하지 않으므로 전체 서울시 데이터를 가져옵니다.
-     * @param sido 시도명 (예: 서울특별시, 경기도) - 현재는 무시됨
-     * @param sigungu 시군구명 (예: 강남구, 수원시) - 현재는 무시됨
-     * @param pageNo 페이지 번호
-     * @param numOfRows 한 페이지 결과 수 (최대 1000건)
-     * @return 정제된 보육시설 정보
-     */
+
+    // 보육시설 정보 조회 (서울시 공공데이터 API)
+    // 서울시 API는 지역별 필터링을 지원하지 않으므로 전체 서울시 데이터를 가져옵니다.
+    // @param sido 시도명 (예: 서울특별시, 경기도) - 현재는 무시됨
+    // @param sigungu 시군구명 (예: 강남구, 수원시) - 현재는 무시됨
+    // @param pageNo 페이지 번호
+    // @param numOfRows 한 페이지 결과 수 (최대 1000건)
+    // @return 정제된 보육시설 정보
+
     public Map<String, Object> getChildcareFacilities(String sido, String sigungu, int pageNo, int numOfRows) {
         // 서울시 API는 한 번에 최대 1000건까지만 요청 가능
         if (numOfRows > 1000) {
@@ -59,9 +59,9 @@ public class CareFacilityApiService {
         return result;
     }
 
-    /**
-     * API 응답을 파싱하고 정제하여 사용하기 쉬운 형태로 변환
-     */
+
+    // API 응답을 파싱하고 정제하여 사용하기 쉬운 형태로 변환
+
     private Map<String, Object> parseAndRefineResponse(String rawResponse, String serviceName) {
         try {
             log.debug("원본 응답: {}", rawResponse);
@@ -161,9 +161,9 @@ public class CareFacilityApiService {
         }
     }
     
-    /**
-     * 빈 응답 생성
-     */
+
+    // 빈 응답 생성
+
     private Map<String, Object> createEmptyResponse(String serviceName) {
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
@@ -175,9 +175,9 @@ public class CareFacilityApiService {
         return result;
     }
     
-    /**
-     * 에러 응답 생성
-     */
+
+    // 에러 응답 생성
+
     private Map<String, Object> createErrorResponse(String code, String message, String serviceName) {
         Map<String, Object> result = new HashMap<>();
         result.put("success", false);
@@ -189,17 +189,17 @@ public class CareFacilityApiService {
         return result;
     }
     
-    /**
-     * JsonNode에서 텍스트 값을 안전하게 추출
-     */
+
+    // JsonNode에서 텍스트 값을 안전하게 추출
+
     private String getNodeText(JsonNode node, String fieldName) {
         JsonNode fieldNode = node.get(fieldName);
         return fieldNode != null && !fieldNode.isNull() ? fieldNode.asText() : "";
     }
     
-    /**
-     * 시간 형식을 HH:MM으로 변환
-     */
+
+    // 시간 형식을 HH:MM으로 변환
+
     private String formatTime(String timeStr) {
         if (timeStr == null || timeStr.trim().isEmpty()) {
             return "";
@@ -216,9 +216,9 @@ public class CareFacilityApiService {
         }
     }
 
-    /**
-     * 유치원 정보 조회
-     */
+
+    // 유치원 정보 조회
+
     public Map<String, Object> getKindergartens(String sido, String sigungu, int pageNo, int numOfRows) {
         String startIndex = String.valueOf((pageNo - 1) * numOfRows + 1);
         String endIndex = String.valueOf(pageNo * numOfRows);
@@ -228,9 +228,9 @@ public class CareFacilityApiService {
         return parseAndRefineResponse(response, "kindergarten");
     }
 
-    /**
-     * 돌봄시설 통계 정보 조회
-     */
+
+    // 돌봄시설 통계 정보 조회
+
     public Map<String, Object> getCareFacilityStatistics(String sido) {
         String endpoint = "/statistics/" + sido + "/";
         String response = publicDataApiClient.get(endpoint, null, String.class);
@@ -238,9 +238,9 @@ public class CareFacilityApiService {
         return parseAndRefineResponse(response, "statistics");
     }
 
-    /**
-     * 돌봄시설 키워드 검색
-     */
+
+    // 돌봄시설 키워드 검색
+
     public Map<String, Object> searchCareFacilities(String keyword, int pageNo, int numOfRows) {
         String startIndex = String.valueOf((pageNo - 1) * numOfRows + 1);
         String endIndex = String.valueOf(pageNo * numOfRows);
