@@ -1,10 +1,12 @@
 package com.carecode.domain.health.app;
 
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
+import com.carecode.domain.health.dto.request.HealthRecordAttachmentRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthCreateHospitalReviewRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHospitalReviewRequest;
 import com.carecode.domain.health.dto.response.HealthRecordResponse;
+import com.carecode.domain.health.dto.response.HealthRecordAttachmentResponse;
 import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
 import com.carecode.domain.health.dto.response.CheckupScheduleResponse;
 import com.carecode.domain.health.dto.response.HealthStatsResponse;
@@ -88,6 +90,18 @@ public class HealthFacade {
         return healthService.getHealthRecordsByType(childId, recordType);
     }
 
+    public HealthRecordAttachmentResponse addAttachment(Long recordId, HealthRecordAttachmentRequest request) {
+        return healthService.addAttachment(recordId, request);
+    }
+
+    public List<HealthRecordAttachmentResponse> getAttachments(Long recordId) {
+        return healthService.getAttachments(recordId);
+    }
+
+    public void deleteAttachment(Long attachmentId) {
+        healthService.deleteAttachment(attachmentId);
+    }
+
     public List<com.carecode.domain.health.dto.response.ChildInfoResponse> getChildrenByAgeRange(Long userId, Integer minAge, Integer maxAge) {
         return healthService.getChildrenByAgeRange(userId, minAge, maxAge);
     }
@@ -116,6 +130,10 @@ public class HealthFacade {
 
     public Map<String, Object> getHealthGoals(String userId) {
         return healthService.getHealthGoals(userId);
+    }
+
+    public Map<String, Object> getIntegratedRecommendations(String userId) {
+        return healthService.getIntegratedRecommendations(userId);
     }
 
     public List<Map<String, Object>> getHealthChart(String userId, String type, String from, String to) {
