@@ -9,28 +9,28 @@ import com.carecode.domain.user.entity.User;
  */
 public interface NotificationStrategy {
     
-    /**
-     * 알림 타입 반환
-     */
+
+    // 알림 타입 반환
+
     String getNotificationType();
     
-    /**
-     * 알림 생성
-     */
+
+    // 알림 생성
+
     Notification createNotification(User user, String title, String message);
     
-    /**
-     * 알림 처리 (전송, 저장 등)
-     */
+
+    // 알림 처리 (전송, 저장 등)
+
     void processNotification(Notification notification);
     
-    /**
-     * 알림 유효성 검사
-     */
+
+    // 알림 유효성 검사
+
     boolean validateNotification(Notification notification);
     
-    /**
-     * 알림 우선순위 결정
-     */
+
+    // 알림 우선순위 결정
+
     String determinePriority(Notification notification);
 } 
