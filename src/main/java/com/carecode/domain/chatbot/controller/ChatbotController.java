@@ -9,18 +9,14 @@ import com.carecode.domain.chatbot.dto.response.ChatbotMessageResponse;
 import com.carecode.domain.chatbot.dto.response.ChatbotChatHistoryDtoResponse;
 import com.carecode.domain.chatbot.dto.response.ChatbotSessionDtoResponse;
 import com.carecode.domain.chatbot.dto.response.ChatbotFeedbackDtoResponse;
-import com.carecode.domain.chatbot.service.ChatbotService;
 import com.carecode.domain.chatbot.app.ChatbotFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,7 +33,6 @@ import java.util.Map;
 @Tag(name = "챗봇", description = "육아 관련 챗봇 서비스 API")
 public class ChatbotController extends BaseController {
 
-    private final ChatbotService chatbotService;
     private final ChatbotFacade chatbotFacade;
 
 
@@ -45,10 +40,13 @@ public class ChatbotController extends BaseController {
 
     @PostMapping("/chat")
     @LogExecutionTime
+    @RequireAuthentication
     @Operation(summary = "챗봇 메시지 전송", description = "챗봇과 대화를 시작합니다.")
     public ResponseEntity<ChatbotMessageResponse> sendMessage(
             @Parameter(description = "챗봇 요청 정보", required = true) @RequestBody ChatbotMessageRequest request) {
-        log.info("챗봇 메시지 전송: 사용자ID={}, 메시지={}", request.getUserId(), request.getMessage());
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        request.setUserId(userId);
+        log.info("챗봇 메시지 전송: 사용자ID={}, 메시지={}", userId, request.getMessage());
         
         try {
             ChatbotMessageResponse response = chatbotFacade.processMessage(request);
@@ -67,12 +65,13 @@ public class ChatbotController extends BaseController {
 
     @GetMapping("/history")
     @LogExecutionTime
+    @RequireAuthentication
     @Operation(summary = "대화 기록 조회", description = "사용자의 챗봇 대화 기록을 조회합니다.")
     public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> getChatHistory(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "세션 ID") @RequestParam(required = false) String sessionId,
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") int size) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("대화 기록 조회: 사용자ID={}, 세션ID={}, 페이지={}, 크기={}", userId, sessionId, page, size);
         
         try {
@@ -89,11 +88,12 @@ public class ChatbotController extends BaseController {
 
     @GetMapping("/sessions")
     @LogExecutionTime
+    @RequireAuthentication
     @Operation(summary = "세션 목록 조회", description = "사용자의 챗봇 세션 목록을 조회합니다.")
     public ResponseEntity<List<ChatbotSessionDtoResponse>> getSessions(
-            @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("세션 목록 조회: 사용자ID={}, 페이지={}, 크기={}", userId, page, size);
         
         try {
