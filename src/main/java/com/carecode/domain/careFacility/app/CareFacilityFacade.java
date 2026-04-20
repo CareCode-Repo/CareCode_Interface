@@ -1,12 +1,14 @@
 package com.carecode.domain.careFacility.app;
 
 import com.carecode.domain.careFacility.dto.response.BookingResponse;
+import com.carecode.domain.careFacility.dto.request.ReviewRequest;
 import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
 import com.carecode.domain.careFacility.dto.request.UpdateBookingRequest;
 import com.carecode.domain.careFacility.dto.request.CareFacilitySearchRequest;
 import com.carecode.domain.careFacility.dto.response.CareFacilityInfo;
 import com.carecode.domain.careFacility.dto.response.CareFacilityListResponse;
 import com.carecode.domain.careFacility.dto.response.CareFacilityStatsResponse;
+import com.carecode.domain.careFacility.dto.response.ReviewResponse;
 import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.service.CareFacilityBookingService;
 import com.carecode.domain.careFacility.service.CareFacilityService;
@@ -179,6 +181,26 @@ public class CareFacilityFacade {
     @Transactional(readOnly = true)
     public CareFacilityInfo getFacilityByIdWithReviews(Long facilityId) {
         return careFacilityService.getFacilityByIdWithReviews(facilityId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getFacilityReviews(Long facilityId) {
+        return careFacilityService.getFacilityReviews(facilityId);
+    }
+
+    @Transactional
+    public ReviewResponse createReview(Long facilityId, String userEmail, ReviewRequest request) {
+        return careFacilityService.createReview(facilityId, userEmail, request);
+    }
+
+    @Transactional
+    public ReviewResponse updateReview(Long reviewId, String userEmail, ReviewRequest request) {
+        return careFacilityService.updateReview(reviewId, userEmail, request);
+    }
+
+    @Transactional
+    public void deleteReview(Long reviewId, String userEmail) {
+        careFacilityService.deleteReview(reviewId, userEmail);
     }
 }
 
