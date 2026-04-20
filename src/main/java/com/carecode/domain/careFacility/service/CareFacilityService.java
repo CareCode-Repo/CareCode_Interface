@@ -5,15 +5,21 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.exception.CareFacilityNotFoundException;
 import com.carecode.domain.careFacility.dto.request.CareFacilitySearchRequest;
+import com.carecode.domain.careFacility.dto.request.ReviewRequest;
 import com.carecode.domain.careFacility.dto.response.CareFacilityInfo;
 import com.carecode.domain.careFacility.dto.response.CareFacilityListResponse;
+import com.carecode.domain.careFacility.dto.response.ReviewResponse;
 import com.carecode.domain.careFacility.dto.response.CareFacilityStatsResponse;
 import com.carecode.domain.careFacility.dto.response.TypeStats;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.careFacility.entity.FacilityType;
+import com.carecode.domain.careFacility.entity.Review;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
+import com.carecode.domain.careFacility.repository.ReviewRepository;
 import com.carecode.domain.careFacility.mapper.CareFacilityMapper;
 import com.carecode.core.util.CommonUtil;
+import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,6 +46,8 @@ import java.util.stream.Collectors;
 public class CareFacilityService {
 
     private final CareFacilityRepository careFacilityRepository;
+    private final ReviewRepository reviewRepository;
+    private final UserRepository userRepository;
     private final CareFacilityMapper careFacilityMapper;
 
 
@@ -493,6 +501,73 @@ public class CareFacilityService {
         CareFacility facility = careFacilityRepository.findByIdWithReviews(facilityId)
                 .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
         return careFacilityMapper.toResponse(facility);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getFacilityReviews(Long facilityId) {
+        CareFacility facility = careFacilityRepository.findById(facilityId)
+                .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
+        return reviewRepository.findByCareFacilityOrderByCreatedAtDesc(facility).stream()
+                .map(this::toReviewResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public ReviewResponse createReview(Long facilityId, String userEmail, ReviewRequest request) {
+        CareFacility facility = careFacilityRepository.findById(facilityId)
+                .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
+        User user = userRepository.findByEmailAndDeletedAtIsNull(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Review review = Review.builder()
+                .careFacility(facility)
+                .user(user)
+                .rating(request.getRating())
+                .content(request.getContent())
+                .build();
+        Review savedReview = reviewRepository.save(review);
+
+        long reviewCount = reviewRepository.countByCareFacility(facility);
+        double avgRating = reviewRepository.findByCareFacilityOrderByCreatedAtDesc(facility).stream()
+                .mapToInt(Review::getRating)
+                .average()
+                .orElse(0.0);
+        facility.setReviewCount((int) reviewCount);
+        facility.setRating(avgRating);
+        careFacilityRepository.save(facility);
+
+        return toReviewResponse(savedReview);
+    }
+
+    @Transactional
+    public ReviewResponse updateReview(Long reviewId, String userEmail, ReviewRequest request) {
+        User user = userRepository.findByEmailAndDeletedAtIsNull(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Review review = reviewRepository.findByIdAndUser(reviewId, user)
+                .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없거나 권한이 없습니다."));
+        review.updateReview(request.getRating(), request.getContent());
+        return toReviewResponse(reviewRepository.save(review));
+    }
+
+    @Transactional
+    public void deleteReview(Long reviewId, String userEmail) {
+        User user = userRepository.findByEmailAndDeletedAtIsNull(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Review review = reviewRepository.findByIdAndUser(reviewId, user)
+                .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없거나 권한이 없습니다."));
+        reviewRepository.delete(review);
+    }
+
+    private ReviewResponse toReviewResponse(Review review) {
+        return ReviewResponse.builder()
+                .reviewId(review.getId())
+                .facilityId(review.getCareFacility().getId())
+                .userId(review.getUser().getUserId())
+                .rating(review.getRating())
+                .content(review.getContent())
+                .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
+                .build();
     }
 
 
