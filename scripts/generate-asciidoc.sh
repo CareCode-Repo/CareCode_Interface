@@ -44,7 +44,7 @@ log_info "CareCode API 문서 생성을 시작합니다..."
 
 # 애플리케이션이 실행 중인지 확인
 check_app_running() {
-    if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+    if curl -s http://localhost:8082/actuator/health > /dev/null 2>&1; then
         return 0
     else
         return 1

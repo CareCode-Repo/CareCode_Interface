@@ -4,14 +4,12 @@ import com.carecode.core.exception.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -101,10 +99,8 @@ public class CustomizedResponseEntityExceptionHandler {
     @ExceptionHandler(CareServiceException.class)
     public ResponseEntity<ErrorResponse> handleCareServiceException(CareServiceException ex, WebRequest request) {
         log.error("CareServiceException 발생: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
-        
-        ErrorCode errorCode = ex.getErrorCode() != null 
-            ? ErrorCode.INTERNAL_SERVER_ERROR 
-            : ErrorCode.INTERNAL_SERVER_ERROR;
+
+        ErrorCode errorCode = resolveCareServiceErrorCode(ex.getErrorCode());
         
         ErrorResponse errorResponse = ErrorResponse.of(
             errorCode,
@@ -113,8 +109,18 @@ public class CustomizedResponseEntityExceptionHandler {
         );
         
         return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .status(errorCode.getHttpStatus())
                 .body(errorResponse);
+    }
+
+    private ErrorCode resolveCareServiceErrorCode(String careServiceErrorCode) {
+        if ("UNAUTHORIZED".equalsIgnoreCase(careServiceErrorCode)) {
+            return ErrorCode.UNAUTHORIZED;
+        }
+        if ("FORBIDDEN".equalsIgnoreCase(careServiceErrorCode)) {
+            return ErrorCode.FORBIDDEN;
+        }
+        return ErrorCode.INTERNAL_SERVER_ERROR;
     }
 
 

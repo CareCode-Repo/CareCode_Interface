@@ -28,6 +28,8 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
     // 정책 유형별 조회
     List<Policy> findByPolicyType(String policyType);
 
+    List<Policy> findTop1ByOrderByCreatedAtDesc();
+
     // 지역별 정책 조회
     List<Policy> findByTargetRegion(String targetRegion);
 

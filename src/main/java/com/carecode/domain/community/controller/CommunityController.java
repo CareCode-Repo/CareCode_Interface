@@ -12,7 +12,6 @@ import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
 import com.carecode.domain.community.dto.response.CommunityCommentResponse;
 import com.carecode.domain.community.dto.response.CommunityTagResponse;
 import com.carecode.domain.community.dto.response.CommunityPageResponse;
-import com.carecode.domain.community.service.CommunityService;
 import com.carecode.domain.community.app.CommunityFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import com.carecode.core.handler.ApiSuccess;
 import java.util.Date;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * 커뮤니티 API 컨트롤러
@@ -225,9 +222,8 @@ public class CommunityController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "게시글 좋아요", description = "게시글에 좋아요를 추가하거나 제거합니다.")
     public ResponseEntity<Map<String, Object>> toggleLike(
-            @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = Long.parseLong(userDetails.getUsername());
+            @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
+        Long userId = communityFacade.getCurrentAuthenticatedUserId();
         boolean isLiked = communityFacade.toggleLike(postId, userId);
         long likeCount = communityFacade.getLikeCount(postId);
         
@@ -245,9 +241,8 @@ public class CommunityController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "게시글 북마크", description = "게시글을 북마크에 추가하거나 제거합니다.")
     public ResponseEntity<Map<String, Object>> toggleBookmark(
-            @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = Long.parseLong(userDetails.getUsername());
+            @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
+        Long userId = communityFacade.getCurrentAuthenticatedUserId();
         boolean isBookmarked = communityFacade.toggleBookmark(postId, userId);
         long bookmarkCount = communityFacade.getBookmarkCount(postId);
         
@@ -265,8 +260,8 @@ public class CommunityController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "좋아요한 게시글 목록", description = "현재 사용자가 좋아요한 게시글 목록을 조회합니다.")
     public ResponseEntity<List<CommunityPostResponse>> getLikedPosts(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = Long.parseLong(userDetails.getUsername());
+            ) {
+        Long userId = communityFacade.getCurrentAuthenticatedUserId();
         List<CommunityPostResponse> posts = communityFacade.getLikedPosts(userId);
         return ResponseEntity.ok(posts);
     }
@@ -279,8 +274,8 @@ public class CommunityController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "북마크한 게시글 목록", description = "현재 사용자가 북마크한 게시글 목록을 조회합니다.")
     public ResponseEntity<List<CommunityPostResponse>> getBookmarkedPosts(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = Long.parseLong(userDetails.getUsername());
+            ) {
+        Long userId = communityFacade.getCurrentAuthenticatedUserId();
         List<CommunityPostResponse> posts = communityFacade.getBookmarkedPosts(userId);
         return ResponseEntity.ok(posts);
     }

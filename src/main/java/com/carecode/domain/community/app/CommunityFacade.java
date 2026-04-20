@@ -121,6 +121,11 @@ public class CommunityFacade {
     public long getBookmarkCount(Long postId) {
         return communityService.getBookmarkCount(postId);
     }
+
+    @Transactional(readOnly = true)
+    public Long getCurrentAuthenticatedUserId() {
+        return communityService.getCurrentAuthenticatedUserId();
+    }
 }
 
 

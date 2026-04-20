@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.3'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'com.carecode'
@@ -74,6 +75,33 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy(tasks.named('jacocoTestReport'))
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.30
+            }
+        }
+    }
 }
 
 // JAR 빌드 최적화

@@ -1,6 +1,7 @@
 package com.carecode.core.security;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,6 +16,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Spring Security 설정
@@ -26,11 +29,17 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService customUserDetailsService;
+    private final List<String> allowedOrigins;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, 
-                         CustomUserDetailsService customUserDetailsService) {
+                         CustomUserDetailsService customUserDetailsService,
+                         @Value("${app.security.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}") String allowedOrigins) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.customUserDetailsService = customUserDetailsService;
+        this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList();
     }
 
     @Bean
@@ -39,9 +48,10 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowCredentials(true);
-                configuration.addAllowedOriginPattern("*");
-                configuration.addAllowedHeader("*");
-                configuration.addAllowedMethod("*");
+                configuration.setAllowedOriginPatterns(allowedOrigins);
+                configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+                configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                configuration.setExposedHeaders(List.of("Authorization", "X-Refresh-Token"));
                 return configuration;
             })) // CORS 활성화
             .csrf(AbstractHttpConfigurer::disable)
@@ -64,7 +74,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 // 공개 엔드포인트
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
                 .requestMatchers("/", "/error", "/favicon.ico").permitAll()
                 
                 // 정적 리소스 (공개 접근)
@@ -89,6 +99,8 @@ public class SecurityConfig {
                 
                 // 관리자 API (ADMIN 권한 필요)
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/admin/login").permitAll()
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 
                 // 공개 API 엔드포인트
                 .requestMatchers("/facilities").permitAll()
