@@ -82,6 +82,9 @@ public class Policy {
     
     @Column(name = "priority")
     private Integer priority;
+
+    @Column(name = "view_count")
+    private Integer viewCount;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -101,6 +104,9 @@ public class Policy {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (viewCount == null) {
+            viewCount = 0;
+        }
     }
     
     @PreUpdate
