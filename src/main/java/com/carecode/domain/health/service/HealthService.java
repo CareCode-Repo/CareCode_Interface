@@ -8,7 +8,9 @@ import com.carecode.core.exception.ChildNotFoundException;
 import com.carecode.core.exception.BusinessException;
 import com.carecode.core.exception.ErrorCode;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
+import com.carecode.domain.health.dto.request.HealthRecordAttachmentRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
+import com.carecode.domain.health.dto.response.HealthRecordAttachmentResponse;
 import com.carecode.domain.health.dto.response.HealthRecordResponse;
 import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
 import com.carecode.domain.health.dto.response.CheckupScheduleResponse;
@@ -16,9 +18,13 @@ import com.carecode.domain.health.dto.response.HealthStatsResponse;
 import com.carecode.domain.health.dto.response.HealthAlertResponse;
 import com.carecode.domain.health.dto.response.ChildInfoResponse;
 import com.carecode.domain.health.entity.HealthRecord;
-import com.carecode.domain.health.entity.HospitalReview;
+import com.carecode.domain.health.entity.HealthRecordAttachment;
+import com.carecode.domain.policy.entity.Policy;
+import com.carecode.domain.careFacility.entity.CareFacility;
+import com.carecode.domain.health.repository.HealthRecordAttachmentRepository;
 import com.carecode.domain.health.repository.HealthRecordRepository;
-import com.carecode.domain.health.repository.HospitalReviewRepository;
+import com.carecode.domain.policy.repository.PolicyRepository;
+import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.ChildRepository;
@@ -54,9 +60,7 @@ import java.util.stream.Collectors;
 public class HealthService {
     
     // 상수 정의
-    private static final String DEFAULT_CHILD_NAME = "아동";
     private static final String DEFAULT_ALERT_PRIORITY = "MEDIUM";
-    private static final String DEFAULT_TREND = "정상";
     private static final int DEFAULT_NUTRITION_PROGRESS = 85;
     private static final int DEFAULT_MONTHS_FOR_NEXT_CHECKUP = 3;
     private static final int MAX_UPCOMING_EVENTS = 5;
@@ -64,9 +68,11 @@ public class HealthService {
     private static final int HEALTH_SCORE_MEDIUM_THRESHOLD = 60;
     
     private final HealthRecordRepository healthRecordRepository;
+    private final HealthRecordAttachmentRepository healthRecordAttachmentRepository;
     private final ChildRepository childRepository;
     private final UserRepository userRepository;
-    private final HospitalReviewRepository hospitalReviewRepository;
+    private final PolicyRepository policyRepository;
+    private final CareFacilityRepository careFacilityRepository;
     private final HealthRecordMapper healthRecordMapper;
     private final ChildMapper childMapper;
     
@@ -452,6 +458,41 @@ public class HealthService {
         }
     }
 
+    @LogExecutionTime
+    @Transactional
+    public HealthRecordAttachmentResponse addAttachment(Long recordId, HealthRecordAttachmentRequest request) {
+        HealthRecord record = healthRecordRepository.findById(recordId)
+                .orElseThrow(() -> new HealthRecordNotFoundException(recordId));
+        HealthRecordAttachment attachment = HealthRecordAttachment.builder()
+                .healthRecord(record)
+                .fileUrl(request.getFileUrl())
+                .fileName(request.getFileName())
+                .fileType(request.getFileType())
+                .fileSize(request.getFileSize())
+                .description(request.getDescription())
+                .displayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0)
+                .build();
+        return toAttachmentResponse(healthRecordAttachmentRepository.save(attachment));
+    }
+
+    @LogExecutionTime
+    public List<HealthRecordAttachmentResponse> getAttachments(Long recordId) {
+        HealthRecord record = healthRecordRepository.findById(recordId)
+                .orElseThrow(() -> new HealthRecordNotFoundException(recordId));
+        return healthRecordAttachmentRepository.findByHealthRecordAndIsActiveTrueOrderByDisplayOrderAscCreatedAtDesc(record).stream()
+                .map(this::toAttachmentResponse)
+                .collect(Collectors.toList());
+    }
+
+    @LogExecutionTime
+    @Transactional
+    public void deleteAttachment(Long attachmentId) {
+        HealthRecordAttachment attachment = healthRecordAttachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new CareServiceException("첨부파일을 찾을 수 없습니다: " + attachmentId));
+        attachment.deactivate();
+        healthRecordAttachmentRepository.save(attachment);
+    }
+
 
     // 건강 알림 조회
 
@@ -470,6 +511,34 @@ public class HealthService {
             log.error("건강 알림 조회 실패: {}", e.getMessage());
             throw new CareServiceException("건강 알림 조회 중 오류가 발생했습니다.", e);
         }
+    }
+
+    @LogExecutionTime
+    public Map<String, Object> getIntegratedRecommendations(String userId) {
+        User user = findUserByIdOrUserId(userId);
+        Integer childAge = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).stream()
+                .map(Child::getBirthDate)
+                .filter(java.util.Objects::nonNull)
+                .map(b -> java.time.Period.between(b, LocalDate.now()).getYears())
+                .findFirst()
+                .orElse(0);
+
+        List<String> recommendedPolicies = policyRepository.findByChildAge(childAge).stream()
+                .limit(3)
+                .map(Policy::getTitle)
+                .collect(Collectors.toList());
+        List<String> recommendedFacilities = careFacilityRepository.findByChildAge(childAge).stream()
+                .limit(3)
+                .map(CareFacility::getName)
+                .collect(Collectors.toList());
+
+        Map<String, Object> recommendations = new HashMap<>();
+        recommendations.put("userId", user.getUserId());
+        recommendations.put("childAge", childAge);
+        recommendations.put("recommendedPolicies", recommendedPolicies);
+        recommendations.put("recommendedFacilities", recommendedFacilities);
+        recommendations.put("nudgeMessage", "아이 연령에 맞는 정책/시설을 확인해보세요.");
+        return recommendations;
     }
 
 
@@ -874,5 +943,19 @@ public class HealthService {
             case "bloodpressure" -> record.getBloodPressure();
             default -> null;
         };
+    }
+
+    private HealthRecordAttachmentResponse toAttachmentResponse(HealthRecordAttachment attachment) {
+        return HealthRecordAttachmentResponse.builder()
+                .attachmentId(attachment.getId())
+                .recordId(attachment.getHealthRecord().getId())
+                .fileUrl(attachment.getFileUrl())
+                .fileName(attachment.getFileName())
+                .fileType(attachment.getFileType())
+                .fileSize(attachment.getFileSize())
+                .description(attachment.getDescription())
+                .displayOrder(attachment.getDisplayOrder())
+                .createdAt(attachment.getCreatedAt())
+                .build();
     }
 }
