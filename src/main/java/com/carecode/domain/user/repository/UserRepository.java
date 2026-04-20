@@ -7,9 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -53,6 +51,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 사용자 역할별 조회 (삭제된 사용자 포함)
     List<User> findByRole(String role);
 
+    List<User> findTop2ByDeletedAtIsNullOrderByCreatedAtDesc();
+
     // 지역별 사용자 조회 (삭제된 사용자 포함)
     List<User> findByAddressContaining(String region);
 
@@ -85,6 +85,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 이메일 인증된 사용자 수 조회 (삭제되지 않은 사용자만)
     @Query("SELECT COUNT(u) FROM User u WHERE u.emailVerified = true AND u.deletedAt IS NULL")
     long countEmailVerifiedUsersNotDeleted();
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.deletedAt IS NULL AND u.createdAt >= :since")
+    long countNewUsersSince(@Param("since") LocalDateTime since);
+
+    @Query("""
+           SELECT YEAR(u.createdAt), MONTH(u.createdAt), COUNT(u)
+           FROM User u
+           WHERE u.deletedAt IS NULL AND u.createdAt >= :since
+           GROUP BY YEAR(u.createdAt), MONTH(u.createdAt)
+           """)
+    List<Object[]> countUsersGroupedByMonthSince(@Param("since") LocalDateTime since);
 
     // OAuth2 제공자와 프로바이더 ID로 사용자 조회 (삭제되지 않은 사용자만)
     @Query("SELECT u FROM User u WHERE u.provider = :provider AND u.providerId = :providerId AND u.deletedAt IS NULL")

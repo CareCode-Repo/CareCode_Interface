@@ -19,6 +19,17 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  STAGING_HEALTH_URL: ${{ secrets.STAGING_HEALTH_URL }}
+  PRODUCTION_HEALTH_URL: ${{ secrets.PRODUCTION_HEALTH_URL }}
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+concurrency:
+  group: carecode-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # ===========================================
@@ -31,6 +42,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Setup SSH key
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -49,7 +65,7 @@ jobs:
           ${{ runner.os }}-gradle-
           
     - name: Run tests
-      run: ./gradlew test
+      run: ./gradlew clean test jacocoTestReport
       
     - name: Build application
       run: ./gradlew build -x test
@@ -72,9 +88,14 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Setup SSH key
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
       
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@0.30.0
       with:
         scan-type: 'fs'
         scan-ref: '.'
@@ -97,7 +118,7 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     
     outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
+      image-tag: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
       
     steps:
     - name: Checkout code
@@ -150,14 +171,22 @@ jobs:
       
     - name: Deploy to staging environment
       run: |
-        echo "Deploying to staging environment (Green)"
-        # 여기에 실제 배포 스크립트 추가
-        # 예: SSH를 통한 원격 서버 배포 또는 클라우드 플랫폼 배포
+        test -n "${{ secrets.STAGING_DEPLOY_HOST }}"
+        ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_DEPLOY_USER }}@${{ secrets.STAGING_DEPLOY_HOST }} \
+          "docker pull ${{ needs.build-docker.outputs.image-tag }} && docker stop carecode-staging || true && docker rm carecode-staging || true && docker run -d --name carecode-staging -p 8082:8082 --env-file /opt/carecode/.env ${{ needs.build-docker.outputs.image-tag }}"
         
     - name: Run health check
       run: |
-        echo "Running health check for staging environment"
-        # 헬스체크 스크립트 추가
+        test -n "$STAGING_HEALTH_URL"
+        for i in {1..20}; do
+          if curl -fsS "$STAGING_HEALTH_URL/actuator/health" | grep -q '"status":"UP"'; then
+            echo "Staging health check passed"
+            exit 0
+          fi
+          sleep 5
+        done
+        echo "Staging health check failed"
+        exit 1
         
     - name: Notify deployment status
       if: always()
@@ -182,8 +211,7 @@ jobs:
     - name: Determine deployment strategy
       id: strategy
       run: |
-        # 현재 활성 환경 확인 (Blue 또는 Green)
-        CURRENT_ENV=$(curl -s http://your-domain.com/admin/current-env || echo "blue")
+        CURRENT_ENV=$(curl -fsS "${{ secrets.PRODUCTION_ROUTER_STATUS_URL }}" || echo "blue")
         if [ "$CURRENT_ENV" = "blue" ]; then
           echo "target-env=green" >> $GITHUB_OUTPUT
           echo "current-env=blue" >> $GITHUB_OUTPUT
@@ -194,29 +222,42 @@ jobs:
         
     - name: Deploy to target environment
       run: |
-        echo "Deploying to ${{ steps.strategy.outputs.target-env }} environment"
-        # 대상 환경에 새 버전 배포
+        test -n "${{ secrets.PRODUCTION_DEPLOY_HOST }}"
+        ssh -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_DEPLOY_USER }}@${{ secrets.PRODUCTION_DEPLOY_HOST }} \
+          "docker pull ${{ needs.build-docker.outputs.image-tag }} && docker stop carecode-${{ steps.strategy.outputs.target-env }} || true && docker rm carecode-${{ steps.strategy.outputs.target-env }} || true && docker run -d --name carecode-${{ steps.strategy.outputs.target-env }} -p 8082:8082 --env-file /opt/carecode/.env ${{ needs.build-docker.outputs.image-tag }}"
         
     - name: Wait for deployment to be ready
       run: |
-        echo "Waiting for ${{ steps.strategy.outputs.target-env }} environment to be ready"
-        # 배포 완료 대기 및 헬스체크
+        test -n "$PRODUCTION_HEALTH_URL"
+        for i in {1..20}; do
+          if curl -fsS "$PRODUCTION_HEALTH_URL/actuator/health" | grep -q '"status":"UP"'; then
+            echo "Production target is healthy"
+            exit 0
+          fi
+          sleep 5
+        done
+        echo "Production health check failed"
+        exit 1
         
     - name: Switch traffic to new environment
       run: |
-        echo "Switching traffic to ${{ steps.strategy.outputs.target-env }} environment"
-        # Nginx 설정 업데이트 또는 로드밸런서 설정 변경
+        test -n "${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}"
+        curl -fsS -X POST "${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}" \
+          -H "Authorization: Bearer ${{ secrets.PRODUCTION_ROUTER_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"target\":\"${{ steps.strategy.outputs.target-env }}\"}"
         
     - name: Verify deployment
       run: |
-        echo "Verifying deployment"
-        # 배포 검증 (응답 시간, 에러율 등)
+        curl -fsS "$PRODUCTION_HEALTH_URL/actuator/health" | grep -q '"status":"UP"'
         
     - name: Rollback if needed
       if: failure()
       run: |
-        echo "Rolling back to ${{ steps.strategy.outputs.current-env }} environment"
-        # 실패 시 이전 환경으로 롤백
+        curl -fsS -X POST "${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}" \
+          -H "Authorization: Bearer ${{ secrets.PRODUCTION_ROUTER_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"target\":\"${{ steps.strategy.outputs.current-env }}\"}"
         
     - name: Notify deployment status
       if: always()

@@ -32,7 +32,7 @@ public class AuthenticationAspect {
         if (authentication == null || !authentication.isAuthenticated() || 
             "anonymousUser".equals(authentication.getName())) {
             log.warn("인증되지 않은 사용자의 접근 시도: {}", joinPoint.getSignature().getName());
-            throw new CareServiceException(requireAuthentication.message());
+            throw new CareServiceException("UNAUTHORIZED", requireAuthentication.message());
         }
         
         // 역할 기반 권한 확인 (필요한 경우)
@@ -50,7 +50,7 @@ public class AuthenticationAspect {
             if (!hasRequiredRole) {
                 log.warn("권한이 없는 사용자의 접근 시도: {} (필요한 역할: {})", 
                     joinPoint.getSignature().getName(), String.join(", ", requiredRoles));
-                throw new CareServiceException("접근 권한이 없습니다.");
+                throw new CareServiceException("FORBIDDEN", "접근 권한이 없습니다.");
             }
         }
         

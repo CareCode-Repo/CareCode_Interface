@@ -28,8 +28,8 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -114,9 +114,9 @@ logging:
   level:
     com.carecode: INFO
     com.carecode.core.security: INFO
-    com.carecode.domain.user.service.JwtService: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.security.oauth2: DEBUG
+    com.carecode.domain.user.service.JwtService: INFO
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: INFO
     org.springframework.web: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
@@ -126,7 +126,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,env,httptrace
+        include: health,info,prometheus
       base-path: /actuator
   endpoint:
     health:

@@ -558,21 +558,8 @@ public class CommunityService {
         return communityMapper.toPostResponseList(posts);
     }
 
-
-    // 현재 로그인한 사용자 ID 가져오기
-
-    private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-
-        String username = authentication.getName();
-        if (username == null || username.equals("anonymousUser")) {
-            return null;
-        }
-
-        User user = userRepository.findByEmail(username).orElse(null);
-        return user != null ? user.getId() : null;
+    @Transactional(readOnly = true)
+    public Long getCurrentAuthenticatedUserId() {
+        return getCurrentUser().getId();
     }
 } 

@@ -1,0 +1,12 @@
+.git
+.github
+.gradle
+build
+out
+**/*.log
+**/.DS_Store
+README.md
+ORGANIZATION_README.md
+.cursor
+agent-transcripts
+mcps

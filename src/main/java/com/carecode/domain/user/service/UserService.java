@@ -3,8 +3,6 @@ package com.carecode.domain.user.service;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.exception.UserNotFoundException;
-import com.carecode.core.util.ValidationUtil;
-import com.carecode.domain.user.dto.request.LoginRequestDto;
 import com.carecode.domain.user.dto.request.PasswordChangeRequestDto;
 import com.carecode.domain.user.dto.response.UserDto;
 import com.carecode.domain.user.dto.response.UserStatsResponse;
@@ -14,7 +12,6 @@ import com.carecode.domain.user.entity.Gender;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +26,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
@@ -44,6 +42,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RestTemplate restTemplate;
 
 
 
@@ -115,18 +114,17 @@ public class UserService {
         log.info("카카오 사용자 정보 조회 시작: accessToken={}", accessToken != null ? accessToken.substring(0, Math.min(20, accessToken.length())) + "..." : "null");
         
         try {
-            RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + accessToken);
             headers.set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
             HttpEntity<String> entity = new HttpEntity<>(headers);
             
             
-            ResponseEntity<Map> response = restTemplate.exchange(
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 "https://kapi.kakao.com/v2/user/me",
                 HttpMethod.GET,
                 entity,
-                Map.class
+                new ParameterizedTypeReference<>() {}
             );
             
             Map<String, Object> body = response.getBody();
@@ -140,10 +138,10 @@ public class UserService {
                 }
                 userInfo.put("id", kakaoId);
                 
-                Map<String, Object> kakaoAccount = (Map<String, Object>) body.get("kakao_account");
-                if (kakaoAccount != null && kakaoAccount.containsKey("profile")) {
-                    Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
-                    if (profile != null) {
+                Object kakaoAccountObj = body.get("kakao_account");
+                if (kakaoAccountObj instanceof Map<?, ?> kakaoAccount) {
+                    Object profileObj = kakaoAccount.get("profile");
+                    if (profileObj instanceof Map<?, ?> profile) {
                         userInfo.put("nickname", profile.get("nickname"));
                         userInfo.put("profileImageUrl", profile.get("profile_image_url"));
                     }
@@ -173,25 +171,18 @@ public class UserService {
 
     @LogExecutionTime
     public UserStatsResponse getUserStatistics() {
-        List<User> allUsers = userRepository.findAll();
-        long totalUsers = allUsers.size();
-        long activeUsers = allUsers.stream().filter(u -> Boolean.TRUE.equals(u.getIsActive())).count();
-        long verifiedUsers = allUsers.stream().filter(u -> Boolean.TRUE.equals(u.getEmailVerified())).count();
+        long totalUsers = userRepository.count();
+        long activeUsers = userRepository.countActiveUsersNotDeleted();
+        long verifiedUsers = userRepository.countEmailVerifiedUsersNotDeleted();
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
         LocalDateTime startOfWeek = now.minusWeeks(1);
         LocalDateTime startOfMonth = now.minusMonths(1);
 
-        long newUsersToday = allUsers.stream()
-                .filter(u -> u.getCreatedAt() != null && !u.getCreatedAt().isBefore(startOfToday))
-                .count();
-        long newUsersThisWeek = allUsers.stream()
-                .filter(u -> u.getCreatedAt() != null && !u.getCreatedAt().isBefore(startOfWeek))
-                .count();
-        long newUsersThisMonth = allUsers.stream()
-                .filter(u -> u.getCreatedAt() != null && !u.getCreatedAt().isBefore(startOfMonth))
-                .count();
+        long newUsersToday = userRepository.countNewUsersSince(startOfToday);
+        long newUsersThisWeek = userRepository.countNewUsersSince(startOfWeek);
+        long newUsersThisMonth = userRepository.countNewUsersSince(startOfMonth);
 
         return UserStatsResponse.builder()
                 .totalUsers(totalUsers)
