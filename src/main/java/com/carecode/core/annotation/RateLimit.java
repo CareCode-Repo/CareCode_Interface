@@ -12,24 +12,24 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RateLimit {
-    /**
-     * 시간당 허용되는 최대 요청 수
-     */
+
+    // 시간당 허용되는 최대 요청 수
+
     int requests() default 100;
     
-    /**
-     * 시간 윈도우 (초 단위)
-     */
+
+    // 시간 윈도우 (초 단위)
+
     int windowSeconds() default 60;
     
-    /**
-     * Rate limit 초과 시 메시지
-     */
+
+    // Rate limit 초과 시 메시지
+
     String message() default "요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.";
     
-    /**
-     * 사용자별로 제한할지 여부 (true면 IP 기반, false면 전역)
-     */
+
+    // 사용자별로 제한할지 여부 (true면 IP 기반, false면 전역)
+
     boolean perUser() default true;
 }
 
