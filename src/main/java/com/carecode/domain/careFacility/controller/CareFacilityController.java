@@ -7,10 +7,12 @@ import com.carecode.core.annotation.ValidateChildAge;
 import com.carecode.core.controller.BaseController;
 import com.carecode.domain.careFacility.dto.request.CareFacilitySearchRequest;
 import com.carecode.domain.careFacility.dto.request.CareFacilityAdvancedSearchRequest;
+import com.carecode.domain.careFacility.dto.request.ReviewRequest;
 import com.carecode.domain.careFacility.dto.response.CareFacilityInfo;
 import com.carecode.domain.careFacility.dto.response.CareFacilityListResponse;
 import com.carecode.domain.careFacility.dto.response.CareFacilityStatsResponse;
 import com.carecode.domain.careFacility.dto.response.BookingResponse;
+import com.carecode.domain.careFacility.dto.response.ReviewResponse;
 import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
 import com.carecode.domain.careFacility.dto.request.UpdateBookingRequest;
 import com.carecode.domain.careFacility.entity.FacilityType;
@@ -288,6 +290,43 @@ public class CareFacilityController extends BaseController {
             @Parameter(description = "시설 ID", required = true) @PathVariable Long id) {
         CareFacilityInfo facility = careFacilityFacade.getFacilityByIdWithReviews(id);
         return ResponseEntity.ok(facility);
+    }
+
+    @GetMapping("/{id}/reviews")
+    @LogExecutionTime
+    @Operation(summary = "시설 리뷰 목록 조회", description = "시설의 리뷰 목록을 조회합니다.")
+    public ResponseEntity<List<ReviewResponse>> getFacilityReviews(@PathVariable Long id) {
+        return ResponseEntity.ok(careFacilityFacade.getFacilityReviews(id));
+    }
+
+    @PostMapping("/{id}/reviews")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "시설 리뷰 작성", description = "시설 리뷰를 작성합니다.")
+    public ResponseEntity<ReviewResponse> createReview(@PathVariable Long id,
+                                                       @RequestBody ReviewRequest request,
+                                                       @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(careFacilityFacade.createReview(id, userDetails.getUsername(), request));
+    }
+
+    @PutMapping("/reviews/{reviewId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "시설 리뷰 수정", description = "작성한 시설 리뷰를 수정합니다.")
+    public ResponseEntity<ReviewResponse> updateReview(@PathVariable Long reviewId,
+                                                       @RequestBody ReviewRequest request,
+                                                       @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(careFacilityFacade.updateReview(reviewId, userDetails.getUsername(), request));
+    }
+
+    @DeleteMapping("/reviews/{reviewId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "시설 리뷰 삭제", description = "작성한 시설 리뷰를 삭제합니다.")
+    public ResponseEntity<ApiSuccess> deleteReview(@PathVariable Long reviewId,
+                                                   @AuthenticationPrincipal UserDetails userDetails) {
+        careFacilityFacade.deleteReview(reviewId, userDetails.getUsername());
+        return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("리뷰가 삭제되었습니다.").build());
     }
     
     // 예약 생성
