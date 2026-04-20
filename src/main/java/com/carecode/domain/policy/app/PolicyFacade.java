@@ -1,6 +1,7 @@
 package com.carecode.domain.policy.app;
 
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
+import com.carecode.domain.policy.dto.response.PolicyBookmarkResponse;
 import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.dto.response.PolicyListResponse;
 import com.carecode.domain.policy.dto.response.PolicyStatsSimpleResponse;
@@ -55,6 +56,21 @@ public class PolicyFacade {
 
     @Transactional(readOnly = true)
     public List<PolicyDto> getActivePoliciesByDate() { return policyService.getActivePoliciesByDate(); }
+
+    @Transactional
+    public PolicyBookmarkResponse addBookmark(String userIdOrEmail, Long policyId) {
+        return policyService.addBookmark(userIdOrEmail, policyId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PolicyBookmarkResponse> getBookmarks(String userIdOrEmail) {
+        return policyService.getBookmarks(userIdOrEmail);
+    }
+
+    @Transactional
+    public void removeBookmark(String userIdOrEmail, Long policyId) {
+        policyService.removeBookmark(userIdOrEmail, policyId);
+    }
 }
 
 
