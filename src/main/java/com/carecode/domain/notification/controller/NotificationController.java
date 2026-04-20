@@ -16,16 +16,15 @@ import com.carecode.domain.notification.dto.response.NotificationTemplateRespons
 import com.carecode.domain.notification.dto.response.NotificationDeliveryStatusResponse;
 import com.carecode.domain.notification.app.NotificationFacade;
 import com.carecode.domain.notification.entity.Notification;
+import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -46,6 +45,7 @@ import java.util.Map;
 public class NotificationController extends BaseController {
 
     private final NotificationFacade notificationFacade;
+    private final UserRepository userRepository;
 
 
     // 알림 목록 조회
@@ -54,7 +54,8 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 목록 조회", description = "사용자의 알림 목록을 조회합니다.")
-    public ResponseEntity<List<NotificationInfoResponse>> getAllNotifications(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+    public ResponseEntity<List<NotificationInfoResponse>> getAllNotifications() {
+        String userId = getAuthenticatedUserCode();
         List<NotificationInfoResponse> notifications = notificationFacade.getNotificationsByUserId(userId);
         return ResponseEntity.ok(notifications);
     }
@@ -137,7 +138,8 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "모든 알림 읽음 처리", description = "사용자의 모든 알림을 읽음 상태로 변경합니다.")
-    public ResponseEntity<ApiSuccess> markAllAsRead(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+    public ResponseEntity<ApiSuccess> markAllAsRead() {
+        String userId = getAuthenticatedUserCode();
 
         notificationFacade.markAllAsRead(userId);
 
@@ -151,7 +153,8 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "읽지 않은 알림 조회", description = "사용자의 읽지 않은 알림 목록을 조회합니다.")
-    public ResponseEntity<List<NotificationInfoResponse>> getUnreadNotifications(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+    public ResponseEntity<List<NotificationInfoResponse>> getUnreadNotifications() {
+        String userId = getAuthenticatedUserCode();
 
         List<NotificationInfoResponse> notifications = notificationFacade.getUnreadNotifications(userId);
 
@@ -166,8 +169,7 @@ public class NotificationController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "알림 설정 조회", description = "사용자의 알림 설정을 조회합니다.")
     public ResponseEntity<Map<String, Object>> getNotificationSettings(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
-
-        Map<String, Object> settings = notificationFacade.getNotificationSettings(userId);
+        Map<String, Object> settings = notificationFacade.getNotificationSettings(getAuthenticatedUserCode());
 
         return ResponseEntity.ok(settings);
     }
@@ -181,8 +183,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 설정 업데이트", description = "사용자의 알림 설정을 업데이트합니다.")
     public ResponseEntity<Map<String, Object>> updateNotificationSettings(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId,
                                                                           @Parameter(description = "알림 설정", required = true) @RequestBody Map<String, Object> settings) {
-
-        Map<String, Object> updatedSettings = notificationFacade.updateNotificationSettings(userId, settings);
+        Map<String, Object> updatedSettings = notificationFacade.updateNotificationSettings(getAuthenticatedUserCode(), settings);
 
         return ResponseEntity.ok(updatedSettings);
     }
@@ -195,8 +196,7 @@ public class NotificationController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "알림 통계 조회", description = "사용자의 알림 관련 통계를 조회합니다.")
     public ResponseEntity<Map<String, Object>> getNotificationStatistics(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
-
-        Map<String, Object> statistics = notificationFacade.getNotificationStatistics(userId);
+        Map<String, Object> statistics = notificationFacade.getNotificationStatistics(getAuthenticatedUserCode());
 
         return ResponseEntity.ok(statistics);
     }
@@ -208,7 +208,8 @@ public class NotificationController extends BaseController {
     @LogExecutionTime
     @RequireAuthentication
     @Operation(summary = "알림 설정 목록 조회", description = "사용자의 알림 설정 목록을 조회합니다.")
-    public ResponseEntity<List<NotificationSettingsResponse>> getNotificationPreferences(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
+    public ResponseEntity<List<NotificationSettingsResponse>> getNotificationPreferences() {
+        String userId = getAuthenticatedUserCode();
 
         List<NotificationSettingsResponse> preferences = notificationFacade.getUserPreferences(userId);
 
@@ -224,7 +225,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "특정 알림 타입 설정 조회", description = "사용자의 특정 알림 타입 설정을 조회합니다.")
     public ResponseEntity<NotificationSettingsResponse> getNotificationPreferenceByType(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
                                                                                          @Parameter(description = "알림 타입", required = true) @PathVariable String notificationType) {
-        NotificationSettingsResponse preference = notificationFacade.getPreferenceByType(userId, notificationType);
+        NotificationSettingsResponse preference = notificationFacade.getPreferenceByType(getAuthenticatedUserCode(), notificationType);
 
         return ResponseEntity.ok(preference);
     }
@@ -238,8 +239,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "전체 알림 설정 업데이트", description = "사용자의 모든 알림 설정을 한 번에 업데이트합니다.")
     public ResponseEntity<NotificationSettingsResponse> updateNotificationPreferences(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
                                                                                        @Parameter(description = "알림 설정", required = true) @RequestBody NotificationSettingsResponse preferenceDto) {
-
-        NotificationSettingsResponse updatedPreference = notificationFacade.savePreference(userId, preferenceDto);
+        NotificationSettingsResponse updatedPreference = notificationFacade.savePreference(getAuthenticatedUserCode(), preferenceDto);
 
         return ResponseEntity.ok(updatedPreference);
     }
@@ -253,8 +253,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 설정 저장", description = "사용자의 알림 설정을 저장합니다.")
     public ResponseEntity<NotificationSettingsResponse> saveNotificationPreference(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
                                                                                     @Parameter(description = "알림 설정", required = true) @RequestBody NotificationSettingsResponse preferenceDto) {
-
-        NotificationSettingsResponse savedPreference = notificationFacade.savePreference(userId, preferenceDto);
+        NotificationSettingsResponse savedPreference = notificationFacade.savePreference(getAuthenticatedUserCode(), preferenceDto);
 
         return ResponseEntity.ok(savedPreference);
     }
@@ -270,8 +269,7 @@ public class NotificationController extends BaseController {
                                                                                  @Parameter(description = "알림 타입", required = true) @PathVariable String notificationType,
                                                                                  @Parameter(description = "채널", required = true) @PathVariable String channel,
                                                                                  @Parameter(description = "활성화 여부", required = true) @RequestParam boolean enabled) {
-
-        NotificationSettingsResponse updatedPreference = notificationFacade.updateChannelPreference(userId, notificationType, channel, enabled);
+        NotificationSettingsResponse updatedPreference = notificationFacade.updateChannelPreference(getAuthenticatedUserCode(), notificationType, channel, enabled);
 
         return ResponseEntity.ok(updatedPreference);
     }
@@ -284,8 +282,7 @@ public class NotificationController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "모든 알림 설정 비활성화", description = "사용자의 모든 알림 설정을 비활성화합니다.")
     public ResponseEntity<ApiSuccess> disableAllNotifications(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-
-        notificationFacade.disableAllNotifications(userId);
+        notificationFacade.disableAllNotifications(getAuthenticatedUserCode());
 
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("모든 알림 설정이 비활성화되었습니다.").build());
     }
@@ -298,8 +295,7 @@ public class NotificationController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "알림 설정 초기화", description = "사용자의 알림 설정을 기본값으로 초기화합니다.")
     public ResponseEntity<ApiSuccess> resetNotificationPreferences(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-
-        notificationFacade.resetToDefault(userId);
+        notificationFacade.resetToDefault(getAuthenticatedUserCode());
 
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림 설정이 기본값으로 초기화되었습니다.").build());
     }
@@ -327,8 +323,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "푸시 알림 토큰 등록", description = "사용자의 푸시 알림 토큰을 등록합니다.")
     public ResponseEntity<ApiSuccess> registerPushToken(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
                                                         @Parameter(description = "푸시 토큰 등록 요청", required = true) @RequestBody NotificationRegisterPushTokenRequest request) {
-
-        notificationFacade.registerPushToken(userId, request);
+        notificationFacade.registerPushToken(getAuthenticatedUserCode(), request);
 
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("푸시 알림 토큰이 등록되었습니다.").build());
     }
@@ -342,8 +337,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 설정 수정", description = "사용자의 알림 설정을 수정합니다.")
     public ResponseEntity<ApiSuccess> updateSettings(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
                                                      @Parameter(description = "설정 수정 요청", required = true) @RequestBody NotificationUpdateSettingsRequest request) {
-
-        notificationFacade.updateSettings(userId, request);
+        notificationFacade.updateSettings(getAuthenticatedUserCode(), request);
 
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림 설정이 수정되었습니다.").build());
     }
@@ -357,8 +351,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "테스트 알림 발송", description = "테스트 알림을 발송합니다.")
     public ResponseEntity<ApiSuccess> sendTestNotification(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
                                                            @Parameter(description = "테스트 알림 요청", required = true) @RequestBody NotificationSendTestRequest request) {
-
-        notificationFacade.sendTestNotification(userId, request);
+        notificationFacade.sendTestNotification(getAuthenticatedUserCode(), request);
 
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("테스트 알림이 발송되었습니다.").build());
     }
@@ -371,8 +364,7 @@ public class NotificationController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "알림 통계 조회", description = "사용자의 알림 통계를 조회합니다.")
     public ResponseEntity<NotificationStatsResponse> getNotificationStats(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-
-        NotificationStatsResponse stats = notificationFacade.getNotificationStats(userId);
+        NotificationStatsResponse stats = notificationFacade.getNotificationStats(getAuthenticatedUserCode());
 
         return ResponseEntity.ok(stats);
     }
@@ -418,7 +410,7 @@ public class NotificationController extends BaseController {
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "알림 타입 (SYSTEM, POLICY, FACILITY, COMMUNITY, CHATBOT, HEALTH)", required = true) @RequestParam String notificationType) {
         List<NotificationInfoResponse> notifications = notificationFacade.getNotificationsByType(
-                userId, Notification.NotificationType.valueOf(notificationType));
+                getAuthenticatedUserCode(), Notification.NotificationType.valueOf(notificationType));
         return ResponseEntity.ok(notifications);
     }
 
@@ -434,7 +426,7 @@ public class NotificationController extends BaseController {
             @Parameter(description = "시작일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String startDate,
             @Parameter(description = "종료일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String endDate) {
         List<NotificationInfoResponse> notifications = notificationFacade.getNotificationsByDateRange(
-                userId, LocalDateTime.parse(startDate), LocalDateTime.parse(endDate));
+                getAuthenticatedUserCode(), LocalDateTime.parse(startDate), LocalDateTime.parse(endDate));
         return ResponseEntity.ok(notifications);
     }
 
@@ -447,7 +439,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "전체 알림 개수 조회", description = "사용자의 전체 알림 개수를 조회합니다.")
     public ResponseEntity<Map<String, Long>> getTotalNotificationCount(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-        long count = notificationFacade.getTotalNotificationCount(userId);
+        long count = notificationFacade.getTotalNotificationCount(getAuthenticatedUserCode());
         Map<String, Long> response = new java.util.HashMap<>();
         response.put("totalCount", count);
         return ResponseEntity.ok(response);
@@ -463,10 +455,17 @@ public class NotificationController extends BaseController {
     public ResponseEntity<Map<String, Long>> getNotificationCountByReadStatus(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "읽음 여부 (true: 읽음, false: 읽지 않음)", required = true) @RequestParam boolean isRead) {
-        long count = notificationFacade.getNotificationCountByReadStatus(userId, isRead);
+        long count = notificationFacade.getNotificationCountByReadStatus(getAuthenticatedUserCode(), isRead);
         Map<String, Long> response = new java.util.HashMap<>();
         response.put("count", count);
         response.put("isRead", isRead ? 1L : 0L);
         return ResponseEntity.ok(response);
+    }
+
+    private String getAuthenticatedUserCode() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new CareServiceException("인증 사용자를 찾을 수 없습니다."));
+        return user.getUserId();
     }
 } 
