@@ -4,12 +4,17 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
+import com.carecode.domain.health.dto.request.HealthRecordAttachmentRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthCreateHospitalReviewRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHospitalReviewRequest;
 import com.carecode.domain.health.dto.response.*;
 import com.carecode.domain.health.app.HealthFacade;
 import com.carecode.domain.health.entity.HealthRecord;
+import com.carecode.core.handler.ApiSuccess;
+import com.carecode.core.exception.CareServiceException;
+import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,10 +23,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Date;
 
 /**
  * 통합 건강 관리 컨트롤러
@@ -36,6 +43,7 @@ import java.util.List;
 public class HealthController extends BaseController {
 
     private final HealthFacade healthFacade;
+    private final UserRepository userRepository;
 
     // ==================== 건강 정보 관리 ====================
 
@@ -76,8 +84,7 @@ public class HealthController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "사용자별 건강 정보 조회", description = "특정 사용자의 모든 건강 정보를 조회합니다.")
     public ResponseEntity<List<HealthRecordResponse>> getUserHealthRecords(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
-
-        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByUserId(userId);
+        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByUserId(getAuthenticatedUserCode());
 
         return ResponseEntity.ok(records);
     }
@@ -111,6 +118,32 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/records/{recordId}/attachments")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 기록 첨부 추가", description = "건강 기록에 첨부파일 메타 정보를 추가합니다.")
+    public ResponseEntity<HealthRecordAttachmentResponse> addAttachment(@PathVariable Long recordId,
+                                                                        @RequestBody HealthRecordAttachmentRequest request) {
+        return ResponseEntity.ok(healthFacade.addAttachment(recordId, request));
+    }
+
+    @GetMapping("/records/{recordId}/attachments")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 기록 첨부 조회", description = "건강 기록의 첨부파일 목록을 조회합니다.")
+    public ResponseEntity<List<HealthRecordAttachmentResponse>> getAttachments(@PathVariable Long recordId) {
+        return ResponseEntity.ok(healthFacade.getAttachments(recordId));
+    }
+
+    @DeleteMapping("/records/attachments/{attachmentId}")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "건강 기록 첨부 삭제", description = "건강 기록 첨부파일을 비활성화합니다.")
+    public ResponseEntity<ApiSuccess> deleteAttachment(@PathVariable Long attachmentId) {
+        healthFacade.deleteAttachment(attachmentId);
+        return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("첨부파일이 삭제되었습니다.").build());
+    }
+
     // ==================== 건강 통계 ====================
 
 
@@ -121,8 +154,7 @@ public class HealthController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "건강 통계 조회", description = "사용자의 건강 관련 통계를 조회합니다.")
     public ResponseEntity<HealthStatsResponse> getHealthStatistics(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-
-        HealthStatsResponse statistics = healthFacade.getHealthStatistics(userId);
+        HealthStatsResponse statistics = healthFacade.getHealthStatistics(getAuthenticatedUserCode());
 
         return ResponseEntity.ok(statistics);
     }
@@ -169,8 +201,16 @@ public class HealthController extends BaseController {
     })
     public ResponseEntity<List<HealthAlertResponse>> getHealthAlerts(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-        List<HealthAlertResponse> alerts = healthFacade.getHealthAlerts(userId);
+        List<HealthAlertResponse> alerts = healthFacade.getHealthAlerts(getAuthenticatedUserCode());
         return ResponseEntity.ok(alerts);
+    }
+
+    @GetMapping("/recommendations")
+    @LogExecutionTime
+    @RequireAuthentication
+    @Operation(summary = "연계 추천 조회", description = "아동 연령 기반 정책/시설 연계 추천을 제공합니다.")
+    public ResponseEntity<java.util.Map<String, Object>> getIntegratedRecommendations() {
+        return ResponseEntity.ok(healthFacade.getIntegratedRecommendations(getAuthenticatedUserCode()));
     }
 
     // ==================== 병원 관리 ====================
@@ -231,8 +271,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "병원 좋아요", description = "병원에 좋아요를 추가합니다.")
     public ResponseEntity<?> likeHospital(@Parameter(description = "병원 ID", required = true) @PathVariable Long id,
                                           @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
-
-        boolean success = healthFacade.likeHospital(id, userId);
+        boolean success = healthFacade.likeHospital(id, getAuthenticatedUserPk());
 
         if (!success) {
             return ResponseEntity.status(409).body("이미 좋아요를 누른 병원입니다.");
@@ -249,8 +288,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "병원 좋아요 취소", description = "병원의 좋아요를 취소합니다.")
     public ResponseEntity<?> unlikeHospital(@Parameter(description = "병원 ID", required = true) @PathVariable Long id,
                                             @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
-
-        boolean success = healthFacade.unlikeHospital(id, userId);
+        boolean success = healthFacade.unlikeHospital(id, getAuthenticatedUserPk());
 
         if (!success) {
             return ResponseEntity.status(409).body("좋아요를 누르지 않은 병원입니다.");
@@ -293,8 +331,7 @@ public class HealthController extends BaseController {
     public ResponseEntity<HospitalReviewResponse> createHospitalReview(@Parameter(description = "병원 ID", required = true) @PathVariable Long id,
                                                                        @Parameter(description = "리뷰 정보", required = true) @RequestBody HealthCreateHospitalReviewRequest request,
                                                                        @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
-
-        HospitalReviewResponse review = healthFacade.createHospitalReview(id, userId, request.getRating(), request.getContent());
+        HospitalReviewResponse review = healthFacade.createHospitalReview(id, getAuthenticatedUserPk(), request.getRating(), request.getContent());
 
         return ResponseEntity.ok(review);
     }
@@ -322,8 +359,7 @@ public class HealthController extends BaseController {
     public ResponseEntity<HospitalReviewResponse> updateHospitalReview(@Parameter(description = "리뷰 ID", required = true) @PathVariable Long reviewId,
                                                                        @Parameter(description = "수정할 리뷰 정보", required = true) @RequestBody HealthUpdateHospitalReviewRequest request,
                                                                        @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
-
-        HospitalReviewResponse review = healthFacade.updateHospitalReview(reviewId, userId, request.getRating(), request.getContent());
+        HospitalReviewResponse review = healthFacade.updateHospitalReview(reviewId, getAuthenticatedUserPk(), request.getRating(), request.getContent());
 
         return ResponseEntity.ok(review);
     }
@@ -337,8 +373,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "병원 리뷰 삭제", description = "병원 리뷰를 삭제합니다.")
     public ResponseEntity<Void> deleteHospitalReview(@Parameter(description = "리뷰 ID", required = true) @PathVariable Long reviewId,
                                                      @Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
-
-        healthFacade.deleteHospitalReview(reviewId, userId);
+        healthFacade.deleteHospitalReview(reviewId, getAuthenticatedUserPk());
 
         return ResponseEntity.ok().build();
     }
@@ -377,7 +412,7 @@ public class HealthController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "연령 범위별 자녀 조회", description = "특정 연령 범위에 해당하는 자녀를 조회합니다.")
     public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenByAgeRange(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId, @Parameter(description = "최소 연령", required = true) @RequestParam Integer minAge, @Parameter(description = "최대 연령", required = true) @RequestParam Integer maxAge) {
-        List<ChildInfoResponse> children = healthFacade.getChildrenByAgeRange(userId, minAge, maxAge);
+        List<ChildInfoResponse> children = healthFacade.getChildrenByAgeRange(getAuthenticatedUserPk(), minAge, maxAge);
 
         return ResponseEntity.ok(children);
     }
@@ -389,7 +424,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "성별 자녀 조회", description = "특정 성별의 자녀를 조회합니다.")
     public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenByGender(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
                                                                                                                @Parameter(description = "성별 (MALE, FEMALE)", required = true) @RequestParam String gender) {
-        List<ChildInfoResponse> children = healthFacade.getChildrenByGender(userId, gender);
+        List<ChildInfoResponse> children = healthFacade.getChildrenByGender(getAuthenticatedUserPk(), gender);
         return ResponseEntity.ok(children);
     }
 
@@ -399,7 +434,7 @@ public class HealthController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "특별한 요구사항이 있는 자녀 조회", description = "특별한 요구사항이 있는 자녀를 조회합니다.")
     public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenWithSpecialNeeds(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
-        List<ChildInfoResponse> children = healthFacade.getChildrenWithSpecialNeeds(userId);
+        List<ChildInfoResponse> children = healthFacade.getChildrenWithSpecialNeeds(getAuthenticatedUserPk());
 
         return ResponseEntity.ok(children);
     }
@@ -411,8 +446,22 @@ public class HealthController extends BaseController {
     @Operation(summary = "이름으로 자녀 검색", description = "이름으로 자녀를 검색합니다.")
     public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> searchChildrenByName(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
                                                                                                                 @Parameter(description = "검색할 이름", required = true) @RequestParam String name) {
-        List<ChildInfoResponse> children = healthFacade.searchChildrenByName(userId, name);
+        List<ChildInfoResponse> children = healthFacade.searchChildrenByName(getAuthenticatedUserPk(), name);
 
         return ResponseEntity.ok(children);
+    }
+
+    private Long getAuthenticatedUserPk() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new CareServiceException("인증 사용자를 찾을 수 없습니다."));
+        return user.getId();
+    }
+
+    private String getAuthenticatedUserCode() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new CareServiceException("인증 사용자를 찾을 수 없습니다."));
+        return user.getUserId();
     }
 }
