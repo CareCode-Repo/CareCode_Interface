@@ -22,14 +22,6 @@ public interface HealthRecordRepository extends JpaRepository<HealthRecord, Long
     // 아동별 건강 기록 조회 (최신순)
     Page<HealthRecord> findByChildIdOrderByRecordDateDesc(Long childId, Pageable pageable);
 
-    // 아동별 건강 기록 조회 (최신순) - JOIN FETCH로 N+1 문제 해결
-    @Query("SELECT r FROM HealthRecord r " +
-           "JOIN FETCH r.child c " +
-           "JOIN FETCH r.user u " +
-           "WHERE r.child.id = :childId " +
-           "ORDER BY r.recordDate DESC")
-    List<HealthRecord> findByChildIdWithChildAndUser(@Param("childId") Long childId);
-
     // 아동별 건강 기록 조회 (최신순)
     List<HealthRecord> findByChildOrderByRecordDateDesc(Child child);
 
@@ -56,9 +48,6 @@ public interface HealthRecordRepository extends JpaRepository<HealthRecord, Long
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
-    // 기간별 건강 기록 조회 (최신순)
-    List<HealthRecord> findByChildIdAndRecordDateBetweenOrderByRecordDateDesc(Long childId, LocalDate startDate, LocalDate endDate);
-
     // 기간별 건강 기록 조회 (오래된순) - JOIN FETCH로 N+1 문제 해결
     @Query("SELECT r FROM HealthRecord r " +
            "JOIN FETCH r.child c " +
@@ -70,9 +59,6 @@ public interface HealthRecordRepository extends JpaRepository<HealthRecord, Long
             @Param("childId") Long childId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
-
-    // 기간별 건강 기록 조회 (오래된순)
-    List<HealthRecord> findByChildIdAndRecordDateBetweenOrderByRecordDateAsc(Long childId, LocalDate startDate, LocalDate endDate);
 
     // 아동별 특정 타입의 건강 기록 조회 - JOIN FETCH로 N+1 문제 해결
     @Query("SELECT r FROM HealthRecord r " +
