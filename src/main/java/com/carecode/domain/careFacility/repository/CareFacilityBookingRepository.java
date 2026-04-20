@@ -21,30 +21,8 @@ public interface CareFacilityBookingRepository extends JpaRepository<CareFacilit
     // 사용자별 예약 목록 조회
     List<CareFacilityBooking> findByUserIdOrderByStartTimeDesc(String userId);
 
-    // 사용자별 예약 목록 조회 (페이징)
-    Page<CareFacilityBooking> findByUserIdOrderByStartTimeDesc(String userId, Pageable pageable);
-
     // 시설별 예약 목록 조회
     List<CareFacilityBooking> findByFacilityIdOrderByStartTimeAsc(Long facilityId);
-
-    // 상태별 예약 목록 조회
-    List<CareFacilityBooking> findByStatusOrderByStartTimeAsc(CareFacilityBooking.BookingStatus status);
-
-    // 사용자별 상태별 예약 목록 조회
-    List<CareFacilityBooking> findByUserIdAndStatusOrderByStartTimeDesc(String userId, CareFacilityBooking.BookingStatus status);
-
-
-    // 시설별 상태별 예약 목록 조회
-    List<CareFacilityBooking> findByFacilityIdAndStatusOrderByStartTimeAsc(Long facilityId, CareFacilityBooking.BookingStatus status);
-
-    // 예약 타입별 예약 목록 조회
-    List<CareFacilityBooking> findByBookingTypeOrderByStartTimeAsc(CareFacilityBooking.BookingType bookingType);
-
-    // 날짜 범위별 예약 목록 조회
-    @Query("SELECT cb FROM CareFacilityBooking cb WHERE cb.startTime BETWEEN :startDate AND :endDate ORDER BY cb.startTime ASC")
-    List<CareFacilityBooking> findByStartTimeBetween(@Param("startDate") LocalDateTime startDate,
-                                                     @Param("endDate") LocalDateTime endDate);
-
 
     // 시설별 날짜 범위별 예약 목록 조회
     @Query("SELECT cb FROM CareFacilityBooking cb WHERE cb.facility.id = :facilityId AND cb.startTime BETWEEN :startDate AND :endDate ORDER BY cb.startTime ASC")
@@ -52,20 +30,8 @@ public interface CareFacilityBookingRepository extends JpaRepository<CareFacilit
                                                                   @Param("startDate") LocalDateTime startDate,
                                                                   @Param("endDate") LocalDateTime endDate);
 
-    // 사용자별 예약 수 조회
-    long countByUserId(String userId);
-
-    // 시설별 예약 수 조회
-    long countByFacilityId(Long facilityId);
-
     // 상태별 예약 수 조회
     long countByStatus(CareFacilityBooking.BookingStatus status);
-
-    // 사용자별 상태별 예약 수 조회
-    long countByUserIdAndStatus(String userId, CareFacilityBooking.BookingStatus status);
-
-    // 시설별 상태별 예약 수 조회
-    long countByFacilityIdAndStatus(Long facilityId, CareFacilityBooking.BookingStatus status);
 
     // 예약 타입별 예약 수 조회
     long countByBookingType(CareFacilityBooking.BookingType bookingType);
@@ -78,10 +44,6 @@ public interface CareFacilityBookingRepository extends JpaRepository<CareFacilit
     @Query("SELECT cb FROM CareFacilityBooking cb WHERE cb.facility.id = :facilityId AND DATE(cb.startTime) = CURRENT_DATE ORDER BY cb.startTime ASC")
     List<CareFacilityBooking> findTodayBookingsByFacility(@Param("facilityId") Long facilityId);
 
-    // 사용자별 오늘 예약 목록 조회
-    @Query("SELECT cb FROM CareFacilityBooking cb WHERE cb.userId = :userId AND DATE(cb.startTime) = CURRENT_DATE ORDER BY cb.startTime ASC")
-    List<CareFacilityBooking> findTodayBookingsByUser(@Param("userId") String userId);
-
     // 오늘 예약 수 조회
     @Query("SELECT COUNT(cb) FROM CareFacilityBooking cb WHERE DATE(cb.startTime) = CURRENT_DATE")
     long countTodayBookings();
@@ -93,11 +55,6 @@ public interface CareFacilityBookingRepository extends JpaRepository<CareFacilit
     // 이번 달 예약 수 조회
     @Query("SELECT COUNT(cb) FROM CareFacilityBooking cb WHERE cb.startTime >= :monthStart AND cb.startTime <= :monthEnd")
     long countThisMonthBookings(@Param("monthStart") LocalDateTime monthStart, @Param("monthEnd") LocalDateTime monthEnd);
-
-    // 취소된 예약 목록 조회
-    List<CareFacilityBooking> findByStatusAndCancelledAtBetweenOrderByCancelledAtDesc(CareFacilityBooking.BookingStatus status, 
-                                                                                     LocalDateTime startDate, 
-                                                                                     LocalDateTime endDate);
 
     // 관리자용 복합 검색
     @Query("SELECT cb FROM CareFacilityBooking cb WHERE " +
