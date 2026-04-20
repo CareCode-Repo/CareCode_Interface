@@ -5,6 +5,7 @@ import com.carecode.domain.user.dto.response.TokenValidationResponse;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +22,7 @@ import java.util.Map;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret:carecode-secret-key-for-jwt-token-generation}")
+    @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.access-token.expiration:3600000}") // 1시간
@@ -29,6 +30,16 @@ public class JwtService {
 
     @Value("${jwt.refresh-token.expiration:2592000000}") // 30일
     private long refreshTokenExpiration;
+
+    @PostConstruct
+    public void validateJwtSecret() {
+        if (secret == null || secret.trim().isEmpty()) {
+            throw new IllegalStateException("JWT secret must be configured.");
+        }
+        if (secret.length() < 32) {
+            throw new IllegalStateException("JWT secret must be at least 32 characters.");
+        }
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());

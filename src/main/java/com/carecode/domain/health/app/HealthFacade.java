@@ -3,8 +3,6 @@ package com.carecode.domain.health.app;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthRecordAttachmentRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
-import com.carecode.domain.health.dto.request.HealthCreateHospitalReviewRequest;
-import com.carecode.domain.health.dto.request.HealthUpdateHospitalReviewRequest;
 import com.carecode.domain.health.dto.response.HealthRecordResponse;
 import com.carecode.domain.health.dto.response.HealthRecordAttachmentResponse;
 import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
@@ -27,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import com.carecode.domain.health.mapper.HospitalMapper;
 import com.carecode.domain.health.mapper.HospitalReviewMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -181,8 +180,7 @@ public class HealthFacade {
     }
 
     public boolean unlikeHospital(Long id, Long userId) {
-        Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new HospitalNotFoundException(id));
+        hospitalRepository.findById(id).orElseThrow(() -> new HospitalNotFoundException(id));
         
         // 좋아요를 누르지 않은 경우 false 반환
         if (!hospitalLikeRepository.existsByHospitalIdAndUserId(id, userId)) {
@@ -194,8 +192,7 @@ public class HealthFacade {
     }
 
     public long getLikeCount(Long id) {
-        Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new HospitalNotFoundException(id));
+        hospitalRepository.findById(id).orElseThrow(() -> new HospitalNotFoundException(id));
         
         return hospitalLikeRepository.countByHospitalId(id);
     }
@@ -216,11 +213,9 @@ public class HealthFacade {
     }
 
     public List<HospitalInfoResponse> getPopularHospitals(int limit) {
-        return hospitalRepository.findAll().stream()
-                .sorted((h1, h2) -> Long.compare(
-                        hospitalLikeRepository.countByHospitalId(h2.getId()),
-                        hospitalLikeRepository.countByHospitalId(h1.getId())))
-                .limit(limit)
+        int safeLimit = Math.max(limit, 1);
+        return hospitalRepository.findPopularHospitals(PageRequest.of(0, safeLimit)).stream()
+                .limit(safeLimit)
                 .map(hospitalMapper::toResponse)
                 .toList();
     }
