@@ -23,9 +23,9 @@ import java.util.Map;
 @EnableCaching
 public class CacheConfig {
 
-    /**
-     * 기본 캐시 설정
-     */
+
+    // 기본 캐시 설정
+
     private RedisCacheConfiguration defaultCacheConfig() {
         return RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10)) // 기본 TTL: 10분
@@ -36,9 +36,9 @@ public class CacheConfig {
                 .disableCachingNullValues(); // null 값은 캐싱하지 않음
     }
 
-    /**
-     * 캐시별 TTL 설정
-     */
+
+    // 캐시별 TTL 설정
+
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory factory) {
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
