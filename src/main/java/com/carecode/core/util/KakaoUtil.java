@@ -39,9 +39,9 @@ public class KakaoUtil {
     private final ObjectMapper objectMapper = new ObjectMapper()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    /**
-     * 카카오 액세스 토큰 요청
-     */
+
+    // 카카오 액세스 토큰 요청
+
     public KakaoOAuthToken requestToken(String accessCode) {
         if (accessCode == null || accessCode.trim().isEmpty()) {
             throw new IllegalArgumentException("인증 코드가 비어있습니다.");
@@ -100,9 +100,9 @@ public class KakaoUtil {
         }
     }
 
-    /**
-     * 카카오 사용자 프로필 요청
-     */
+
+    // 카카오 사용자 프로필 요청
+
     public KakaoProfile requestProfile(KakaoOAuthToken oAuthToken) {
         if (oAuthToken == null || oAuthToken.getAccess_token() == null) {
             throw new IllegalArgumentException("유효하지 않은 OAuth 토큰입니다.");
