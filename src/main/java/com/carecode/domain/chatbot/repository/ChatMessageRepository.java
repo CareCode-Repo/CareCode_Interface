@@ -21,6 +21,8 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     // 사용자별 메시지 목록 조회 (페이징)
     Page<ChatMessage> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
+    Page<ChatMessage> findByUserAndSessionIdOrderByCreatedAtDesc(User user, String sessionId, Pageable pageable);
+
     // 의도 타입별 메시지 조회
     List<ChatMessage> findByUserAndIntentTypeOrderByCreatedAtDesc(User user, ChatMessage.IntentType intentType);
 
