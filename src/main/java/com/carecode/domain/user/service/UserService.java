@@ -46,9 +46,9 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
 
-    /**
-     * 사용자 상세 조회 (String ID) - 삭제되지 않은 사용자만
-     */
+
+    // 사용자 상세 조회 (String ID) - 삭제되지 않은 사용자만
+
     @LogExecutionTime
     public UserDto getUserById(String userId) {
             // 먼저 userId로 조회 시도 (삭제되지 않은 사용자만)
@@ -70,9 +70,9 @@ public class UserService {
             return convertToDto(user);
     }
 
-    /**
-     * 이메일로 사용자 조회 (삭제되지 않은 사용자만)
-     */
+
+    // 이메일로 사용자 조회 (삭제되지 않은 사용자만)
+
     @LogExecutionTime
     public UserDto getUserByEmail(String email) {
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
@@ -81,36 +81,36 @@ public class UserService {
         return convertToDto(user);
     }
 
-    /**
-     * 이메일로 사용자 Optional 조회 (삭제되지 않은 사용자만)
-     */
+
+    // 이메일로 사용자 Optional 조회 (삭제되지 않은 사용자만)
+
     @LogExecutionTime
     public Optional<User> getUserByEmailOptional(String email) {
         return userRepository.findByEmailAndDeletedAtIsNull(email);
     }
 
 
-    /**
-     * 이메일로 User 엔티티 조회 (비밀번호 포함) - 삭제되지 않은 사용자만
-     */
+
+    // 이메일로 User 엔티티 조회 (비밀번호 포함) - 삭제되지 않은 사용자만
+
     @LogExecutionTime
     public User getUserEntityByEmail(String email) {
         return userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
     }
 
-    /**
-     * User 엔티티 저장
-     */
+
+    // User 엔티티 저장
+
     @Transactional
     public User saveUser(User user) {
         return userRepository.save(user);
     }
 
 
-    /**
-     * 카카오 API를 통해 사용자 정보 조회
-     */
+
+    // 카카오 API를 통해 사용자 정보 조회
+
     public Map<String, Object> getKakaoUserInfo(String accessToken) {
         log.info("카카오 사용자 정보 조회 시작: accessToken={}", accessToken != null ? accessToken.substring(0, Math.min(20, accessToken.length())) + "..." : "null");
         
@@ -168,9 +168,9 @@ public class UserService {
         }
     }
 
-    /**
-     * 사용자 통계 조회
-     */
+
+    // 사용자 통계 조회
+
     @LogExecutionTime
     public UserStatsResponse getUserStatistics() {
         List<User> allUsers = userRepository.findAll();
@@ -203,9 +203,9 @@ public class UserService {
                 .build();
     }
 
-    /**
-     * 카카오 신규 사용자 가입 완료 (이름 및 역할 설정)
-     */
+
+    // 카카오 신규 사용자 가입 완료 (이름 및 역할 설정)
+
     @Transactional
     public UserDto completeKakaoRegistration(String email, String name, String role) {
         if (name == null || name.trim().isEmpty()) {
@@ -247,18 +247,18 @@ public class UserService {
         return convertToDto(updatedUser);
     }
 
-    /**
-     * 사용자 생성
-     */
+
+    // 사용자 생성
+
     @Transactional
     public UserDto createUser(UserDto userDto) {
         log.info("사용자 생성: 이메일={}, provider={}", userDto.getEmail(), userDto.getProvider());
-        
+
         // 이메일 중복 확인
-        if (userRepository.existsByEmail(userDto.getEmail())) {
+        if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다: " + userDto.getEmail());
         }
-        
+
         // OAuth 사용자와 일반 사용자 구분
         String encodedPassword = null;
         if (userDto.getProvider() == null || userDto.getProvider().isEmpty()) {
@@ -297,26 +297,12 @@ public class UserService {
     }
 
 
-    /**
-     * 사용자 정보 수정 (String ID)
-     */
-    @Transactional
-    @RequireAuthentication
-    public UserDto updateUser(String userId, UserDto userDto) {
-        log.info("사용자 정보 수정: 사용자ID={}", userId);
-        
-        try {
-            Long id = Long.parseLong(userId);
-            return updateUser(userId, userDto);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("잘못된 사용자 ID 형식입니다: " + userId);
-        }
-    }
 
 
-    /**
-     * 비밀번호 변경 (PasswordChangeRequestDto)
-     */
+
+
+    // 비밀번호 변경 (PasswordChangeRequestDto)
+
     @Transactional
     @RequireAuthentication
     public void changePassword(String userId, PasswordChangeRequestDto request) {
@@ -336,58 +322,48 @@ public class UserService {
     }
 
 
-    /**
-     * 사용자 비활성화 (String ID)
-     */
+
+    // 사용자 비활성화 (String ID)
+
     @Transactional
     @RequireAuthentication
     public void deactivateUser(String userId) {
         log.info("사용자 비활성화: 사용자ID={}", userId);
-        
+
         try {
             Long id = Long.parseLong(userId);
-            deactivateUser(userId);
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+            user.setIsActive(false);
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("잘못된 사용자 ID 형식입니다: " + userId);
         }
     }
 
 
-    /**
-     * 사용자 활성화 (String ID)
-     */
+
+    // 사용자 활성화 (String ID)
+
     @Transactional
     @RequireAuthentication
     public void activateUser(String userId) {
         log.info("사용자 활성화: 사용자ID={}", userId);
-        
+
         try {
             Long id = Long.parseLong(userId);
-            activateUser(userId);
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+            user.setIsActive(true);
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("잘못된 사용자 ID 형식입니다: " + userId);
         }
     }
 
-    /**
-     * 이메일 인증 완료
-     */
-    @Transactional
-    public void verifyEmail(String email) {
-        log.info("이메일 인증 완료: 이메일={}", email);
-        
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
-        
-        user.setEmailVerified(true);
-        user.setUpdatedAt(LocalDateTime.now());
-        
-        userRepository.save(user);
-    }
-
-    /**
-     * 사용자 역할 변경
-     */
+    // 사용자 역할 변경
     @Transactional
     @RequireAuthentication
     public void updateUserRole(Long userId, String newRole) {
@@ -402,27 +378,28 @@ public class UserService {
         userRepository.save(user);
     }
 
-
-    /**
-     * 프로필 이미지 업데이트 (String ID)
-     */
+    // 프로필 이미지 업데이트 (String ID)
     @Transactional
     @RequireAuthentication
     public void updateProfileImage(String userId, String imageUrl) {
         log.info("프로필 이미지 업데이트: 사용자ID={}", userId);
-        
+
         try {
             Long id = Long.parseLong(userId);
-            updateProfileImage(userId, imageUrl);
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+            user.setProfileImageUrl(imageUrl);
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("잘못된 사용자 ID 형식입니다: " + userId);
         }
     }
 
 
-    /**
-     * 사용자 검색 (삭제되지 않은 사용자만)
-     */
+
+    // 사용자 검색 (삭제되지 않은 사용자만)
+
     @LogExecutionTime
     @RequireAuthentication
     public List<UserDto> searchUsers(String keyword) {
@@ -432,9 +409,9 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 사용자 검색 (타입별, 삭제되지 않은 사용자만)
-     */
+
+    // 사용자 검색 (타입별, 삭제되지 않은 사용자만)
+
     @LogExecutionTime
     @RequireAuthentication
     public List<UserDto> searchUsers(String keyword, String type) {
@@ -455,9 +432,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Entity를 DTO로 변환
-     */
+    // Entity를 DTO로 변환
     public UserDto convertToDto(User user) {
         return UserDto.builder()
                 .id(user.getId())
@@ -482,10 +457,7 @@ public class UserService {
                 .build();
     }
 
-
-    /**
-     * 사용자 위치 업데이트
-     */
+    // 사용자 위치 업데이트
     @Transactional
     public UserDto updateUserLocation(String userId, Double latitude, Double longitude) {
         Long id = Long.parseLong(userId);
@@ -499,10 +471,7 @@ public class UserService {
         return convertToDto(updatedUser);
     }
 
-
-    /**
-     * 활성화된 사용자 목록 조회
-     */
+    // 활성화된 사용자 목록 조회
     @LogExecutionTime
     public List<UserDto> getActiveUsers() {
         List<User> users = userRepository.findByIsActiveTrue();
@@ -511,9 +480,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 사용자 유형별 조회
-     */
+    // 사용자 유형별 조회
     @LogExecutionTime
     public List<UserDto> getUsersByType(String userType) {
         List<User> users = userRepository.findByRole(userType);
@@ -522,9 +489,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 지역별 사용자 조회
-     */
+    // 지역별 사용자 조회
     @LogExecutionTime
     public List<UserDto> getUsersByRegion(String region) {
         List<User> users = userRepository.findByAddressContaining(region);
@@ -533,9 +498,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 인증된 사용자 목록 조회
-     */
+    // 인증된 사용자 목록 조회
     @LogExecutionTime
     public List<UserDto> getVerifiedUsers() {
         List<User> users = userRepository.findByEmailVerifiedTrue();
@@ -544,9 +507,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 최근 로그인한 사용자 목록 조회
-     */
+    // 최근 로그인한 사용자 목록 조회
     @LogExecutionTime
     public List<UserDto> getRecentlyActiveUsers() {
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
@@ -556,11 +517,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-
-
-    /**
-     * 사용자 소프트 삭제 (상태값만 변경)
-     */
+    // 사용자 소프트 삭제 (상태값만 변경)
     @Transactional
     public void deleteUser(String userId) {
         User user;
@@ -595,13 +552,9 @@ public class UserService {
         user.setIsActive(false);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
-        
-        log.info("사용자 소프트 삭제 완료: 사용자ID={}, 삭제시간={}", userId, user.getDeletedAt());
     }
 
-    /**
-     * 사용자 계정 복구 (재활성화)
-     */
+    // 사용자 계정 복구 (재활성화)
     @Transactional
     public void reactivateUser(String userId) {
         User user;
@@ -635,9 +588,7 @@ public class UserService {
         log.info("사용자 계정 복구 완료: 사용자ID={}, 복구시간={}", userId, user.getUpdatedAt());
     }
 
-    /**
-     * 역할별 사용자 조회
-     */
+    // 역할별 사용자 조회
     @LogExecutionTime
     public List<UserDto> getUsersByRole(String role) {
         log.info("역할별 사용자 조회: 역할={}", role);
@@ -648,9 +599,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 지역별 사용자 조회
-     */
+    // 지역별 사용자 조회
     @LogExecutionTime
     public List<UserDto> getUsersByLocation(String region) {
         log.info("지역별 사용자 조회: 지역={}", region);
@@ -661,9 +610,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 이메일 인증된 사용자 조회
-     */
+    // 이메일 인증된 사용자 조회
     @LogExecutionTime
     public List<UserDto> getEmailVerifiedUsers() {
         log.info("이메일 인증된 사용자 조회");
@@ -674,51 +621,15 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-
-    /**
-     * 최근 업데이트된 사용자 조회
-     */
-    @LogExecutionTime
-    public List<UserDto> getRecentlyUpdatedUsers(int days) {
-        log.info("최근 업데이트된 사용자 조회: {}일 이내", days);
-        
-        LocalDateTime dateTime = LocalDateTime.now().minusDays(days);
-        List<User> users = userRepository.findByUpdatedAtAfterAndDeletedAtIsNull(dateTime);
-        return users.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 활성 사용자 수 조회
-     */
-    @LogExecutionTime
-    public long getActiveUserCount() {
-        log.info("활성 사용자 수 조회");
-        
-        return userRepository.countActiveUsersNotDeleted();
-    }
-
-    /**
-     * 이메일 인증된 사용자 수 조회
-     */
-    @LogExecutionTime
-    public long getEmailVerifiedUserCount() {
-        log.info("이메일 인증된 사용자 수 조회");
-        
-        return userRepository.countEmailVerifiedUsersNotDeleted();
-    }
-
-    /**
-     * OAuth 제공자별 사용자 조회
-     */
-    @LogExecutionTime
-    public List<UserDto> getUsersByProvider(String provider) {
-        log.info("OAuth 제공자별 사용자 조회: 제공자={}", provider);
-        
-        List<User> users = userRepository.findByProviderAndDeletedAtIsNull(provider);
-        return users.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
+    // 최근 업데이트된 사용자 조회 ->  나중에 사용
+    //    @LogExecutionTime
+    //    public List<UserDto> getRecentlyUpdatedUsers(int days) {
+    //        log.info("최근 업데이트된 사용자 조회: {}일 이내", days);
+    //
+    //        LocalDateTime dateTime = LocalDateTime.now().minusDays(days);
+    //        List<User> users = userRepository.findByUpdatedAtAfterAndDeletedAtIsNull(dateTime);
+    //        return users.stream()
+    //                .map(this::convertToDto)
+    //                .collect(Collectors.toList());
+    //    }
 } 
