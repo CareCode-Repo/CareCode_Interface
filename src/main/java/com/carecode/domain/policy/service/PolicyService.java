@@ -6,7 +6,6 @@ import com.carecode.core.exception.PolicyNotFoundException;
 import com.carecode.core.util.SortUtil;
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
 import com.carecode.domain.policy.entity.Policy;
-import com.carecode.domain.policy.entity.PolicyCategory;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.policy.mapper.PolicyMapper;
 import com.carecode.domain.policy.dto.response.PolicyListResponse;
@@ -14,7 +13,11 @@ import com.carecode.domain.policy.dto.response.PolicyInfoResponse;
 import com.carecode.domain.policy.dto.response.PolicyStatsSimpleResponse;
 import com.carecode.domain.policy.dto.response.PolicyCategoryStatsResponse;
 import com.carecode.domain.policy.dto.response.PolicyDto;
-import com.carecode.domain.policy.repository.PolicyCategoryRepository;
+import com.carecode.domain.policy.dto.response.PolicyBookmarkResponse;
+import com.carecode.domain.policy.entity.PolicyBookmark;
+import com.carecode.domain.policy.repository.PolicyBookmarkRepository;
+import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -38,7 +41,8 @@ import java.util.stream.Collectors;
 public class PolicyService {
 
     private final PolicyRepository policyRepository;
-    private final PolicyCategoryRepository policyCategoryRepository;
+    private final PolicyBookmarkRepository policyBookmarkRepository;
+    private final UserRepository userRepository;
     private final PolicyMapper policyMapper;
 
 
@@ -190,14 +194,15 @@ public class PolicyService {
     }
 
 
-    // 정책 조회수 증가 (현재는 구현하지 않음 - viewCount 필드가 없음)
-
     @Transactional
     public void incrementViewCount(Long policyId) {
         log.info("정책 조회수 증가: 정책ID={}", policyId);
-        
-        // viewCount 필드가 엔티티에 없으므로 현재는 로그만 출력
-        // 추후 viewCount 필드 추가 시 구현
+        Policy policy = policyRepository.findById(policyId)
+                .orElseThrow(() -> new PolicyNotFoundException("정책을 찾을 수 없습니다: " + policyId));
+
+        int currentViewCount = policy.getViewCount() != null ? policy.getViewCount() : 0;
+        policy.setViewCount(currentViewCount + 1);
+        policyRepository.save(policy);
     }
 
 
@@ -252,6 +257,52 @@ public class PolicyService {
         return policies.stream()
                 .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public PolicyBookmarkResponse addBookmark(String userIdOrEmail, Long policyId) {
+        User user = resolveUser(userIdOrEmail);
+        Policy policy = policyRepository.findById(policyId)
+                .orElseThrow(() -> new PolicyNotFoundException("정책을 찾을 수 없습니다: " + policyId));
+
+        PolicyBookmark bookmark = policyBookmarkRepository.findByUserAndPolicy(user, policy)
+                .orElseGet(() -> policyBookmarkRepository.save(
+                        PolicyBookmark.builder().user(user).policy(policy).build()
+                ));
+
+        return toBookmarkResponse(bookmark);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PolicyBookmarkResponse> getBookmarks(String userIdOrEmail) {
+        User user = resolveUser(userIdOrEmail);
+        return policyBookmarkRepository.findByUserOrderByCreatedAtDesc(user).stream()
+                .map(this::toBookmarkResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void removeBookmark(String userIdOrEmail, Long policyId) {
+        User user = resolveUser(userIdOrEmail);
+        Policy policy = policyRepository.findById(policyId)
+                .orElseThrow(() -> new PolicyNotFoundException("정책을 찾을 수 없습니다: " + policyId));
+        policyBookmarkRepository.deleteByUserAndPolicy(user, policy);
+    }
+
+    private User resolveUser(String userIdOrEmail) {
+        return userRepository.findByUserId(userIdOrEmail)
+                .or(() -> userRepository.findByEmailAndDeletedAtIsNull(userIdOrEmail))
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userIdOrEmail));
+    }
+
+    private PolicyBookmarkResponse toBookmarkResponse(PolicyBookmark bookmark) {
+        return PolicyBookmarkResponse.builder()
+                .policyId(String.valueOf(bookmark.getPolicy().getId()))
+                .userId(bookmark.getUser().getUserId())
+                .title(bookmark.getPolicy().getTitle())
+                .category(bookmark.getPolicy().getPolicyType())
+                .bookmarkedAt(bookmark.getCreatedAt())
+                .build();
     }
 
     
