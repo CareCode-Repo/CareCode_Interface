@@ -4,7 +4,6 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.chatbot.dto.request.ChatbotRequestDto;
 import com.carecode.domain.chatbot.dto.request.ChatbotMessageRequest;
 import com.carecode.domain.chatbot.dto.response.ChatbotMessageResponse;
 import com.carecode.domain.chatbot.dto.response.ChatbotChatHistoryDtoResponse;
@@ -41,9 +40,9 @@ public class ChatbotController extends BaseController {
     private final ChatbotService chatbotService;
     private final ChatbotFacade chatbotFacade;
 
-    /**
-     * 챗봇 메시지 전송
-     */
+
+    // 챗봇 메시지 전송
+
     @PostMapping("/chat")
     @LogExecutionTime
     @Operation(summary = "챗봇 메시지 전송", description = "챗봇과 대화를 시작합니다.")
@@ -63,9 +62,9 @@ public class ChatbotController extends BaseController {
         }
     }
 
-    /**
-     * 대화 기록 조회
-     */
+
+    // 대화 기록 조회
+
     @GetMapping("/history")
     @LogExecutionTime
     @Operation(summary = "대화 기록 조회", description = "사용자의 챗봇 대화 기록을 조회합니다.")
@@ -85,9 +84,9 @@ public class ChatbotController extends BaseController {
         }
     }
 
-    /**
-     * 세션 목록 조회
-     */
+
+    // 세션 목록 조회
+
     @GetMapping("/sessions")
     @LogExecutionTime
     @Operation(summary = "세션 목록 조회", description = "사용자의 챗봇 세션 목록을 조회합니다.")
@@ -106,9 +105,9 @@ public class ChatbotController extends BaseController {
         }
     }
 
-    /**
-     * 메시지 피드백 처리
-     */
+
+    // 메시지 피드백 처리
+
     @PostMapping("/feedback")
     @LogExecutionTime
     @Operation(summary = "메시지 피드백 처리", description = "챗봇 메시지에 대한 피드백을 처리합니다.")
@@ -134,9 +133,9 @@ public class ChatbotController extends BaseController {
 
     // ==================== 챗봇 필터링 기능 ====================
 
-    /**
-     * 의도 타입별 메시지 조회
-     */
+
+    // 의도 타입별 메시지 조회
+
     @GetMapping("/messages/intent")
     @LogExecutionTime
     @RequireAuthentication
@@ -149,9 +148,9 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(messages);
     }
 
-    /**
-     * 기간별 메시지 조회
-     */
+
+    // 기간별 메시지 조회
+
     @GetMapping("/messages/date-range")
     @LogExecutionTime
     @RequireAuthentication
@@ -165,9 +164,9 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(messages);
     }
 
-    /**
-     * 도움됨 여부별 메시지 조회
-     */
+
+    // 도움됨 여부별 메시지 조회
+
     @GetMapping("/messages/helpful")
     @LogExecutionTime
     @RequireAuthentication
@@ -179,9 +178,9 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(messages);
     }
 
-    /**
-     * 키워드로 메시지 검색
-     */
+
+    // 키워드로 메시지 검색
+
     @GetMapping("/messages/search")
     @LogExecutionTime
     @RequireAuthentication
@@ -193,9 +192,9 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(messages);
     }
 
-    /**
-     * 상태별 세션 조회
-     */
+
+    // 상태별 세션 조회
+
     @GetMapping("/sessions/status")
     @LogExecutionTime
     @RequireAuthentication
@@ -208,9 +207,9 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(sessions);
     }
 
-    /**
-     * 기간별 세션 조회
-     */
+
+    // 기간별 세션 조회
+
     @GetMapping("/sessions/date-range")
     @LogExecutionTime
     @RequireAuthentication
@@ -224,9 +223,9 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(sessions);
     }
 
-    /**
-     * 사용자별 세션 수 조회
-     */
+
+    // 사용자별 세션 수 조회
+
     @GetMapping("/sessions/count")
     @LogExecutionTime
     @RequireAuthentication
