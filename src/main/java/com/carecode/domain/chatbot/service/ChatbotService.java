@@ -10,8 +10,9 @@ import com.carecode.domain.chatbot.entity.ChatMessage;
 import com.carecode.domain.chatbot.entity.ChatSession;
 import com.carecode.domain.chatbot.repository.ChatMessageRepository;
 import com.carecode.domain.chatbot.repository.ChatSessionRepository;
+import com.carecode.domain.careFacility.repository.CareFacilityRepository;
+import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.entity.UserRole;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,8 @@ public class ChatbotService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatSessionRepository chatSessionRepository;
     private final UserRepository userRepository;
+    private final PolicyRepository policyRepository;
+    private final CareFacilityRepository careFacilityRepository;
 
     // 의도 분석을 위한 키워드 패턴
     private static final Map<ChatMessage.IntentType, List<Pattern>> INTENT_PATTERNS = new HashMap<>();
@@ -108,9 +111,8 @@ public class ChatbotService {
         log.info("챗봇 메시지 처리: 사용자ID={}, 메시지={}", request.getUserId(), request.getMessage());
         
         try {
-            // 사용자 조회 (없으면 임시 사용자 생성)
-            User user = userRepository.findByUserId(request.getUserId())
-                    .orElseGet(() -> createTemporaryUser(request.getUserId()));
+            // 인증 기반 사용자만 허용
+            User user = resolveUser(request.getUserId());
             
             // 세션 관리
             ChatSession session = getOrCreateSession(user, request.getSessionId());
@@ -155,14 +157,13 @@ public class ChatbotService {
         log.info("대화 기록 조회: 사용자ID={}, 세션ID={}", userId, sessionId);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseGet(() -> createTemporaryUser(userId));
+            User user = resolveUser(userId);
             
             Pageable pageable = PageRequest.of(page, size);
             Page<ChatMessage> messages;
             
             if (sessionId != null && !sessionId.isEmpty()) {
-                messages = chatMessageRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+                messages = chatMessageRepository.findByUserAndSessionIdOrderByCreatedAtDesc(user, sessionId, pageable);
             } else {
                 messages = chatMessageRepository.findByUserOrderByCreatedAtDesc(user, pageable);
             }
@@ -185,8 +186,7 @@ public class ChatbotService {
         log.info("세션 목록 조회: 사용자ID={}", userId);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseGet(() -> createTemporaryUser(userId));
+            User user = resolveUser(userId);
             
             Pageable pageable = PageRequest.of(page, size);
             Page<ChatSession> sessions = chatSessionRepository.findByUserOrderByCreatedAtDesc(user, pageable);
@@ -230,8 +230,7 @@ public class ChatbotService {
         log.info("의도 타입별 메시지 조회: 사용자ID={}, 의도타입={}", userId, intentType);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            User user = resolveUser(userId);
             
             List<ChatMessage> messages = chatMessageRepository.findByUserAndIntentTypeOrderByCreatedAtDesc(user, intentType);
             
@@ -252,8 +251,7 @@ public class ChatbotService {
         log.info("기간별 메시지 조회: 사용자ID={}, 시작일={}, 종료일={}", userId, startDate, endDate);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            User user = resolveUser(userId);
             
             List<ChatMessage> messages = chatMessageRepository.findByUserAndDateRange(user, startDate, endDate);
             
@@ -274,8 +272,7 @@ public class ChatbotService {
         log.info("도움됨 여부별 메시지 조회: 사용자ID={}, 도움됨={}", userId, isHelpful);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            User user = resolveUser(userId);
             
             List<ChatMessage> messages = chatMessageRepository.findByUserAndIsHelpfulOrderByCreatedAtDesc(user, isHelpful);
             
@@ -296,8 +293,7 @@ public class ChatbotService {
         log.info("키워드로 메시지 검색: 사용자ID={}, 키워드={}", userId, keyword);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            User user = resolveUser(userId);
             
             List<ChatMessage> messages = chatMessageRepository.findByUserAndKeyword(user, keyword);
             
@@ -318,8 +314,7 @@ public class ChatbotService {
         log.info("상태별 세션 조회: 사용자ID={}, 상태={}", userId, status);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            User user = resolveUser(userId);
             
             List<ChatSession> sessions = chatSessionRepository.findByUserAndStatusOrderByCreatedAtDesc(user, status);
             
@@ -340,8 +335,7 @@ public class ChatbotService {
         log.info("기간별 세션 조회: 사용자ID={}, 시작일={}, 종료일={}", userId, startDate, endDate);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            User user = resolveUser(userId);
             
             List<ChatSession> sessions = chatSessionRepository.findByUserAndDateRange(user, startDate, endDate);
             
@@ -362,8 +356,7 @@ public class ChatbotService {
         log.info("사용자별 세션 수 조회: 사용자ID={}", userId);
         
         try {
-            User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+            User user = resolveUser(userId);
             
             return chatSessionRepository.countByUser(user);
         } catch (Exception e) {
@@ -403,31 +396,16 @@ public class ChatbotService {
     }
 
 
-    // 임시 사용자 생성
-
-    private User createTemporaryUser(String userId) {
-        log.info("임시 사용자 생성: 사용자ID={}", userId);
-        
-        User temporaryUser = User.builder()
-                .userId(userId)
-                .name("게스트 사용자")
-                .email("guest@" + userId + ".temp")
-                .password("temp_password_123") // 임시 비밀번호 설정
-                .phoneNumber("000-0000-0000")
-                .role(UserRole.GUEST)
-                .isActive(true)
-                .emailVerified(false)
-                .createdAt(LocalDateTime.now())
-                .build();
-        
-        return userRepository.save(temporaryUser);
-    }
-
-
     // 세션 ID 생성
 
     private String generateSessionId() {
         return "session_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    private User resolveUser(String userIdOrEmail) {
+        return userRepository.findByUserId(userIdOrEmail)
+                .or(() -> userRepository.findByEmail(userIdOrEmail))
+                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userIdOrEmail));
     }
 
 
@@ -549,12 +527,16 @@ public class ChatbotService {
     // 정책 정보 응답 생성
 
     private String generatePolicyInfoResponse(String message) {
+        String topPolicies = policyRepository.findPopularPolicies(PageRequest.of(0, 3)).stream()
+                .map(p -> "- " + p.getTitle())
+                .collect(Collectors.joining("\n"));
+
         if (message.contains("보조금") || message.contains("지원금")) {
-            return "육아 지원금과 보조금에 관한 정보를 제공해드릴 수 있습니다. 연령, 소득, 지역에 따라 지원 내용이 다를 수 있으니 구체적인 상황을 알려주시면 더 정확한 정보를 제공해드릴 수 있습니다.";
+            return "육아 지원금과 보조금 정보를 확인해드릴 수 있어요.\n최근 인기 정책:\n" + topPolicies;
         } else if (message.contains("신청") || message.contains("혜택")) {
-            return "다양한 육아 지원 정책과 혜택이 있습니다. 어린이집 지원, 양육수당, 교육비 지원 등이 있으니 구체적으로 어떤 혜택에 대해 알고 싶으신지 말씀해 주세요.";
+            return "신청 가능한 육아 지원 정책을 안내해드릴게요.\n최근 인기 정책:\n" + topPolicies;
         } else {
-            return "육아 관련 정책과 지원 제도에 관한 정보를 제공해드릴 수 있습니다. 보조금, 지원금, 혜택 등 어떤 부분에 대해 알고 싶으신가요?";
+            return "육아 관련 정책과 지원 제도를 안내해드릴게요.\n최근 인기 정책:\n" + topPolicies;
         }
     }
 
@@ -562,12 +544,16 @@ public class ChatbotService {
     // 시설 정보 응답 생성
 
     private String generateFacilityInfoResponse(String message) {
+        String topFacilities = careFacilityRepository.findPopularFacilities(PageRequest.of(0, 3)).stream()
+                .map(f -> "- " + f.getName())
+                .collect(Collectors.joining("\n"));
+
         if (message.contains("어린이집") || message.contains("유치원")) {
-            return "어린이집과 유치원 정보를 제공해드릴 수 있습니다. 위치, 운영시간, 정원, 특별활동 등 구체적으로 어떤 정보가 필요하신가요?";
+            return "어린이집/유치원 정보를 안내해드릴 수 있어요.\n추천 시설:\n" + topFacilities;
         } else if (message.contains("위치") || message.contains("주소")) {
-            return "주변 육아 시설의 위치와 주소 정보를 찾아드릴 수 있습니다. 어느 지역의 시설을 찾고 계신가요?";
+            return "주변 육아 시설의 위치 정보를 도와드릴게요.\n추천 시설:\n" + topFacilities;
         } else {
-            return "육아 관련 시설 정보를 제공해드릴 수 있습니다. 어린이집, 유치원, 놀이터, 도서관 등 어떤 시설에 대해 알고 싶으신가요?";
+            return "육아 관련 시설 정보를 안내해드릴게요.\n추천 시설:\n" + topFacilities;
         }
     }
 
