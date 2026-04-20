@@ -150,34 +150,34 @@ public class CareFacilityBooking {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    /**
-     * 예약 취소
-     */
+
+    // 예약 취소
+
     public void cancel(String reason) {
         this.status = BookingStatus.CANCELLED;
         this.cancellationReason = reason;
         this.cancelledAt = LocalDateTime.now();
     }
 
-    /**
-     * 예약 확정
-     */
+
+    // 예약 확정
+
     public void confirm() {
         this.status = BookingStatus.CONFIRMED;
     }
 
-    /**
-     * 예약 완료
-     */
+
+    // 예약 완료
+
     public void complete() {
         this.status = BookingStatus.COMPLETED;
         this.actualStartTime = this.startTime;
         this.actualEndTime = this.endTime;
     }
 
-    /**
-     * 예약 유형 열거형
-     */
+
+    // 예약 유형 열거형
+
     public enum BookingType {
         VISIT("방문"),
         REGULAR("정기"),
@@ -194,9 +194,9 @@ public class CareFacilityBooking {
         }
     }
 
-    /**
-     * 예약 상태 열거형
-     */
+
+    // 예약 상태 열거형
+
     public enum BookingStatus {
         PENDING("대기중"),
         CONFIRMED("확정"),
