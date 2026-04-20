@@ -74,9 +74,9 @@ public class LoggingAspect {
         }
     }
     
-    /**
-     * 메서드 인자를 문자열로 포맷팅
-     */
+
+    // 메서드 인자를 문자열로 포맷팅
+
     private String formatArgs(Object[] args) {
         if (args == null || args.length == 0) {
             return "[]";
