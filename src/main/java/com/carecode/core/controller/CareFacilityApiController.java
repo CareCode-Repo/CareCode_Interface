@@ -35,9 +35,9 @@ public class CareFacilityApiController {
     private final CareFacilityRepository careFacilityRepository;
     private FacilityType facilityType;
 
-    /**
-     * 전체 보육시설 정보 동기화 (모든 데이터)
-     */
+
+    // 전체 보육시설 정보 동기화 (모든 데이터)
+
     @PostMapping("/sync-all")
     @Operation(summary = "전체 보육시설 정보 동기화", description = "공공데이터에서 모든 보육시설 정보를 조회하고 DB에 저장합니다.")
     public ResponseEntity<Map<String, Object>> syncAllChildcareFacilities(
@@ -146,9 +146,9 @@ public class CareFacilityApiController {
         }
     }
 
-    /**
-     * Swagger UI용 간단한 보육시설 동기화 (GET 방식)
-     */
+
+    // Swagger UI용 간단한 보육시설 동기화 (GET 방식)
+
     @GetMapping("/swagger/sync")
     @Operation(summary = "Swagger용 보육시설 동기화", description = "Swagger UI에서 쉽게 테스트할 수 있는 GET 방식 동기화")
     public ResponseEntity<Map<String, Object>> swaggerSync() {
@@ -167,9 +167,9 @@ public class CareFacilityApiController {
         }
     }
 
-    /**
-     * DB 저장된 보육시설 목록 조회
-     */
+
+    // DB 저장된 보육시설 목록 조회
+
     @GetMapping("/swagger/db-facilities")
     @Operation(summary = "DB 저장된 보육시설 목록", description = "DB에 저장된 보육시설 목록을 조회합니다")
     public ResponseEntity<Map<String, Object>> swaggerGetDbFacilities(
@@ -205,9 +205,9 @@ public class CareFacilityApiController {
         }
     }
 
-    /**
-     * 보육시설 통계
-     */
+
+    // 보육시설 통계
+
     @GetMapping("/swagger/stats")
     @Operation(summary = "보육시설 통계", description = "DB에 저장된 보육시설 통계 정보를 조회합니다")
     public ResponseEntity<Map<String, Object>> swaggerGetStats() {
@@ -232,9 +232,9 @@ public class CareFacilityApiController {
         }
     }
 
-    /**
-     * 공공데이터로부터 새로운 CareFacility 엔티티 생성
-     */
+
+    // 공공데이터로부터 새로운 CareFacility 엔티티 생성
+
     private CareFacility createCareFacilityFromPublicData(Map<String, Object> facilityData) {
         try {
             return CareFacility.builder()
@@ -262,9 +262,9 @@ public class CareFacilityApiController {
         }
     }
 
-    /**
-     * 기존 CareFacility 엔티티를 공공데이터로 업데이트
-     */
+
+    // 기존 CareFacility 엔티티를 공공데이터로 업데이트
+
     private void updateCareFacilityFromPublicData(CareFacility existingFacility, Map<String, Object> facilityData) {
         try {
             existingFacility.setName((String) facilityData.get("facilityName"));
@@ -288,9 +288,9 @@ public class CareFacilityApiController {
         }
     }
 
-    /**
-     * 서비스 타입을 FacilityType으로 매핑
-     */
+
+    // 서비스 타입을 FacilityType으로 매핑
+
     private FacilityType mapServiceTypeToFacilityType(String serviceType) {
         if (serviceType == null) {
             return FacilityType.OTHER;
@@ -310,9 +310,9 @@ public class CareFacilityApiController {
         }
     }
 
-    /**
-     * 운영시간 정보 포맷팅
-     */
+
+    // 운영시간 정보 포맷팅
+
     private String formatOperatingHours(Map<String, Object> facilityData) {
         StringBuilder hours = new StringBuilder();
         
@@ -338,9 +338,9 @@ public class CareFacilityApiController {
         return hours.toString();
     }
 
-    /**
-     * 시설 설명 생성
-     */
+
+    // 시설 설명 생성
+
     private String generateDescription(Map<String, Object> facilityData) {
         StringBuilder description = new StringBuilder();
         
@@ -368,9 +368,9 @@ public class CareFacilityApiController {
         return description.toString();
     }
 
-    /**
-     * Double 파싱 헬퍼 메서드
-     */
+
+    // Double 파싱 헬퍼 메서드
+
     private Double parseDouble(Object value) {
         if (value == null || value.toString().trim().isEmpty()) {
             return null;
@@ -383,9 +383,9 @@ public class CareFacilityApiController {
         }
     }
 
-    /**
-     * Integer 파싱 헬퍼 메서드
-     */
+
+    // Integer 파싱 헬퍼 메서드
+
     private Integer parseInteger(Object value) {
         if (value == null || value.toString().trim().isEmpty()) {
             return null;
