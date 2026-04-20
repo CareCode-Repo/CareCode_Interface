@@ -4,19 +4,18 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.CareServiceException;
-import com.carecode.domain.notification.dto.request.NotificationRequest;
 import com.carecode.domain.notification.dto.request.NotificationCreateRequest;
 import com.carecode.domain.notification.dto.request.NotificationMarkAsReadRequest;
 import com.carecode.domain.notification.dto.request.NotificationRegisterPushTokenRequest;
 import com.carecode.domain.notification.dto.request.NotificationUpdateSettingsRequest;
 import com.carecode.domain.notification.dto.request.NotificationSendTestRequest;
-import com.carecode.domain.notification.dto.response.NotificationResponse;
 import com.carecode.domain.notification.dto.response.NotificationInfoResponse;
 import com.carecode.domain.notification.dto.response.NotificationSettingsResponse;
 import com.carecode.domain.notification.dto.response.NotificationStatsResponse;
 import com.carecode.domain.notification.dto.response.NotificationTemplateResponse;
 import com.carecode.domain.notification.dto.response.NotificationDeliveryStatusResponse;
 import com.carecode.domain.notification.app.NotificationFacade;
+import com.carecode.domain.notification.entity.Notification;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -29,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import com.carecode.core.handler.ApiSuccess;
 import java.util.Date;
@@ -47,9 +47,9 @@ public class NotificationController extends BaseController {
 
     private final NotificationFacade notificationFacade;
 
-    /**
-     * 알림 목록 조회
-     */
+
+    // 알림 목록 조회
+
     @GetMapping
     @LogExecutionTime
     @RequireAuthentication
@@ -59,9 +59,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(notifications);
     }
 
-    /**
-     * 알림 상세 조회
-     */
+
+    // 알림 상세 조회
+
     @GetMapping("/{notificationId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -73,9 +73,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(notification);
     }
 
-    /**
-     * 알림 생성
-     */
+
+    // 알림 생성
+
     @PostMapping
     @LogExecutionTime
     @RequireAuthentication
@@ -87,9 +87,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(notification);
     }
 
-    /**
-     * 알림 수정
-     */
+
+    // 알림 수정
+
     @PutMapping("/{notificationId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -102,9 +102,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(notification);
     }
 
-    /**
-     * 알림 삭제
-     */
+
+    // 알림 삭제
+
     @DeleteMapping("/{notificationId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -116,9 +116,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림이 삭제되었습니다.").build());
     }
 
-    /**
-     * 알림 읽음 처리
-     */
+
+    // 알림 읽음 처리
+
     @PutMapping("/{notificationId}/read")
     @LogExecutionTime
     @RequireAuthentication
@@ -130,9 +130,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림이 읽음 처리되었습니다.").build());
     }
 
-    /**
-     * 모든 알림 읽음 처리
-     */
+
+    // 모든 알림 읽음 처리
+
     @PutMapping("/read-all")
     @LogExecutionTime
     @RequireAuthentication
@@ -144,9 +144,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("모든 알림이 읽음 처리되었습니다.").build());
     }
 
-    /**
-     * 읽지 않은 알림 조회
-     */
+
+    // 읽지 않은 알림 조회
+
     @GetMapping("/unread")
     @LogExecutionTime
     @RequireAuthentication
@@ -158,9 +158,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(notifications);
     }
 
-    /**
-     * 알림 설정 조회
-     */
+
+    // 알림 설정 조회
+
     @GetMapping("/settings/{userId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -172,9 +172,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(settings);
     }
 
-    /**
-     * 알림 설정 업데이트
-     */
+
+    // 알림 설정 업데이트
+
     @PutMapping("/settings/{userId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -187,9 +187,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(updatedSettings);
     }
 
-    /**
-     * 알림 통계 조회
-     */
+
+    // 알림 통계 조회
+
     @GetMapping("/statistics/{userId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -201,9 +201,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(statistics);
     }
 
-    /**
-     * 알림 설정 목록 조회
-     */
+
+    // 알림 설정 목록 조회
+
     @GetMapping("/preferences")
     @LogExecutionTime
     @RequireAuthentication
@@ -215,9 +215,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(preferences);
     }
 
-    /**
-     * 특정 알림 타입 설정 조회
-     */
+
+    // 특정 알림 타입 설정 조회
+
     @GetMapping("/preferences/{notificationType}")
     @LogExecutionTime
     @RequireAuthentication
@@ -229,9 +229,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(preference);
     }
 
-    /**
-     * 전체 알림 설정 업데이트
-     */
+
+    // 전체 알림 설정 업데이트
+
     @PutMapping("/preferences")
     @LogExecutionTime
     @RequireAuthentication
@@ -244,9 +244,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(updatedPreference);
     }
 
-    /**
-     * 알림 설정 저장
-     */
+
+    // 알림 설정 저장
+
     @PostMapping("/preferences")
     @LogExecutionTime
     @RequireAuthentication
@@ -259,9 +259,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(savedPreference);
     }
 
-    /**
-     * 채널별 설정 업데이트
-     */
+
+    // 채널별 설정 업데이트
+
     @PutMapping("/preferences/{notificationType}/channels/{channel}")
     @LogExecutionTime
     @RequireAuthentication
@@ -276,9 +276,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(updatedPreference);
     }
 
-    /**
-     * 모든 알림 설정 비활성화
-     */
+
+    // 모든 알림 설정 비활성화
+
     @PutMapping("/preferences/disable-all")
     @LogExecutionTime
     @RequireAuthentication
@@ -290,9 +290,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("모든 알림 설정이 비활성화되었습니다.").build());
     }
 
-    /**
-     * 알림 설정 기본값으로 초기화
-     */
+
+    // 알림 설정 기본값으로 초기화
+
     @PutMapping("/preferences/reset")
     @LogExecutionTime
     @RequireAuthentication
@@ -304,9 +304,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림 설정이 기본값으로 초기화되었습니다.").build());
     }
 
-    /**
-     * 알림 읽음 처리
-     */
+
+    // 알림 읽음 처리
+
     @PutMapping("/mark-read")
     @LogExecutionTime
     @RequireAuthentication
@@ -318,9 +318,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림이 읽음으로 처리되었습니다.").build());
     }
 
-    /**
-     * 푸시 알림 토큰 등록
-     */
+
+    // 푸시 알림 토큰 등록
+
     @PostMapping("/push-token")
     @LogExecutionTime
     @RequireAuthentication
@@ -333,9 +333,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("푸시 알림 토큰이 등록되었습니다.").build());
     }
 
-    /**
-     * 알림 설정 수정
-     */
+
+    // 알림 설정 수정
+
     @PutMapping("/settings")
     @LogExecutionTime
     @RequireAuthentication
@@ -348,9 +348,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림 설정이 수정되었습니다.").build());
     }
 
-    /**
-     * 테스트 알림 발송
-     */
+
+    // 테스트 알림 발송
+
     @PostMapping("/test")
     @LogExecutionTime
     @RequireAuthentication
@@ -363,9 +363,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("테스트 알림이 발송되었습니다.").build());
     }
 
-    /**
-     * 알림 통계 조회
-     */
+
+    // 알림 통계 조회
+
     @GetMapping("/stats")
     @LogExecutionTime
     @RequireAuthentication
@@ -377,9 +377,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(stats);
     }
 
-    /**
-     * 알림 템플릿 조회
-     */
+
+    // 알림 템플릿 조회
+
     @GetMapping("/templates")
     @LogExecutionTime
     @RequireAuthentication
@@ -391,9 +391,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(templates);
     }
 
-    /**
-     * 알림 전송 상태 조회
-     */
+
+    // 알림 전송 상태 조회
+
     @GetMapping("/delivery-status/{notificationId}")
     @LogExecutionTime
     @RequireAuthentication
@@ -407,9 +407,9 @@ public class NotificationController extends BaseController {
 
     // ==================== 알림 필터링 기능 ====================
 
-    /**
-     * 알림 타입별 조회
-     */
+
+    // 알림 타입별 조회
+
     @GetMapping("/type")
     @LogExecutionTime
     @RequireAuthentication
@@ -418,13 +418,13 @@ public class NotificationController extends BaseController {
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "알림 타입 (SYSTEM, POLICY, FACILITY, COMMUNITY, CHATBOT, HEALTH)", required = true) @RequestParam String notificationType) {
         List<NotificationInfoResponse> notifications = notificationFacade.getNotificationsByType(
-                userId, com.carecode.domain.notification.entity.Notification.NotificationType.valueOf(notificationType));
+                userId, Notification.NotificationType.valueOf(notificationType));
         return ResponseEntity.ok(notifications);
     }
 
-    /**
-     * 기간별 알림 조회
-     */
+
+    // 기간별 알림 조회
+
     @GetMapping("/date-range")
     @LogExecutionTime
     @RequireAuthentication
@@ -434,13 +434,13 @@ public class NotificationController extends BaseController {
             @Parameter(description = "시작일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String startDate,
             @Parameter(description = "종료일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String endDate) {
         List<NotificationInfoResponse> notifications = notificationFacade.getNotificationsByDateRange(
-                userId, java.time.LocalDateTime.parse(startDate), java.time.LocalDateTime.parse(endDate));
+                userId, LocalDateTime.parse(startDate), LocalDateTime.parse(endDate));
         return ResponseEntity.ok(notifications);
     }
 
-    /**
-     * 사용자별 전체 알림 개수 조회
-     */
+
+    // 사용자별 전체 알림 개수 조회
+
     @GetMapping("/count")
     @LogExecutionTime
     @RequireAuthentication
@@ -453,9 +453,9 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 읽음 상태별 알림 개수 조회
-     */
+
+    // 읽음 상태별 알림 개수 조회
+
     @GetMapping("/count-by-status")
     @LogExecutionTime
     @RequireAuthentication
