@@ -45,9 +45,9 @@ public class AuthController extends BaseController {
 
     // ==================== 일반 로그인 ====================
 
-    /**
-     * 일반 로그인
-     */
+
+    // 일반 로그인
+
     @PostMapping("/login")
     @LogExecutionTime(warnThreshold = 1000)
     @RateLimit(requests = 5, windowSeconds = 60, message = "로그인 시도 횟수를 초과했습니다. 1분 후 다시 시도해주세요.")
@@ -141,9 +141,8 @@ public class AuthController extends BaseController {
 
     // ==================== 토큰 관리 ====================
 
-    /**
-     * 토큰 갱신
-     */
+    // 토큰 갱신
+
     @PostMapping("/refresh")
     @LogExecutionTime
     @Operation(summary = "토큰 갱신", description = "Refresh Token을 사용하여 새로운 Access Token을 발급합니다.")
