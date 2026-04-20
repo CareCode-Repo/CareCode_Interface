@@ -12,9 +12,9 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ApiVersion {
-    /**
-     * API 버전 (예: "v1", "v2")
-     */
+
+    // API 버전 (예: "v1", "v2")
+
     String value();
 }
 
