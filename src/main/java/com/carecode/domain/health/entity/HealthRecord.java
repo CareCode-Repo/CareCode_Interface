@@ -136,17 +136,17 @@ public class HealthRecord {
         updatedAt = LocalDateTime.now();
     }
     
-    /**
-     * 기록 완료 처리
-     */
+
+    // 기록 완료 처리
+
     public void markAsCompleted() {
         this.isCompleted = true;
         this.status = RecordStatus.COMPLETED;
     }
     
-    /**
-     * 기록 상태 업데이트
-     */
+
+    // 기록 상태 업데이트
+
     public void updateStatus(RecordStatus status) {
         this.status = status;
         if (status == RecordStatus.COMPLETED) {
@@ -154,9 +154,9 @@ public class HealthRecord {
         }
     }
     
-    /**
-     * 기록 내용 업데이트
-     */
+
+    // 기록 내용 업데이트
+
     public void updateRecord(LocalDate recordDate,
                              Double height, Double weight, Double temperature,
                              String bloodPressure, Integer pulseRate, String notes) {
@@ -174,9 +174,9 @@ public class HealthRecord {
         this.notes = notes;
     }
     
-    /**
-     * 기록 타입 Enum
-     */
+
+    // 기록 타입 Enum
+
     public enum RecordType {
         VACCINATION("예방접종"),
         CHECKUP("건강검진"),
@@ -198,9 +198,9 @@ public class HealthRecord {
         }
     }
     
-    /**
-     * 기록 상태 Enum
-     */
+
+    // 기록 상태 Enum
+
     public enum RecordStatus {
         SCHEDULED("예정"),
         IN_PROGRESS("진행중"),
