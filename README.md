@@ -170,7 +170,7 @@ CareCode Interface는 다음을 목표로 합니다:
 | 오케스트레이션 | Docker Compose | 멀티 컨테이너 관리 |
 | 리버스 프록시 | Nginx | HTTP/HTTPS 라우팅 |
 | 빌드 도구 | Gradle | 8.14.2 |
-| CI/CD | GitHub Actions | 자동화된 빌드 및 배포 |
+| CI/CD | GitHub Actions, CodeQL | 빌드·테스트·Trivy·Java 정적 분석(codeql.yml) |
 
 ### Monitoring & Logging
 
@@ -266,13 +266,16 @@ com.carecode.domain/
 
 **주요 API**:
 ```
-POST   /auth/login                  - 로그인
-POST   /auth/register               - 회원가입
-POST   /auth/refresh                  - 토큰 갱신
-GET    /auth/me                     - 현재 사용자 정보
-POST   /auth/logout                 - 로그아웃
-GET    /auth/kakao/callback         - 카카오 로그인 콜백
+POST   /auth/login                    - 일반 로그인 (응답: TokenDto JSON)
+POST   /auth/register                 - 회원가입 (응답: TokenDto JSON)
+POST   /auth/refresh                  - 액세스·리프레시 토큰 갱신
+POST   /auth/kakao/login              - 카카오 code 교환 (응답: TokenDto JSON, isNewUser 포함)
+GET    /auth/kakao/login-url          - 카카오 인가 URL (설정: KAKAO_CLIENT_ID, kakao.redirect-uri)
+POST   /auth/kakao/complete-registration - 카카오 가입 완료 (Bearer JWT)
+POST   /auth/logout                   - 로그아웃 (Bearer 필요, Redis 저장 시 해당 사용자 리프레시 토큰 전부 폐기)
 ```
+
+리프레시 토큰을 Redis에서 관리하려면 `jwt.refresh-token.store=redis`(또는 환경 변수 `JWT_REFRESH_TOKEN_STORE=redis`)와 동작 중인 Redis를 설정합니다. 기본값 `none`이면 JWT 서명 검증만 수행합니다.
 
 ### 2. CareFacility Domain (돌봄 시설)
 
@@ -492,7 +495,7 @@ docker-compose up carecode-mariadb carecode-redis -d
 
 ### 인증
 
-대부분의 API는 **JWT 토큰 인증**이 필요합니다.
+대부분의 API는 **JWT 토큰 인증**이 필요합니다. 토큰은 응답 **JSON 본문**(`TokenDto`: `accessToken`, `refreshToken`, `expiresIn` 등)으로 내려가며, 카카오 로그인도 동일합니다. 컨트롤러 단위 `@CrossOrigin`은 사용하지 않으며, 허용 오리진은 **`app.security.cors.allowed-origins`**(쉼표 구분)와 `SecurityConfig`의 CORS 설정만 따릅니다. `jwt.refresh-token.store=redis`이면 로그인·갱신 시 발급한 리프레시 토큰이 Redis에 등록되고, `/auth/refresh`는 등록된 토큰만 갱신하며 `POST /auth/logout`으로 해당 사용자의 리프레시 세션을 일괄 폐기할 수 있습니다(액세스 토큰 블랙리스트는 포함하지 않음).
 
 **헤더 예시**:
 ```
@@ -509,12 +512,16 @@ curl -X POST http://localhost/auth/login \
   }'
 ```
 
-**응답**:
+**응답**(요약 — 실제 필드는 `TokenDto` 및 `user` 객체 포함):
 ```json
 {
+  "success": true,
+  "message": "로그인 성공!",
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresIn": 3600
+  "tokenType": "Bearer",
+  "expiresIn": 3600000,
+  "refreshExpiresIn": 2592000000
 }
 ```
 
@@ -726,7 +733,7 @@ CareCode_Interface/
 
 - `@LogExecutionTime`: 실행 시간 로깅
 - `@RateLimit`: Rate Limiting (로그인 시도 제한)
-- `@RequireAuthentication`: 인증 필수
+- `@RequireAuthentication`: 인증 필수(일부 컨트롤러는 `SecurityConfig` + `@PreAuthorize("isAuthenticated()")`로 대체)
 - `@RequireAdminRole`: 관리자 권한 필수
 - `@ValidateLocation`: 지역 검증
 - `@ValidateChildAge`: 연령대 검증
