@@ -2,6 +2,11 @@ spring:
   application:
     name: CareCode
 
+  flyway:
+    enabled: false
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
   # 프로젝트 프로파일 직접 선택으로 변경
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}

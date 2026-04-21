@@ -1,4 +1,7 @@
 spring:
+  flyway:
+    enabled: false
+
   # Spring Batch 설정
   batch:
     job:
