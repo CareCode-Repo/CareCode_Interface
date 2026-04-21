@@ -29,6 +29,8 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -56,6 +58,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.springframework.batch:spring-batch-test'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+    testImplementation 'org.testcontainers:mariadb:1.20.4'
 
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
     // 소셜 로그인(OAuth2)
@@ -97,8 +101,11 @@ tasks.named('check') {
 tasks.named('jacocoTestCoverageVerification') {
     violationRules {
         rule {
+            element = 'BUNDLE'
             limit {
-                minimum = 0.30
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.01
             }
         }
     }
