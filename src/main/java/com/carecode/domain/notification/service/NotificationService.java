@@ -1,7 +1,9 @@
 package com.carecode.domain.notification.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.exception.BusinessException;
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ErrorCode;
 import com.carecode.domain.notification.dto.request.NotificationCreateRequest;
 import com.carecode.domain.notification.dto.request.NotificationMarkAsReadRequest;
 import com.carecode.domain.notification.dto.request.NotificationSendTestRequest;
@@ -29,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -71,12 +74,13 @@ public class NotificationService {
     // 알림 상세 조회
 
     @LogExecutionTime
-    public NotificationInfoResponse getNotificationById(Long notificationId) {
+    public NotificationInfoResponse getNotificationById(Long notificationId, String actorUserId) {
         log.info("알림 상세 조회 - 알림 ID: {}", notificationId);
         
         try {
             Notification notification = notificationRepository.findById(notificationId)
                     .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다: " + notificationId));
+            assertNotificationOwnedByUser(notification, actorUserId);
             
             return convertToResponseDto(notification);
         } catch (Exception e) {
@@ -89,11 +93,14 @@ public class NotificationService {
     // 알림 생성 (전략 패턴 사용)
 
     @Transactional
-    public NotificationInfoResponse createNotification(NotificationCreateRequest request) {
+    public NotificationInfoResponse createNotification(NotificationCreateRequest request, String actorUserId) {
         log.info("알림 생성 - 사용자 ID: {}, 타입: {}, 제목: {}", 
                 request.getUserId(), request.getNotificationType(), request.getTitle());
         
         try {
+            if (!Objects.equals(request.getUserId(), actorUserId)) {
+                throw new BusinessException(ErrorCode.FORBIDDEN, "다른 사용자를 대상으로 알림을 생성할 수 없습니다.");
+            }
             User user = userRepository.findByUserId(request.getUserId())
                     .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + request.getUserId()));
             
@@ -123,9 +130,10 @@ public class NotificationService {
     // 알림 수정
 
     @Transactional
-    public NotificationInfoResponse updateNotification(Long notificationId, NotificationCreateRequest request) {
+    public NotificationInfoResponse updateNotification(Long notificationId, NotificationCreateRequest request, String actorUserId) {
             Notification notification = notificationRepository.findById(notificationId)
                     .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다: " + notificationId));
+            assertNotificationOwnedByUser(notification, actorUserId);
             
             // 전략을 사용하여 알림 수정
             NotificationStrategy strategy = strategyFactory.getStrategy(request.getNotificationType());
@@ -147,9 +155,10 @@ public class NotificationService {
     // 알림 삭제
 
     @Transactional
-    public void deleteNotification(Long notificationId) {
+    public void deleteNotification(Long notificationId, String actorUserId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다: " + notificationId));
+        assertNotificationOwnedByUser(notification, actorUserId);
 
         notificationRepository.delete(notification);
     }
@@ -158,9 +167,10 @@ public class NotificationService {
     // 알림 읽음 처리
 
     @Transactional
-    public void markAsRead(Long notificationId) {
+    public void markAsRead(Long notificationId, String actorUserId) {
             Notification notification = notificationRepository.findById(notificationId)
                     .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다: " + notificationId));
+            assertNotificationOwnedByUser(notification, actorUserId);
             
             notification.markAsRead();
             notificationRepository.save(notification);
@@ -325,14 +335,14 @@ public class NotificationService {
 
     // 알림 읽음 처리
 
-    @Transactional
-    public void markAsRead(NotificationMarkAsReadRequest request) {
-        if (request.getMarkAllAsRead() != null && request.getMarkAllAsRead()) {
-            // 모든 알림을 읽음으로 처리
-            notificationRepository.markAllAsRead();
+    @Transactional(readOnly = false)
+    public void markAsRead(NotificationMarkAsReadRequest request, String actorUserId) {
+        User user = userRepository.findByUserId(actorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + actorUserId));
+        if (Boolean.TRUE.equals(request.getMarkAllAsRead())) {
+            notificationRepository.markAllAsReadForUser(user.getId());
         } else if (request.getNotificationIds() != null && !request.getNotificationIds().isEmpty()) {
-            // 특정 알림들을 읽음으로 처리
-            notificationRepository.markAsReadByIds(request.getNotificationIds());
+            notificationRepository.markAsReadByIdsForUser(request.getNotificationIds(), user.getId());
         }
     }
 
@@ -470,9 +480,10 @@ public class NotificationService {
     // 알림 전송 상태 조회
 
     @Transactional(readOnly = true)
-    public NotificationDeliveryStatusResponse getDeliveryStatus(Long notificationId) {
+    public NotificationDeliveryStatusResponse getDeliveryStatus(Long notificationId, String actorUserId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new CareServiceException("알림을 찾을 수 없습니다: " + notificationId));
+        assertNotificationOwnedByUser(notification, actorUserId);
 
         return NotificationDeliveryStatusResponse.builder()
                 .notificationId(notificationId)
@@ -482,5 +493,11 @@ public class NotificationService {
                 .deliveredAt(notification.getCreatedAt().toString())
                 .errorMessage(null)
                 .build();
+    }
+
+    private void assertNotificationOwnedByUser(Notification notification, String actorUserId) {
+        if (notification.getUser() == null || !Objects.equals(notification.getUser().getUserId(), actorUserId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 알림에 접근할 권한이 없습니다.");
+        }
     }
 } 

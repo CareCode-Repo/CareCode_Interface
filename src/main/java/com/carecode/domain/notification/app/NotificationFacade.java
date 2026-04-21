@@ -37,25 +37,25 @@ public class NotificationFacade {
     }
 
     @Transactional(readOnly = true)
-    public NotificationInfoResponse getNotificationById(Long notificationId) {
-        return notificationService.getNotificationById(notificationId);
+    public NotificationInfoResponse getNotificationById(Long notificationId, String actorUserId) {
+        return notificationService.getNotificationById(notificationId, actorUserId);
     }
 
     @Transactional
-    public NotificationInfoResponse createNotification(NotificationCreateRequest request) {
-        return notificationService.createNotification(request);
+    public NotificationInfoResponse createNotification(NotificationCreateRequest request, String actorUserId) {
+        return notificationService.createNotification(request, actorUserId);
     }
 
     @Transactional
-    public NotificationInfoResponse updateNotification(Long id, NotificationCreateRequest request) {
-        return notificationService.updateNotification(id, request);
+    public NotificationInfoResponse updateNotification(Long id, NotificationCreateRequest request, String actorUserId) {
+        return notificationService.updateNotification(id, request, actorUserId);
     }
 
     @Transactional
-    public void deleteNotification(Long id) { notificationService.deleteNotification(id); }
+    public void deleteNotification(Long id, String actorUserId) { notificationService.deleteNotification(id, actorUserId); }
 
     @Transactional
-    public void markAsRead(Long id) { notificationService.markAsRead(id); }
+    public void markAsRead(Long id, String actorUserId) { notificationService.markAsRead(id, actorUserId); }
 
     @Transactional
     public void markAllAsRead(String userId) { notificationService.markAllAsRead(userId); }
@@ -97,9 +97,9 @@ public class NotificationFacade {
     public void resetToDefault(String userId) { preferenceService.resetToDefault(userId); }
 
     // 알림 읽음 처리
-    @Transactional
-    public void markAsRead(NotificationMarkAsReadRequest request) {
-        notificationService.markAsRead(request);
+    @Transactional(readOnly = false)
+    public void markAsRead(NotificationMarkAsReadRequest request, String actorUserId) {
+        notificationService.markAsRead(request, actorUserId);
     }
 
     // 푸시 알림 토큰 등록
@@ -172,8 +172,8 @@ public class NotificationFacade {
     // 알림 전송 상태 조회
 
     @Transactional(readOnly = true)
-    public NotificationDeliveryStatusResponse getDeliveryStatus(Long notificationId) {
-        return notificationService.getDeliveryStatus(notificationId);
+    public NotificationDeliveryStatusResponse getDeliveryStatus(Long notificationId, String actorUserId) {
+        return notificationService.getDeliveryStatus(notificationId, actorUserId);
     }
 }
 

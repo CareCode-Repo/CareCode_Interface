@@ -69,7 +69,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 상세 조회", description = "특정 알림의 상세 정보를 조회합니다.")
     public ResponseEntity<NotificationInfoResponse> getNotification(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
 
-        NotificationInfoResponse notification = notificationFacade.getNotificationById(notificationId);
+        NotificationInfoResponse notification = notificationFacade.getNotificationById(notificationId, getAuthenticatedUserCode());
 
         return ResponseEntity.ok(notification);
     }
@@ -83,7 +83,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 생성", description = "새로운 알림을 생성합니다.")
     public ResponseEntity<NotificationInfoResponse> createNotification(@Parameter(description = "알림 정보", required = true) @RequestBody NotificationCreateRequest request) {
 
-        NotificationInfoResponse notification = notificationFacade.createNotification(request);
+        NotificationInfoResponse notification = notificationFacade.createNotification(request, getAuthenticatedUserCode());
 
         return ResponseEntity.ok(notification);
     }
@@ -98,7 +98,7 @@ public class NotificationController extends BaseController {
     public ResponseEntity<NotificationInfoResponse> updateNotification(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId,
                                                                                 @Parameter(description = "수정할 알림 정보", required = true) @RequestBody NotificationCreateRequest request) {
 
-        NotificationInfoResponse notification = notificationFacade.updateNotification(notificationId, request);
+        NotificationInfoResponse notification = notificationFacade.updateNotification(notificationId, request, getAuthenticatedUserCode());
 
         return ResponseEntity.ok(notification);
     }
@@ -112,7 +112,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 삭제", description = "알림을 삭제합니다.")
     public ResponseEntity<ApiSuccess> deleteNotification(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
 
-        notificationFacade.deleteNotification(notificationId);
+        notificationFacade.deleteNotification(notificationId, getAuthenticatedUserCode());
 
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림이 삭제되었습니다.").build());
     }
@@ -126,7 +126,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 읽음 처리", description = "알림을 읽음 상태로 변경합니다.")
     public ResponseEntity<ApiSuccess> markAsRead(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
 
-        notificationFacade.markAsRead(notificationId);
+        notificationFacade.markAsRead(notificationId, getAuthenticatedUserCode());
 
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림이 읽음 처리되었습니다.").build());
     }
@@ -309,7 +309,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 읽음 처리", description = "알림을 읽음으로 표시합니다.")
     public ResponseEntity<ApiSuccess> markAsRead(@Parameter(description = "읽음 처리 요청", required = true) @RequestBody NotificationMarkAsReadRequest request) {
 
-        notificationFacade.markAsRead(request);
+        notificationFacade.markAsRead(request, getAuthenticatedUserCode());
 
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("알림이 읽음으로 처리되었습니다.").build());
     }
@@ -392,7 +392,7 @@ public class NotificationController extends BaseController {
     @Operation(summary = "알림 전송 상태 조회", description = "특정 알림의 전송 상태를 조회합니다.")
     public ResponseEntity<NotificationDeliveryStatusResponse> getDeliveryStatus(@Parameter(description = "알림 ID", required = true) @PathVariable Long notificationId) {
 
-        NotificationDeliveryStatusResponse status = notificationFacade.getDeliveryStatus(notificationId);
+        NotificationDeliveryStatusResponse status = notificationFacade.getDeliveryStatus(notificationId, getAuthenticatedUserCode());
 
         return ResponseEntity.ok(status);
     }

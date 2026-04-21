@@ -4,6 +4,7 @@ import com.carecode.domain.notification.entity.Notification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -76,4 +77,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.id IN :notificationIds")
     void markAsReadByIds(@Param("notificationIds") List<Long> notificationIds);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.isRead = false AND n.user.id = :userId")
+    void markAllAsReadForUser(@Param("userId") Long userId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.id IN :notificationIds AND n.user.id = :userId")
+    void markAsReadByIdsForUser(@Param("notificationIds") List<Long> notificationIds, @Param("userId") Long userId);
 } 
