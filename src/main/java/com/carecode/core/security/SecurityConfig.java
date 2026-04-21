@@ -4,7 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -25,17 +27,21 @@ import java.util.List;
 @Slf4j
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService customUserDetailsService;
     private final List<String> allowedOrigins;
+    private final Environment environment;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, 
                          CustomUserDetailsService customUserDetailsService,
+                         Environment environment,
                          @Value("${app.security.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}") String allowedOrigins) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.customUserDetailsService = customUserDetailsService;
+        this.environment = environment;
         this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isEmpty())
@@ -71,9 +77,15 @@ public class SecurityConfig {
                     response.getWriter().write("{\"error\":\"Forbidden\",\"message\":\"Access denied\"}");
                 })
             )
-            .authorizeHttpRequests(authz -> authz
+            .authorizeHttpRequests(authz -> {
+                if (!environment.matchesProfiles("prod")) {
+                    authz.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll();
+                }
+                if (environment.matchesProfiles("dev", "docker")) {
+                    authz.requestMatchers("/kakao-test.html", "/kakao-debug.html").permitAll();
+                }
+                authz
                 // 공개 엔드포인트
-                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
                 .requestMatchers("/", "/error", "/favicon.ico").permitAll()
                 
@@ -91,8 +103,6 @@ public class SecurityConfig {
                 // OAuth2 관련 엔드포인트 (공개 접근)
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers("/kakao-callback.html").permitAll()
-                .requestMatchers("/kakao-test.html").permitAll()
-                .requestMatchers("/kakao-debug.html").permitAll()
                 
                 // 이메일 인증 관련 엔드포인트 (공개 접근)
                 .requestMatchers("/users/send-code", "/users/verify-code", "/users/verify").permitAll()
@@ -118,14 +128,15 @@ public class SecurityConfig {
                 // 돌봄시설 공공데이터 API (공개 접근)
                 .requestMatchers("/api/public/care-facilities/**").permitAll()
                 
-                // Health API 엔드포인트 (공개 접근)
-                .requestMatchers("/health").permitAll()
-                .requestMatchers("/health/**").permitAll()
+                // 건강 API: 인증된 사용자만 (소유권은 서비스 계층에서 검증)
+                .requestMatchers("/health/**").authenticated()
                 .requestMatchers("/hospitals").permitAll()
                 .requestMatchers("/hospitals/search").permitAll()
                 .requestMatchers("/hospitals/*/reviews").permitAll()
                 .requestMatchers("/hospitals/*/rating").permitAll()
-                .requestMatchers("/hospitals/*/like").permitAll()
+                .requestMatchers(HttpMethod.GET, "/hospitals/*/likes").permitAll()
+                .requestMatchers(HttpMethod.POST, "/hospitals/*/like").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/hospitals/*/like").authenticated()
                 
                 // 정책 API 엔드포인트 (공개 접근)
                 .requestMatchers("/policies").permitAll()
@@ -133,12 +144,6 @@ public class SecurityConfig {
                 .requestMatchers("/policies/categories").permitAll()
                 .requestMatchers("/policies/*").permitAll()
                 .requestMatchers("/policies/statistics").permitAll()
-                
-                // 챗봇 API (공개 접근 허용)
-                .requestMatchers("/chatbot/chat").permitAll()
-                .requestMatchers("/chatbot/history").permitAll()
-                .requestMatchers("/chatbot/sessions").permitAll()
-                .requestMatchers("/chatbot/feedback").permitAll()
                 
                 // CORS preflight 요청 허용
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -166,8 +171,8 @@ public class SecurityConfig {
                 .requestMatchers("/notifications/**").authenticated()
                 
                 // 기타 모든 요청은 인증 필요
-                .anyRequest().authenticated()
-            )
+                .anyRequest().authenticated();
+            })
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin())); // H2 콘솔 사용 시 필요
         return http.build();
