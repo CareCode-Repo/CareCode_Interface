@@ -1,9 +1,9 @@
 package com.carecode.domain.policy.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.controller.BaseController;
+import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.PolicyNotFoundException;
 import com.carecode.domain.policy.dto.response.PolicyDto;
@@ -12,8 +12,6 @@ import com.carecode.domain.policy.dto.response.PolicyListResponse;
 import com.carecode.domain.policy.dto.response.PolicyStatsSimpleResponse;
 import com.carecode.domain.policy.dto.response.PolicyBookmarkResponse;
 import com.carecode.domain.policy.app.PolicyFacade;
-import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,7 +22,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,12 +36,11 @@ import java.util.Date;
 @RequestMapping("/policies")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*", allowedHeaders = "*") // CORS 허용
 @Tag(name = "육아 정책", description = "육아 정책 정보 및 검색 API")
 public class PolicyController extends BaseController {
 
     private final PolicyFacade policyFacade;
-    private final UserRepository userRepository;
+    private final CurrentUserFacade currentUserFacade;
 
     // 전체 정책 목록 조회
     @GetMapping
@@ -239,7 +235,6 @@ public class PolicyController extends BaseController {
 
     @PostMapping("/{policyId}/bookmarks")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "정책 북마크 추가", description = "현재 로그인한 사용자의 정책 북마크를 추가합니다.")
     public ResponseEntity<PolicyBookmarkResponse> addBookmark(
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
@@ -249,7 +244,6 @@ public class PolicyController extends BaseController {
 
     @GetMapping("/bookmarks")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "정책 북마크 목록", description = "현재 로그인한 사용자의 정책 북마크 목록을 조회합니다.")
     public ResponseEntity<List<PolicyBookmarkResponse>> getBookmarks() {
         return ResponseEntity.ok(policyFacade.getBookmarks(getAuthenticatedUserCode()));
@@ -257,7 +251,6 @@ public class PolicyController extends BaseController {
 
     @DeleteMapping("/{policyId}/bookmarks")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "정책 북마크 삭제", description = "현재 로그인한 사용자의 정책 북마크를 삭제합니다.")
     public ResponseEntity<ApiSuccess> removeBookmark(
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
@@ -266,9 +259,6 @@ public class PolicyController extends BaseController {
     }
 
     private String getAuthenticatedUserCode() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
-                .orElseThrow(() -> new CareServiceException("인증 사용자를 찾을 수 없습니다."));
-        return user.getUserId();
+        return currentUserFacade.requireCurrentUserId();
     }
 } 
