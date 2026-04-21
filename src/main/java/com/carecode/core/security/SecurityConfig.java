@@ -84,6 +84,9 @@ public class SecurityConfig {
                 if (environment.matchesProfiles("dev", "docker")) {
                     authz.requestMatchers("/kakao-test.html", "/kakao-debug.html").permitAll();
                 }
+                if (!environment.matchesProfiles("prod")) {
+                    authz.requestMatchers("/*.html").permitAll();
+                }
                 authz
                 // 공개 엔드포인트
                 .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
@@ -91,7 +94,7 @@ public class SecurityConfig {
                 
                 // 정적 리소스 (공개 접근)
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
-                .requestMatchers("/static/**", "/*.html").permitAll()
+                .requestMatchers("/static/**").permitAll()
                 
                 // 통합 인증 관련 엔드포인트 (공개 접근)
                 .requestMatchers("/auth/login", "/auth/register").permitAll() // 일반 로그인/회원가입
@@ -100,7 +103,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/kakao/login-url").permitAll() // 카카오 로그인 URL 생성
                 .requestMatchers("/auth/kakao/complete-registration").permitAll() // 카카오 가입 완료
                 
-                // OAuth2 관련 엔드포인트 (공개 접근)
+                // OAuth2 authorize/token (Spring Client beans). Kakao REST login uses KakaoUtil + /auth/kakao/login only; oauth2Login() is not configured.
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers("/kakao-callback.html").permitAll()
                 
@@ -123,6 +126,7 @@ public class SecurityConfig {
                 .requestMatchers("/facilities/radius").permitAll()
                 .requestMatchers("/facilities/statistics").permitAll()
                 .requestMatchers("/facilities/*/view").permitAll()
+                .requestMatchers(HttpMethod.POST, "/facilities/*/rating").authenticated()
                 .requestMatchers("/facilities/*/rating").permitAll()
                 
                 // 돌봄시설 공공데이터 API (공개 접근)
@@ -132,8 +136,8 @@ public class SecurityConfig {
                 .requestMatchers("/health/**").authenticated()
                 .requestMatchers("/hospitals").permitAll()
                 .requestMatchers("/hospitals/search").permitAll()
-                .requestMatchers("/hospitals/*/reviews").permitAll()
-                .requestMatchers("/hospitals/*/rating").permitAll()
+                .requestMatchers(HttpMethod.GET, "/hospitals/*/reviews").permitAll()
+                .requestMatchers(HttpMethod.GET, "/hospitals/*/rating").permitAll()
                 .requestMatchers(HttpMethod.GET, "/hospitals/*/likes").permitAll()
                 .requestMatchers(HttpMethod.POST, "/hospitals/*/like").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/hospitals/*/like").authenticated()
