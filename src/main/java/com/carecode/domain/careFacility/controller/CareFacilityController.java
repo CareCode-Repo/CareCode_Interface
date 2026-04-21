@@ -1,7 +1,6 @@
 package com.carecode.domain.careFacility.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.annotation.ValidateChildAge;
 import com.carecode.core.controller.BaseController;
@@ -152,7 +151,6 @@ public class CareFacilityController extends BaseController {
     // 복합 조건으로 시설 검색 (페이징)
     @PostMapping("/search")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "복합 조건 시설 검색", description = "다양한 조건으로 육아 시설을 검색합니다.")
     public ResponseEntity<CareFacilityListResponse> searchFacilities(@Parameter(description = "검색 조건", required = true) @RequestBody CareFacilitySearchRequest requestDto) {
 
@@ -175,7 +173,6 @@ public class CareFacilityController extends BaseController {
     // 시설 평점 업데이트
     @PostMapping("/{id}/rating")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "시설 평점 업데이트", description = "특정 시설의 평점을 업데이트합니다.")
     public ResponseEntity<ApiSuccess> updateRating(@Parameter(description = "시설 ID", required = true) @PathVariable Long id,
                                                    @Parameter(description = "평점 (0.0 ~ 5.0)", required = true) @RequestParam Double rating) {
@@ -264,7 +261,6 @@ public class CareFacilityController extends BaseController {
 
     @PostMapping("/advanced-search")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "고급 검색", description = "다양한 조건을 조합하여 시설을 검색합니다.")
     public ResponseEntity<List<CareFacilityInfo>> advancedSearch(
             @Parameter(description = "검색 조건", required = true) @RequestBody CareFacilityAdvancedSearchRequest request) {
@@ -301,7 +297,6 @@ public class CareFacilityController extends BaseController {
 
     @PostMapping("/{id}/reviews")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "시설 리뷰 작성", description = "시설 리뷰를 작성합니다.")
     public ResponseEntity<ReviewResponse> createReview(@PathVariable Long id,
                                                        @RequestBody ReviewRequest request,
@@ -311,7 +306,6 @@ public class CareFacilityController extends BaseController {
 
     @PutMapping("/reviews/{reviewId}")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "시설 리뷰 수정", description = "작성한 시설 리뷰를 수정합니다.")
     public ResponseEntity<ReviewResponse> updateReview(@PathVariable Long reviewId,
                                                        @RequestBody ReviewRequest request,
@@ -321,7 +315,6 @@ public class CareFacilityController extends BaseController {
 
     @DeleteMapping("/reviews/{reviewId}")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "시설 리뷰 삭제", description = "작성한 시설 리뷰를 삭제합니다.")
     public ResponseEntity<ApiSuccess> deleteReview(@PathVariable Long reviewId,
                                                    @AuthenticationPrincipal UserDetails userDetails) {
@@ -332,7 +325,6 @@ public class CareFacilityController extends BaseController {
     // 예약 생성
     @PostMapping("/{facilityId}/bookings")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "시설 예약 생성", description = "특정 육아 시설에 예약을 생성합니다.")
     public ResponseEntity<BookingResponse> createBooking(@Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId,
                                                          @Parameter(description = "예약 정보", required = true) @RequestBody CreateBookingRequest request,
@@ -346,7 +338,6 @@ public class CareFacilityController extends BaseController {
     // 예약 상세 조회
     @GetMapping("/bookings/{bookingId}")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "예약 상세 조회", description = "특정 예약의 상세 정보를 조회합니다.")
     public ResponseEntity<BookingResponse> getBookingById(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
                                                           @AuthenticationPrincipal UserDetails userDetails) {
@@ -359,7 +350,6 @@ public class CareFacilityController extends BaseController {
     // 사용자별 예약 목록 조회
     @GetMapping("/bookings/user")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "사용자별 예약 목록 조회", description = "현재 로그인한 사용자의 예약 목록을 조회합니다.")
     public ResponseEntity<List<BookingResponse>> getUserBookings(@AuthenticationPrincipal UserDetails userDetails) {
 
@@ -371,7 +361,6 @@ public class CareFacilityController extends BaseController {
     // 시설별 예약 목록 조회
     @GetMapping("/{facilityId}/bookings")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "시설별 예약 목록 조회", description = "특정 시설의 예약 목록을 조회합니다.")
     public ResponseEntity<List<BookingResponse>> getFacilityBookings(@Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId) {
 
@@ -383,7 +372,6 @@ public class CareFacilityController extends BaseController {
     // 예약 상태 업데이트
     @PutMapping("/bookings/{bookingId}/status")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "예약 상태 업데이트", description = "예약의 상태를 업데이트합니다.")
     public ResponseEntity<BookingResponse> updateBookingStatus(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
                                                                @Parameter(description = "새로운 상태", required = true) @RequestParam String status,
@@ -397,7 +385,6 @@ public class CareFacilityController extends BaseController {
     // 예약 취소
     @DeleteMapping("/bookings/{bookingId}")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "예약 취소", description = "예약을 취소합니다.")
     public ResponseEntity<ApiSuccess> cancelBooking(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
                                                     @AuthenticationPrincipal UserDetails userDetails) {
@@ -410,7 +397,6 @@ public class CareFacilityController extends BaseController {
     // 예약 수정
     @PutMapping("/bookings/{bookingId}")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "예약 수정", description = "기존 예약 정보를 수정합니다.")
     public ResponseEntity<BookingResponse> updateBooking(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
                                                          @Parameter(description = "수정할 예약 정보", required = true) @RequestBody UpdateBookingRequest request,
@@ -424,7 +410,6 @@ public class CareFacilityController extends BaseController {
     // 오늘의 예약 조회
     @GetMapping("/bookings/today")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "오늘의 예약 조회", description = "오늘 날짜의 예약 목록을 조회합니다.")
     public ResponseEntity<List<BookingResponse>> getTodayBookings() {
 
@@ -436,7 +421,6 @@ public class CareFacilityController extends BaseController {
     // 시설별 오늘의 예약 조회
     @GetMapping("/{facilityId}/bookings/today")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "시설별 오늘의 예약 조회", description = "특정 시설의 오늘 예약 목록을 조회합니다.")
     public ResponseEntity<List<BookingResponse>> getTodayBookingsByFacility(@Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId) {
 
