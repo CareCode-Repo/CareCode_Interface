@@ -57,7 +57,7 @@ public class HealthController extends BaseController {
     public ResponseEntity<HealthRecordResponse> createHealthRecord(@Parameter(description = "건강 정보", required = true)
                                                                                      @RequestBody HealthCreateHealthRecordRequest request) {
 
-        HealthRecordResponse record = healthFacade.createHealthRecord(request);
+        HealthRecordResponse record = healthFacade.createHealthRecord(request, getAuthenticatedUserPk());
 
         return ResponseEntity.ok(record);
     }
@@ -71,7 +71,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "건강 정보 조회", description = "특정 건강 정보를 조회합니다.")
     public ResponseEntity<HealthRecordResponse> getHealthRecord(@Parameter(description = "건강 정보 ID", required = true) @PathVariable Long recordId) {
 
-        HealthRecordResponse record = healthFacade.getHealthRecordById(recordId);
+        HealthRecordResponse record = healthFacade.getHealthRecordById(recordId, getAuthenticatedUserPk());
 
         return ResponseEntity.ok(record);
     }
@@ -84,7 +84,7 @@ public class HealthController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "사용자별 건강 정보 조회", description = "특정 사용자의 모든 건강 정보를 조회합니다.")
     public ResponseEntity<List<HealthRecordResponse>> getUserHealthRecords(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
-        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByUserId(getAuthenticatedUserCode());
+        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByUserId(getAuthenticatedUserCode(), getAuthenticatedUserPk());
 
         return ResponseEntity.ok(records);
     }
@@ -99,7 +99,7 @@ public class HealthController extends BaseController {
     public ResponseEntity<HealthRecordResponse> updateHealthRecord(@Parameter(description = "건강 정보 ID", required = true) @PathVariable Long recordId,
                                                                                   @Parameter(description = "수정할 건강 정보", required = true) @RequestBody HealthUpdateHealthRecordRequest request) {
 
-        HealthRecordResponse record = healthFacade.updateHealthRecord(recordId, request);
+        HealthRecordResponse record = healthFacade.updateHealthRecord(recordId, request, getAuthenticatedUserPk());
 
         return ResponseEntity.ok(record);
     }
@@ -113,7 +113,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "건강 정보 삭제", description = "건강 정보를 삭제합니다.")
     public ResponseEntity<Void> deleteHealthRecord(@Parameter(description = "건강 정보 ID", required = true) @PathVariable Long recordId) {
 
-        healthFacade.deleteHealthRecord(recordId);
+        healthFacade.deleteHealthRecord(recordId, getAuthenticatedUserPk());
 
         return ResponseEntity.ok().build();
     }
@@ -124,7 +124,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "건강 기록 첨부 추가", description = "건강 기록에 첨부파일 메타 정보를 추가합니다.")
     public ResponseEntity<HealthRecordAttachmentResponse> addAttachment(@PathVariable Long recordId,
                                                                         @RequestBody HealthRecordAttachmentRequest request) {
-        return ResponseEntity.ok(healthFacade.addAttachment(recordId, request));
+        return ResponseEntity.ok(healthFacade.addAttachment(recordId, request, getAuthenticatedUserPk()));
     }
 
     @GetMapping("/records/{recordId}/attachments")
@@ -132,7 +132,7 @@ public class HealthController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "건강 기록 첨부 조회", description = "건강 기록의 첨부파일 목록을 조회합니다.")
     public ResponseEntity<List<HealthRecordAttachmentResponse>> getAttachments(@PathVariable Long recordId) {
-        return ResponseEntity.ok(healthFacade.getAttachments(recordId));
+        return ResponseEntity.ok(healthFacade.getAttachments(recordId, getAuthenticatedUserPk()));
     }
 
     @DeleteMapping("/records/attachments/{attachmentId}")
@@ -140,7 +140,7 @@ public class HealthController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "건강 기록 첨부 삭제", description = "건강 기록 첨부파일을 비활성화합니다.")
     public ResponseEntity<ApiSuccess> deleteAttachment(@PathVariable Long attachmentId) {
-        healthFacade.deleteAttachment(attachmentId);
+        healthFacade.deleteAttachment(attachmentId, getAuthenticatedUserPk());
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("첨부파일이 삭제되었습니다.").build());
     }
 
@@ -154,7 +154,7 @@ public class HealthController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "건강 통계 조회", description = "사용자의 건강 관련 통계를 조회합니다.")
     public ResponseEntity<HealthStatsResponse> getHealthStatistics(@Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-        HealthStatsResponse statistics = healthFacade.getHealthStatistics(getAuthenticatedUserCode());
+        HealthStatsResponse statistics = healthFacade.getHealthStatistics(getAuthenticatedUserCode(), getAuthenticatedUserPk());
 
         return ResponseEntity.ok(statistics);
     }
@@ -168,7 +168,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "예방접종 스케줄 조회", description = "아동의 예방접종 스케줄을 조회합니다.")
     public ResponseEntity<List<VaccineScheduleResponse>> getVaccineSchedule(@Parameter(description = "아동 ID", required = true) @RequestParam String childId) {
 
-        List<VaccineScheduleResponse> schedule = healthFacade.getVaccineSchedule(childId);
+        List<VaccineScheduleResponse> schedule = healthFacade.getVaccineSchedule(childId, getAuthenticatedUserPk());
 
         return ResponseEntity.ok(schedule);
     }
@@ -182,7 +182,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "건강 검진 스케줄 조회", description = "아동의 건강 검진 스케줄을 조회합니다.")
     public ResponseEntity<List<CheckupScheduleResponse>> getCheckupSchedule(@Parameter(description = "아동 ID", required = true) @RequestParam String childId) {
 
-        List<CheckupScheduleResponse> schedule = healthFacade.getCheckupSchedule(childId);
+        List<CheckupScheduleResponse> schedule = healthFacade.getCheckupSchedule(childId, getAuthenticatedUserPk());
 
         return ResponseEntity.ok(schedule);
     }
@@ -201,7 +201,7 @@ public class HealthController extends BaseController {
     })
     public ResponseEntity<List<HealthAlertResponse>> getHealthAlerts(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
-        List<HealthAlertResponse> alerts = healthFacade.getHealthAlerts(getAuthenticatedUserCode());
+        List<HealthAlertResponse> alerts = healthFacade.getHealthAlerts(getAuthenticatedUserCode(), getAuthenticatedUserPk());
         return ResponseEntity.ok(alerts);
     }
 
@@ -210,7 +210,7 @@ public class HealthController extends BaseController {
     @RequireAuthentication
     @Operation(summary = "연계 추천 조회", description = "아동 연령 기반 정책/시설 연계 추천을 제공합니다.")
     public ResponseEntity<java.util.Map<String, Object>> getIntegratedRecommendations() {
-        return ResponseEntity.ok(healthFacade.getIntegratedRecommendations(getAuthenticatedUserCode()));
+        return ResponseEntity.ok(healthFacade.getIntegratedRecommendations(getAuthenticatedUserCode(), getAuthenticatedUserPk()));
     }
 
     // ==================== 병원 관리 ====================
@@ -388,7 +388,7 @@ public class HealthController extends BaseController {
     public ResponseEntity<List<HealthRecordResponse>> getHealthRecordsByDateRangeAsc(@Parameter(description = "아동 ID", required = true) @RequestParam Long childId,
                                                                                      @Parameter(description = "시작일 (yyyy-MM-dd)", required = true) @RequestParam String startDate,
                                                                                      @Parameter(description = "종료일 (yyyy-MM-dd)", required = true) @RequestParam String endDate) {
-        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByDateRangeAsc(childId, LocalDate.parse(startDate), LocalDate.parse(endDate));
+        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByDateRangeAsc(childId, LocalDate.parse(startDate), LocalDate.parse(endDate), getAuthenticatedUserPk());
         return ResponseEntity.ok(records);
     }
 
@@ -399,7 +399,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "타입별 건강 기록 조회", description = "특정 타입의 건강 기록을 조회합니다.")
     public ResponseEntity<List<HealthRecordResponse>> getHealthRecordsByType(@Parameter(description = "아동 ID", required = true) @RequestParam Long childId,
                                                                              @Parameter(description = "기록 타입 (VACCINATION, CHECKUP, MEDICATION, SYMPTOM, OTHER)", required = true) @RequestParam String recordType) {
-        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByType(childId, HealthRecord.RecordType.valueOf(recordType));
+        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByType(childId, HealthRecord.RecordType.valueOf(recordType), getAuthenticatedUserPk());
 
         return ResponseEntity.ok(records);
     }

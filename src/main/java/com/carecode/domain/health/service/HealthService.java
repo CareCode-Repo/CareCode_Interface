@@ -1,6 +1,7 @@
 package com.carecode.domain.health.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.core.exception.HealthRecordNotFoundException;
@@ -83,7 +84,7 @@ public class HealthService {
 
     @LogExecutionTime
     @Transactional
-    public HealthRecordResponse createHealthRecord(HealthCreateHealthRecordRequest request) {
+    public HealthRecordResponse createHealthRecord(HealthCreateHealthRecordRequest request, Long actorUserId) {
         validateRequest(request);
         log.info("건강 기록 생성: 아이ID={}, 제목={}", request.getChildId(), request.getTitle());
         
@@ -92,6 +93,7 @@ public class HealthService {
             Long childId = Long.valueOf(request.getChildId());
             Child child = childRepository.findById(childId)
                     .orElseThrow(() -> new ChildNotFoundException(childId));
+            assertChildOwnedByUser(child, actorUserId);
             
             // HealthRecord 엔티티 생성 (매퍼 사용)
             HealthRecord record = healthRecordMapper.toEntity(request);
@@ -103,6 +105,8 @@ public class HealthService {
         } catch (NumberFormatException e) {
             log.error("잘못된 아동 ID 형식: {}", request.getChildId());
             throw new CareServiceException("잘못된 아동 ID 형식입니다: " + request.getChildId(), e);
+        } catch (CareCodeException e) {
+            throw e;
         } catch (CareServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -115,15 +119,18 @@ public class HealthService {
     // 건강 기록 조회
 
     @LogExecutionTime
-    public HealthRecordResponse getHealthRecordById(Long recordId) {
+    public HealthRecordResponse getHealthRecordById(Long recordId, Long actorUserId) {
         validateRecordId(recordId);
         log.info("건강 기록 조회: 기록ID={}", recordId);
         
         try {
             HealthRecord record = healthRecordRepository.findById(recordId)
                     .orElseThrow(() -> new HealthRecordNotFoundException(recordId));
+            assertHealthRecordOwnedByUser(record, actorUserId);
             
             return healthRecordMapper.toResponse(record);
+        } catch (CareCodeException e) {
+            throw e;
         } catch (CareServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -136,9 +143,10 @@ public class HealthService {
     // 사용자별 건강 기록 조회 (DTO 반환)
 
     @LogExecutionTime
-    public List<HealthRecordResponse> getHealthRecordsByUserId(String userId) {
+    public List<HealthRecordResponse> getHealthRecordsByUserId(String userId, Long actorUserId) {
         log.info("사용자별 건강 기록 조회: 사용자ID={}", userId);
         try {
+            assertUserIdBelongsToActor(userId, actorUserId);
             List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
             return records.stream()
                     .map(healthRecordMapper::toResponse)
@@ -168,12 +176,13 @@ public class HealthService {
 
     @LogExecutionTime
     @Transactional
-    public HealthRecordResponse updateHealthRecord(Long recordId, HealthUpdateHealthRecordRequest request) {
+    public HealthRecordResponse updateHealthRecord(Long recordId, HealthUpdateHealthRecordRequest request, Long actorUserId) {
         validateRecordId(recordId);
         validateUpdateRequest(request);
         
         HealthRecord record = healthRecordRepository.findById(recordId)
                 .orElseThrow(() -> new CareServiceException("건강 기록을 찾을 수 없습니다: " + recordId));
+        assertHealthRecordOwnedByUser(record, actorUserId);
         
         // 기록 업데이트
         record.setTitle(request.getTitle());
@@ -194,11 +203,12 @@ public class HealthService {
 
     @LogExecutionTime
     @Transactional
-    public void deleteHealthRecord(Long recordId) {
+    public void deleteHealthRecord(Long recordId, Long actorUserId) {
         validateRecordId(recordId);
         
         HealthRecord record = healthRecordRepository.findById(recordId)
                 .orElseThrow(() -> new HealthRecordNotFoundException(recordId));
+        assertHealthRecordOwnedByUser(record, actorUserId);
         
         healthRecordRepository.delete(record);
         log.info("건강 기록이 삭제되었습니다: 기록ID={}", recordId);
@@ -208,9 +218,10 @@ public class HealthService {
     // 건강 기록 목록 조회 (페이징)
 
     @LogExecutionTime
-    public List<HealthRecordResponse> getHealthRecords(Long childId, int page, int size) {
+    public List<HealthRecordResponse> getHealthRecords(Long childId, int page, int size, Long actorUserId) {
         validateChildId(childId);
         validatePaginationParams(page, size);
+        assertChildOwnedByUserId(childId, actorUserId);
         
         log.info("건강 기록 목록 조회 - 아동 ID: {}, 페이지: {}, 크기: {}", childId, page, size);
         
@@ -227,9 +238,10 @@ public class HealthService {
     // JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
 
     @LogExecutionTime
-    public List<HealthRecordResponse> getHealthRecordsByDateRange(Long childId, LocalDate startDate, LocalDate endDate) {
+    public List<HealthRecordResponse> getHealthRecordsByDateRange(Long childId, LocalDate startDate, LocalDate endDate, Long actorUserId) {
         validateChildId(childId);
         validateDateRange(startDate, endDate);
+        assertChildOwnedByUserId(childId, actorUserId);
         
         log.info("기간별 건강 기록 조회 - 아동 ID: {}, 시작일: {}, 종료일: {}", childId, startDate, endDate);
         
@@ -300,12 +312,13 @@ public class HealthService {
     // 건강 상태 분석
 
     @LogExecutionTime
-    public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request) {
+    public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request, Long actorUserId) {
         validateRequest(request);
         
         Long childId = Long.valueOf(request.getChildId());
         Child child = childRepository.findById(childId)
                 .orElseThrow(() -> new CareServiceException("아동을 찾을 수 없습니다: " + request.getChildId()));
+        assertChildOwnedByUser(child, actorUserId);
         
         List<HealthRecord> records = healthRecordRepository.findByChildOrderByRecordDateDesc(child);
         
@@ -324,12 +337,13 @@ public class HealthService {
     // 건강 리포트 생성
 
     @LogExecutionTime
-    public Map<String, Object> generateHealthReport(HealthCreateHealthRecordRequest request) {
+    public Map<String, Object> generateHealthReport(HealthCreateHealthRecordRequest request, Long actorUserId) {
         validateRequest(request);
         
         Long childId = Long.valueOf(request.getChildId());
         Child child = childRepository.findById(childId)
                 .orElseThrow(() -> new CareServiceException("아동을 찾을 수 없습니다: " + request.getChildId()));
+        assertChildOwnedByUser(child, actorUserId);
 
         List<HealthRecord> records = healthRecordRepository.findByChildOrderByRecordDateDesc(child);
 
@@ -348,10 +362,11 @@ public class HealthService {
     // 건강 통계 조회
 
     @LogExecutionTime
-    public HealthStatsResponse getHealthStatistics(String userId) {
+    public HealthStatsResponse getHealthStatistics(String userId, Long actorUserId) {
         log.info("건강 통계 조회: 사용자ID={}", userId);
         
         try {
+            assertUserIdBelongsToActor(userId, actorUserId);
             List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
             
             return HealthStatsResponse.builder()
@@ -375,12 +390,14 @@ public class HealthService {
     // 예방접종 스케줄 조회
 
     @LogExecutionTime
-    public List<VaccineScheduleResponse> getVaccineSchedule(String childId) {
+    public List<VaccineScheduleResponse> getVaccineSchedule(String childId, Long actorUserId) {
         log.info("예방접종 스케줄 조회: 아동ID={}", childId);
         
         try {
+            Long cid = Long.valueOf(childId);
+            assertChildOwnedByUserId(cid, actorUserId);
             List<HealthRecord> vaccineRecords = healthRecordRepository.findByChildIdAndRecordType(
-                    Long.valueOf(childId), HealthRecord.RecordType.VACCINATION);
+                    cid, HealthRecord.RecordType.VACCINATION);
             
             return vaccineRecords.stream()
                     .map(this::convertToVaccineScheduleResponse)
@@ -395,12 +412,14 @@ public class HealthService {
     // 건강 검진 스케줄 조회
 
     @LogExecutionTime
-    public List<CheckupScheduleResponse> getCheckupSchedule(String childId) {
+    public List<CheckupScheduleResponse> getCheckupSchedule(String childId, Long actorUserId) {
         log.info("건강 검진 스케줄 조회: 아동ID={}", childId);
         
         try {
+            Long cid = Long.valueOf(childId);
+            assertChildOwnedByUserId(cid, actorUserId);
             List<HealthRecord> checkupRecords = healthRecordRepository.findByChildIdAndRecordType(
-                    Long.valueOf(childId), HealthRecord.RecordType.CHECKUP);
+                    cid, HealthRecord.RecordType.CHECKUP);
             
             return checkupRecords.stream()
                     .map(this::convertToCheckupScheduleResponse)
@@ -416,9 +435,10 @@ public class HealthService {
     // JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
 
     @LogExecutionTime
-    public List<HealthRecordResponse> getHealthRecordsByDateRangeAsc(Long childId, LocalDate startDate, LocalDate endDate) {
+    public List<HealthRecordResponse> getHealthRecordsByDateRangeAsc(Long childId, LocalDate startDate, LocalDate endDate, Long actorUserId) {
         validateChildId(childId);
         validateDateRange(startDate, endDate);
+        assertChildOwnedByUserId(childId, actorUserId);
         
         log.info("기간별 건강 기록 조회 (오래된순): 아동ID={}, 시작일={}, 종료일={}", childId, startDate, endDate);
         
@@ -441,8 +461,9 @@ public class HealthService {
     // JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
 
     @LogExecutionTime
-    public List<HealthRecordResponse> getHealthRecordsByType(Long childId, HealthRecord.RecordType recordType) {
+    public List<HealthRecordResponse> getHealthRecordsByType(Long childId, HealthRecord.RecordType recordType, Long actorUserId) {
         validateChildId(childId);
+        assertChildOwnedByUserId(childId, actorUserId);
         log.info("타입별 건강 기록 조회: 아동ID={}, 타입={}", childId, recordType);
         
         try {
@@ -460,9 +481,10 @@ public class HealthService {
 
     @LogExecutionTime
     @Transactional
-    public HealthRecordAttachmentResponse addAttachment(Long recordId, HealthRecordAttachmentRequest request) {
+    public HealthRecordAttachmentResponse addAttachment(Long recordId, HealthRecordAttachmentRequest request, Long actorUserId) {
         HealthRecord record = healthRecordRepository.findById(recordId)
                 .orElseThrow(() -> new HealthRecordNotFoundException(recordId));
+        assertHealthRecordOwnedByUser(record, actorUserId);
         HealthRecordAttachment attachment = HealthRecordAttachment.builder()
                 .healthRecord(record)
                 .fileUrl(request.getFileUrl())
@@ -476,9 +498,10 @@ public class HealthService {
     }
 
     @LogExecutionTime
-    public List<HealthRecordAttachmentResponse> getAttachments(Long recordId) {
+    public List<HealthRecordAttachmentResponse> getAttachments(Long recordId, Long actorUserId) {
         HealthRecord record = healthRecordRepository.findById(recordId)
                 .orElseThrow(() -> new HealthRecordNotFoundException(recordId));
+        assertHealthRecordOwnedByUser(record, actorUserId);
         return healthRecordAttachmentRepository.findByHealthRecordAndIsActiveTrueOrderByDisplayOrderAscCreatedAtDesc(record).stream()
                 .map(this::toAttachmentResponse)
                 .collect(Collectors.toList());
@@ -486,9 +509,10 @@ public class HealthService {
 
     @LogExecutionTime
     @Transactional
-    public void deleteAttachment(Long attachmentId) {
+    public void deleteAttachment(Long attachmentId, Long actorUserId) {
         HealthRecordAttachment attachment = healthRecordAttachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new CareServiceException("첨부파일을 찾을 수 없습니다: " + attachmentId));
+        assertHealthRecordOwnedByUser(attachment.getHealthRecord(), actorUserId);
         attachment.deactivate();
         healthRecordAttachmentRepository.save(attachment);
     }
@@ -497,10 +521,11 @@ public class HealthService {
     // 건강 알림 조회
 
     @LogExecutionTime
-    public List<HealthAlertResponse> getHealthAlerts(String userId) {
+    public List<HealthAlertResponse> getHealthAlerts(String userId, Long actorUserId) {
         log.info("건강 알림 조회: 사용자ID={}", userId);
         
         try {
+            assertUserIdBelongsToActor(userId, actorUserId);
             List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
             
             return records.stream()
@@ -514,7 +539,8 @@ public class HealthService {
     }
 
     @LogExecutionTime
-    public Map<String, Object> getIntegratedRecommendations(String userId) {
+    public Map<String, Object> getIntegratedRecommendations(String userId, Long actorUserId) {
+        assertUserIdBelongsToActor(userId, actorUserId);
         User user = findUserByIdOrUserId(userId);
         Integer childAge = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).stream()
                 .map(Child::getBirthDate)
@@ -545,8 +571,9 @@ public class HealthService {
     // 건강 목표 조회
 
     @LogExecutionTime
-    public Map<String, Object> getHealthGoals(String userId) {
+    public Map<String, Object> getHealthGoals(String userId, Long actorUserId) {
         validateUserId(userId);
+        assertUserIdBelongsToActor(userId, actorUserId);
         User user = findUserByIdOrUserId(userId);
         
         List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
@@ -567,10 +594,11 @@ public class HealthService {
     // 건강 차트 데이터 조회
 
     @LogExecutionTime
-    public List<Map<String, Object>> getHealthChart(String userId, String type, LocalDate from, LocalDate to) {
+    public List<Map<String, Object>> getHealthChart(String userId, String type, LocalDate from, LocalDate to, Long actorUserId) {
         validateUserId(userId);
         validateChartType(type);
         validateDateRange(from, to);
+        assertUserIdBelongsToActor(userId, actorUserId);
         
         User user = findUserByIdOrUserId(userId);
         List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
@@ -605,6 +633,42 @@ public class HealthService {
         healthStatus.put("version", "1.0.0");
         
         return healthStatus;
+    }
+
+    private void assertHealthRecordOwnedByUser(HealthRecord record, Long actorUserId) {
+        if (actorUserId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "인증이 필요합니다.");
+        }
+        User owner = record.getUser();
+        if (owner == null || owner.getId() == null || !owner.getId().equals(actorUserId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 건강 기록에 접근할 권한이 없습니다.");
+        }
+    }
+
+    private void assertChildOwnedByUser(Child child, Long actorUserId) {
+        if (actorUserId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "인증이 필요합니다.");
+        }
+        User parent = child.getUser();
+        if (parent == null || parent.getId() == null || !parent.getId().equals(actorUserId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 자녀 정보에 접근할 권한이 없습니다.");
+        }
+    }
+
+    private void assertChildOwnedByUserId(Long childId, Long actorUserId) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new ChildNotFoundException(childId));
+        assertChildOwnedByUser(child, actorUserId);
+    }
+
+    private void assertUserIdBelongsToActor(String userId, Long actorUserId) {
+        if (actorUserId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "인증이 필요합니다.");
+        }
+        User resolved = findUserByIdOrUserId(userId);
+        if (!resolved.getId().equals(actorUserId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 사용자 정보에 접근할 권한이 없습니다.");
+        }
     }
 
     // ===== Helper Methods =====

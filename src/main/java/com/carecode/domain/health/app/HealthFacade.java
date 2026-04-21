@@ -45,60 +45,60 @@ public class HealthFacade {
     // ==================== 건강 기록 관리 ====================
     // 트랜잭션은 Service 계층에서 관리하므로 Facade에서는 제거
 
-    public HealthRecordResponse createHealthRecord(HealthCreateHealthRecordRequest request) {
-        return healthService.createHealthRecord(request);
+    public HealthRecordResponse createHealthRecord(HealthCreateHealthRecordRequest request, Long actorUserId) {
+        return healthService.createHealthRecord(request, actorUserId);
     }
 
-    public HealthRecordResponse getHealthRecordById(Long recordId) {
-        return healthService.getHealthRecordById(recordId);
+    public HealthRecordResponse getHealthRecordById(Long recordId, Long actorUserId) {
+        return healthService.getHealthRecordById(recordId, actorUserId);
     }
 
-    public List<HealthRecordResponse> getHealthRecordsByUserId(String userId) {
-        return healthService.getHealthRecordsByUserId(userId);
+    public List<HealthRecordResponse> getHealthRecordsByUserId(String userId, Long actorUserId) {
+        return healthService.getHealthRecordsByUserId(userId, actorUserId);
     }
 
-    public HealthRecordResponse updateHealthRecord(Long recordId, HealthUpdateHealthRecordRequest request) {
-        return healthService.updateHealthRecord(recordId, request);
+    public HealthRecordResponse updateHealthRecord(Long recordId, HealthUpdateHealthRecordRequest request, Long actorUserId) {
+        return healthService.updateHealthRecord(recordId, request, actorUserId);
     }
 
-    public void deleteHealthRecord(Long recordId) {
-        healthService.deleteHealthRecord(recordId);
+    public void deleteHealthRecord(Long recordId, Long actorUserId) {
+        healthService.deleteHealthRecord(recordId, actorUserId);
     }
 
-    public HealthStatsResponse getHealthStatistics(String userId) {
-        return healthService.getHealthStatistics(userId);
+    public HealthStatsResponse getHealthStatistics(String userId, Long actorUserId) {
+        return healthService.getHealthStatistics(userId, actorUserId);
     }
 
-    public List<VaccineScheduleResponse> getVaccineSchedule(String childId) {
-        return healthService.getVaccineSchedule(childId);
+    public List<VaccineScheduleResponse> getVaccineSchedule(String childId, Long actorUserId) {
+        return healthService.getVaccineSchedule(childId, actorUserId);
     }
 
-    public List<CheckupScheduleResponse> getCheckupSchedule(String childId) {
-        return healthService.getCheckupSchedule(childId);
+    public List<CheckupScheduleResponse> getCheckupSchedule(String childId, Long actorUserId) {
+        return healthService.getCheckupSchedule(childId, actorUserId);
     }
 
-    public List<HealthAlertResponse> getHealthAlerts(String userId) {
-        return healthService.getHealthAlerts(userId);
+    public List<HealthAlertResponse> getHealthAlerts(String userId, Long actorUserId) {
+        return healthService.getHealthAlerts(userId, actorUserId);
     }
 
-    public List<HealthRecordResponse> getHealthRecordsByDateRangeAsc(Long childId, LocalDate startDate, LocalDate endDate) {
-        return healthService.getHealthRecordsByDateRangeAsc(childId, startDate, endDate);
+    public List<HealthRecordResponse> getHealthRecordsByDateRangeAsc(Long childId, LocalDate startDate, LocalDate endDate, Long actorUserId) {
+        return healthService.getHealthRecordsByDateRangeAsc(childId, startDate, endDate, actorUserId);
     }
 
-    public List<HealthRecordResponse> getHealthRecordsByType(Long childId, com.carecode.domain.health.entity.HealthRecord.RecordType recordType) {
-        return healthService.getHealthRecordsByType(childId, recordType);
+    public List<HealthRecordResponse> getHealthRecordsByType(Long childId, com.carecode.domain.health.entity.HealthRecord.RecordType recordType, Long actorUserId) {
+        return healthService.getHealthRecordsByType(childId, recordType, actorUserId);
     }
 
-    public HealthRecordAttachmentResponse addAttachment(Long recordId, HealthRecordAttachmentRequest request) {
-        return healthService.addAttachment(recordId, request);
+    public HealthRecordAttachmentResponse addAttachment(Long recordId, HealthRecordAttachmentRequest request, Long actorUserId) {
+        return healthService.addAttachment(recordId, request, actorUserId);
     }
 
-    public List<HealthRecordAttachmentResponse> getAttachments(Long recordId) {
-        return healthService.getAttachments(recordId);
+    public List<HealthRecordAttachmentResponse> getAttachments(Long recordId, Long actorUserId) {
+        return healthService.getAttachments(recordId, actorUserId);
     }
 
-    public void deleteAttachment(Long attachmentId) {
-        healthService.deleteAttachment(attachmentId);
+    public void deleteAttachment(Long attachmentId, Long actorUserId) {
+        healthService.deleteAttachment(attachmentId, actorUserId);
     }
 
     public List<com.carecode.domain.health.dto.response.ChildInfoResponse> getChildrenByAgeRange(Long userId, Integer minAge, Integer maxAge) {
@@ -119,26 +119,26 @@ public class HealthFacade {
 
     // ==================== 건강 분석 및 리포트 ====================
 
-    public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request) {
-        return healthService.analyzeHealthStatus(request);
+    public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request, Long actorUserId) {
+        return healthService.analyzeHealthStatus(request, actorUserId);
     }
 
-    public Map<String, Object> generateHealthReport(HealthCreateHealthRecordRequest request) {
-        return healthService.generateHealthReport(request);
+    public Map<String, Object> generateHealthReport(HealthCreateHealthRecordRequest request, Long actorUserId) {
+        return healthService.generateHealthReport(request, actorUserId);
     }
 
-    public Map<String, Object> getHealthGoals(String userId) {
-        return healthService.getHealthGoals(userId);
+    public Map<String, Object> getHealthGoals(String userId, Long actorUserId) {
+        return healthService.getHealthGoals(userId, actorUserId);
     }
 
-    public Map<String, Object> getIntegratedRecommendations(String userId) {
-        return healthService.getIntegratedRecommendations(userId);
+    public Map<String, Object> getIntegratedRecommendations(String userId, Long actorUserId) {
+        return healthService.getIntegratedRecommendations(userId, actorUserId);
     }
 
-    public List<Map<String, Object>> getHealthChart(String userId, String type, String from, String to) {
+    public List<Map<String, Object>> getHealthChart(String userId, String type, String from, String to, Long actorUserId) {
         LocalDate fromDate = from != null ? LocalDate.parse(from) : null;
         LocalDate toDate = to != null ? LocalDate.parse(to) : null;
-        return healthService.getHealthChart(userId, type, fromDate, toDate);
+        return healthService.getHealthChart(userId, type, fromDate, toDate, actorUserId);
     }
 
     public Map<String, Object> checkSystemHealth() {

@@ -101,7 +101,7 @@ class HealthServiceTest {
         );
 
         // When
-        HealthRecordResponse response = healthService.createHealthRecord(testRequest);
+        HealthRecordResponse response = healthService.createHealthRecord(testRequest, testUser.getId());
 
         // Then
         assertThat(response).isNotNull();
@@ -120,7 +120,7 @@ class HealthServiceTest {
         when(childRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> healthService.createHealthRecord(testRequest))
+        assertThatThrownBy(() -> healthService.createHealthRecord(testRequest, testUser.getId()))
                 .isInstanceOf(ChildNotFoundException.class)
                 .hasMessageContaining("아동을 찾을 수 없습니다");
 
@@ -142,7 +142,7 @@ class HealthServiceTest {
         );
 
         // When
-        HealthRecordResponse response = healthService.getHealthRecordById(recordId);
+        HealthRecordResponse response = healthService.getHealthRecordById(recordId, testUser.getId());
 
         // Then
         assertThat(response).isNotNull();
@@ -160,7 +160,7 @@ class HealthServiceTest {
         when(healthRecordRepository.findById(recordId)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> healthService.getHealthRecordById(recordId))
+        assertThatThrownBy(() -> healthService.getHealthRecordById(recordId, testUser.getId()))
                 .isInstanceOf(HealthRecordNotFoundException.class)
                 .hasMessageContaining("건강 기록을 찾을 수 없습니다");
 
