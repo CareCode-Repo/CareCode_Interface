@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // SecurityContext에 인증 정보 설정
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     
-                    log.info("JWT 인증 성공: userId={}, email={}, role={}", userId, email, role);
+                    log.debug("JWT 인증 성공: userId={}, email={}, role={}", userId, email, role);
                 } else {
                     log.debug("JWT 토큰이 유효하지 않음");
                     SecurityContextHolder.clearContext();
@@ -106,7 +106,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/auth/login") ||
                path.startsWith("/auth/register") ||
                path.equals("/auth/refresh") ||
-               path.startsWith("/api/auth/kakao") ||
+               path.startsWith("/auth/kakao") ||
                path.startsWith("/oauth2") ||
                path.startsWith("/login/oauth2") ||
                path.equals("/kakao-callback.html") ||
