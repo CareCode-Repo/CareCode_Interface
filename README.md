@@ -268,7 +268,7 @@ com.carecode.domain/
 ```
 POST   /auth/login                  - 로그인
 POST   /auth/register               - 회원가입
-POST   /auth/refresh-token          - 토큰 갱신
+POST   /auth/refresh                  - 토큰 갱신
 GET    /auth/me                     - 현재 사용자 정보
 POST   /auth/logout                 - 로그아웃
 GET    /auth/kakao/callback         - 카카오 로그인 콜백
