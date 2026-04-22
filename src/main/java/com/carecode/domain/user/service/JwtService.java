@@ -31,6 +31,14 @@ public class JwtService {
     @Value("${jwt.refresh-token.expiration:2592000000}") // 30일
     private long refreshTokenExpiration;
 
+    public long getAccessTokenExpirationMs() {
+        return accessTokenExpiration;
+    }
+
+    public long getRefreshTokenExpirationMs() {
+        return refreshTokenExpiration;
+    }
+
     @PostConstruct
     public void validateJwtSecret() {
         if (secret == null || secret.trim().isEmpty()) {
@@ -175,7 +183,7 @@ public class JwtService {
                     .parseClaimsJws(token);
             return !isTokenExpired(token);
         } catch (JwtException | IllegalArgumentException e) {
-            log.error("JWT 토큰 검증 실패: {}", e.getMessage());
+            log.warn("JWT 토큰 검증 실패: {}", e.getMessage());
             return false;
         }
     }
@@ -204,7 +212,7 @@ public class JwtService {
                     .message("토큰이 유효합니다.")
                     .build();
         } catch (Exception e) {
-            log.error("토큰 검증 중 오류 발생: {}", e.getMessage());
+            log.warn("토큰 검증 중 오류 발생: {}", e.getMessage());
             return TokenValidationResponse.builder()
                     .valid(false)
                     .message("토큰 검증 중 오류가 발생했습니다.")
@@ -241,7 +249,7 @@ public class JwtService {
                     .message("토큰 갱신 성공")
                     .build();
         } catch (Exception e) {
-            log.error("토큰 갱신 실패: {}", e.getMessage());
+            log.warn("토큰 갱신 실패: {}", e.getMessage());
             throw new RuntimeException("토큰 갱신에 실패했습니다.", e);
         }
     }
