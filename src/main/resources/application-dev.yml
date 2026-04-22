@@ -154,6 +154,11 @@ management:
 kakao:
   redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/auth/kakao/callback}
 
+# 선택: 리프레시 토큰을 Redis에 등록·검증(jwt.refresh-token.store=redis). 기본은 application.properties의 none.
+# jwt:
+#   refresh-token:
+#     store: redis
+
 # 공공 데이터 API 설정
 public:
   data:
