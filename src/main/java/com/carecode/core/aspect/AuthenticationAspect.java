@@ -31,7 +31,7 @@ public class AuthenticationAspect {
         // 인증되지 않은 경우
         if (authentication == null || !authentication.isAuthenticated() || 
             "anonymousUser".equals(authentication.getName())) {
-            log.warn("인증되지 않은 사용자의 접근 시도: {}", joinPoint.getSignature().getName());
+            log.debug("인증되지 않은 사용자의 접근 시도: {}", joinPoint.getSignature().getName());
             throw new CareServiceException("UNAUTHORIZED", requireAuthentication.message());
         }
         
