@@ -3,19 +3,21 @@ package com.carecode.domain.user.controller;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RateLimit;
 import com.carecode.core.controller.BaseController;
+import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.domain.user.dto.request.LoginRequestDto;
 import com.carecode.domain.user.dto.request.RefreshTokenRequest;
 import com.carecode.domain.user.dto.response.TokenDto;
 import com.carecode.domain.user.dto.response.UserDto;
 import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.service.AuthService;
 import com.carecode.domain.user.service.JwtService;
 import com.carecode.domain.user.service.EmailVerificationService;
 import com.carecode.domain.user.service.UserService;
+import com.carecode.domain.user.service.refreshtoken.RefreshTokenStore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,14 +36,16 @@ import com.carecode.core.handler.ApiSuccess;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @Tag(name = "인증", description = "통합 인증 API (일반 로그인, 토큰 갱신)")
 public class AuthController extends BaseController {
 
     private final UserService userService;
     private final JwtService jwtService;
+    private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenStore refreshTokenStore;
+    private final CurrentUserFacade currentUserFacade;
 
     // ==================== 일반 로그인 ====================
 
@@ -78,31 +82,7 @@ public class AuthController extends BaseController {
         userEntity.setUpdatedAt(LocalDateTime.now());
         userService.saveUser(userEntity);
 
-        // JWT 토큰 생성
-        String accessToken = jwtService.generateAccessToken(
-            userEntity.getUserId(),
-            userEntity.getEmail(),
-            userEntity.getRole().name(),
-            userEntity.getName() // name 포함
-        );
-
-        String refreshToken = jwtService.generateRefreshToken(
-            userEntity.getUserId(),
-            userEntity.getEmail()
-        );
-
-        TokenDto tokenDto = TokenDto.builder()
-                .success(true)
-                .message("로그인 성공!")
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .expiresIn(3600000L)
-                .refreshExpiresIn(2592000000L)
-                .user(userService.convertToDto(userEntity))
-                .build();
-
-        return ResponseEntity.ok(tokenDto);
+        return ResponseEntity.ok(authService.issueTokenForUser(userEntity, "로그인 성공!"));
     }
 
     // 회원가입
@@ -111,31 +91,9 @@ public class AuthController extends BaseController {
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
     public ResponseEntity<TokenDto> register(@Parameter(description = "회원가입 정보", required = true) @Valid @RequestBody UserDto request) {
         UserDto createdUser = userService.createUser(request);
-
-        // JWT 토큰 생성
-        String accessToken = jwtService.generateAccessToken(
-            createdUser.getUserId(),
-            createdUser.getEmail(),
-            createdUser.getRole(),
-            createdUser.getName() // name 포함
-        );
-
-        String refreshToken = jwtService.generateRefreshToken(
-            createdUser.getUserId(),
-            createdUser.getEmail()
-        );
-
-        TokenDto tokenDto = TokenDto.builder()
-                .success(true)
-                .message("회원가입 성공!")
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .expiresIn(3600000L)
-                .refreshExpiresIn(2592000000L)
-                .user(createdUser)
-                .build();
-
+        User user = userService.getUserEntityByEmail(createdUser.getEmail());
+        TokenDto tokenDto = authService.issueTokenForUser(user, "회원가입 성공!");
+        tokenDto.setUser(createdUser);
         return ResponseEntity.ok(tokenDto);
     }
 
@@ -159,6 +117,13 @@ public class AuthController extends BaseController {
         String userId = jwtService.getUserIdFromToken(request.getRefreshToken());
         String email = jwtService.getEmailFromToken(request.getRefreshToken());
 
+        if (!refreshTokenStore.isRegistered(request.getRefreshToken(), userId)) {
+            return ResponseEntity.status(401).body(TokenDto.builder()
+                    .success(false)
+                    .message("세션이 만료되었거나 로그아웃된 Refresh Token입니다.")
+                    .build());
+        }
+
         // 사용자 존재 확인
         UserDto user = userService.getUserById(userId);
 
@@ -168,18 +133,29 @@ public class AuthController extends BaseController {
         // 새로운 Refresh Token 생성 (토큰 로테이션)
         String newRefreshToken = jwtService.generateRefreshToken(userId, email);
 
+        refreshTokenStore.remove(request.getRefreshToken(), userId);
+        refreshTokenStore.register(userId, newRefreshToken);
+
         TokenDto tokenDto = TokenDto.builder()
                 .success(true)
                 .message("토큰 갱신 성공!")
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .tokenType("Bearer")
-                .expiresIn(3600000L)
-                .refreshExpiresIn(2592000000L)
+                .expiresIn(jwtService.getAccessTokenExpirationMs())
+                .refreshExpiresIn(jwtService.getRefreshTokenExpirationMs())
                 .user(user)
                 .build();
 
         return ResponseEntity.ok(tokenDto);
+    }
+
+    @PostMapping("/logout")
+    @LogExecutionTime
+    @Operation(summary = "로그아웃", description = "서버에 등록된 리프레시 토큰 세션을 모두 폐기합니다. (액세스 토큰은 만료 시까지 유효할 수 있음)")
+    public ResponseEntity<ApiSuccess> logout() {
+        refreshTokenStore.removeAllForUser(currentUserFacade.requireCurrentUserId());
+        return ResponseEntity.ok(ApiSuccess.of("로그아웃되었습니다."));
     }
 
     // ==================== 이메일 인증 ====================
@@ -213,17 +189,4 @@ public class AuthController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.of(message));
     }
 
-    // ==================== 유틸리티 메서드 ====================
-
-    // 현재 로그인한 사용자의 이메일을 JWT 토큰에서 추출
-    private String getCurrentUserEmail(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("유효한 Authorization 헤더가 없습니다.");
-        }
-
-        String token = authHeader.substring(7);
-        return jwtService.extractEmailFromToken(token);
-    }
 }
