@@ -120,6 +120,12 @@ public class CustomizedResponseEntityExceptionHandler {
         if ("FORBIDDEN".equalsIgnoreCase(careServiceErrorCode)) {
             return ErrorCode.FORBIDDEN;
         }
+        if ("USER_NOT_FOUND".equalsIgnoreCase(careServiceErrorCode)) {
+            return ErrorCode.USER_NOT_FOUND;
+        }
+        if (careServiceErrorCode != null && careServiceErrorCode.startsWith("KAKAO")) {
+            return ErrorCode.INVALID_INPUT;
+        }
         return ErrorCode.INTERNAL_SERVER_ERROR;
     }
 
