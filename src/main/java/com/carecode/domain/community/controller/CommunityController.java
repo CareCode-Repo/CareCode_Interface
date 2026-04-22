@@ -1,7 +1,6 @@
 package com.carecode.domain.community.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.controller.BaseController;
 import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
@@ -35,7 +34,6 @@ import java.util.Date;
 @RequestMapping("/community")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*", allowedHeaders = "*") // CORS 허용
 @Tag(name = "커뮤니티", description = "육아 커뮤니티 게시글 및 댓글 관리 API")
 public class CommunityController extends BaseController {
 
@@ -73,7 +71,6 @@ public class CommunityController extends BaseController {
 
     @PostMapping("/posts")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성합니다.")
     public ResponseEntity<CommunityPostResponse> createPost(
             @Parameter(description = "게시글 정보", required = true) @RequestBody CommunityCreatePostRequest request) {
@@ -86,7 +83,6 @@ public class CommunityController extends BaseController {
 
     @PutMapping("/posts/{postId}")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "게시글 수정", description = "기존 게시글을 수정합니다.")
     public ResponseEntity<CommunityPostResponse> updatePost(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
@@ -100,7 +96,6 @@ public class CommunityController extends BaseController {
 
     @DeleteMapping("/posts/{postId}")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "게시글 삭제", description = "게시글을 삭제합니다.")
     public ResponseEntity<ApiSuccess> deletePost(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
@@ -125,7 +120,6 @@ public class CommunityController extends BaseController {
 
     @PostMapping("/posts/{postId}/comments")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "댓글 작성", description = "게시글에 댓글을 작성합니다.")
     public ResponseEntity<CommunityCommentResponse> createComment(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
@@ -139,7 +133,6 @@ public class CommunityController extends BaseController {
 
     @PutMapping("/comments/{commentId}")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "댓글 수정", description = "기존 댓글을 수정합니다.")
     public ResponseEntity<CommunityCommentResponse> updateComment(
             @Parameter(description = "댓글 ID", required = true) @PathVariable Long commentId,
@@ -153,7 +146,6 @@ public class CommunityController extends BaseController {
 
     @DeleteMapping("/comments/{commentId}")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "댓글 삭제", description = "댓글을 삭제합니다.")
     public ResponseEntity<ApiSuccess> deleteComment(
             @Parameter(description = "댓글 ID", required = true) @PathVariable Long commentId) {
@@ -219,7 +211,6 @@ public class CommunityController extends BaseController {
 
     @PostMapping("/posts/{postId}/like")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "게시글 좋아요", description = "게시글에 좋아요를 추가하거나 제거합니다.")
     public ResponseEntity<Map<String, Object>> toggleLike(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
@@ -238,7 +229,6 @@ public class CommunityController extends BaseController {
 
     @PostMapping("/posts/{postId}/bookmark")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "게시글 북마크", description = "게시글을 북마크에 추가하거나 제거합니다.")
     public ResponseEntity<Map<String, Object>> toggleBookmark(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
@@ -257,7 +247,6 @@ public class CommunityController extends BaseController {
 
     @GetMapping("/posts/liked")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "좋아요한 게시글 목록", description = "현재 사용자가 좋아요한 게시글 목록을 조회합니다.")
     public ResponseEntity<List<CommunityPostResponse>> getLikedPosts(
             ) {
@@ -271,7 +260,6 @@ public class CommunityController extends BaseController {
 
     @GetMapping("/posts/bookmarked")
     @LogExecutionTime
-    @RequireAuthentication
     @Operation(summary = "북마크한 게시글 목록", description = "현재 사용자가 북마크한 게시글 목록을 조회합니다.")
     public ResponseEntity<List<CommunityPostResponse>> getBookmarkedPosts(
             ) {
