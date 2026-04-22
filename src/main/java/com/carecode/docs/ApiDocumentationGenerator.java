@@ -22,8 +22,6 @@ import java.util.*;
 public class ApiDocumentationGenerator {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
-
-
     // 메인 메서드 - 독립 실행용
 
     public static void main(String[] args) {
