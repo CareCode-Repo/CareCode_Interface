@@ -27,4 +27,6 @@ public class TokenDto {
     private Boolean success;
     private String message;
     private UserDto user;
+    /** 카카오 등 소셜 로그인에서만 설정 (선택). */
+    private Boolean isNewUser;
 }
