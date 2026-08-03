@@ -34,6 +34,9 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class CareFacilityBookingService {
 
+    /** 시설에 정원 정보가 없을 때 적용할 동시 예약 허용 건수. */
+    private static final int DEFAULT_CONCURRENT_BOOKING_LIMIT = 1;
+
     private final CareFacilityBookingRepository bookingRepository;
     private final CareFacilityRepository careFacilityRepository;
     private final UserRepository userRepository;
@@ -53,7 +56,7 @@ public class CareFacilityBookingService {
                 .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userDetails.getUsername()));
 
         // 예약 시간 중복 확인
-        validateBookingTime(facilityId, request.getStartTime());
+        validateBookingTime(careFacility, request.getStartTime(), request.getEndTime(), null);
 
         // 예약 생성
         CareFacilityBooking booking = new CareFacilityBooking(
@@ -200,9 +203,11 @@ public class CareFacilityBookingService {
             throw new CareServiceException("완료된 예약은 수정할 수 없습니다.");
         }
 
-        // 예약 시간 변경 시 중복 확인
-        if (!booking.getStartTime().equals(request.getStartTime())) {
-            validateBookingTime(booking.getFacility().getId(), request.getStartTime());
+        // 예약 시간이 바뀌면 다시 검증한다. 종료 시각만 바뀌어도 겹침 여부가 달라지므로 둘 다 비교한다.
+        boolean timeChanged = !booking.getStartTime().equals(request.getStartTime())
+                || !java.util.Objects.equals(booking.getEndTime(), request.getEndTime());
+        if (timeChanged) {
+            validateBookingTime(booking.getFacility(), request.getStartTime(), request.getEndTime(), booking.getId());
         }
 
         // 예약 정보 업데이트
@@ -247,14 +252,36 @@ public class CareFacilityBookingService {
 
     // 예약 시간 중복 확인
 
-    private void validateBookingTime(Long facilityId, LocalDateTime scheduledDateTime) {
-        LocalDateTime startTime = scheduledDateTime.minusHours(1);
-        LocalDateTime endTime = scheduledDateTime.plusHours(1);
-        
-        List<CareFacilityBooking> conflictingBookings = bookingRepository.findByFacilityIdAndStartTimeBetween(facilityId, startTime, endTime);
-        
-        if (!conflictingBookings.isEmpty()) {
-            throw new CareServiceException("해당 시간에 이미 예약이 있습니다. 다른 시간을 선택해주세요.");
+    /**
+     * 예약 가능 여부 검증.
+     *
+     * <p>이전 구현은 시작 시각 ±1시간만 비교해서 (1) 기존 예약의 종료 시각을 무시했고,
+     * (2) 취소된 예약도 충돌로 셌으며, (3) 시설 정원과 무관하게 1건만 있어도 막았다.
+     * 여기서는 실제 구간 겹침을 보고, 겹치는 유효 예약 수가 정원 미만일 때만 허용한다.
+     */
+    private void validateBookingTime(CareFacility facility,
+                                     LocalDateTime startTime,
+                                     LocalDateTime endTime,
+                                     Long excludeBookingId) {
+        if (startTime == null || endTime == null) {
+            throw new CareServiceException("예약 시작/종료 시간은 필수입니다.");
+        }
+        if (!endTime.isAfter(startTime)) {
+            throw new CareServiceException("예약 종료 시간은 시작 시간보다 뒤여야 합니다.");
+        }
+        if (startTime.isBefore(LocalDateTime.now())) {
+            throw new CareServiceException("과거 시간으로는 예약할 수 없습니다.");
+        }
+
+        long overlapping = bookingRepository.countOverlappingBookings(
+                facility.getId(), startTime, endTime, excludeBookingId);
+
+        int capacity = facility.getCapacity() != null && facility.getCapacity() > 0
+                ? facility.getCapacity()
+                : DEFAULT_CONCURRENT_BOOKING_LIMIT;
+
+        if (overlapping >= capacity) {
+            throw new CareServiceException("해당 시간에 예약 가능한 자리가 없습니다. 다른 시간을 선택해주세요.");
         }
     }
 
