@@ -1,0 +1,23 @@
+package com.carecode.domain.chatbot.llm;
+
+import com.carecode.domain.chatbot.rag.RetrievedContext;
+
+import java.util.Optional;
+
+/**
+ * 챗봇 응답 생성기.
+ *
+ * <p>구현체를 바꾸면 LLM 공급자를 교체할 수 있다.
+ * 사용 불가 상태({@link #isAvailable()} == false)면 호출부가 룰 기반 응답으로 폴백한다.
+ */
+public interface ChatCompletionClient {
+
+    boolean isAvailable();
+
+    /**
+     * 검색된 근거를 바탕으로 답변을 생성한다.
+     *
+     * @return 생성 실패 시 {@link Optional#empty()} — 예외를 던지지 않는다
+     */
+    Optional<String> generateReply(String userMessage, RetrievedContext context);
+}
