@@ -14,6 +14,7 @@ import com.carecode.domain.notification.dto.response.NotificationDeliveryStatusR
 import com.carecode.domain.notification.entity.Notification;
 import com.carecode.domain.notification.factory.NotificationStrategyFactory;
 import com.carecode.domain.notification.repository.NotificationRepository;
+import com.carecode.domain.notification.sender.NotificationDispatcher;
 import com.carecode.domain.notification.strategy.NotificationStrategy;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.UserRepository;
@@ -47,7 +48,9 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final NotificationStrategyFactory strategyFactory;
-    
+    private final NotificationDispatcher notificationDispatcher;
+
+
 
     // 사용자별 알림 목록 조회
 
@@ -115,10 +118,13 @@ public class NotificationService {
             
             // 알림 저장
             Notification savedNotification = notificationRepository.save(notification);
-            
-            // 알림 처리 (전송 등)
+
+            // 알림 처리 (타입별 후처리)
             strategy.processNotification(savedNotification);
-            
+
+            // 사용자 설정에 맞는 채널로 실제 발송 (SMTP/FCM 왕복이 요청을 막지 않도록 비동기)
+            notificationDispatcher.dispatchAsync(savedNotification);
+
             return convertToResponseDto(savedNotification);
         } catch (Exception e) {
             log.error("알림 생성 실패: {}", e.getMessage());
