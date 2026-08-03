@@ -1,108 +1,80 @@
 package com.carecode.core.aspect;
 
 import com.carecode.core.annotation.RateLimit;
-import com.carecode.core.exception.BusinessException;
+import com.carecode.core.exception.RateLimitExceededException;
+import com.carecode.core.util.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Duration;
 
 /**
- * Rate Limiting을 처리하는 Aspect
- * 지정된 시간 내에 허용되는 최대 요청 수를 제한합니다.
+ * {@link RateLimit} 이 붙은 메서드에 대한 요청 수 제한.
+ *
+ * <p>이전 구현은 인스턴스 로컬 {@code ConcurrentHashMap} 을 썼기 때문에
+ * (1) 다중 인스턴스에서 무의미했고, (2) IP 별 키가 무한히 쌓여 메모리를 잠식했으며,
+ * (3) 윈도우 리셋이 원자적이지 않아 경계에서 한도를 초과할 수 있었다.
+ * Redis 의 INCR + EXPIRE 로 교체해 세 문제를 모두 해소한다.
  */
 @Aspect
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class RateLimitingAspect {
 
-    private final ConcurrentHashMap<String, RateLimitInfo> rateLimitMap = new ConcurrentHashMap<>();
+    private static final String KEY_PREFIX = "ratelimit:method:";
+
+    private final StringRedisTemplate redisTemplate;
+    private final ClientIpResolver clientIpResolver;
 
     @Around("@annotation(rateLimit)")
     public Object rateLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
-        String key = generateKey(joinPoint, rateLimit);
-        RateLimitInfo info = rateLimitMap.computeIfAbsent(key, k -> new RateLimitInfo(rateLimit));
-        
-        long currentTime = System.currentTimeMillis();
-        
-        // 시간 윈도우가 지났으면 리셋
-        if (currentTime - info.getWindowStart() > rateLimit.windowSeconds() * 1000L) {
-            info.reset(currentTime);
+        String key = KEY_PREFIX + generateKey(joinPoint, rateLimit);
+
+        long count;
+        try {
+            Long incremented = redisTemplate.opsForValue().increment(key);
+            count = incremented != null ? incremented : 0L;
+            if (count == 1L) {
+                redisTemplate.expire(key, Duration.ofSeconds(rateLimit.windowSeconds()));
+            }
+        } catch (DataAccessException e) {
+            // Redis 장애로 전체 API 가 막히지 않도록 fail-open 한다.
+            log.error("Rate limit 카운터 조회 실패 - Redis 장애로 제한을 건너뜁니다. key={}", key, e);
+            return joinPoint.proceed();
         }
-        
-        // 요청 수 체크
-        int currentCount = info.getCount().incrementAndGet();
-        
-        if (currentCount > rateLimit.requests()) {
-            log.warn("Rate limit 초과 - Key: {}, 현재 요청 수: {}, 허용 한도: {}", 
-                key, currentCount, rateLimit.requests());
-            throw new BusinessException(rateLimit.message());
+
+        if (count > rateLimit.requests()) {
+            log.warn("Rate limit 초과 - key={}, 요청 수={}, 한도={}", key, count, rateLimit.requests());
+            throw new RateLimitExceededException(rateLimit.message());
         }
-        
+
         return joinPoint.proceed();
     }
-    
+
     private String generateKey(ProceedingJoinPoint joinPoint, RateLimit rateLimit) {
         String methodName = joinPoint.getSignature().toShortString();
-        
-        if (rateLimit.perUser()) {
-            // IP 기반 키 생성
-            ServletRequestAttributes attributes = 
+
+        if (!rateLimit.perUser()) {
+            return methodName;
+        }
+
+        ServletRequestAttributes attributes =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes != null) {
-                HttpServletRequest request = attributes.getRequest();
-                String clientIp = getClientIp(request);
-                return methodName + ":" + clientIp;
-            }
+        if (attributes == null) {
+            return methodName;
         }
-        
-        return methodName;
-    }
-    
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
-    }
-    
-    private static class RateLimitInfo {
-        private final RateLimit rateLimit;
-        private long windowStart;
-        private final AtomicInteger count;
-        
-        public RateLimitInfo(RateLimit rateLimit) {
-            this.rateLimit = rateLimit;
-            this.windowStart = System.currentTimeMillis();
-            this.count = new AtomicInteger(0);
-        }
-        
-        public void reset(long currentTime) {
-            this.windowStart = currentTime;
-            this.count.set(0);
-        }
-        
-        public long getWindowStart() {
-            return windowStart;
-        }
-        
-        public AtomicInteger getCount() {
-            return count;
-        }
+
+        HttpServletRequest request = attributes.getRequest();
+        return methodName + ":" + clientIpResolver.resolve(request);
     }
 }
-
