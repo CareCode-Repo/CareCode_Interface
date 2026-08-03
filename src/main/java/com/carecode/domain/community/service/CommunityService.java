@@ -1,6 +1,8 @@
 package com.carecode.domain.community.service;
 
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.CommentAccessDeniedException;
+import com.carecode.core.exception.PostAccessDeniedException;
 import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
@@ -24,6 +26,7 @@ import com.carecode.domain.community.mapper.CommunityMapper;
 import com.carecode.domain.community.entity.PostLike;
 import com.carecode.domain.community.entity.Bookmark;
 import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.entity.UserRole;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -94,21 +97,17 @@ public class CommunityService {
 
     public CommunityPostDetailResponse getPostById(Long postId) {
         log.info("게시글 상세 조회 - 게시글 ID: {}", postId);
-        try {
-            Post post = postRepository.findById(postId)
-                    .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
-            
-            // 조회수 증가
-            post.setViewCount(post.getViewCount() + 1);
-            postRepository.save(post);
-            
-            return communityMapper.toPostDetailResponse(post);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("게시글 상세 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글을 조회하는 중 오류가 발생했습니다.");
+
+        // 조회수는 DB 에서 원자적으로 증가시킨다 (동시 조회 시 증가분 유실 방지).
+        int updated = postRepository.incrementViewCount(postId);
+        if (updated == 0) {
+            throw new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId);
         }
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
+
+        return communityMapper.toPostDetailResponse(post);
     }
     
 
@@ -145,40 +144,30 @@ public class CommunityService {
 
     public CommunityPostResponse updatePost(Long postId, CommunityUpdatePostRequest request) {
         log.info("게시글 수정 - 게시글 ID: {}", postId);
-        try {
-            Post post = postRepository.findById(postId)
-                    .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
-            
-            post.setTitle(request.getTitle());
-            post.setContent(request.getContent());
-            post.setCategory(mapCategory(request.getCategory()));
-            
-            Post updatedPost = postRepository.save(post);
-            return communityMapper.toPostResponse(updatedPost);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("게시글 수정 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글을 수정하는 중 오류가 발생했습니다.");
-        }
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
+
+        requirePostOwnership(post);
+
+        post.setTitle(request.getTitle());
+        post.setContent(request.getContent());
+        post.setCategory(mapCategory(request.getCategory()));
+
+        Post updatedPost = postRepository.save(post);
+        return communityMapper.toPostResponse(updatedPost);
     }
-    
+
 
     // 게시글 삭제
 
     public void deletePost(Long postId) {
         log.info("게시글 삭제 - 게시글 ID: {}", postId);
-        try {
-            Post post = postRepository.findById(postId)
-                    .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
-            
-            postRepository.delete(post);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("게시글 삭제 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글을 삭제하는 중 오류가 발생했습니다.");
-        }
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
+
+        requirePostOwnership(post);
+
+        postRepository.delete(post);
     }
     
 
@@ -254,18 +243,22 @@ public class CommunityService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
 
+        requireCommentOwnership(comment);
+
         comment.setContent(request.getContent());
         Comment updatedComment = commentRepository.save(comment);
 
         return communityMapper.toCommentResponse(updatedComment);
     }
-    
+
 
     // 댓글 삭제
 
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다. ID: " + commentId));
+
+        requireCommentOwnership(comment);
 
         Long postId = comment.getPost().getId();
         commentRepository.delete(comment);
@@ -334,6 +327,40 @@ public class CommunityService {
                     log.error("getCurrentUser() - 사용자를 찾을 수 없음: {}", userEmail);
                     return new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userEmail);
                 });
+    }
+
+
+    // 게시글 소유권 검증 (작성자 본인 또는 관리자만 허용)
+
+    private void requirePostOwnership(Post post) {
+        User currentUser = getCurrentUser();
+        if (isOwner(post.getAuthor(), currentUser) || isAdmin(currentUser)) {
+            return;
+        }
+        log.warn("게시글 접근 거부 - 게시글ID={}, 요청자ID={}", post.getId(), currentUser.getId());
+        throw new PostAccessDeniedException("본인이 작성한 게시글만 수정/삭제할 수 있습니다.");
+    }
+
+
+    // 댓글 소유권 검증 (작성자 본인 또는 관리자만 허용)
+
+    private void requireCommentOwnership(Comment comment) {
+        User currentUser = getCurrentUser();
+        if (isOwner(comment.getAuthor(), currentUser) || isAdmin(currentUser)) {
+            return;
+        }
+        log.warn("댓글 접근 거부 - 댓글ID={}, 요청자ID={}", comment.getId(), currentUser.getId());
+        throw new CommentAccessDeniedException("본인이 작성한 댓글만 수정/삭제할 수 있습니다.");
+    }
+
+    private boolean isOwner(User author, User currentUser) {
+        return author != null
+                && author.getId() != null
+                && author.getId().equals(currentUser.getId());
+    }
+
+    private boolean isAdmin(User user) {
+        return UserRole.ADMIN == user.getRole();
     }
 
 
