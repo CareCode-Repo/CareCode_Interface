@@ -43,17 +43,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup SSH key
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
-      
+    # 이 잡은 SSH 를 사용하지 않는다. PR 트리거에서도 도는 잡에
+    # 배포용 개인키를 올리지 않도록 SSH 설정을 두지 않는다.
+
+    - name: Validate Gradle wrapper
+      uses: gradle/actions/wrapper-validation@v4
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
-        
+
     - name: Cache Gradle packages
       uses: actions/cache@v4
       with:
@@ -66,10 +67,18 @@ jobs:
           
     - name: Run tests
       run: ./gradlew clean test jacocoTestReport
-      
+
+    - name: Publish test report
+      uses: mikepenz/action-junit-report@v5
+      if: always()
+      with:
+        report_paths: 'build/test-results/test/TEST-*.xml'
+
+    # build 에서 -x test 로 테스트를 빼면 check 에 걸어둔 커버리지 검증까지 함께 무력화된다.
+    # 위에서 이미 test 를 돌렸으므로 여기서는 검증을 포함해 그대로 build 한다.
     - name: Build application
-      run: ./gradlew build -x test
-      
+      run: ./gradlew build
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -89,24 +98,34 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup SSH key
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
-      
-    - name: Run Trivy vulnerability scanner
+    # 이 잡도 SSH 를 사용하지 않으므로 배포용 개인키를 로드하지 않는다.
+
+    # 1) SARIF 리포트 생성 (Security 탭 업로드용) - 여기서는 실패시키지 않는다.
+    - name: Run Trivy vulnerability scanner (report)
       uses: aquasecurity/trivy-action@0.30.0
       with:
         scan-type: 'fs'
         scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
-        
+
     - name: Upload Trivy scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
+
+    # 2) 게이트: CRITICAL/HIGH 취약점이 있으면 파이프라인을 실패시킨다.
+    #    exit-code 를 지정하지 않으면 취약점이 나와도 그냥 통과해 스캔이 장식이 된다.
+    - name: Fail on CRITICAL/HIGH vulnerabilities
+      uses: aquasecurity/trivy-action@0.30.0
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'table'
+        severity: 'CRITICAL,HIGH'
+        ignore-unfixed: true
+        exit-code: '1'
 
   # ===========================================
   # Build Docker Image Job
@@ -208,35 +227,48 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    # blue/green 두 컨테이너는 서로 다른 포트를 점유해야 한다.
+    # 둘 다 8082 를 쓰면 동시에 뜰 수 없어 무중단 전환 자체가 성립하지 않는다.
     - name: Determine deployment strategy
       id: strategy
       run: |
         CURRENT_ENV=$(curl -fsS "${{ secrets.PRODUCTION_ROUTER_STATUS_URL }}" || echo "blue")
         if [ "$CURRENT_ENV" = "blue" ]; then
-          echo "target-env=green" >> $GITHUB_OUTPUT
-          echo "current-env=blue" >> $GITHUB_OUTPUT
+          echo "target-env=green"  >> $GITHUB_OUTPUT
+          echo "current-env=blue"  >> $GITHUB_OUTPUT
+          echo "target-port=8083"  >> $GITHUB_OUTPUT
         else
-          echo "target-env=blue" >> $GITHUB_OUTPUT
+          echo "target-env=blue"   >> $GITHUB_OUTPUT
           echo "current-env=green" >> $GITHUB_OUTPUT
+          echo "target-port=8082"  >> $GITHUB_OUTPUT
         fi
-        
+
     - name: Deploy to target environment
       run: |
         test -n "${{ secrets.PRODUCTION_DEPLOY_HOST }}"
+        TARGET="${{ steps.strategy.outputs.target-env }}"
+        PORT="${{ steps.strategy.outputs.target-port }}"
         ssh -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_DEPLOY_USER }}@${{ secrets.PRODUCTION_DEPLOY_HOST }} \
-          "docker pull ${{ needs.build-docker.outputs.image-tag }} && docker stop carecode-${{ steps.strategy.outputs.target-env }} || true && docker rm carecode-${{ steps.strategy.outputs.target-env }} || true && docker run -d --name carecode-${{ steps.strategy.outputs.target-env }} -p 8082:8082 --env-file /opt/carecode/.env ${{ needs.build-docker.outputs.image-tag }}"
-        
-    - name: Wait for deployment to be ready
+          "docker pull ${{ needs.build-docker.outputs.image-tag }} \
+           && (docker stop carecode-$TARGET || true) \
+           && (docker rm carecode-$TARGET || true) \
+           && docker run -d --name carecode-$TARGET -p $PORT:8082 --env-file /opt/carecode/.env ${{ needs.build-docker.outputs.image-tag }}"
+
+    # 전환 전에는 아직 라우팅되지 않는 대기(target) 인스턴스를 직접 확인해야 한다.
+    # 공용 헬스 URL 을 보면 구버전이 UP 이라 항상 통과해버린다.
+    - name: Wait for target instance to be ready
       run: |
-        test -n "$PRODUCTION_HEALTH_URL"
+        test -n "${{ secrets.PRODUCTION_TARGET_HEALTH_URL_TEMPLATE }}"
+        PORT="${{ steps.strategy.outputs.target-port }}"
+        TARGET_HEALTH_URL=$(echo "${{ secrets.PRODUCTION_TARGET_HEALTH_URL_TEMPLATE }}" | sed "s/{port}/$PORT/")
         for i in {1..20}; do
-          if curl -fsS "$PRODUCTION_HEALTH_URL/actuator/health" | grep -q '"status":"UP"'; then
-            echo "Production target is healthy"
+          if curl -fsS "$TARGET_HEALTH_URL/actuator/health" | grep -q '"status":"UP"'; then
+            echo "Production target ($PORT) is healthy"
             exit 0
           fi
           sleep 5
         done
-        echo "Production health check failed"
+        echo "Production target health check failed"
         exit 1
         
     - name: Switch traffic to new environment
