@@ -1,229 +1,159 @@
 package com.carecode.domain.admin.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.annotation.RequireAdminRole;
 import com.carecode.core.controller.BaseController;
 import com.carecode.domain.admin.dto.AdminBookingDetailResponse;
-import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
 import com.carecode.domain.admin.dto.AdminBookingSearchRequest;
 import com.carecode.domain.admin.dto.AdminBookingSearchResponse;
-import com.carecode.domain.admin.dto.AdminStatusUpdateRequest;
 import com.carecode.domain.admin.dto.AdminBookingStatsResponse;
+import com.carecode.domain.admin.dto.AdminStatusUpdateRequest;
 import com.carecode.domain.admin.service.CareFacilityBookingAdminService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.time.LocalDate;
+import java.util.Map;
 
 /**
- * 관리자용 육아 시설 예약 관리 컨트롤러
+ * 관리자용 육아 시설 예약 관리 API.
+ *
+ * <p>접근 제어는 SecurityConfig 의 {@code /api/admin/**} → hasRole("ADMIN") 규칙이 담당한다.
  */
 @Slf4j
-@Controller
-@RequestMapping("/admin/facilities/bookings")
+@RestController
+@RequestMapping("/api/admin/facilities/bookings")
 @RequiredArgsConstructor
-@RequireAdminRole
+@Tag(name = "어드민 - 시설 예약", description = "관리자 전용 예약 관리 API")
 public class AdminCareFacilityBookingController extends BaseController {
 
     private final CareFacilityBookingAdminService adminBookingService;
 
-    // 예약 목록 페이지
     @GetMapping
     @LogExecutionTime
-    public String bookingList(@RequestParam(defaultValue = "0") Integer page, @RequestParam(defaultValue = "20") Integer size,
-                              @RequestParam(required = false) Long facilityId, @RequestParam(required = false) String status,
-                              @RequestParam(required = false) String keyword, Model model) {
-        AdminBookingSearchRequest request = AdminBookingSearchRequest.builder()
-            .page(page)
-            .size(size)
-            .facilityId(facilityId)
-            .status(status)
-            .keyword(keyword)
-            .build();
-            
-        AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
-            
-        model.addAttribute("bookings", response.getBookings());
-        model.addAttribute("pagination", response);
-        model.addAttribute("searchRequest", request);
+    @Operation(summary = "예약 목록 조회")
+    public ResponseEntity<AdminBookingSearchResponse> bookingList(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String keyword) {
 
-        return "admin/facilities/bookings/list";
-    }
-
-
-    // 예약 상세 페이지
-
-    @GetMapping("/{bookingId}")
-    @LogExecutionTime
-    public String bookingDetail(@PathVariable Long bookingId, Model model) {
-        AdminBookingDetailResponse booking = adminBookingService.getBookingDetail(bookingId);
-        model.addAttribute("booking", booking);
-        return "admin/facilities/bookings/detail";
-    }
-
-
-    // 예약 상태 변경
-
-    @PostMapping("/{bookingId}/status")
-    @LogExecutionTime
-    public String updateBookingStatus(@PathVariable Long bookingId, @RequestParam String status,
-                                      @RequestParam(required = false) String reason,
-                                      RedirectAttributes redirectAttributes) {
-
-        AdminStatusUpdateRequest request = AdminStatusUpdateRequest.builder()
-            .status(status)
-            .reason(reason)
-            .build();
-
-        adminBookingService.updateBookingStatus(bookingId, request);
-        redirectAttributes.addFlashAttribute("success", "예약 상태가 성공적으로 변경되었습니다.");
-
-        return "redirect:/admin/facilities/bookings/" + bookingId;
-    }
-
-
-    // 예약 삭제
-
-    @PostMapping("/{bookingId}/delete")
-    @LogExecutionTime
-    public String deleteBooking(@PathVariable Long bookingId, RedirectAttributes redirectAttributes) {
-        adminBookingService.deleteBooking(bookingId);
-        redirectAttributes.addFlashAttribute("success", "예약이 성공적으로 삭제되었습니다.");
-
-        return "redirect:/admin/facilities/bookings";
-    }
-
-
-    // 예약 통계 페이지
-
-    @GetMapping("/statistics")
-    @LogExecutionTime
-    public String bookingStatistics(Model model) {
-        AdminBookingStatsResponse stats = adminBookingService.getBookingStats();
-        model.addAttribute("stats", stats);
-        return "admin/facilities/bookings/statistics";
-    }
-
-
-    // 오늘의 예약 페이지
-
-    @GetMapping("/today")
-    @LogExecutionTime
-    public String todayBookings(@RequestParam(defaultValue = "0") Integer page, @RequestParam(defaultValue = "20") Integer size, Model model) {
         AdminBookingSearchRequest request = AdminBookingSearchRequest.builder()
                 .page(page)
                 .size(size)
+                .facilityId(facilityId)
+                .status(status)
+                .keyword(keyword)
                 .build();
-            
-        // 오늘 날짜로 검색
-        request.setStartDate(java.time.LocalDateTime.now().toLocalDate().atStartOfDay());
-        request.setEndDate(java.time.LocalDateTime.now().toLocalDate().atTime(23, 59, 59));
-            
-        AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
-            
-        model.addAttribute("bookings", response.getBookings());
-        model.addAttribute("pagination", response);
-        model.addAttribute("isToday", true);
-            
-        return "admin/facilities/bookings/today";
+
+        return ResponseEntity.ok(adminBookingService.searchBookings(request));
     }
 
+    @GetMapping("/{bookingId}")
+    @LogExecutionTime
+    @Operation(summary = "예약 상세 조회")
+    public ResponseEntity<AdminBookingDetailResponse> bookingDetail(@PathVariable Long bookingId) {
+        return ResponseEntity.ok(adminBookingService.getBookingDetail(bookingId));
+    }
 
-    // 시설별 예약 페이지
+    @PatchMapping("/{bookingId}/status")
+    @LogExecutionTime
+    @Operation(summary = "예약 상태 변경")
+    public ResponseEntity<AdminBookingDetailResponse> updateBookingStatus(
+            @PathVariable Long bookingId,
+            @Valid @RequestBody AdminStatusUpdateRequest request) {
+
+        adminBookingService.updateBookingStatus(bookingId, request);
+        return ResponseEntity.ok(adminBookingService.getBookingDetail(bookingId));
+    }
+
+    @DeleteMapping("/{bookingId}")
+    @LogExecutionTime
+    @Operation(summary = "예약 삭제")
+    public ResponseEntity<Void> deleteBooking(@PathVariable Long bookingId) {
+        adminBookingService.deleteBooking(bookingId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/statistics")
+    @LogExecutionTime
+    @Operation(summary = "예약 통계 조회")
+    public ResponseEntity<AdminBookingStatsResponse> bookingStatistics() {
+        return ResponseEntity.ok(adminBookingService.getBookingStats());
+    }
+
+    @GetMapping("/today")
+    @LogExecutionTime
+    @Operation(summary = "오늘의 예약 조회")
+    public ResponseEntity<AdminBookingSearchResponse> todayBookings(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer size) {
+        return ResponseEntity.ok(adminBookingService.searchBookings(todayRequest(page, size)));
+    }
 
     @GetMapping("/facility/{facilityId}")
     @LogExecutionTime
-    public String facilityBookings(@PathVariable Long facilityId, @RequestParam(defaultValue = "0") Integer page,
-                                   @RequestParam(defaultValue = "20") Integer size, Model model) {
+    @Operation(summary = "시설별 예약 조회")
+    public ResponseEntity<AdminBookingSearchResponse> facilityBookings(
+            @PathVariable Long facilityId,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer size) {
+
         AdminBookingSearchRequest request = AdminBookingSearchRequest.builder()
                 .facilityId(facilityId)
                 .page(page)
                 .size(size)
                 .build();
 
-        AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
-
-        model.addAttribute("bookings", response.getBookings());
-        model.addAttribute("pagination", response);
-        model.addAttribute("facilityId", facilityId);
-
-        return "admin/facilities/bookings/facility";
+        return ResponseEntity.ok(adminBookingService.searchBookings(request));
     }
-
-
-    // 상태별 예약 페이지
 
     @GetMapping("/status/{status}")
     @LogExecutionTime
-    public String statusBookings(@PathVariable String status, @RequestParam(defaultValue = "0") Integer page,
-                                 @RequestParam(defaultValue = "20") Integer size, Model model) {
+    @Operation(summary = "상태별 예약 조회")
+    public ResponseEntity<AdminBookingSearchResponse> statusBookings(
+            @PathVariable String status,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer size) {
+
         AdminBookingSearchRequest request = AdminBookingSearchRequest.builder()
                 .status(status)
                 .page(page)
                 .size(size)
                 .build();
-            
-        AdminBookingSearchResponse response = adminBookingService.searchBookings(request);
-            
-        model.addAttribute("bookings", response.getBookings());
-        model.addAttribute("pagination", response);
-        model.addAttribute("status", status);
-            
-        return "admin/facilities/bookings/status";
+
+        return ResponseEntity.ok(adminBookingService.searchBookings(request));
     }
-
-
-    // 예약 생성 페이지 (관리자가 직접 예약 생성)
-
-    @GetMapping("/create")
-    @LogExecutionTime
-    public String createBookingForm(Model model) {
-        model.addAttribute("bookingRequest", new CreateBookingRequest());
-        return "admin/facilities/bookings/create";
-    }
-
-
-    // 예약 수정 페이지
-
-    @GetMapping("/{bookingId}/edit")
-    @LogExecutionTime
-    public String editBookingForm(@PathVariable Long bookingId, Model model) {
-        AdminBookingDetailResponse booking = adminBookingService.getBookingDetail(bookingId);
-        model.addAttribute("booking", booking);
-        return "admin/facilities/bookings/edit";
-    }
-
-
-    // 대시보드 메인 페이지 (예약 요약)
 
     @GetMapping("/dashboard")
     @LogExecutionTime
-    public String bookingDashboard(Model model) {
-        // 통계 정보
-        AdminBookingStatsResponse stats = adminBookingService.getBookingStats();
-        model.addAttribute("stats", stats);
-
-        // 최근 예약 목록 (최근 10개)
+    @Operation(summary = "예약 대시보드 요약", description = "통계, 최근 예약, 오늘의 예약을 함께 반환합니다.")
+    public ResponseEntity<Map<String, Object>> bookingDashboard() {
         AdminBookingSearchRequest recentRequest = AdminBookingSearchRequest.builder()
                 .page(0)
                 .size(10)
                 .build();
-        AdminBookingSearchResponse recentBookings = adminBookingService.searchBookings(recentRequest);
-        model.addAttribute("recentBookings", recentBookings.getBookings());
 
-        // 오늘의 예약 (최근 5개)
-        AdminBookingSearchRequest todayRequest = AdminBookingSearchRequest.builder()
-                .page(0)
-                .size(5)
+        return ResponseEntity.ok(Map.of(
+                "stats", adminBookingService.getBookingStats(),
+                "recentBookings", adminBookingService.searchBookings(recentRequest).getBookings(),
+                "todayBookings", adminBookingService.searchBookings(todayRequest(0, 5)).getBookings()
+        ));
+    }
+
+    private AdminBookingSearchRequest todayRequest(Integer page, Integer size) {
+        AdminBookingSearchRequest request = AdminBookingSearchRequest.builder()
+                .page(page)
+                .size(size)
                 .build();
-        todayRequest.setStartDate(java.time.LocalDateTime.now().toLocalDate().atStartOfDay());
-        todayRequest.setEndDate(java.time.LocalDateTime.now().toLocalDate().atTime(23, 59, 59));
-
-        AdminBookingSearchResponse todayBookings = adminBookingService.searchBookings(todayRequest);
-        model.addAttribute("todayBookings", todayBookings.getBookings());
-
-        return "admin/facilities/bookings/dashboard";
+        LocalDate today = LocalDate.now();
+        request.setStartDate(today.atStartOfDay());
+        request.setEndDate(today.atTime(23, 59, 59));
+        return request;
     }
 }
