@@ -5,6 +5,7 @@ import com.carecode.domain.careFacility.dto.response.CareFacilityInfo;
 import com.carecode.domain.careFacility.dto.response.CareFacilityStatsResponse;
 import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.service.CareFacilityService;
+import com.carecode.core.util.PageRequestUtil;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -179,20 +180,18 @@ public class CareFacilityApiController {
         try {
             log.info("DB 저장된 보육시설 목록 조회 요청: page={}, size={}", page, size);
             
-            // CareFacilityService를 통해 DB에서 데이터 조회
-            List<CareFacilityInfo> facilities = careFacilityService.getAllCareFacilities();
-            
-            // 페이징 처리
-            int start = page * size;
-            int end = Math.min(start + size, facilities.size());
-            List<CareFacilityInfo> pagedFacilities = facilities.subList(start, end);
-            
+            // 전체를 읽어 subList 로 자르면 테이블이 커질수록 그대로 부하가 되고,
+            // start 가 목록 크기를 넘으면 IndexOutOfBoundsException 이 난다. DB 페이징으로 처리한다.
+            int safePage = PageRequestUtil.normalizePage(page);
+            int safeSize = PageRequestUtil.normalizeSize(size);
+            List<CareFacilityInfo> pagedFacilities = careFacilityService.getAllCareFacilities(safePage, safeSize);
+
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "DB 저장된 보육시설 목록 조회 성공",
-                "totalCount", facilities.size(),
-                "currentPage", page,
-                "pageSize", size,
+                "totalCount", careFacilityService.countCareFacilities(),
+                "currentPage", safePage,
+                "pageSize", safeSize,
                 "data", pagedFacilities
             ));
             

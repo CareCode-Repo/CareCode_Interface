@@ -3,6 +3,7 @@ package com.carecode.domain.policy.controller;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.controller.BaseController;
+import com.carecode.core.util.PageRequestUtil;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.PolicyNotFoundException;
@@ -46,9 +47,12 @@ public class PolicyController extends BaseController {
     @GetMapping
     @LogExecutionTime
     @Operation(summary = "전체 정책 목록 조회", description = "등록된 모든 육아 정책 목록을 조회합니다.")
-    public ResponseEntity<List<PolicyDto>> getAllPolicies() {
+    public ResponseEntity<List<PolicyDto>> getAllPolicies(
+            @Parameter(description = "페이지 번호 (0부터)") @RequestParam(required = false) Integer page,
+            @Parameter(description = "페이지 크기 (최대 200)") @RequestParam(required = false) Integer size) {
         log.info("전체 정책 목록 조회");
-        List<PolicyDto> policies = policyFacade.getAllPolicies();
+        List<PolicyDto> policies = policyFacade.getAllPolicies(
+                PageRequestUtil.normalizePage(page), PageRequestUtil.normalizeSize(size));
         return ResponseEntity.ok(policies);
     }
 

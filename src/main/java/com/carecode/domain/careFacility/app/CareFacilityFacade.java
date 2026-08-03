@@ -27,8 +27,8 @@ public class CareFacilityFacade {
     private final CareFacilityBookingService bookingService;
 
     @Transactional(readOnly = true)
-    public List<CareFacilityInfo> getAllCareFacilities() {
-        return careFacilityService.getAllCareFacilities();
+    public List<CareFacilityInfo> getAllCareFacilities(int page, int size) {
+        return careFacilityService.getAllCareFacilities(page, size);
     }
 
     @Transactional(readOnly = true)
