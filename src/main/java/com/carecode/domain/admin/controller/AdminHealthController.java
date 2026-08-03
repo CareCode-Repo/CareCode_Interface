@@ -1,68 +1,58 @@
 package com.carecode.domain.admin.controller;
 
+import com.carecode.core.exception.HealthRecordNotFoundException;
+import com.carecode.domain.health.dto.response.HealthRecordResponse;
 import com.carecode.domain.health.entity.HealthRecord;
+import com.carecode.domain.health.mapper.HealthRecordMapper;
 import com.carecode.domain.health.repository.HealthRecordRepository;
-import com.carecode.domain.user.repository.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
-@RequestMapping("/admin/health")
+/**
+ * 어드민 건강기록 관리 API.
+ *
+ * <p>건강기록은 민감정보다. 관리자가 대신 생성·수정하지 않고 조회와 삭제만 제공한다.
+ */
+@RestController
+@RequestMapping("/api/admin/health/records")
 @RequiredArgsConstructor
+@Tag(name = "어드민 - 건강기록", description = "관리자 전용 건강기록 관리 API")
 public class AdminHealthController {
+
     private final HealthRecordRepository healthRecordRepository;
-    private final UserRepository userRepository;
+    private final HealthRecordMapper healthRecordMapper;
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("records", healthRecordRepository.findAll());
-        return "admin/health/list";
-    }
-
-    @GetMapping("/add")
-    public String addForm(Model model) {
-        model.addAttribute("record", new HealthRecord());
-        model.addAttribute("users", userRepository.findAll());
-        return "admin/health/form";
-    }
-
-    @PostMapping("/add")
-    public String add(@ModelAttribute HealthRecord record, @RequestParam(required = false) Long userId) {
-        if (userId != null) {
-            userRepository.findById(userId).ifPresent(record::setUser);
-        }
-        healthRecordRepository.save(record);
-        return "redirect:/admin/health";
+    @Operation(summary = "건강기록 목록 조회")
+    public ResponseEntity<Page<HealthRecordResponse>> list(
+            @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(healthRecordRepository.findAll(pageable).map(healthRecordMapper::toResponse));
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("record", healthRecordRepository.findById(id).orElse(null));
-        return "admin/health/detail";
+    @Operation(summary = "건강기록 상세 조회")
+    public ResponseEntity<HealthRecordResponse> detail(@PathVariable Long id) {
+        return ResponseEntity.ok(healthRecordMapper.toResponse(findRecord(id)));
     }
 
-    @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
-        model.addAttribute("record", healthRecordRepository.findById(id).orElse(null));
-        model.addAttribute("users", userRepository.findAll());
-        return "admin/health/form";
+    @DeleteMapping("/{id}")
+    @Operation(summary = "건강기록 삭제")
+    @Transactional
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        healthRecordRepository.delete(findRecord(id));
+        return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/edit")
-    public String edit(@PathVariable Long id, @ModelAttribute HealthRecord record, @RequestParam(required = false) Long userId) {
-        record.setId(id);
-        if (userId != null) {
-            userRepository.findById(userId).ifPresent(record::setUser);
-        }
-        healthRecordRepository.save(record);
-        return "redirect:/admin/health";
+    private HealthRecord findRecord(Long id) {
+        return healthRecordRepository.findById(id)
+                .orElseThrow(() -> new HealthRecordNotFoundException("건강 기록을 찾을 수 없습니다: " + id));
     }
-
-    @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id) {
-        healthRecordRepository.deleteById(id);
-        return "redirect:/admin/health";
-    }
-} 
+}
