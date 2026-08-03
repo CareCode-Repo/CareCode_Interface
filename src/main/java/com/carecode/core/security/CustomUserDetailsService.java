@@ -22,7 +22,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
+        // 탈퇴(soft delete)한 계정이 로그인되지 않도록 deletedAt 조건을 포함해 조회한다.
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
         String password = user.getPassword();
         if (password == null || password.isBlank()) {
