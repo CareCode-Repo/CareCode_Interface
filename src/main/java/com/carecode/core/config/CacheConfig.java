@@ -1,5 +1,10 @@
 package com.carecode.core.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -32,8 +37,28 @@ public class CacheConfig {
                 .serializeKeysWith(RedisSerializationContext.SerializationPair
                         .fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair
-                        .fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                        .fromSerializer(new GenericJackson2JsonRedisSerializer(cacheObjectMapper())))
                 .disableCachingNullValues(); // null 값은 캐싱하지 않음
+    }
+
+    /**
+     * 캐시 값 직렬화용 ObjectMapper.
+     * JavaTimeModule 이 없으면 LocalDate/LocalDateTime 필드를 가진 DTO 캐싱이 실패한다.
+     */
+    private ObjectMapper cacheObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        // 역직렬화 시 구체 타입을 복원하기 위한 타입 정보 포함
+        mapper.activateDefaultTyping(
+                BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType("com.carecode.")
+                        .allowIfSubType("java.util.")
+                        .allowIfSubType("java.time.")
+                        .build(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY);
+        return mapper;
     }
 
 

@@ -1,6 +1,6 @@
 package com.carecode.domain.careFacility.service;
 
-import com.carecode.core.annotation.CacheableResult;
+import org.springframework.cache.annotation.Cacheable;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.exception.CareFacilityNotFoundException;
@@ -227,20 +227,31 @@ public class CareFacilityService {
 
     // 돌봄 시설 목록 조회
 
+    /**
+     * 시설 목록 조회.
+     * <p>테이블 전체를 메모리로 올리지 않도록 항상 페이지 단위로 읽는다.
+     */
     @LogExecutionTime
-    public List<CareFacilityInfo> getAllCareFacilities() {
+    public List<CareFacilityInfo> getAllCareFacilities(int page, int size) {
 
-        List<CareFacility> facilities = careFacilityRepository.findAll();
-        return facilities.stream()
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name"));
+        return careFacilityRepository.findAll(pageable).getContent().stream()
                 .map(careFacilityMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+
+    // 전체 시설 수
+
+    public long countCareFacilities() {
+        return careFacilityRepository.count();
     }
 
 
     // 돌봄 시설 상세 조회
 
     @LogExecutionTime
-    @CacheableResult(cacheName = "careFacility", key = "#facilityId")
+    @Cacheable(cacheNames = "careFacility", key = "#facilityId")
     public CareFacilityInfo getCareFacilityById(Long facilityId) {
         CareFacility facility = careFacilityRepository.findById(facilityId)
                 .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
@@ -369,12 +380,11 @@ public class CareFacilityService {
 
     @Transactional
     public void incrementViewCount(Long facilityId) {
-        CareFacility facility = careFacilityRepository.findById(facilityId)
-                .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
-        
-        Integer currentViewCount = facility.getViewCount() != null ? facility.getViewCount() : 0;
-        facility.setViewCount(currentViewCount + 1);
-        careFacilityRepository.save(facility);
+        // DB 에서 원자적으로 증가시킨다. 갱신된 행이 없으면 존재하지 않는 시설이다.
+        int updated = careFacilityRepository.incrementViewCount(facilityId);
+        if (updated == 0) {
+            throw new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId);
+        }
     }
 
 
