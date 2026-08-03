@@ -57,23 +57,18 @@ public class AuthController extends BaseController {
     @RateLimit(requests = 5, windowSeconds = 60, message = "로그인 시도 횟수를 초과했습니다. 1분 후 다시 시도해주세요.")
     @Operation(summary = "일반 로그인", description = "이메일과 비밀번호로 로그인합니다.")
     public ResponseEntity<TokenDto> login(@Parameter(description = "로그인 정보", required = true) @Valid @RequestBody LoginRequestDto request) {
-        User userEntity = userService.getUserEntityByEmail(request.getEmail());
+        // 가입 여부가 응답으로 새어나가지 않도록, 실패 사유와 무관하게 동일한 401 을 반환한다.
+        // (미가입 404 / 비밀번호 불일치 401 로 나뉘면 이메일 열거가 가능하다.)
+        User userEntity = userService.findActiveUserEntityByEmail(request.getEmail()).orElse(null);
 
-        // 비밀번호 검증
-        if (!passwordEncoder.matches(request.getPassword(), userEntity.getPassword())) {
-            log.warn("로그인 실패: 비밀번호 불일치 - 이메일={}", request.getEmail());
+        if (userEntity == null
+                || userEntity.getPassword() == null
+                || !passwordEncoder.matches(request.getPassword(), userEntity.getPassword())
+                || !Boolean.TRUE.equals(userEntity.getIsActive())) {
+            log.warn("로그인 실패 - 이메일={}", request.getEmail());
             return ResponseEntity.status(401).body(TokenDto.builder()
                     .success(false)
-                    .message("비밀번호가 일치하지 않습니다.")
-                    .build());
-        }
-
-        // 사용자 활성 상태 확인
-        if (!userEntity.getIsActive()) {
-            log.warn("로그인 실패: 비활성 사용자 - 이메일={}", request.getEmail());
-            return ResponseEntity.status(401).body(TokenDto.builder()
-                    .success(false)
-                    .message("비활성화된 사용자입니다.")
+                    .message("이메일 또는 비밀번호가 올바르지 않습니다.")
                     .build());
         }
 
