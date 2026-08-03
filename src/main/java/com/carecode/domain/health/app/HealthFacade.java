@@ -26,6 +26,7 @@ import com.carecode.domain.health.mapper.HospitalMapper;
 import com.carecode.domain.health.mapper.HospitalReviewMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -149,8 +150,10 @@ public class HealthFacade {
     // 병원 관련 작업은 Facade에서 직접 처리하므로 트랜잭션 필요
     // 하지만 Service 계층으로 이동하는 것이 더 나음 (향후 개선)
 
-    public List<HospitalInfoResponse> getAllHospitals() {
-        return hospitalRepository.findAll().stream()
+    public List<HospitalInfoResponse> getAllHospitals(int page, int size) {
+        // 테이블 전체를 메모리로 올리지 않도록 항상 페이지 단위로 읽는다.
+        return hospitalRepository.findAll(PageRequest.of(page, size, Sort.by("name")))
+                .getContent().stream()
                 .map(hospitalMapper::toResponse)
                 .toList();
     }

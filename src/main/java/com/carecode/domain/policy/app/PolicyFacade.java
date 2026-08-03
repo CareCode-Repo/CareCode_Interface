@@ -19,7 +19,7 @@ public class PolicyFacade {
     private final PolicyService policyService;
 
     @Transactional(readOnly = true)
-    public List<PolicyDto> getAllPolicies() { return policyService.getAllPolicies(); }
+    public List<PolicyDto> getAllPolicies(int page, int size) { return policyService.getAllPolicies(page, size); }
 
     @Transactional(readOnly = true)
     public PolicyDto getPolicyById(Long policyId) { return policyService.getPolicyById(policyId); }
