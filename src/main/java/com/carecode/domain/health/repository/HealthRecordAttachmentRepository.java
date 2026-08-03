@@ -8,4 +8,8 @@ import java.util.List;
 
 public interface HealthRecordAttachmentRepository extends JpaRepository<HealthRecordAttachment, Long> {
     List<HealthRecordAttachment> findByHealthRecordAndIsActiveTrueOrderByDisplayOrderAscCreatedAtDesc(HealthRecord healthRecord);
+
+    List<HealthRecordAttachment> findByHealthRecordIdOrderByDisplayOrderAsc(Long healthRecordId);
+
+    long countByHealthRecordId(Long healthRecordId);
 }
