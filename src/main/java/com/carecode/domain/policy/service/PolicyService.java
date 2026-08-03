@@ -1,6 +1,6 @@
 package com.carecode.domain.policy.service;
 
-import com.carecode.core.annotation.CacheableResult;
+import org.springframework.cache.annotation.Cacheable;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.PolicyNotFoundException;
 import com.carecode.core.util.SortUtil;
@@ -48,12 +48,16 @@ public class PolicyService {
 
     // 정책 목록 조회
 
+    /**
+     * 정책 목록 조회.
+     * <p>테이블 전체를 메모리로 올리지 않도록 항상 페이지 단위로 읽는다.
+     */
     @LogExecutionTime
-    public List<PolicyDto> getAllPolicies() {
-        log.info("전체 정책 목록 조회");
-        
-        List<Policy> policies = policyRepository.findAll();
-        return policies.stream()
+    public List<PolicyDto> getAllPolicies(int page, int size) {
+        log.info("전체 정책 목록 조회 - page={}, size={}", page, size);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return policyRepository.findAll(pageable).getContent().stream()
                 .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -62,7 +66,7 @@ public class PolicyService {
     // 정책 상세 조회
 
     @LogExecutionTime
-    @CacheableResult(cacheName = "policy", key = "#policyId")
+    @Cacheable(cacheNames = "policy", key = "#policyId")
     public PolicyDto getPolicyById(Long policyId) {
         log.info("정책 상세 조회: 정책ID={}", policyId);
         
@@ -197,12 +201,11 @@ public class PolicyService {
     @Transactional
     public void incrementViewCount(Long policyId) {
         log.info("정책 조회수 증가: 정책ID={}", policyId);
-        Policy policy = policyRepository.findById(policyId)
-                .orElseThrow(() -> new PolicyNotFoundException("정책을 찾을 수 없습니다: " + policyId));
-
-        int currentViewCount = policy.getViewCount() != null ? policy.getViewCount() : 0;
-        policy.setViewCount(currentViewCount + 1);
-        policyRepository.save(policy);
+        // DB 에서 원자적으로 증가시킨다. 갱신된 행이 없으면 존재하지 않는 정책이다.
+        int updated = policyRepository.incrementViewCount(policyId);
+        if (updated == 0) {
+            throw new PolicyNotFoundException("정책을 찾을 수 없습니다: " + policyId);
+        }
     }
 
 
@@ -211,13 +214,8 @@ public class PolicyService {
     @LogExecutionTime
     public List<String> getPolicyCategories() {
         log.info("정책 카테고리 목록 조회");
-        
-        return policyRepository.findAll().stream()
-                .map(Policy::getPolicyType)
-                .distinct()
-                .filter(type -> type != null && !type.trim().isEmpty())
-                .sorted()
-                .collect(Collectors.toList());
+        // 전체 정책을 메모리로 올려 distinct 하던 것을 DB DISTINCT 쿼리로 대체
+        return policyRepository.findDistinctPolicyTypes();
     }
 
 
