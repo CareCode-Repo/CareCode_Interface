@@ -1,5 +1,6 @@
 package com.carecode.domain.user.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -22,7 +23,13 @@ public class UserDto {
     private Long id;
     private String userId;
     private String email;
-    private String password; // 생성 시에만 사용
+
+    /**
+     * 회원가입/수정 요청에서만 사용한다.
+     * WRITE_ONLY 로 두지 않으면 이 DTO 를 반환하는 모든 응답에 비밀번호 해시가 실려 나간다.
+     */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
     private String name;
     private String phoneNumber;
     private LocalDate birthDate;
