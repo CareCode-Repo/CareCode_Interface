@@ -5,6 +5,7 @@ import com.carecode.domain.community.entity.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -41,4 +42,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT p FROM Post p JOIN p.tags t WHERE t = :tag AND p.isActive = true")
     List<Post> findByTagsContaining(@Param("tag") Tag tag);
+
+    long countByAuthorId(Long authorId);
+
+    /**
+     * 조회수를 DB 에서 원자적으로 증가시킨다 (lost update 방지).
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Post p SET p.viewCount = COALESCE(p.viewCount, 0) + 1 WHERE p.id = :postId")
+    int incrementViewCount(@Param("postId") Long postId);
 } 

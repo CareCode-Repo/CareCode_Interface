@@ -6,6 +6,7 @@ import com.carecode.domain.careFacility.entity.FacilityType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -149,4 +150,11 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
     // ID로 시설 조회 (Reviews와 함께)
     @Query("SELECT cf FROM CareFacility cf LEFT JOIN FETCH cf.reviews WHERE cf.id = :id")
     Optional<CareFacility> findByIdWithReviews(@Param("id") Long id);
+
+    /**
+     * 조회수를 DB 에서 원자적으로 증가시킨다 (lost update 방지).
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE CareFacility cf SET cf.viewCount = COALESCE(cf.viewCount, 0) + 1 WHERE cf.id = :facilityId")
+    int incrementViewCount(@Param("facilityId") Long facilityId);
 } 
