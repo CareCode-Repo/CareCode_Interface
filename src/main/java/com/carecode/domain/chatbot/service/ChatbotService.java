@@ -10,6 +10,9 @@ import com.carecode.domain.chatbot.entity.ChatMessage;
 import com.carecode.domain.chatbot.entity.ChatSession;
 import com.carecode.domain.chatbot.repository.ChatMessageRepository;
 import com.carecode.domain.chatbot.repository.ChatSessionRepository;
+import com.carecode.domain.chatbot.llm.ChatCompletionClient;
+import com.carecode.domain.chatbot.rag.CareKnowledgeRetriever;
+import com.carecode.domain.chatbot.rag.RetrievedContext;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.user.entity.User;
@@ -42,6 +45,8 @@ public class ChatbotService {
     private final UserRepository userRepository;
     private final PolicyRepository policyRepository;
     private final CareFacilityRepository careFacilityRepository;
+    private final CareKnowledgeRetriever knowledgeRetriever;
+    private final ChatCompletionClient chatCompletionClient;
 
     // 의도 분석을 위한 키워드 패턴
     private static final Map<ChatMessage.IntentType, List<Pattern>> INTENT_PATTERNS = new HashMap<>();
@@ -121,8 +126,8 @@ public class ChatbotService {
             ChatMessage.IntentType intentType = analyzeIntent(request.getMessage());
             double confidence = calculateConfidence(request.getMessage(), intentType);
             
-            // 응답 생성
-            String response = generateResponse(request.getMessage(), intentType, user);
+            // 응답 생성 (LLM 우선, 실패 시 규칙 기반 폴백)
+            String response = generateReply(request.getMessage(), intentType, user);
             
             // 메시지 저장
             ChatMessage chatMessage = saveChatMessage(user, session, request.getMessage(), response, intentType, confidence);
@@ -447,7 +452,35 @@ public class ChatbotService {
     }
 
 
-    // 응답 생성
+    /**
+     * 응답 생성.
+     *
+     * <p>DB 에서 관련 정책·시설을 검색해 근거로 넘기고 LLM 이 답하게 한다(RAG).
+     * API 키가 없거나 호출이 실패하면 아래 규칙 기반 응답으로 폴백하므로,
+     * LLM 을 붙이지 않은 환경에서도 챗봇은 그대로 동작한다.
+     */
+    private String generateReply(String message, ChatMessage.IntentType intentType, User user) {
+        // 인사·감사·작별처럼 검색이 필요 없는 의도는 정형 응답이 더 빠르고 안정적이다.
+        if (intentType == ChatMessage.IntentType.GREETING
+                || intentType == ChatMessage.IntentType.THANKS
+                || intentType == ChatMessage.IntentType.GOODBYE) {
+            return generateResponse(message, intentType, user);
+        }
+
+        if (chatCompletionClient.isAvailable()) {
+            RetrievedContext context = knowledgeRetriever.retrieve(message);
+            Optional<String> llmReply = chatCompletionClient.generateReply(message, context);
+            if (llmReply.isPresent()) {
+                return llmReply.get();
+            }
+            log.warn("LLM 응답 생성 실패 - 규칙 기반 응답으로 폴백합니다.");
+        }
+
+        return generateResponse(message, intentType, user);
+    }
+
+
+    // 응답 생성 (규칙 기반 폴백)
 
     private String generateResponse(String message, ChatMessage.IntentType intentType, User user) {
         switch (intentType) {
