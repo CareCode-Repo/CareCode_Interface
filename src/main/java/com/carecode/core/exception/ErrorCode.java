@@ -16,6 +16,7 @@ public enum ErrorCode {
     UNAUTHORIZED("C002", "인증이 필요합니다", HttpStatus.UNAUTHORIZED),
     FORBIDDEN("C003", "접근 권한이 없습니다", HttpStatus.FORBIDDEN),
     RESOURCE_NOT_FOUND("C004", "요청한 리소스를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
+    RATE_LIMIT_EXCEEDED("C005", "요청이 너무 많습니다. 잠시 후 다시 시도해주세요", HttpStatus.TOO_MANY_REQUESTS),
     
     // ===== 사용자 관련 에러 (U000) =====
     USER_NOT_FOUND("U001", "사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
