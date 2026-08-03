@@ -41,25 +41,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             
             if (StringUtils.hasText(token)) {
                 log.debug("토큰 유효성 검증 시작");
-                boolean isValid = jwtService.validateToken(token);
+                // Access Token 만 허용한다. Refresh Token 으로는 API 인증이 되지 않아야 한다.
+                boolean isValid = jwtService.validateAccessToken(token);
                 log.debug("토큰 유효성 검증 결과: {}", isValid);
-                
+
                 if (isValid) {
                     String userId = jwtService.getUserIdFromToken(token);
                     String email = jwtService.getEmailFromToken(token);
                     String role = jwtService.getRoleFromToken(token);
-                    String name = jwtService.getNameFromToken(token);
-                    
+
+                    if (!StringUtils.hasText(email) || !StringUtils.hasText(role)) {
+                        // role 이 없으면 "ROLE_null" 권한으로 인증되던 문제를 차단한다.
+                        log.warn("JWT 인증 거부: 필수 클레임 누락 (email={}, role={})", email, role);
+                        SecurityContextHolder.clearContext();
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+
                     // 인증 정보 생성 - email을 principal로 사용 (일관성을 위해)
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         email,       // principal을 email로 설정 (일관성)
                         null,        // credentials는 null
                         Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
                     );
-                    
+
                     // SecurityContext에 인증 정보 설정
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-                    
+
                     log.debug("JWT 인증 성공: userId={}, email={}, role={}", userId, email, role);
                 } else {
                     log.debug("JWT 토큰이 유효하지 않음");
@@ -95,7 +103,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
         
-        // 다음 경로들은 JWT 인증을 건너뜀
+        // 다음 경로들은 JWT 인증을 건너뜀.
+        // 주의: /admin 은 여기서 제외하면 안 된다. 세션 기반 어드민 체인(SecurityConfig 참고)이
+        // 별도로 처리하며, 과거처럼 스킵하면 /admin/** 이 인증 주체 없이 항상 403 이 된다.
         boolean shouldNotFilter = path.startsWith("/swagger-ui") ||
                path.startsWith("/api-docs") ||
                path.startsWith("/v3/api-docs") ||
@@ -109,9 +119,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/auth/kakao") ||
                path.startsWith("/oauth2") ||
                path.startsWith("/login/oauth2") ||
-               path.equals("/kakao-callback.html") ||
-               path.startsWith("/admin");
-        
+               path.equals("/kakao-callback.html");
+
         return shouldNotFilter;
     }
 } 
