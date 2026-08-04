@@ -2,12 +2,7 @@ package com.carecode.core.client.sync;
 
 import lombok.Getter;
 
-/**
- * 공공데이터 동기화 결과.
- *
- * <p>이전에는 동기화가 조용히 중단돼도 알 방법이 없었다.
- * 성공·실패 건수와 중단 사유를 담아 로그와 응답에 남긴다.
- */
+/** 공공데이터 동기화 결과. */
 @Getter
 public class SyncResult {
 

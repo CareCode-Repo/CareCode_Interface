@@ -16,24 +16,13 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 
-/**
- * XML 응답을 {@link JsonNode} 로 변환한다.
- *
- * <p>공공데이터포털 데이터셋 중 일부(예: 심평원 병원정보서비스)는 XML 만 반환한다.
- * {@code jackson-dataformat-xml} 을 클래스패스에 넣으면 Spring MVC 가
- * XML 메시지 컨버터를 자동 등록해 애플리케이션 응답 협상 동작까지 바뀌므로,
- * 의존성을 늘리지 않고 JDK 내장 DOM 파서로 변환한다.
- */
+/** XML 응답을 JsonNode 로 변환한다. */
 @Component
 public class XmlResponseParser {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /**
-     * XML 문자열을 JsonNode 트리로 변환한다.
-     *
-     * @return 파싱할 수 없으면 null
-     */
+    /** XML 문자열을 JsonNode 트리로 변환한다. */
     public JsonNode parse(String xml) {
         if (xml == null || xml.isBlank()) {
             return null;
@@ -47,10 +36,7 @@ public class XmlResponseParser {
         }
     }
 
-    /**
-     * 외부 엔티티 참조(XXE)를 차단한 DocumentBuilder.
-     * 외부에서 받은 XML 을 파싱하므로 기본 설정을 그대로 쓰면 안 된다.
-     */
+    /** 외부 엔티티 참조(XXE)를 차단한 DocumentBuilder. */
     private DocumentBuilder newSecureBuilder() throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);

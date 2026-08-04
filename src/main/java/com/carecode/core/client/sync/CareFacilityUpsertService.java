@@ -12,13 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-/**
- * 시설 한 건을 저장하는 트랜잭션 경계.
- *
- * <p>동기화 루프와 분리한 이유: {@code @Transactional} 은 프록시로 동작하므로
- * 같은 클래스 안에서 호출하면 적용되지 않는다(self-invocation).
- * 한 건 실패가 전체 배치를 롤백시키지 않으려면 별도 빈이어야 한다.
- */
+/** 시설 한 건을 저장하는 트랜잭션 경계. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -26,12 +20,7 @@ public class CareFacilityUpsertService {
 
     private final CareFacilityRepository careFacilityRepository;
 
-    /**
-     * 시설 코드 기준 upsert.
-     *
-     * @return 신규 생성이면 true, 기존 갱신이면 false
-     * @throws IllegalArgumentException 시설 코드가 없는 경우
-     */
+    /** 시설 코드 기준 upsert. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean upsert(JsonNode row) {
         String facilityCode = text(row, "STCODE", "crcodeCd", "crcode");

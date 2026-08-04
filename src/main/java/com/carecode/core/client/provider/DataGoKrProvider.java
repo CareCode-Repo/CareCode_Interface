@@ -11,16 +11,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-/**
- * 공공데이터포털(data.go.kr) 공급자.
- *
- * <p>URL 규격: {@code {baseUrl}/{resource}?serviceKey=...&pageNo=1&numOfRows=100&type=json}
- * 서울시와 달리 페이지 번호를 쿼리 파라미터로 넘긴다.
- *
- * <p>주의: 발급받는 serviceKey 는 이미 URL 인코딩된 문자열이다.
- * {@code UriComponentsBuilder} 로 다시 인코딩하면 `%2B` 가 `%252B` 가 되어 인증에 실패하므로,
- * 키만 따로 붙여 {@link URI} 를 직접 만든다.
- */
+/** 공공데이터포털(data.go.kr) 공급자. */
 @Slf4j
 @Component
 public class DataGoKrProvider implements PublicDataProvider {
