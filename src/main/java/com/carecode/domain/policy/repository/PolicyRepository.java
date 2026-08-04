@@ -26,6 +26,12 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
     // 활성화된 정책 목록 조회
     List<Policy> findByIsActiveTrue();
 
+    /** 지역 비교 대상. 전국 정책은 모든 지역에 공통 적용되므로 후보 목록에서 뺀다. */
+    @Query("SELECT DISTINCT p.targetRegion FROM Policy p "
+            + "WHERE p.isActive = true AND p.targetRegion IS NOT NULL "
+            + "AND p.targetRegion <> '' AND p.targetRegion NOT LIKE '%전국%'")
+    List<String> findDistinctTargetRegions();
+
     /** 추천 후보 조회. 우선순위 높은 정책부터 가져와 상위 N건만 채점한다. */
     Page<Policy> findByIsActiveTrueOrderByPriorityDescViewCountDesc(Pageable pageable);
 

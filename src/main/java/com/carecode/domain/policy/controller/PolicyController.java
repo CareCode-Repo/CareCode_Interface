@@ -9,6 +9,7 @@ import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.PolicyNotFoundException;
 import com.carecode.domain.policy.dto.response.MissedBenefitSummaryResponse;
 import com.carecode.domain.policy.dto.response.PersonalizedPolicyResponse;
+import com.carecode.domain.policy.dto.response.RegionalBenefitComparisonResponse;
 import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
 import com.carecode.domain.policy.dto.response.PolicyListResponse;
@@ -280,6 +281,17 @@ public class PolicyController extends BaseController {
     @Operation(summary = "놓친 지원금 조회", description = "자녀가 대상이었으나 지나간 지원금과 소급 가능 여부를 조회합니다.")
     public ResponseEntity<MissedBenefitSummaryResponse> getMissedBenefits() {
         return ResponseEntity.ok(policyFacade.findMissedBenefits());
+    }
+
+    // 거주지별 지원금 비교
+    @GetMapping("/regional-comparison")
+    @LogExecutionTime
+    @Operation(summary = "거주지별 지원금 비교", description = "지역별 예상 수령액을 계산해 현재 거주지와 비교합니다.")
+    public ResponseEntity<RegionalBenefitComparisonResponse> compareRegionalBenefits(
+            @Parameter(description = "자녀 ID (미지정 시 최근 등록 자녀)") @RequestParam(required = false) Long childId,
+            @Parameter(description = "전망 기간(년)", example = "5") @RequestParam(required = false) Integer years,
+            @Parameter(description = "상위 노출 지역 수", example = "10") @RequestParam(required = false) Integer limit) {
+        return ResponseEntity.ok(policyFacade.compareRegionalBenefits(childId, years, limit));
     }
 
     private String getAuthenticatedUserCode() {
