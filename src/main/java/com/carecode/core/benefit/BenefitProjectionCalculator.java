@@ -43,12 +43,23 @@ public class BenefitProjectionCalculator {
             return new Projection(0, eligibleMonths, type);
         }
 
-        // UNKNOWN 을 월 지급으로 가정하면 5년 기준 최대 60배 과대 계상된다. 1회로 본다.
-        long total = type == BenefitPaymentType.MONTHLY
-                ? (long) amount * eligibleMonths
-                : amount;
+        if (type != BenefitPaymentType.MONTHLY) {
+            // UNKNOWN 을 월 지급으로 가정하면 5년 기준 최대 60배 과대 계상된다. 1회로 본다.
+            return new Projection(amount, eligibleMonths, type);
+        }
 
-        return new Projection(total, eligibleMonths, type);
+        // 대상 연령 구간과 지급 기간은 다르다. 상한이 있으면 그만큼만 받는다.
+        int paidMonths = capByPaymentDuration(policy, eligibleMonths);
+        return new Projection((long) amount * paidMonths, paidMonths, type);
+    }
+
+    /** 지급 개월 상한. 미지정이면 대상 구간 전체를 받는 것으로 본다. */
+    private int capByPaymentDuration(Policy policy, int eligibleMonths) {
+        Integer max = policy.getMaxPaymentMonths();
+        if (max == null || max <= 0) {
+            return eligibleMonths;
+        }
+        return Math.min(eligibleMonths, max);
     }
 
     /**

@@ -152,6 +152,38 @@ class BenefitProjectionCalculatorTest {
         assertThat(calculator.project(policy, 0, 0).eligibleMonths()).isZero();
     }
 
+    @Test
+    @DisplayName("지급 개월 상한이 있으면 대상 기간이 길어도 그만큼만 준다")
+    void capsByPaymentDuration() {
+        // 육아휴직급여: 대상 0~96개월이지만 실제 지급은 최대 12개월
+        Policy policy = policy(0, 96, 1_500_000, "월급여");
+        policy.setMaxPaymentMonths(12);
+
+        BenefitProjectionCalculator.Projection result = calculator.project(policy, 0, 60);
+
+        // 상한이 없으면 9,000만원이 된다
+        assertThat(result.eligibleMonths()).isEqualTo(12);
+        assertThat(result.amount()).isEqualTo(18_000_000);
+    }
+
+    @Test
+    @DisplayName("대상 기간이 상한보다 짧으면 짧은 쪽을 따른다")
+    void usesShorterOfWindowAndCap() {
+        Policy policy = policy(0, 5, 1_000_000, "월지급");
+        policy.setMaxPaymentMonths(12);
+
+        assertThat(calculator.project(policy, 0, 60).eligibleMonths()).isEqualTo(6);
+    }
+
+    @Test
+    @DisplayName("일시금에는 지급 개월 상한이 영향을 주지 않는다")
+    void capDoesNotAffectOneTime() {
+        Policy policy = policy(0, 96, 2_000_000, "일시지급");
+        policy.setMaxPaymentMonths(3);
+
+        assertThat(calculator.project(policy, 0, 60).amount()).isEqualTo(2_000_000);
+    }
+
     private Policy policy(Integer ageMin, Integer ageMax, Integer amount, String benefitType) {
         Policy p = new Policy();
         p.setTargetAgeMin(ageMin);

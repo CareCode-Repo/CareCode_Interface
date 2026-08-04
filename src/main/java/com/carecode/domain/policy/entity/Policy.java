@@ -67,6 +67,13 @@ public class Policy {
     @Column(name = "benefit_amount")
     private Integer benefitAmount;
     
+    /**
+     * 월 지급 정책의 최대 지급 개월. null 이면 대상 연령 구간 내내 지급한다.
+     * 대상 연령과 지급 기간은 다르다 — 육아휴직급여는 아이가 0~96개월이어도 최대 12개월만 받는다.
+     */
+    @Column(name = "max_payment_months")
+    private Integer maxPaymentMonths;
+
     @Column(name = "benefit_type")
     private String benefitType;
     
