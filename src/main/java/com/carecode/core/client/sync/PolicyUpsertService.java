@@ -1,5 +1,6 @@
 package com.carecode.core.client.sync;
 
+import com.carecode.core.util.AgeRangeParser;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -49,10 +50,30 @@ public class PolicyUpsertService {
         policy.setApplicationUrl(text(row, "상세조회URL", "servDtlLink", "DETAIL_URL"));
         policy.setContactInfo(text(row, "전화문의", "rprsCtadr", "CONTACT"));
         policy.setRequiredDocuments(text(row, "구비서류", "docCn"));
+        applyAgeRange(policy, row);
         policy.setUpdatedAt(LocalDateTime.now());
 
         policyRepository.save(policy);
         return isNew;
+    }
+
+    /** 자유 텍스트에서 연령 조건을 개월로 환산해 채운다. 못 찾으면 기존 값을 건드리지 않는다. */
+    private void applyAgeRange(Policy policy, JsonNode row) {
+        String source = String.join(" ",
+                nullToEmpty(text(row, "지원대상", "trgterIndvdlArray")),
+                nullToEmpty(text(row, "선정기준", "slctCritCn")),
+                nullToEmpty(text(row, "서비스목적요약", "servDgst", "SVC_DGST")));
+
+        AgeRangeParser.AgeRange range = AgeRangeParser.parse(source);
+        if (range == null) {
+            return;
+        }
+        policy.setTargetAgeMin(range.minMonths());
+        policy.setTargetAgeMax(range.maxMonths());
+    }
+
+    private String nullToEmpty(String value) {
+        return value != null ? value : "";
     }
 
     private String text(JsonNode row, String... keys) {

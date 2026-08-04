@@ -135,10 +135,10 @@ public class PolicyController extends BaseController {
     // 연령대별 정책 조회
     @GetMapping("/age")
     @LogExecutionTime
-    @Operation(summary = "연령대별 정책 조회", description = "특정 연령대에 해당하는 육아 정책 목록을 조회합니다.")
+    @Operation(summary = "연령대별 정책 조회", description = "월령 범위에 해당하는 정책을 조회합니다.")
     public ResponseEntity<List<PolicyDto>> getPoliciesByAgeRange(
-            @Parameter(description = "최소 연령", required = true) @RequestParam Integer minAge,
-            @Parameter(description = "최대 연령", required = true) @RequestParam Integer maxAge) {
+            @Parameter(description = "최소 월령", example = "0", required = true) @RequestParam Integer minAge,
+            @Parameter(description = "최대 월령", example = "71", required = true) @RequestParam Integer maxAge) {
         log.info("연령대별 정책 조회: 최소연령={}, 최대연령={}", minAge, maxAge);
 
         try {
@@ -221,8 +221,9 @@ public class PolicyController extends BaseController {
     // 아이 연령별 정책 조회
     @GetMapping("/child-age")
     @LogExecutionTime
-    @Operation(summary = "아이 연령별 정책 조회", description = "특정 연령의 아이에게 해당하는 정책을 조회합니다.")
-    public ResponseEntity<List<PolicyDto>> getPoliciesByChildAge(@Parameter(description = "아이 연령", required = true) @RequestParam Integer childAge) {
+    @Operation(summary = "아이 연령별 정책 조회", description = "해당 월령의 아이가 받을 수 있는 정책을 조회합니다.")
+    public ResponseEntity<List<PolicyDto>> getPoliciesByChildAge(
+            @Parameter(description = "아이 월령", example = "24", required = true) @RequestParam Integer childAge) {
         List<PolicyDto> policies = policyFacade.getPoliciesByChildAge(childAge);
 
         return ResponseEntity.ok(policies);
