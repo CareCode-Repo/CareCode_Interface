@@ -58,8 +58,15 @@ public class DataGoKrProvider implements PublicDataProvider {
         UriComponentsBuilder builder = UriComponentsBuilder
                 .fromHttpUrl(baseUrl + "/" + stripLeadingSlash(resource))
                 .queryParam("pageNo", pageNo)
-                .queryParam("numOfRows", numOfRows)
-                .queryParam("type", "json");
+                .queryParam("numOfRows", numOfRows);
+
+        // 응답 포맷 파라미터는 데이터셋마다 이름이 다르다(type / _type).
+        // 호출부가 지정하지 않았을 때만 기본값을 넣는다 — 지정했는데 또 넣으면 파라미터가 중복된다.
+        boolean formatSpecified = params != null
+                && (params.containsKey("type") || params.containsKey("_type"));
+        if (!formatSpecified) {
+            builder.queryParam("type", "json");
+        }
 
         if (params != null) {
             params.forEach((k, v) -> {
