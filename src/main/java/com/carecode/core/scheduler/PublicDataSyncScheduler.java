@@ -1,6 +1,7 @@
 package com.carecode.core.scheduler;
 
 import com.carecode.core.client.sync.GovernmentBenefitSyncService;
+import com.carecode.core.client.sync.KindergartenSyncService;
 import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
 import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 public class PublicDataSyncScheduler {
 
     private final NationwideChildcareFacilitySyncService facilitySyncService;
+    private final KindergartenSyncService kindergartenSyncService;
     private final GovernmentBenefitSyncService benefitSyncService;
     private final PediatricHospitalSyncService hospitalSyncService;
 
@@ -24,6 +26,13 @@ public class PublicDataSyncScheduler {
     public void syncChildcareFacilities() {
         SyncResult result = facilitySyncService.sync();
         logResult("전국 어린이집", result);
+    }
+
+    /** 전국 유치원 동기화. 어린이집 작업과 겹치지 않게 시간을 벌린다. */
+    @Scheduled(cron = "${app.scheduler.public-data.kindergarten-cron:0 0 4 * * MON}", zone = "Asia/Seoul")
+    public void syncKindergartens() {
+        SyncResult result = kindergartenSyncService.sync();
+        logResult("전국 유치원", result);
     }
 
     /** 정부 지원 서비스(보조금24) 동기화. */
