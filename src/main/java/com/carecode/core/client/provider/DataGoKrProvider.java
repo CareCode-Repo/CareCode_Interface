@@ -47,7 +47,7 @@ public class DataGoKrProvider implements PublicDataProvider {
         }
 
         UriComponentsBuilder builder = UriComponentsBuilder
-                .fromHttpUrl(baseUrl + "/" + stripLeadingSlash(resource))
+                .fromHttpUrl(toAbsoluteUrl(resource))
                 .queryParam("pageNo", pageNo)
                 .queryParam("numOfRows", numOfRows);
 
@@ -79,6 +79,14 @@ public class DataGoKrProvider implements PublicDataProvider {
             throw new PublicDataApiException(
                     "공공데이터포털 호출 실패: resource=" + resource + ", 사유=" + e.getMessage(), e);
         }
+    }
+
+    /** 표준데이터처럼 다른 호스트에 있는 데이터셋은 절대 URL 로 지정할 수 있게 한다. */
+    private String toAbsoluteUrl(String resource) {
+        if (resource != null && (resource.startsWith("http://") || resource.startsWith("https://"))) {
+            return resource;
+        }
+        return baseUrl + "/" + stripLeadingSlash(resource);
     }
 
     private String stripTrailingSlash(String url) {

@@ -77,6 +77,26 @@ class DataGoKrProviderTest {
     }
 
     @Test
+    @DisplayName("절대 URL 리소스는 기본 호스트를 붙이지 않는다")
+    void usesAbsoluteResourceUrlAsIs() {
+        RestTemplate restTemplate = new RestTemplate();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(restTemplate).build();
+        DataGoKrProvider provider = new DataGoKrProvider(restTemplate, ENCODED_KEY, "https://apis.data.go.kr");
+
+        server.expect(request -> {
+                    URI uri = request.getURI();
+                    // 표준데이터는 별도 호스트에 있다
+                    assertThat(uri.getHost()).isEqualTo("api.data.go.kr");
+                    assertThat(uri.getPath()).isEqualTo("/openapi/tn_pubr_public_kindergarten_api");
+                })
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+        provider.fetch("http://api.data.go.kr/openapi/tn_pubr_public_kindergarten_api", 1, 10, Map.of());
+
+        server.verify();
+    }
+
+    @Test
     @DisplayName("빈 파라미터 값은 쿼리에서 제외한다")
     void skipsBlankParams() {
         RestTemplate restTemplate = new RestTemplate();

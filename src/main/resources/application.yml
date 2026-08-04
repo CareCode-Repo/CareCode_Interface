@@ -144,7 +144,9 @@ app:
     public-data:
       # 시설 정보는 변동이 잦지 않아 주 1회, 정책은 신청 기간이 있어 매일 확인한다.
       facility-cron: ${PUBLIC_DATA_FACILITY_CRON:0 0 3 * * MON}
+      kindergarten-cron: ${PUBLIC_DATA_KINDERGARTEN_CRON:0 0 4 * * MON}
       benefit-cron: ${PUBLIC_DATA_BENEFIT_CRON:0 30 3 * * *}
+      hospital-cron: ${PUBLIC_DATA_HOSPITAL_CRON:0 0 3 * * TUE}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -218,6 +220,14 @@ public:
       # 코드가 개정될 수 있어 설정으로 뺀다.
       pediatric-subject-code: ${HOSPITAL_PEDIATRIC_SUBJECT_CODE:10}
       subject-name: ${HOSPITAL_SUBJECT_NAME:소아청소년과}
+
+    # 데이터셋 경로. 공공데이터 오퍼레이션은 개편되므로 재배포 없이 바꿀 수 있게 뺀다.
+    # 절대 URL 을 넣으면 base-url 대신 그대로 호출한다(표준데이터는 호스트가 다르다).
+    resource:
+      childcare: ${PUBLIC_DATA_RESOURCE_CHILDCARE:B551014/CCEF/childcare}
+      kindergarten: ${PUBLIC_DATA_RESOURCE_KINDERGARTEN:http://api.data.go.kr/openapi/tn_pubr_public_kindergarten_api}
+      benefit: ${PUBLIC_DATA_RESOURCE_BENEFIT:1741000/publicServiceInformations/publicServiceInformation}
+      hospital: ${PUBLIC_DATA_RESOURCE_HOSPITAL:B551182/hospInfoServicev2/getHospBasisList}
 
     sync:
       # 무한 루프 방지 상한. 도달하면 중단 사유를 남긴다.
