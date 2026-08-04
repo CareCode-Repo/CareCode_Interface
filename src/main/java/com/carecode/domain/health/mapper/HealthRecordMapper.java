@@ -23,6 +23,14 @@ public class HealthRecordMapper implements RequestMapper<HealthCreateHealthRecor
                 .nextDate(request.getNextDate() != null ? request.getNextDate().toLocalDate() : null)
                 .location(request.getLocation())
                 .doctorName(request.getDoctorName())
+                .hospitalName(request.getHospitalName())
+                // 측정값은 성장 곡선의 입력이므로 생성 시점에 그대로 반영한다.
+                .height(request.getHeight())
+                .weight(request.getWeight())
+                .temperature(request.getTemperature())
+                .bloodPressure(request.getBloodPressure())
+                .pulseRate(request.getPulseRate())
+                .vaccineName(request.getVaccineName())
                 .isCompleted(false);
         return builder.build();
     }

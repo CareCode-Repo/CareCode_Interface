@@ -191,8 +191,15 @@ public class HealthService {
         record.setNextDate(request.getNextDate() != null ? request.getNextDate().toLocalDate() : null);
         record.setLocation(request.getLocation());
         record.setDoctorName(request.getDoctorName());
+        record.setHospitalName(request.getHospitalName());
+        record.setHeight(request.getHeight());
+        record.setWeight(request.getWeight());
+        record.setTemperature(request.getTemperature());
+        record.setBloodPressure(request.getBloodPressure());
+        record.setPulseRate(request.getPulseRate());
+        record.setVaccineName(request.getVaccineName());
         record.setIsCompleted(request.getIsCompleted());
-        
+
         HealthRecord updatedRecord = healthRecordRepository.save(record);
         log.info("건강 기록 수정 완료: 기록ID={}", recordId);
         return healthRecordMapper.toResponse(updatedRecord);
