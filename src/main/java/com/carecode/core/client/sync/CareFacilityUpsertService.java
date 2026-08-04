@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 public class CareFacilityUpsertService {
 
     private final CareFacilityRepository careFacilityRepository;
+    private final CapacitySnapshotRecorder snapshotRecorder;
 
     /** 시설 코드 기준 upsert. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -72,6 +73,7 @@ public class CareFacilityUpsertService {
 
         facility.setUpdatedAt(LocalDateTime.now());
         careFacilityRepository.save(facility);
+        snapshotRecorder.record(facility);
         return isNew;
     }
 

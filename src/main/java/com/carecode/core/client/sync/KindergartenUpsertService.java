@@ -25,6 +25,7 @@ public class KindergartenUpsertService {
     public static final String CODE_PREFIX = "KG-";
 
     private final CareFacilityRepository careFacilityRepository;
+    private final CapacitySnapshotRecorder snapshotRecorder;
 
     /** 시설 코드 기준 upsert. 표준데이터에 고유 코드가 없으면 이름+주소로 만들어 쓴다. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -83,6 +84,7 @@ public class KindergartenUpsertService {
 
         facility.setUpdatedAt(LocalDateTime.now());
         careFacilityRepository.save(facility);
+        snapshotRecorder.record(facility);
         return isNew;
     }
 

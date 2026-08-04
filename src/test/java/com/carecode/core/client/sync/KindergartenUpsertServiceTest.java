@@ -30,7 +30,7 @@ class KindergartenUpsertServiceTest {
     void setUp() {
         repository = mock(CareFacilityRepository.class);
         when(repository.findByFacilityCode(anyString())).thenReturn(Optional.empty());
-        service = new KindergartenUpsertService(repository);
+        service = new KindergartenUpsertService(repository, mock(CapacitySnapshotRecorder.class));
     }
 
     @Test
