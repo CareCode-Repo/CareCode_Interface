@@ -11,6 +11,7 @@ import com.carecode.domain.careFacility.dto.request.ReviewRequest;
 import com.carecode.domain.careFacility.dto.response.CareFacilityInfo;
 import com.carecode.domain.careFacility.dto.response.CareFacilityListResponse;
 import com.carecode.domain.careFacility.dto.response.CareFacilityStatsResponse;
+import com.carecode.domain.careFacility.dto.response.AdmissionForecastResponse;
 import com.carecode.domain.careFacility.dto.response.BookingResponse;
 import com.carecode.domain.careFacility.dto.response.ReviewResponse;
 import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
@@ -432,4 +433,15 @@ public class CareFacilityController extends BaseController {
 
         return ResponseEntity.ok(bookings);
     }
-} 
+
+    // 입소 가능 시점 예측
+    @GetMapping("/{facilityId}/admission-forecast")
+    @LogExecutionTime
+    @Operation(summary = "입소 가능 시점 예측", description = "관측된 정원 변동으로 자리가 날 확률을 추정합니다.")
+    public ResponseEntity<AdmissionForecastResponse> forecastAdmission(
+            @Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId,
+            @Parameter(description = "아이 월령", example = "18") @RequestParam(required = false) Integer childAgeMonths,
+            @Parameter(description = "예측 기간(개월)", example = "6") @RequestParam(required = false) Integer horizonMonths) {
+        return ResponseEntity.ok(careFacilityFacade.forecastAdmission(facilityId, childAgeMonths, horizonMonths));
+    }
+}
