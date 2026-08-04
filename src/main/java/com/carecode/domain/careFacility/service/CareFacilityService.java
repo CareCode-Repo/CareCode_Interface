@@ -2,6 +2,8 @@ package com.carecode.domain.careFacility.service;
 
 import org.springframework.cache.annotation.Cacheable;
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.util.BoundingBox;
+import com.carecode.core.search.FullTextSearchSupport;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.exception.CareFacilityNotFoundException;
 import com.carecode.domain.careFacility.dto.request.CareFacilitySearchRequest;
@@ -49,6 +51,7 @@ public class CareFacilityService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final CareFacilityMapper careFacilityMapper;
+    private final FullTextSearchSupport fullTextSearchSupport;
 
 
     // 공공데이터 API에서 받아온 보육시설 데이터를 DB에 저장
@@ -272,14 +275,20 @@ public class CareFacilityService {
                 Sort.Direction.ASC
         );
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
-        
-        Page<CareFacility> facilityPage = careFacilityRepository.findBySearchCriteria(
-                request.getKeyword(),
-                null,
-                request.getCity(),
-                pageable
-        );
-        
+
+        // 키워드만 있는 검색은 전문 검색으로 처리한다. LIKE '%키워드%' 는 인덱스를 못 탄다.
+        boolean keywordOnly = request.getCity() == null || request.getCity().isBlank();
+        Page<CareFacility> facilityPage;
+        if (keywordOnly && fullTextSearchSupport.canUseFullText(request.getKeyword())) {
+            String normalized = fullTextSearchSupport.normalize(request.getKeyword());
+            facilityPage = careFacilityRepository.searchByFullText(normalized,
+                    PageRequest.of(request.getPage(), request.getSize()));
+        } else {
+            facilityPage = careFacilityRepository.findBySearchCriteria(
+                    request.getKeyword(), null, request.getCity(), pageable);
+        }
+
+
         List<CareFacilityInfo> facilities = facilityPage.getContent().stream()
                 .map(careFacilityMapper::toResponse)
                 .collect(Collectors.toList());
@@ -323,7 +332,10 @@ public class CareFacilityService {
     @LogExecutionTime
     @ValidateLocation
     public List<CareFacilityInfo> getCareFacilitiesWithinRadius(Double latitude, Double longitude, Double radius) {
-        List<CareFacility> facilities = careFacilityRepository.findWithinRadius(latitude, longitude, radius);
+        BoundingBox box = BoundingBox.around(latitude, longitude, radius);
+        List<CareFacility> facilities = careFacilityRepository.findWithinBoundingBox(
+                latitude, longitude, radius,
+                box.minLat(), box.maxLat(), box.minLng(), box.maxLng());
         return facilities.stream()
                 .map(careFacilityMapper::toResponse)
                 .collect(Collectors.toList());
