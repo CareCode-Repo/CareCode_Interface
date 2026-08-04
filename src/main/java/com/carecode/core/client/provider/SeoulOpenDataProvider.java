@@ -8,19 +8,13 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
-/**
- * 서울 열린데이터광장 공급자.
- *
- * <p>URL 규격: {@code {baseUrl}/{apiKey}/json/{service}/{startIndex}/{endIndex}/}
- * 페이지 번호가 아니라 시작·종료 인덱스를 경로에 넣는다. 한 번에 최대 1000건.
- */
+/** 서울 열린데이터광장 공급자. 페이지 번호 대신 시작·종료 인덱스를 URL 경로에 넣는다. */
 @Slf4j
 @Component
 public class SeoulOpenDataProvider implements PublicDataProvider {
 
     public static final String PROVIDER_NAME = "SEOUL_OPEN_DATA";
 
-    /** 서울시 API가 한 번에 허용하는 최대 건수. */
     private static final int MAX_ROWS = 1000;
 
     private final RestTemplate restTemplate;

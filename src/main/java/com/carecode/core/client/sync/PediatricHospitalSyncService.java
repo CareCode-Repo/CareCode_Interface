@@ -12,17 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * 소아청소년과 병원 동기화.
- *
- * <p>출처: 건강보험심사평가원_병원정보서비스 (공공데이터포털)
- *
- * <p>{@code Hospital} 엔티티는 있었으나 데이터를 넣을 경로가 없어 비어 있었다.
- * 진료과목 코드로 소아청소년과만 걸러 적재한다.
- *
- * <p>이 데이터셋은 XML 로 응답하므로 {@link XmlResponseParser} 를 거친다.
- * (다른 data.go.kr 데이터셋과 달리 JSON 을 지원하지 않을 수 있어 두 포맷을 모두 처리한다.)
- */
+/** 소아청소년과 병원 동기화. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,10 +27,7 @@ public class PediatricHospitalSyncService {
     private final XmlResponseParser xmlResponseParser;
     private final ObjectMapper objectMapper;
 
-    /**
-     * 진료과목 코드. 심평원 코드표 기준 소아청소년과는 "10".
-     * 코드가 개정될 수 있어 설정으로 뺀다.
-     */
+    /** 진료과목 코드. */
     @Value("${public.data.hospital.pediatric-subject-code:10}")
     private String pediatricSubjectCode;
 
@@ -108,12 +95,7 @@ public class PediatricHospitalSyncService {
         return params;
     }
 
-    /**
-     * 응답에서 항목 배열을 꺼낸다. JSON 과 XML 응답을 모두 처리한다.
-     *
-     * <p>단일 항목이면 배열이 아니라 객체로 오는 경우가 있어(특히 XML→JSON 변환 시)
-     * 그 경우 1건짜리 배열로 감싼다.
-     */
+    /** 응답에서 항목 배열을 꺼낸다. */
     private JsonNode extractRows(String body) {
         if (body == null || body.isBlank()) {
             return null;

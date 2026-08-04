@@ -20,11 +20,7 @@ public class Hospital {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * 심평원 암호화 요양기호(ykiho).
-     * 공공데이터 동기화 시 중복 적재를 막는 외부 식별자다.
-     * 복호화 수단은 제공되지 않으므로 값 자체를 키로 쓴다.
-     */
+    /** 심평원 암호화 요양기호(ykiho). */
     @Column(name = "external_code", unique = true, length = 100)
     private String externalCode;
 

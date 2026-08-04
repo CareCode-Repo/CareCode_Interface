@@ -16,12 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-/**
- * 공공데이터포털 공급자 검증.
- *
- * <p>serviceKey 는 발급 시점에 이미 URL 인코딩된 문자열이라,
- * 빌더로 다시 인코딩하면 {@code %2B} 가 {@code %252B} 로 이중 인코딩돼 인증에 실패한다.
- */
+/** 공공데이터포털 공급자 검증. */
 @DisplayName("DataGoKrProvider")
 class DataGoKrProviderTest {
 

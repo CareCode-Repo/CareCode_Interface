@@ -10,14 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
-/**
- * 전국 어린이집 정보 동기화.
- *
- * <p>출처: 한국사회보장정보원_전국 어린이집 정보 조회 (공공데이터포털)
- *
- * <p>기존 연동은 서울 열린데이터광장 하나뿐이라 서울 외 지역에는 시설 데이터가 없었다.
- * 이 서비스는 전국 데이터를 시설 코드 기준으로 upsert 한다.
- */
+/** 전국 어린이집 정보 동기화. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -85,10 +78,7 @@ public class NationwideChildcareFacilitySyncService {
         return result;
     }
 
-    /**
-     * 공공데이터포털 응답에서 데이터 배열을 꺼낸다.
-     * 데이터셋마다 래핑 구조가 조금씩 달라 흔한 형태를 순서대로 시도한다.
-     */
+    /** 공공데이터포털 응답에서 데이터 배열을 꺼낸다. */
     private JsonNode extractRows(String body) throws Exception {
         if (body == null || body.isBlank()) {
             return null;

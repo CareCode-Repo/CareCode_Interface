@@ -6,12 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * XML 응답 파서 검증.
- *
- * <p>심평원 병원정보서비스처럼 XML 만 반환하는 데이터셋을 처리하기 위한 것으로,
- * 외부에서 받은 XML 을 다루므로 XXE 차단이 특히 중요하다.
- */
+/** XML 응답 파서 검증. */
 @DisplayName("XmlResponseParser")
 class XmlResponseParserTest {
 

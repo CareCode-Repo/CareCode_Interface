@@ -9,12 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 병원 한 건을 저장하는 트랜잭션 경계.
- *
- * <p>동기화 루프와 분리한 이유는 {@link CareFacilityUpsertService} 와 같다 —
- * {@code @Transactional} 은 프록시로 동작하므로 같은 클래스 안에서 호출하면 적용되지 않는다.
- */
+/** 병원 한 건을 저장하는 트랜잭션 경계. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -22,12 +17,7 @@ public class HospitalUpsertService {
 
     private final HospitalRepository hospitalRepository;
 
-    /**
-     * 요양기호(ykiho) 기준 upsert.
-     *
-     * @param defaultType 진료과목명. 응답에 종별명이 없을 때 사용한다.
-     * @return 신규 생성이면 true
-     */
+    /** 요양기호(ykiho) 기준 upsert. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean upsert(JsonNode row, String defaultType) {
         String ykiho = text(row, "ykiho", "YKIHO");

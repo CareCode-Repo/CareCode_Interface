@@ -12,12 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-/**
- * 정책 한 건을 저장하는 트랜잭션 경계.
- *
- * <p>관리자가 직접 수정한 정책을 공공데이터가 덮어쓰지 않도록,
- * 외부에서 받은 정책은 {@code policyCode} 에 접두어를 붙여 출처를 구분한다.
- */
+/** 정책 한 건을 저장하는 트랜잭션 경계. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -28,11 +23,7 @@ public class PolicyUpsertService {
 
     private final PolicyRepository policyRepository;
 
-    /**
-     * 서비스 ID 기준 upsert.
-     *
-     * @return 신규 생성이면 true
-     */
+    /** 서비스 ID 기준 upsert. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @CacheEvict(cacheNames = "policy", allEntries = true)
     public boolean upsert(JsonNode row) {

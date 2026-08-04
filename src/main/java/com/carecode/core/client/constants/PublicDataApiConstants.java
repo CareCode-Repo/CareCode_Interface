@@ -2,13 +2,7 @@ package com.carecode.core.client.constants;
 
 import java.util.Map;
 
-/**
- * 공공데이터 API 공통 상수.
- *
- * <p>이전에는 엔드포인트 상수 5종과 정책·교육 유형 코드가 정의돼 있었으나
- * 어디서도 참조되지 않는 죽은 코드였다("연동돼 있다"는 착각만 만들었다).
- * 실제로 쓰이는 값만 남긴다.
- */
+/** 공공데이터 API 공통 상수. */
 public final class PublicDataApiConstants {
 
     /** 공공데이터포털 공통 응답 코드. */
@@ -17,10 +11,7 @@ public final class PublicDataApiConstants {
     /** 한 번에 요청할 수 있는 최대 건수 (서울 열린데이터광장 기준). */
     public static final int MAX_NUM_OF_ROWS = 1000;
 
-    /**
-     * 시도명 → 법정동 시도 코드.
-     * 공공데이터포털 API 가 지역 필터를 지원할 때 사용한다.
-     */
+    /** 시도명 → 법정동 시도 코드. */
     public static final Map<String, String> SIDO_CODES = Map.ofEntries(
             Map.entry("서울특별시", "11"),
             Map.entry("부산광역시", "21"),
@@ -44,11 +35,7 @@ public final class PublicDataApiConstants {
         // 유틸리티 클래스이므로 인스턴스화 방지
     }
 
-    /**
-     * 시도명으로 시도 코드를 찾는다. 표기가 조금 달라도(예: "서울") 매칭한다.
-     *
-     * @return 찾지 못하면 null
-     */
+    /** 시도명으로 시도 코드를 찾는다. */
     public static String findSidoCode(String sidoName) {
         if (sidoName == null || sidoName.isBlank()) {
             return null;

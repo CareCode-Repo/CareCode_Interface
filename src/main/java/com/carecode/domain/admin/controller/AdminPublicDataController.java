@@ -15,12 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * 공공데이터 수동 동기화 API.
- *
- * <p>정기 동기화는 {@code PublicDataSyncScheduler} 가 담당한다.
- * 이 엔드포인트는 즉시 반영이 필요할 때 쓰는 보조 수단이다.
- */
+/** 공공데이터 수동 동기화 API. */
 @RestController
 @RequestMapping("/api/admin/public-data")
 @RequiredArgsConstructor
@@ -32,22 +27,19 @@ public class AdminPublicDataController {
     private final PediatricHospitalSyncService hospitalSyncService;
 
     @PostMapping("/facilities/sync")
-    @Operation(summary = "전국 어린이집 동기화",
-            description = "공공데이터포털에서 전국 어린이집 정보를 받아 시설 코드 기준으로 갱신합니다.")
+    @Operation(summary = "전국 어린이집 동기화", description = "시설 코드 기준으로 갱신")
     public ResponseEntity<Map<String, Object>> syncFacilities() {
         return ResponseEntity.ok(toResponse(facilitySyncService.sync()));
     }
 
     @PostMapping("/benefits/sync")
-    @Operation(summary = "정부 지원 서비스 동기화",
-            description = "보조금24 공공서비스 정보에서 육아 관련 서비스를 받아 정책으로 갱신합니다.")
+    @Operation(summary = "정부 지원 서비스 동기화", description = "육아 관련 서비스만 정책으로 갱신")
     public ResponseEntity<Map<String, Object>> syncBenefits() {
         return ResponseEntity.ok(toResponse(benefitSyncService.sync()));
     }
 
     @PostMapping("/hospitals/sync")
-    @Operation(summary = "소아청소년과 병원 동기화",
-            description = "심평원 병원정보서비스에서 소아청소년과 진료 병원을 받아 요양기호 기준으로 갱신합니다.")
+    @Operation(summary = "소아청소년과 병원 동기화", description = "요양기호 기준으로 갱신")
     public ResponseEntity<Map<String, Object>> syncHospitals() {
         return ResponseEntity.ok(toResponse(hospitalSyncService.sync()));
     }
