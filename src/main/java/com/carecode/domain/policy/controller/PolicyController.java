@@ -7,6 +7,7 @@ import com.carecode.core.util.PageRequestUtil;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.PolicyNotFoundException;
+import com.carecode.domain.policy.dto.response.PersonalizedPolicyResponse;
 import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
 import com.carecode.domain.policy.dto.response.PolicyListResponse;
@@ -260,6 +261,15 @@ public class PolicyController extends BaseController {
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
         policyFacade.removeBookmark(getAuthenticatedUserCode(), policyId);
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("북마크가 삭제되었습니다.").build());
+    }
+
+    // 개인화 정책 추천
+    @GetMapping("/recommendations")
+    @LogExecutionTime
+    @Operation(summary = "맞춤 정책 추천", description = "자녀 월령과 거주지에 맞는 정책을 추천합니다.")
+    public ResponseEntity<List<PersonalizedPolicyResponse>> getRecommendations(
+            @Parameter(description = "추천 개수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
+        return ResponseEntity.ok(policyFacade.recommendPolicies(PageRequestUtil.normalizeSize(limit)));
     }
 
     private String getAuthenticatedUserCode() {
