@@ -13,6 +13,7 @@ import com.carecode.domain.careFacility.dto.response.CareFacilityListResponse;
 import com.carecode.domain.careFacility.dto.response.CareFacilityStatsResponse;
 import com.carecode.domain.careFacility.dto.response.AdmissionForecastResponse;
 import com.carecode.domain.careFacility.dto.response.BookingResponse;
+import com.carecode.domain.careFacility.dto.response.FacilityPopularityResponse;
 import com.carecode.domain.careFacility.dto.response.ReviewResponse;
 import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
 import com.carecode.domain.careFacility.dto.request.UpdateBookingRequest;
@@ -443,5 +444,14 @@ public class CareFacilityController extends BaseController {
             @Parameter(description = "아이 월령", example = "18") @RequestParam(required = false) Integer childAgeMonths,
             @Parameter(description = "예측 기간(개월)", example = "6") @RequestParam(required = false) Integer horizonMonths) {
         return ResponseEntity.ok(careFacilityFacade.forecastAdmission(facilityId, childAgeMonths, horizonMonths));
+    }
+
+    // 충원율 기반 인기도
+    @GetMapping("/{facilityId}/popularity")
+    @LogExecutionTime
+    @Operation(summary = "시설 인기도 조회", description = "충원율 추이로 수요 수준과 변동을 분석합니다.")
+    public ResponseEntity<FacilityPopularityResponse> getPopularity(
+            @Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId) {
+        return ResponseEntity.ok(careFacilityFacade.analyzePopularity(facilityId));
     }
 }

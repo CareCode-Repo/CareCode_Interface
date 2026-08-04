@@ -2,6 +2,7 @@ package com.carecode.domain.careFacility.app;
 
 import com.carecode.domain.careFacility.dto.response.AdmissionForecastResponse;
 import com.carecode.domain.careFacility.dto.response.BookingResponse;
+import com.carecode.domain.careFacility.dto.response.FacilityPopularityResponse;
 import com.carecode.domain.careFacility.dto.request.ReviewRequest;
 import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
 import com.carecode.domain.careFacility.dto.request.UpdateBookingRequest;
@@ -13,6 +14,7 @@ import com.carecode.domain.careFacility.dto.response.ReviewResponse;
 import com.carecode.domain.careFacility.entity.FacilityType;
 import com.carecode.domain.careFacility.service.AdmissionForecastService;
 import com.carecode.domain.careFacility.service.CareFacilityBookingService;
+import com.carecode.domain.careFacility.service.FacilityPopularityService;
 import com.carecode.domain.careFacility.service.CareFacilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,6 +30,7 @@ public class CareFacilityFacade {
     private final CareFacilityService careFacilityService;
     private final CareFacilityBookingService bookingService;
     private final AdmissionForecastService admissionForecastService;
+    private final FacilityPopularityService facilityPopularityService;
 
     @Transactional(readOnly = true)
     public List<CareFacilityInfo> getAllCareFacilities(int page, int size) {
@@ -209,5 +212,10 @@ public class CareFacilityFacade {
     @Transactional(readOnly = true)
     public AdmissionForecastResponse forecastAdmission(Long facilityId, Integer childAgeMonths, Integer horizonMonths) {
         return admissionForecastService.forecast(facilityId, childAgeMonths, horizonMonths);
+    }
+
+    @Transactional(readOnly = true)
+    public FacilityPopularityResponse analyzePopularity(Long facilityId) {
+        return facilityPopularityService.analyze(facilityId);
     }
 }
