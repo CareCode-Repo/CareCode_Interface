@@ -4,6 +4,7 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.controller.BaseController;
 import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.core.security.RefreshTokenCookieFactory;
 import com.carecode.core.util.KakaoUtil;
 import com.carecode.domain.user.dto.request.KakaoRegistrationRequest;
 import com.carecode.domain.user.dto.response.TokenDto;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +38,7 @@ public class KakaoAuthController extends BaseController {
     private final UserService userService;
     private final KakaoUtil kakaoUtil;
     private final CurrentUserFacade currentUserFacade;
+    private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
     @PostMapping("/login")
     @LogExecutionTime
@@ -44,7 +47,16 @@ public class KakaoAuthController extends BaseController {
             @Parameter(description = "카카오 인증 코드", required = true) @RequestParam String code) {
         log.info("카카오 OAuth 로그인 요청 수신 (authorization code는 로그에 기록하지 않음)");
         TokenDto body = authService.oAuthLoginOrRegister(code);
-        return ResponseEntity.ok(body);
+
+        if (body.getRefreshToken() == null) {
+            return ResponseEntity.ok(body);
+        }
+
+        // 리프레시 토큰은 HttpOnly 쿠키로도 내려 JS 저장소에 남기지 않게 한다.
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE,
+                        refreshTokenCookieFactory.create(body.getRefreshToken()).toString())
+                .body(body);
     }
 
     @PostMapping("/complete-registration")
