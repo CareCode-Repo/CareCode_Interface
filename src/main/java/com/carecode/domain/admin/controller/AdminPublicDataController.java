@@ -1,6 +1,7 @@
 package com.carecode.domain.admin.controller;
 
 import com.carecode.core.client.sync.GovernmentBenefitSyncService;
+import com.carecode.core.client.sync.KindergartenSyncService;
 import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
 import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
@@ -23,6 +24,7 @@ import java.util.Map;
 public class AdminPublicDataController {
 
     private final NationwideChildcareFacilitySyncService facilitySyncService;
+    private final KindergartenSyncService kindergartenSyncService;
     private final GovernmentBenefitSyncService benefitSyncService;
     private final PediatricHospitalSyncService hospitalSyncService;
 
@@ -30,6 +32,12 @@ public class AdminPublicDataController {
     @Operation(summary = "전국 어린이집 동기화", description = "시설 코드 기준으로 갱신")
     public ResponseEntity<Map<String, Object>> syncFacilities() {
         return ResponseEntity.ok(toResponse(facilitySyncService.sync()));
+    }
+
+    @PostMapping("/kindergartens/sync")
+    @Operation(summary = "전국 유치원 동기화", description = "유치원명·주소 기준으로 갱신")
+    public ResponseEntity<Map<String, Object>> syncKindergartens() {
+        return ResponseEntity.ok(toResponse(kindergartenSyncService.sync()));
     }
 
     @PostMapping("/benefits/sync")
@@ -52,6 +60,7 @@ public class AdminPublicDataController {
         body.put("created", result.getCreated());
         body.put("updated", result.getUpdated());
         body.put("failed", result.getFailed());
+        body.put("skipped", result.getSkipped());
         body.put("pagesProcessed", result.getPagesProcessed());
         body.put("stoppedReason", result.getStoppedReason());
         return body;
