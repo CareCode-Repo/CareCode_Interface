@@ -47,12 +47,17 @@ public class RegionalBenefitComparisonService {
 
     public RegionalBenefitComparisonResponse compare(Long childId, Integer years, Integer limit) {
         User user = currentUserFacade.requireCurrentUser();
-        Child child = resolveChild(user, childId);
+        List<Child> children = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        Child child = resolveChild(children, childId);
 
         int horizon = resolveHorizon(years);
         int currentAgeMonths = (int) ChronoUnit.MONTHS.between(child.getBirthDate(), LocalDate.now());
 
-        List<Policy> activePolicies = policyRepository.findByIsActiveTrue();
+        // 자격이 안 되는 정책을 총액에 넣으면 "이사하면 얼마 더" 가 통째로 틀어진다.
+        List<Policy> activePolicies = policyRepository.findByIsActiveTrue().stream()
+                .filter(p -> meetsHouseholdConditions(p, user, children.size()))
+                .toList();
+        long conditional = activePolicies.stream().filter(p -> isIncomeConditional(p, user)).count();
         List<Policy> nationwide = activePolicies.stream().filter(this::isNationwide).toList();
         List<String> regions = policyRepository.findDistinctTargetRegions();
 
@@ -88,8 +93,24 @@ public class RegionalBenefitComparisonService {
                 .baseAmount(base)
                 .rankings(rankings.size() > size ? rankings.subList(0, size) : rankings)
                 .dataQuality("ESTIMATED")
-                .disclaimers(buildDisclaimers(baseRegion))
+                .disclaimers(buildDisclaimers(baseRegion, conditional))
                 .build();
+    }
+
+    /** 자녀 수는 확정값이라 못 맞추면 제외한다. 소득은 미입력을 탈락으로 보지 않는다. */
+    private boolean meetsHouseholdConditions(Policy policy, User user, int childCount) {
+        Integer minChildren = policy.getMinChildren();
+        if (minChildren != null && childCount < minChildren) {
+            return false;
+        }
+        Integer threshold = policy.getIncomeThresholdPercent();
+        Integer income = user.getIncomePercent();
+        return threshold == null || income == null || income <= threshold;
+    }
+
+    /** 소득 조건이 있는데 사용자가 소득을 입력하지 않아 판정을 보류한 정책. */
+    private boolean isIncomeConditional(Policy policy, User user) {
+        return policy.getIncomeThresholdPercent() != null && user.getIncomePercent() == null;
     }
 
     /** 지역 한 곳의 집계 중간 결과. */
@@ -149,8 +170,7 @@ public class RegionalBenefitComparisonService {
         return new RegionSummary(total, cash, nonCash, contributions);
     }
 
-    private Child resolveChild(User user, Long childId) {
-        List<Child> children = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+    private Child resolveChild(List<Child> children, Long childId) {
         if (children.isEmpty()) {
             throw new CareServiceException("등록된 자녀가 없습니다. 자녀를 먼저 등록해 주세요.");
         }
@@ -189,9 +209,16 @@ public class RegionalBenefitComparisonService {
                 .orElse(null);
     }
 
-    private List<String> buildDisclaimers(String baseRegion) {
+    private List<String> buildDisclaimers(String baseRegion, long conditionalCount) {
         List<String> notes = new ArrayList<>();
         notes.add("수집된 정책 기준 추정치이며 실제 수령액과 다를 수 있습니다.");
+        // 중복 수급이 불가능한 정책들이 함께 더해질 수 있어, 총액보다 지역 간 차액이 신뢰도가 높다.
+        notes.add("총액은 모든 정책을 단순 합산한 값입니다. 상호 배타적인 정책이 포함될 수 있으므로 "
+                + "지역 간 '차액' 을 기준으로 보세요.");
+        if (conditionalCount > 0) {
+            notes.add(String.format("소득 조건이 걸린 정책 %d건은 소득 미입력 상태로 포함했습니다. "
+                    + "소득을 입력하면 정확해집니다.", conditionalCount));
+        }
         notes.add("무료검진·서비스 등 금액으로 환산할 수 없는 혜택은 합산에서 제외했습니다.");
         notes.add("지급 방식이 명시되지 않은 정책은 과대 계상을 피하기 위해 1회 지급으로 계산했습니다.");
         if (baseRegion == null) {
