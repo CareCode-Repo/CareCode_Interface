@@ -2,6 +2,7 @@ package com.carecode.core.scheduler;
 
 import com.carecode.core.client.sync.GovernmentBenefitSyncService;
 import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
+import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class PublicDataSyncScheduler {
 
     private final NationwideChildcareFacilitySyncService facilitySyncService;
     private final GovernmentBenefitSyncService benefitSyncService;
+    private final PediatricHospitalSyncService hospitalSyncService;
 
     /**
      * 전국 어린이집 동기화. 매주 월요일 새벽 3시.
@@ -40,6 +42,16 @@ public class PublicDataSyncScheduler {
     public void syncGovernmentBenefits() {
         SyncResult result = benefitSyncService.sync();
         logResult("정부 지원 서비스", result);
+    }
+
+    /**
+     * 소아청소년과 병원 동기화. 매주 화요일 새벽 3시.
+     * 시설 동기화와 같은 날 돌리면 일일 트래픽 한도를 함께 소진하므로 하루 띄운다.
+     */
+    @Scheduled(cron = "${app.scheduler.public-data.hospital-cron:0 0 3 * * TUE}", zone = "Asia/Seoul")
+    public void syncPediatricHospitals() {
+        SyncResult result = hospitalSyncService.sync();
+        logResult("소아청소년과 병원", result);
     }
 
     private void logResult(String label, SyncResult result) {

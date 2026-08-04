@@ -2,6 +2,7 @@ package com.carecode.domain.admin.controller;
 
 import com.carecode.core.client.sync.GovernmentBenefitSyncService;
 import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
+import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +29,7 @@ public class AdminPublicDataController {
 
     private final NationwideChildcareFacilitySyncService facilitySyncService;
     private final GovernmentBenefitSyncService benefitSyncService;
+    private final PediatricHospitalSyncService hospitalSyncService;
 
     @PostMapping("/facilities/sync")
     @Operation(summary = "전국 어린이집 동기화",
@@ -41,6 +43,13 @@ public class AdminPublicDataController {
             description = "보조금24 공공서비스 정보에서 육아 관련 서비스를 받아 정책으로 갱신합니다.")
     public ResponseEntity<Map<String, Object>> syncBenefits() {
         return ResponseEntity.ok(toResponse(benefitSyncService.sync()));
+    }
+
+    @PostMapping("/hospitals/sync")
+    @Operation(summary = "소아청소년과 병원 동기화",
+            description = "심평원 병원정보서비스에서 소아청소년과 진료 병원을 받아 요양기호 기준으로 갱신합니다.")
+    public ResponseEntity<Map<String, Object>> syncHospitals() {
+        return ResponseEntity.ok(toResponse(hospitalSyncService.sync()));
     }
 
     private Map<String, Object> toResponse(SyncResult result) {
