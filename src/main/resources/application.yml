@@ -212,6 +212,13 @@ public:
       service-key: ${DATA_GO_KR_SERVICE_KEY:}
       base-url: ${DATA_GO_KR_BASE_URL:https://apis.data.go.kr}
 
+    # 심평원 병원정보서비스
+    hospital:
+      # 진료과목 코드. 심평원 코드표 기준 소아청소년과는 "10".
+      # 코드가 개정될 수 있어 설정으로 뺀다.
+      pediatric-subject-code: ${HOSPITAL_PEDIATRIC_SUBJECT_CODE:10}
+      subject-name: ${HOSPITAL_SUBJECT_NAME:소아청소년과}
+
     sync:
       # 무한 루프 방지 상한. 도달하면 중단 사유를 남긴다.
       max-pages: ${PUBLIC_DATA_SYNC_MAX_PAGES:200}
