@@ -7,6 +7,7 @@ import com.carecode.core.util.PageRequestUtil;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.PolicyNotFoundException;
+import com.carecode.domain.policy.dto.response.PersonalizedPolicyResponse;
 import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
 import com.carecode.domain.policy.dto.response.PolicyListResponse;
@@ -134,10 +135,10 @@ public class PolicyController extends BaseController {
     // 연령대별 정책 조회
     @GetMapping("/age")
     @LogExecutionTime
-    @Operation(summary = "연령대별 정책 조회", description = "특정 연령대에 해당하는 육아 정책 목록을 조회합니다.")
+    @Operation(summary = "연령대별 정책 조회", description = "월령 범위에 해당하는 정책을 조회합니다.")
     public ResponseEntity<List<PolicyDto>> getPoliciesByAgeRange(
-            @Parameter(description = "최소 연령", required = true) @RequestParam Integer minAge,
-            @Parameter(description = "최대 연령", required = true) @RequestParam Integer maxAge) {
+            @Parameter(description = "최소 월령", example = "0", required = true) @RequestParam Integer minAge,
+            @Parameter(description = "최대 월령", example = "71", required = true) @RequestParam Integer maxAge) {
         log.info("연령대별 정책 조회: 최소연령={}, 최대연령={}", minAge, maxAge);
 
         try {
@@ -220,8 +221,9 @@ public class PolicyController extends BaseController {
     // 아이 연령별 정책 조회
     @GetMapping("/child-age")
     @LogExecutionTime
-    @Operation(summary = "아이 연령별 정책 조회", description = "특정 연령의 아이에게 해당하는 정책을 조회합니다.")
-    public ResponseEntity<List<PolicyDto>> getPoliciesByChildAge(@Parameter(description = "아이 연령", required = true) @RequestParam Integer childAge) {
+    @Operation(summary = "아이 연령별 정책 조회", description = "해당 월령의 아이가 받을 수 있는 정책을 조회합니다.")
+    public ResponseEntity<List<PolicyDto>> getPoliciesByChildAge(
+            @Parameter(description = "아이 월령", example = "24", required = true) @RequestParam Integer childAge) {
         List<PolicyDto> policies = policyFacade.getPoliciesByChildAge(childAge);
 
         return ResponseEntity.ok(policies);
@@ -260,6 +262,15 @@ public class PolicyController extends BaseController {
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
         policyFacade.removeBookmark(getAuthenticatedUserCode(), policyId);
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("북마크가 삭제되었습니다.").build());
+    }
+
+    // 개인화 정책 추천
+    @GetMapping("/recommendations")
+    @LogExecutionTime
+    @Operation(summary = "맞춤 정책 추천", description = "자녀 월령과 거주지에 맞는 정책을 추천합니다.")
+    public ResponseEntity<List<PersonalizedPolicyResponse>> getRecommendations(
+            @Parameter(description = "추천 개수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
+        return ResponseEntity.ok(policyFacade.recommendPolicies(PageRequestUtil.normalizeSize(limit)));
     }
 
     private String getAuthenticatedUserCode() {

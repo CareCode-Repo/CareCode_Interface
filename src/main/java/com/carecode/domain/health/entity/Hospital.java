@@ -20,6 +20,10 @@ public class Hospital {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** 심평원 암호화 요양기호(ykiho). */
+    @Column(name = "external_code", unique = true, length = 100)
+    private String externalCode;
+
     @Column(nullable = false)
     private String name;
 

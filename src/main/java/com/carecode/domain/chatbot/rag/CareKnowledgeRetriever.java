@@ -11,17 +11,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
-/**
- * 챗봇 답변 근거 검색기 (RAG 의 R).
- *
- * <p>사용자 질문에서 키워드를 뽑아 DB 의 정책·시설 데이터를 조회한다.
- * 이렇게 하면 챗봇이 일반론 대신 "우리 서비스에 실제로 등록된" 내용을 근거로 답할 수 있다.
- *
- * <p>지금은 키워드 LIKE 검색이다. 데이터가 커지면 임베딩 기반 벡터 검색으로
- * 이 클래스 내부만 교체하면 된다 — 호출부는 {@link RetrievedContext} 에만 의존한다.
- */
+/** 챗봇 답변 근거 검색기(RAG 의 R). 임베딩 검색으로 바꾸려면 이 클래스 내부만 교체하면 된다. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -29,29 +22,42 @@ public class CareKnowledgeRetriever {
 
     private static final int MAX_PER_SOURCE = 3;
     private static final int MAX_CONTENT_LENGTH = 400;
+    private static final int MAX_KEYWORDS = 3;
 
-    /** 검색어에서 제외할 조사·의문사. 이걸 키워드로 쓰면 아무거나 매칭된다. */
+    /** 검색어에서 제외할 의문사·범용어. 이걸로 검색하면 아무거나 매칭된다. */
     private static final List<String> STOP_WORDS = List.of(
             "알려줘", "알려주세요", "어디", "무엇", "뭐가", "뭔가요", "있나요", "있어",
-            "해줘", "하고", "그리고", "관련", "대해", "대한", "정보", "추천");
+            "해줘", "하고", "그리고", "관련", "대해", "대한", "정보", "추천",
+            "우리", "저희", "지금", "가까운", "근처");
+
+    /** 길이 내림차순. 긴 것부터 떼어내야 "에서" 가 "서" 로 잘리지 않는다. */
+    private static final List<String> JOSA = List.of(
+            "에서는", "으로는", "에게는", "에서", "으로", "에게", "부터", "까지", "이랑",
+            "은", "는", "이", "가", "을", "를", "의", "에", "도", "와", "과", "로");
 
     private final PolicyRepository policyRepository;
     private final CareFacilityRepository careFacilityRepository;
 
     @Transactional(readOnly = true)
     public RetrievedContext retrieve(String question) {
-        String keyword = extractKeyword(question);
-        if (keyword == null) {
+        List<String> keywords = extractKeywords(question);
+        if (keywords.isEmpty()) {
             return RetrievedContext.builder().snippets(List.of()).build();
         }
 
+        // 변별력 높은 키워드부터 시도하고, 근거를 찾으면 멈춘다.
         List<RetrievedContext.Snippet> snippets = new ArrayList<>();
-        try {
-            snippets.addAll(searchPolicies(keyword));
-            snippets.addAll(searchFacilities(keyword));
-        } catch (Exception e) {
-            // 검색 실패가 대화 자체를 막지 않도록 한다. 근거 없이 일반 답변으로 진행한다.
-            log.error("챗봇 근거 검색 실패 - keyword={}", keyword, e);
+        for (String keyword : keywords) {
+            try {
+                snippets.addAll(searchPolicies(keyword));
+                snippets.addAll(searchFacilities(keyword));
+            } catch (Exception e) {
+                // 검색 실패가 대화를 막지 않도록 한다. 근거 없이 일반 답변으로 진행한다.
+                log.error("챗봇 근거 검색 실패 - keyword={}", keyword, e);
+            }
+            if (!snippets.isEmpty()) {
+                break;
+            }
         }
 
         return RetrievedContext.builder().snippets(snippets).build();
@@ -100,26 +106,36 @@ public class CareKnowledgeRetriever {
         return truncate(sb.toString());
     }
 
-    /**
-     * 질문에서 검색에 쓸 핵심 키워드를 뽑는다.
-     * 불용어를 제거하고 가장 긴 토큰을 사용한다 — 짧은 토큰일수록 노이즈가 많다.
-     */
-    private String extractKeyword(String question) {
+    /** 질문에서 검색어 후보를 길이 내림차순으로 뽑는다. 긴 토큰일수록 변별력이 높다. */
+    List<String> extractKeywords(String question) {
         if (question == null || question.isBlank()) {
-            return null;
+            return List.of();
         }
 
         String cleaned = question.replaceAll("[^가-힣a-zA-Z0-9\\s]", " ");
-        String best = null;
+        List<String> keywords = new ArrayList<>();
         for (String token : cleaned.split("\\s+")) {
-            if (token.length() < 2 || STOP_WORDS.contains(token)) {
+            String normalized = stripJosa(token);
+            if (normalized.length() < 2 || STOP_WORDS.contains(normalized) || keywords.contains(normalized)) {
                 continue;
             }
-            if (best == null || token.length() > best.length()) {
-                best = token;
+            keywords.add(normalized);
+        }
+        keywords.sort(Comparator.comparingInt(String::length).reversed());
+        return keywords.size() > MAX_KEYWORDS ? keywords.subList(0, MAX_KEYWORDS) : keywords;
+    }
+
+    /**
+     * 흔한 조사를 떼어낸다. 형태소 분석기 없이 "어린이집은" → "어린이집" 정도만 맞춘다.
+     * 조사를 떼면 2자 미만이 되는 짧은 단어는 원형을 유지한다.
+     */
+    private String stripJosa(String token) {
+        for (String josa : JOSA) {
+            if (token.length() > josa.length() + 1 && token.endsWith(josa)) {
+                return token.substring(0, token.length() - josa.length());
             }
         }
-        return best;
+        return token;
     }
 
     private String truncate(String text) {
