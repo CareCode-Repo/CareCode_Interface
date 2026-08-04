@@ -102,7 +102,7 @@ jobs:
 
     # 1) SARIF 리포트 생성 (Security 탭 업로드용) - 여기서는 실패시키지 않는다.
     - name: Run Trivy vulnerability scanner (report)
-      uses: aquasecurity/trivy-action@0.30.0
+      uses: aquasecurity/trivy-action@v0.36.0
       with:
         scan-type: 'fs'
         scan-ref: '.'
@@ -118,7 +118,7 @@ jobs:
     # 2) 게이트: CRITICAL/HIGH 취약점이 있으면 파이프라인을 실패시킨다.
     #    exit-code 를 지정하지 않으면 취약점이 나와도 그냥 통과해 스캔이 장식이 된다.
     - name: Fail on CRITICAL/HIGH vulnerabilities
-      uses: aquasecurity/trivy-action@0.30.0
+      uses: aquasecurity/trivy-action@v0.36.0
       with:
         scan-type: 'fs'
         scan-ref: '.'
