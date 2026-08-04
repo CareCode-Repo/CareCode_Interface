@@ -2,6 +2,7 @@ package com.carecode.core.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -48,6 +49,12 @@ public class SecurityConfig {
                 .toList();
     }
 
+    /**
+     * 전체 API 체인.
+     * <p>어드민도 동일한 JWT 인증을 사용하고 {@code /api/admin/**} 에서 ADMIN 역할로 구분한다.
+     * (과거에는 세션 기반 어드민 화면이 별도로 있었으나, 템플릿 엔진이 없어 렌더링 자체가 불가능했고
+     * 컨트롤러가 STATELESS 정책 아래에서 SecurityContextHolder 를 직접 조작해 항상 403 이었다.)
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -112,9 +119,7 @@ public class SecurityConfig {
                 
                 // 관리자 API (ADMIN 권한 필요)
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/admin/login").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                
+
                 // 공개 API 엔드포인트
                 .requestMatchers("/facilities").permitAll()
                 .requestMatchers("/facilities/type/**").permitAll()
@@ -142,7 +147,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/hospitals/*/like").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/hospitals/*/like").authenticated()
                 
-                // 정책 API 엔드포인트 (공개 접근)
+                // 정책 API: 개인화·북마크는 인증 필요, 나머지 조회는 공개
+                // 아래 /policies/* 와일드카드보다 먼저 선언해야 적용된다.
+                .requestMatchers("/policies/recommendations").authenticated()
+                .requestMatchers("/policies/bookmarks").authenticated()
+                .requestMatchers("/policies/*/bookmarks").authenticated()
                 .requestMatchers("/policies").permitAll()
                 .requestMatchers("/policies/search").permitAll()
                 .requestMatchers("/policies/categories").permitAll()
@@ -185,5 +194,18 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * {@code @Component} 로 선언된 필터는 Boot 가 서블릿 컨테이너에 자동 등록한다.
+     * 그대로 두면 어드민 체인에서도 JWT 필터가 돌면서 세션으로 복원된 인증을 지운다.
+     * 필터 체인 등록은 {@link #filterChain(HttpSecurity)} 에서만 이뤄지도록 자동 등록을 끈다.
+     */
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> disableJwtFilterAutoRegistration(
+            JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 } 

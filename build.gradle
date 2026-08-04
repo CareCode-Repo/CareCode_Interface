@@ -69,6 +69,12 @@ dependencies {
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     
+    // FCM 푸시 알림 (서비스 계정 자격증명이 없으면 런타임에 비활성화됨)
+    implementation 'com.google.firebase:firebase-admin:9.4.1'
+
+    // Claude API (챗봇). API 키가 없으면 룰 기반 응답으로 폴백한다.
+    implementation 'com.anthropic:anthropic-java:2.34.0'
+
     // Logging - JSON 형식 로깅 지원
     implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
     
@@ -99,13 +105,34 @@ tasks.named('check') {
 }
 
 tasks.named('jacocoTestCoverageVerification') {
+    dependsOn tasks.named('test')
+
     violationRules {
+        // 1) 전체 커버리지: 후퇴 방지선(ratchet).
+        //    현재 라인 커버리지는 약 16% 다. 테스트를 늘릴 때마다 이 값을 함께 올린다.
+        //    (기존 0.01 은 사실상 게이트가 없는 것과 같아 통과해도 의미가 없었다.)
         rule {
             element = 'BUNDLE'
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.01
+                minimum = 0.15
+            }
+        }
+
+        // 2) 보안·인증 핵심 클래스는 별도의 높은 기준을 적용한다.
+        //    이 경로들이 테스트 없이 수정되면 빌드가 실패해야 한다.
+        rule {
+            element = 'CLASS'
+            includes = [
+                'com.carecode.domain.user.service.JwtService',
+                'com.carecode.core.util.ClientIpResolver',
+                'com.carecode.core.util.PageRequestUtil'
+            ]
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.60
             }
         }
     }

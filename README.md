@@ -491,7 +491,7 @@ docker-compose up carecode-mariadb carecode-redis -d
 | 정책 | `/policies/*` | 정책 조회, 검색 |
 | 알림 | `/notifications/*` | 알림 조회, 설정 |
 | 챗봇 | `/chatbot/*` | 챗봇 대화 |
-| 관리자 | `/admin/*` | 관리자 기능 |
+| 관리자 | `/api/admin/*` | 관리자 기능 (JWT + `ROLE_ADMIN` 필요) |
 
 ### 인증
 

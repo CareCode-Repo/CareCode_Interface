@@ -1,10 +1,12 @@
 package com.carecode.domain.policy.app;
 
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
+import com.carecode.domain.policy.dto.response.PersonalizedPolicyResponse;
 import com.carecode.domain.policy.dto.response.PolicyBookmarkResponse;
 import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.dto.response.PolicyListResponse;
 import com.carecode.domain.policy.dto.response.PolicyStatsSimpleResponse;
+import com.carecode.domain.policy.service.PolicyRecommendationService;
 import com.carecode.domain.policy.service.PolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,9 +19,10 @@ import java.util.List;
 public class PolicyFacade {
 
     private final PolicyService policyService;
+    private final PolicyRecommendationService policyRecommendationService;
 
     @Transactional(readOnly = true)
-    public List<PolicyDto> getAllPolicies() { return policyService.getAllPolicies(); }
+    public List<PolicyDto> getAllPolicies(int page, int size) { return policyService.getAllPolicies(page, size); }
 
     @Transactional(readOnly = true)
     public PolicyDto getPolicyById(Long policyId) { return policyService.getPolicyById(policyId); }
@@ -70,6 +73,11 @@ public class PolicyFacade {
     @Transactional
     public void removeBookmark(String userIdOrEmail, Long policyId) {
         policyService.removeBookmark(userIdOrEmail, policyId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PersonalizedPolicyResponse> recommendPolicies(int limit) {
+        return policyRecommendationService.recommendForCurrentUser(limit);
     }
 }
 

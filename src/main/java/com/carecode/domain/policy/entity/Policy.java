@@ -41,9 +41,11 @@ public class Policy {
     @Column(name = "policy_type")
     private String policyType;
     
+    /** 대상 연령 하한(개월). 세 단위 표기는 AgeRangeParser 로 환산해 넣는다. */
     @Column(name = "target_age_min")
     private Integer targetAgeMin;
-    
+
+    /** 대상 연령 상한(개월). null 이면 상한 없음. */
     @Column(name = "target_age_max")
     private Integer targetAgeMax;
     

@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MariaDBContainer;
@@ -63,6 +64,10 @@ class CareCodeMariaDbIntegrationTest {
 
     @MockBean
     private StringRedisTemplate stringRedisTemplate;
+
+    // 메일 자동설정을 제외했으므로 대체 빈을 넣어준다 (실제 SMTP 연결은 하지 않는다).
+    @MockBean
+    private JavaMailSender javaMailSender;
 
     @Autowired
     DataSource dataSource;

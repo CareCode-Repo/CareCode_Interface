@@ -1,58 +1,55 @@
 package com.carecode.domain.admin.controller;
 
+import com.carecode.core.exception.HospitalNotFoundException;
+import com.carecode.domain.health.dto.response.HospitalInfoResponse;
 import com.carecode.domain.health.entity.Hospital;
+import com.carecode.domain.health.mapper.HospitalMapper;
 import com.carecode.domain.health.repository.HospitalRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
-@RequestMapping("/admin/hospitals")
+/**
+ * 어드민 병원 관리 API.
+ */
+@RestController
+@RequestMapping("/api/admin/hospitals")
 @RequiredArgsConstructor
+@Tag(name = "어드민 - 병원", description = "관리자 전용 병원 관리 API")
 public class AdminHospitalController {
+
     private final HospitalRepository hospitalRepository;
+    private final HospitalMapper hospitalMapper;
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("hospitals", hospitalRepository.findAll());
-        return "admin/hospitals/list";
-    }
-
-    @GetMapping("/add")
-    public String addForm(Model model) {
-        model.addAttribute("hospital", new Hospital());
-        return "admin/hospitals/form";
-    }
-
-    @PostMapping("/add")
-    public String add(@ModelAttribute Hospital hospital) {
-        hospitalRepository.save(hospital);
-        return "redirect:/admin/hospitals";
+    @Operation(summary = "병원 목록 조회")
+    public ResponseEntity<Page<HospitalInfoResponse>> list(
+            @PageableDefault(size = 50, sort = "name") Pageable pageable) {
+        return ResponseEntity.ok(hospitalRepository.findAll(pageable).map(hospitalMapper::toResponse));
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("hospital", hospitalRepository.findById(id).orElse(null));
-        return "admin/hospitals/detail";
+    @Operation(summary = "병원 상세 조회")
+    public ResponseEntity<HospitalInfoResponse> detail(@PathVariable Long id) {
+        return ResponseEntity.ok(hospitalMapper.toResponse(findHospital(id)));
     }
 
-    @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
-        model.addAttribute("hospital", hospitalRepository.findById(id).orElse(null));
-        return "admin/hospitals/form";
+    @DeleteMapping("/{id}")
+    @Operation(summary = "병원 삭제")
+    @Transactional
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        hospitalRepository.delete(findHospital(id));
+        return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/edit")
-    public String edit(@PathVariable Long id, @ModelAttribute Hospital hospital) {
-        hospital.setId(id);
-        hospitalRepository.save(hospital);
-        return "redirect:/admin/hospitals";
+    private Hospital findHospital(Long id) {
+        return hospitalRepository.findById(id)
+                .orElseThrow(() -> new HospitalNotFoundException(id));
     }
-
-    @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id) {
-        hospitalRepository.deleteById(id);
-        return "redirect:/admin/hospitals";
-    }
-} 
+}

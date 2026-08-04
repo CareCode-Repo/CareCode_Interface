@@ -1,9 +1,11 @@
 package com.carecode.core;
 
+import com.carecode.core.util.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -29,6 +31,7 @@ import java.time.Duration;
 public class RateLimitInterceptor implements HandlerInterceptor {
 
     private final StringRedisTemplate redisTemplate;
+    private final ClientIpResolver clientIpResolver;
 
     private static final String RATE_LIMIT_KEY_PREFIX = "ratelimit:";
     private static final int AUTHENTICATED_LIMIT    = 300;    // 인증 사용자 (userId 기준)
@@ -57,13 +60,18 @@ public class RateLimitInterceptor implements HandlerInterceptor {
 
     private boolean checkLimit(String keyBody, int limit, HttpServletResponse response) throws Exception {
         String key = RATE_LIMIT_KEY_PREFIX + keyBody;
-        Long currentCount = redisTemplate.opsForValue().increment(key);
-
-        if (currentCount != null && currentCount == 1) {
-            redisTemplate.expire(key, WINDOW_DURATION);
+        long count;
+        try {
+            Long currentCount = redisTemplate.opsForValue().increment(key);
+            if (currentCount != null && currentCount == 1) {
+                redisTemplate.expire(key, WINDOW_DURATION);
+            }
+            count = currentCount != null ? currentCount : 0;
+        } catch (DataAccessException e) {
+            // Redis 장애가 전체 API 중단으로 번지지 않도록 fail-open 한다.
+            log.error("Rate limit 확인 실패 - Redis 장애로 제한을 건너뜁니다. key={}", key, e);
+            return true;
         }
-
-        long count = currentCount != null ? currentCount : 0;
 
         if (count > limit) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
@@ -92,29 +100,11 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     }
 
     /**
-     * 클라이언트 IP 추출 (프록시 고려)
+     * 클라이언트 IP 추출.
+     * 프록시 헤더 신뢰 여부는 {@link ClientIpResolver} 가 설정에 따라 판단한다.
      */
     private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_CLIENT_IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
+        return clientIpResolver.resolve(request);
     }
 
     /**

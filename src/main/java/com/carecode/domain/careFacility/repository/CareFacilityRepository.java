@@ -6,6 +6,7 @@ import com.carecode.domain.careFacility.entity.FacilityType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -123,18 +124,35 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
     List<CareFacility> findNewFacilities(org.springframework.data.domain.Pageable pageable);
     
 
-    // 반경 내 시설 조회
-    @Query(value = "SELECT cf.*, " +
-           "(6371 * acos(cos(radians(:latitude)) * cos(radians(cf.latitude)) * " +
-           "cos(radians(cf.longitude) - radians(:longitude)) + " +
-           "sin(radians(:latitude)) * sin(radians(cf.latitude)))) AS distance " +
-           "FROM care_facilities cf " +
-           "WHERE cf.is_active = true " +
-           "HAVING distance <= :radius " +
-           "ORDER BY distance", nativeQuery = true)
-    List<CareFacility> findWithinRadius(@Param("latitude") Double latitude,
-                                        @Param("longitude") Double longitude,
-                                        @Param("radius") Double radius);
+    /** 반경 내 시설 조회. 바운딩 박스로 후보를 좁힌 뒤 정확한 거리를 계산한다. */
+    @Query(value = "SELECT cf.* FROM ("
+           + "  SELECT c.*, (6371 * acos(LEAST(1, "
+           + "    cos(radians(:latitude)) * cos(radians(c.LATITUDE)) * "
+           + "    cos(radians(c.LONGITUDE) - radians(:longitude)) + "
+           + "    sin(radians(:latitude)) * sin(radians(c.LATITUDE))))) AS distance "
+           + "  FROM TBL_CARE_FACILITIES c "
+           + "  WHERE c.IS_ACTIVE = true "
+           + "    AND c.LATITUDE BETWEEN :minLat AND :maxLat "
+           + "    AND c.LONGITUDE BETWEEN :minLng AND :maxLng"
+           + ") cf WHERE cf.distance <= :radius ORDER BY cf.distance",
+           nativeQuery = true)
+    List<CareFacility> findWithinBoundingBox(@Param("latitude") double latitude,
+                                             @Param("longitude") double longitude,
+                                             @Param("radius") double radius,
+                                             @Param("minLat") double minLat,
+                                             @Param("maxLat") double maxLat,
+                                             @Param("minLng") double minLng,
+                                             @Param("maxLng") double maxLng);
+
+    /** 전문 검색. LIKE '%키워드%' 와 달리 인덱스를 타고 관련도 순으로 정렬된다. */
+    @Query(value = "SELECT * FROM TBL_CARE_FACILITIES "
+           + "WHERE IS_ACTIVE = true "
+           + "AND MATCH(NAME, ADDRESS) AGAINST (:keyword IN NATURAL LANGUAGE MODE)",
+           countQuery = "SELECT COUNT(*) FROM TBL_CARE_FACILITIES "
+           + "WHERE IS_ACTIVE = true "
+           + "AND MATCH(NAME, ADDRESS) AGAINST (:keyword IN NATURAL LANGUAGE MODE)",
+           nativeQuery = true)
+    Page<CareFacility> searchByFullText(@Param("keyword") String keyword, Pageable pageable);
 
     // 검색 조건으로 시설 검색 (페이징)
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true " +
@@ -149,4 +167,11 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
     // ID로 시설 조회 (Reviews와 함께)
     @Query("SELECT cf FROM CareFacility cf LEFT JOIN FETCH cf.reviews WHERE cf.id = :id")
     Optional<CareFacility> findByIdWithReviews(@Param("id") Long id);
+
+    /**
+     * 조회수를 DB 에서 원자적으로 증가시킨다 (lost update 방지).
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE CareFacility cf SET cf.viewCount = COALESCE(cf.viewCount, 0) + 1 WHERE cf.id = :facilityId")
+    int incrementViewCount(@Param("facilityId") Long facilityId);
 } 

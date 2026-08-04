@@ -99,6 +99,15 @@ public class UserService {
     }
 
 
+    /**
+     * 예외를 던지지 않는 조회.
+     * 로그인처럼 "존재하지 않음"과 "비밀번호 불일치"를 구분해서 응답하면 안 되는 경로에서 사용한다.
+     */
+    public Optional<User> findActiveUserEntityByEmail(String email) {
+        return userRepository.findByEmailAndDeletedAtIsNull(email);
+    }
+
+
     // User 엔티티 저장
 
     @Transactional

@@ -4,6 +4,7 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.annotation.ValidateChildAge;
 import com.carecode.core.controller.BaseController;
+import com.carecode.core.util.PageRequestUtil;
 import com.carecode.domain.careFacility.dto.request.CareFacilitySearchRequest;
 import com.carecode.domain.careFacility.dto.request.CareFacilityAdvancedSearchRequest;
 import com.carecode.domain.careFacility.dto.request.ReviewRequest;
@@ -47,9 +48,12 @@ public class CareFacilityController extends BaseController {
     @GetMapping
     @LogExecutionTime
     @Operation(summary = "전체 시설 목록 조회", description = "등록된 모든 육아 시설 목록을 조회합니다.")
-    public ResponseEntity<List<CareFacilityInfo>> getAllFacilities() {
+    public ResponseEntity<List<CareFacilityInfo>> getAllFacilities(
+            @Parameter(description = "페이지 번호 (0부터)") @RequestParam(required = false) Integer page,
+            @Parameter(description = "페이지 크기 (최대 200)") @RequestParam(required = false) Integer size) {
 
-        List<CareFacilityInfo> facilities = careFacilityFacade.getAllCareFacilities();
+        List<CareFacilityInfo> facilities = careFacilityFacade.getAllCareFacilities(
+                PageRequestUtil.normalizePage(page), PageRequestUtil.normalizeSize(size));
 
         return ResponseEntity.ok(facilities);
     }

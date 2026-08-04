@@ -2,6 +2,7 @@ package com.carecode.domain.health.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.controller.BaseController;
+import com.carecode.core.util.PageRequestUtil;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthRecordAttachmentRequest;
@@ -203,8 +204,11 @@ public class HealthController extends BaseController {
     @GetMapping("/hospitals")
     @LogExecutionTime
     @Operation(summary = "모든 병원 조회", description = "등록된 모든 병원 정보를 조회합니다.")
-    public ResponseEntity<List<HospitalInfoResponse>> getAllHospitals() {
-        List<HospitalInfoResponse> hospitals = healthFacade.getAllHospitals();
+    public ResponseEntity<List<HospitalInfoResponse>> getAllHospitals(
+            @Parameter(description = "페이지 번호 (0부터)") @RequestParam(required = false) Integer page,
+            @Parameter(description = "페이지 크기 (최대 200)") @RequestParam(required = false) Integer size) {
+        List<HospitalInfoResponse> hospitals = healthFacade.getAllHospitals(
+                PageRequestUtil.normalizePage(page), PageRequestUtil.normalizeSize(size));
         return ResponseEntity.ok(hospitals);
     }
 

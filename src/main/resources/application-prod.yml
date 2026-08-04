@@ -1,166 +1,31 @@
+# prod 프로파일: 공통 설정은 application.yml 에 있고, 여기에는 차이만 둔다.
 spring:
   flyway:
     enabled: true
-    baseline-on-migrate: true
-    locations: classpath:db/migration
 
-  # Spring Batch 설정
-  batch:
-    job:
-      enabled: false
-    jdbc:
-      initialize-schema: never
-
-  # Redis 설정
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-
-  # 데이터베이스 설정
-  datasource:
-    url: ${DB_URL:jdbc:mariadb://localhost:3306/carecode}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.mariadb.jdbc.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      idle-timeout: 30000
-      connection-timeout: 20000
-      max-lifetime: 1800000
-
-  # JPA & Hibernate 설정
   jpa:
-    database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
+      # 스키마 변경은 Flyway 마이그레이션으로만 수행한다.
       ddl-auto: validate
     show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
 
-  # OAuth2 설정
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID:YOUR_GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET:YOUR_GOOGLE_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/login/oauth2/code/google"
-            scope: profile,email
-          kakao:
-            client-id: ${KAKAO_CLIENT_ID}
-            client-secret: ${KAKAO_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
-            authorization-grant-type: authorization_code
-            scope: profile_nickname,profile_image
-            client-name: Kakao
-            client-authentication-method: client_secret_post
-        provider:
-          kakao:
-            authorization-uri: https://kauth.kakao.com/oauth/authorize
-            token-uri: https://kauth.kakao.com/oauth/token
-            user-info-uri: https://kapi.kakao.com/v2/user/me
-            user-name-attribute: id
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:10}
 
-  # 이메일 설정
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
-# 서버 설정
-server:
-  port: ${SERVER_PORT:8082}
-  servlet:
-    context-path: /
-
-# API 설정
-app:
-  api:
-    base-url: /api/v1
-    version: v1
-    title: 맘편한 API
-    description: 육아 지원 플랫폼 맘편한의 REST API
-
-# JWT 설정
-jwt:
-  secret: ${JWT_SECRET}
-  access-token:
-    expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000} # 1시간
-  refresh-token:
-    expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:2592000000} # 30일
-
-# Swagger 비활성화 (prod)
+# 운영에서는 API 문서를 노출하지 않는다.
 springdoc:
   swagger-ui:
     enabled: false
-    path: /swagger-ui.html
-    operationsSorter: method
-    tagsSorter: alpha
-    server-url: ${SWAGGER_SERVER_URL:http://localhost:8082}
   api-docs:
     enabled: false
-    path: /api-docs
-  packages-to-scan: com.carecode
-  default-consumes-media-type: application/json
-  default-produces-media-type: application/json
 
-# 로깅 설정 (prod: INFO 기반)
 logging:
   level:
+    root: WARN
     com.carecode: INFO
-    com.carecode.core.security: INFO
-    com.carecode.domain.user.service.JwtService: INFO
     org.springframework.security: INFO
-    org.springframework.security.oauth2: INFO
     org.springframework.web: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-
-# Actuator 설정 (모니터링)
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus
-      base-path: /actuator
-  endpoint:
-    health:
-      show-details: when-authorized
-      probes:
-        enabled: true
-    metrics:
-      enabled: true
-    prometheus:
-      enabled: true
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-    tags:
-      application: ${spring.application.name}
-  health:
-    livenessState:
-      enabled: true
-    readinessState:
-      enabled: true
-
-# Kakao 설정
-kakao:
-  redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/auth/kakao/callback}
-
-# 공공 데이터 API 설정
-public:
-  data:
-    api:
-      key: ${PUBLIC_DATA_API_KEY}
-      base-url: ${PUBLIC_DATA_API_BASE_URL:http://openapi.seoul.go.kr:8088}

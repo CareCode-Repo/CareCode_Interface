@@ -1,7 +1,9 @@
 package com.carecode.domain.careFacility.service;
 
-import com.carecode.core.annotation.CacheableResult;
+import org.springframework.cache.annotation.Cacheable;
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.util.BoundingBox;
+import com.carecode.core.search.FullTextSearchSupport;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.exception.CareFacilityNotFoundException;
 import com.carecode.domain.careFacility.dto.request.CareFacilitySearchRequest;
@@ -49,6 +51,7 @@ public class CareFacilityService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final CareFacilityMapper careFacilityMapper;
+    private final FullTextSearchSupport fullTextSearchSupport;
 
 
     // 공공데이터 API에서 받아온 보육시설 데이터를 DB에 저장
@@ -227,20 +230,31 @@ public class CareFacilityService {
 
     // 돌봄 시설 목록 조회
 
+    /**
+     * 시설 목록 조회.
+     * <p>테이블 전체를 메모리로 올리지 않도록 항상 페이지 단위로 읽는다.
+     */
     @LogExecutionTime
-    public List<CareFacilityInfo> getAllCareFacilities() {
+    public List<CareFacilityInfo> getAllCareFacilities(int page, int size) {
 
-        List<CareFacility> facilities = careFacilityRepository.findAll();
-        return facilities.stream()
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name"));
+        return careFacilityRepository.findAll(pageable).getContent().stream()
                 .map(careFacilityMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+
+    // 전체 시설 수
+
+    public long countCareFacilities() {
+        return careFacilityRepository.count();
     }
 
 
     // 돌봄 시설 상세 조회
 
     @LogExecutionTime
-    @CacheableResult(cacheName = "careFacility", key = "#facilityId")
+    @Cacheable(cacheNames = "careFacility", key = "#facilityId")
     public CareFacilityInfo getCareFacilityById(Long facilityId) {
         CareFacility facility = careFacilityRepository.findById(facilityId)
                 .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
@@ -261,14 +275,20 @@ public class CareFacilityService {
                 Sort.Direction.ASC
         );
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
-        
-        Page<CareFacility> facilityPage = careFacilityRepository.findBySearchCriteria(
-                request.getKeyword(),
-                null,
-                request.getCity(),
-                pageable
-        );
-        
+
+        // 키워드만 있는 검색은 전문 검색으로 처리한다. LIKE '%키워드%' 는 인덱스를 못 탄다.
+        boolean keywordOnly = request.getCity() == null || request.getCity().isBlank();
+        Page<CareFacility> facilityPage;
+        if (keywordOnly && fullTextSearchSupport.canUseFullText(request.getKeyword())) {
+            String normalized = fullTextSearchSupport.normalize(request.getKeyword());
+            facilityPage = careFacilityRepository.searchByFullText(normalized,
+                    PageRequest.of(request.getPage(), request.getSize()));
+        } else {
+            facilityPage = careFacilityRepository.findBySearchCriteria(
+                    request.getKeyword(), null, request.getCity(), pageable);
+        }
+
+
         List<CareFacilityInfo> facilities = facilityPage.getContent().stream()
                 .map(careFacilityMapper::toResponse)
                 .collect(Collectors.toList());
@@ -312,7 +332,10 @@ public class CareFacilityService {
     @LogExecutionTime
     @ValidateLocation
     public List<CareFacilityInfo> getCareFacilitiesWithinRadius(Double latitude, Double longitude, Double radius) {
-        List<CareFacility> facilities = careFacilityRepository.findWithinRadius(latitude, longitude, radius);
+        BoundingBox box = BoundingBox.around(latitude, longitude, radius);
+        List<CareFacility> facilities = careFacilityRepository.findWithinBoundingBox(
+                latitude, longitude, radius,
+                box.minLat(), box.maxLat(), box.minLng(), box.maxLng());
         return facilities.stream()
                 .map(careFacilityMapper::toResponse)
                 .collect(Collectors.toList());
@@ -369,12 +392,11 @@ public class CareFacilityService {
 
     @Transactional
     public void incrementViewCount(Long facilityId) {
-        CareFacility facility = careFacilityRepository.findById(facilityId)
-                .orElseThrow(() -> new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId));
-        
-        Integer currentViewCount = facility.getViewCount() != null ? facility.getViewCount() : 0;
-        facility.setViewCount(currentViewCount + 1);
-        careFacilityRepository.save(facility);
+        // DB 에서 원자적으로 증가시킨다. 갱신된 행이 없으면 존재하지 않는 시설이다.
+        int updated = careFacilityRepository.incrementViewCount(facilityId);
+        if (updated == 0) {
+            throw new CareFacilityNotFoundException("돌봄 시설을 찾을 수 없습니다: " + facilityId);
+        }
     }
 
 

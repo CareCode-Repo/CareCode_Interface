@@ -1,5 +1,7 @@
 package com.carecode.domain.user.service;
 
+import com.carecode.core.exception.BusinessException;
+import com.carecode.core.exception.ErrorCode;
 import com.carecode.domain.user.dto.response.TokenDto;
 import com.carecode.domain.user.dto.response.TokenValidationResponse;
 import io.jsonwebtoken.*;
@@ -10,9 +12,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * JWT 토큰 서비스
@@ -22,6 +26,11 @@ import java.util.Map;
 @Service
 public class JwtService {
 
+    /** 토큰 종류를 구분하는 클레임. Access Token 을 Refresh 로, 혹은 그 반대로 쓰는 것을 막습니다. */
+    public static final String CLAIM_TOKEN_TYPE = "typ";
+    public static final String TOKEN_TYPE_ACCESS = "access";
+    public static final String TOKEN_TYPE_REFRESH = "refresh";
+
     @Value("${jwt.secret}")
     private String secret;
 
@@ -30,6 +39,9 @@ public class JwtService {
 
     @Value("${jwt.refresh-token.expiration:2592000000}") // 30일
     private long refreshTokenExpiration;
+
+    @Value("${jwt.issuer:carecode}")
+    private String issuer;
 
     public long getAccessTokenExpirationMs() {
         return accessTokenExpiration;
@@ -50,38 +62,40 @@ public class JwtService {
     }
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        // 플랫폼 기본 인코딩에 따라 키가 달라지지 않도록 UTF-8 을 명시합니다.
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
 
     // Access Token 생성
 
     public String generateAccessToken(String userId, String email, String role) {
-        return generateToken(userId, email, role, null, accessTokenExpiration);
+        return generateToken(TOKEN_TYPE_ACCESS, userId, email, role, null, accessTokenExpiration);
     }
 
 
     // Access Token 생성 (name 포함)
 
     public String generateAccessToken(String userId, String email, String role, String name) {
-        return generateToken(userId, email, role, name, accessTokenExpiration);
+        return generateToken(TOKEN_TYPE_ACCESS, userId, email, role, name, accessTokenExpiration);
     }
 
 
     // Refresh Token 생성
 
     public String generateRefreshToken(String userId, String email) {
-        return generateToken(userId, email, null, null, refreshTokenExpiration);
+        return generateToken(TOKEN_TYPE_REFRESH, userId, email, null, null, refreshTokenExpiration);
     }
 
 
     // 토큰 생성
 
-    private String generateToken(String userId, String email, String role, String name, long expiration) {
+    private String generateToken(String tokenType, String userId, String email, String role, String name, long expiration) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
         Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_TOKEN_TYPE, tokenType);
         claims.put("userId", userId);
         claims.put("email", email);
         if (role != null) {
@@ -93,10 +107,19 @@ public class JwtService {
 
         return Jwts.builder()
                 .setClaims(claims)
+                .setId(UUID.randomUUID().toString())
+                .setIssuer(issuer)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+
+    // 토큰에서 종류(access/refresh) 추출
+
+    public String getTokenType(String token) {
+        return getClaimFromToken(token, CLAIM_TOKEN_TYPE, String.class);
     }
 
 
@@ -179,11 +202,43 @@ public class JwtService {
         try {
             Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
+                    .requireIssuer(issuer)
                     .build()
                     .parseClaimsJws(token);
             return !isTokenExpired(token);
         } catch (JwtException | IllegalArgumentException e) {
             log.warn("JWT 토큰 검증 실패: {}", e.getMessage());
+            return false;
+        }
+    }
+
+
+    // Access Token 전용 검증 - typ=access 인 토큰만 통과시킵니다.
+
+    public boolean validateAccessToken(String token) {
+        return validateTokenOfType(token, TOKEN_TYPE_ACCESS);
+    }
+
+
+    // Refresh Token 전용 검증 - typ=refresh 인 토큰만 통과시킵니다.
+
+    public boolean validateRefreshToken(String token) {
+        return validateTokenOfType(token, TOKEN_TYPE_REFRESH);
+    }
+
+    private boolean validateTokenOfType(String token, String expectedType) {
+        if (!validateToken(token)) {
+            return false;
+        }
+        try {
+            String actualType = getTokenType(token);
+            if (!expectedType.equals(actualType)) {
+                log.warn("JWT 토큰 종류 불일치: 기대={}, 실제={}", expectedType, actualType);
+                return false;
+            }
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("JWT 토큰 종류 확인 실패: {}", e.getMessage());
             return false;
         }
     }
@@ -224,34 +279,30 @@ public class JwtService {
     // 토큰 갱신
 
     public TokenDto refreshTokens(String refreshToken) {
-        try {
-            if (!validateToken(refreshToken)) {
-                throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
-            }
-
-            String userId = getUserIdFromToken(refreshToken);
-            String email = getEmailFromToken(refreshToken);
-            String role = getRoleFromToken(refreshToken);
-
-            // 새로운 Access Token과 Refresh Token 생성
-            String newAccessToken = generateAccessToken(userId, email, role != null ? role : "PARENT");
-            String newRefreshToken = generateRefreshToken(userId, email);
-
-            return TokenDto.builder()
-                    .accessToken(newAccessToken)
-                    .refreshToken(newRefreshToken)
-                    .tokenType("Bearer")
-                    .expiresIn(accessTokenExpiration)
-                    .userId(userId)
-                    .email(email)
-                    .role(role != null ? role : "PARENT")
-                    .success(true)
-                    .message("토큰 갱신 성공")
-                    .build();
-        } catch (Exception e) {
-            log.warn("토큰 갱신 실패: {}", e.getMessage());
-            throw new RuntimeException("토큰 갱신에 실패했습니다.", e);
+        // Access Token 을 Refresh 엔드포인트로 재사용하는 것을 차단합니다.
+        if (!validateRefreshToken(refreshToken)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "유효하지 않은 Refresh Token입니다.");
         }
+
+        String userId = getUserIdFromToken(refreshToken);
+        String email = getEmailFromToken(refreshToken);
+        String role = getRoleFromToken(refreshToken);
+
+        // 새로운 Access Token과 Refresh Token 생성
+        String newAccessToken = generateAccessToken(userId, email, role != null ? role : "PARENT");
+        String newRefreshToken = generateRefreshToken(userId, email);
+
+        return TokenDto.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .tokenType("Bearer")
+                .expiresIn(accessTokenExpiration)
+                .userId(userId)
+                .email(email)
+                .role(role != null ? role : "PARENT")
+                .success(true)
+                .message("토큰 갱신 성공")
+                .build();
     }
 
 

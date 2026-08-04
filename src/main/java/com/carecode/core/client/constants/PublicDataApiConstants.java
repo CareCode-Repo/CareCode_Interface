@@ -1,82 +1,55 @@
 package com.carecode.core.client.constants;
 
-/**
- * 공공데이터 API 관련 상수
- * API 엔드포인트, 파라미터명, 응답 코드 등을 상수로 관리
- */
-public class PublicDataApiConstants {
+import java.util.Map;
 
-    // API 응답 코드
-    public static final String SUCCESS_CODE = "00";
-    public static final String ERROR_CODE = "99";
+/** 공공데이터 API 공통 상수. */
+public final class PublicDataApiConstants {
 
-    // API 파라미터명
-    public static final String PARAM_SERVICE_KEY = "serviceKey";
-    public static final String PARAM_PAGE_NO = "pageNo";
-    public static final String PARAM_NUM_OF_ROWS = "numOfRows";
-    public static final String PARAM_TYPE = "type";
-    public static final String PARAM_SIDO_CD = "sidoCd";
-    public static final String PARAM_POLICY_TYPE = "policyType";
-    public static final String PARAM_EDUCATION_TYPE = "educationType";
+    /** 공공데이터포털 공통 응답 코드. */
+    public static final String RESULT_CODE_SUCCESS = "00";
 
-    // API 응답 타입
-    public static final String RESPONSE_TYPE_JSON = "json";
-    public static final String RESPONSE_TYPE_XML = "xml";
-
-    // 육아 관련 API 엔드포인트
-    public static final String ENDPOINT_CHILDCARE_FACILITIES = "/getChildcareFacilities";
-    public static final String ENDPOINT_CHILDCARE_POLICIES = "/getChildcarePolicies";
-    public static final String ENDPOINT_PEDIATRIC_HOSPITALS = "/getPediatricHospitals";
-    public static final String ENDPOINT_CHILDCARE_SUBSIDIES = "/getChildcareSubsidies";
-    public static final String ENDPOINT_CHILDCARE_EDUCATION = "/getChildcareEducation";
-
-    // 지역 코드
-    public static final String REGION_SEOUL = "11";
-    public static final String REGION_BUSAN = "21";
-    public static final String REGION_DAEGU = "22";
-    public static final String REGION_INCHEON = "23";
-    public static final String REGION_GWANGJU = "24";
-    public static final String REGION_DAEJEON = "25";
-    public static final String REGION_ULSAN = "26";
-    public static final String REGION_SEJONG = "29";
-    public static final String REGION_GYEONGGI = "31";
-    public static final String REGION_GANGWON = "32";
-    public static final String REGION_CHUNGBUK = "33";
-    public static final String REGION_CHUNGNAM = "34";
-    public static final String REGION_JEONBUK = "35";
-    public static final String REGION_JEONNAM = "36";
-    public static final String REGION_GYEONGBUK = "37";
-    public static final String REGION_GYEONGNAM = "38";
-    public static final String REGION_JEJU = "39";
-
-    // 정책 유형
-    public static final String POLICY_TYPE_SUBSIDY = "subsidy";
-    public static final String POLICY_TYPE_FACILITY = "facility";
-    public static final String POLICY_TYPE_EDUCATION = "education";
-    public static final String POLICY_TYPE_MEDICAL = "medical";
-
-    // 교육 유형
-    public static final String EDUCATION_TYPE_PARENTING = "parenting";
-    public static final String EDUCATION_TYPE_CHILDCARE = "childcare";
-    public static final String EDUCATION_TYPE_SAFETY = "safety";
-    public static final String EDUCATION_TYPE_HEALTH = "health";
-
-    // 기본 페이지 설정
-    public static final int DEFAULT_PAGE_NO = 1;
-    public static final int DEFAULT_NUM_OF_ROWS = 10;
+    /** 한 번에 요청할 수 있는 최대 건수 (서울 열린데이터광장 기준). */
     public static final int MAX_NUM_OF_ROWS = 1000;
 
-    // 타임아웃 설정 (밀리초)
-    public static final int CONNECT_TIMEOUT = 10000;
-    public static final int READ_TIMEOUT = 30000;
-
-    // 에러 메시지
-    public static final String ERROR_MSG_API_CALL_FAILED = "API 호출에 실패했습니다.";
-    public static final String ERROR_MSG_INVALID_RESPONSE = "잘못된 응답입니다.";
-    public static final String ERROR_MSG_TIMEOUT = "요청 시간이 초과되었습니다.";
-    public static final String ERROR_MSG_NETWORK_ERROR = "네트워크 오류가 발생했습니다.";
+    /** 시도명 → 법정동 시도 코드. */
+    public static final Map<String, String> SIDO_CODES = Map.ofEntries(
+            Map.entry("서울특별시", "11"),
+            Map.entry("부산광역시", "21"),
+            Map.entry("대구광역시", "22"),
+            Map.entry("인천광역시", "23"),
+            Map.entry("광주광역시", "24"),
+            Map.entry("대전광역시", "25"),
+            Map.entry("울산광역시", "26"),
+            Map.entry("세종특별자치시", "29"),
+            Map.entry("경기도", "31"),
+            Map.entry("강원특별자치도", "32"),
+            Map.entry("충청북도", "33"),
+            Map.entry("충청남도", "34"),
+            Map.entry("전북특별자치도", "35"),
+            Map.entry("전라남도", "36"),
+            Map.entry("경상북도", "37"),
+            Map.entry("경상남도", "38"),
+            Map.entry("제주특별자치도", "39"));
 
     private PublicDataApiConstants() {
         // 유틸리티 클래스이므로 인스턴스화 방지
     }
-} 
+
+    /** 시도명으로 시도 코드를 찾는다. */
+    public static String findSidoCode(String sidoName) {
+        if (sidoName == null || sidoName.isBlank()) {
+            return null;
+        }
+        String normalized = sidoName.trim();
+
+        String exact = SIDO_CODES.get(normalized);
+        if (exact != null) {
+            return exact;
+        }
+        return SIDO_CODES.entrySet().stream()
+                .filter(e -> e.getKey().startsWith(normalized) || normalized.startsWith(e.getKey()))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+}
