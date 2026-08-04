@@ -51,6 +51,18 @@ public class Policy {
     
     @Column(name = "target_region")
     private String targetRegion;
+
+    /** 기준중위소득 대비 상한(%). null 이면 소득 무관 정책이다. */
+    @Column(name = "income_threshold_percent")
+    private Integer incomeThresholdPercent;
+
+    /** 최소 자녀 수 요건. null 이면 무관, 2 이상이면 다자녀 정책이다. */
+    @Column(name = "min_children")
+    private Integer minChildren;
+
+    /** 대상 연령이 지난 뒤에도 신청 가능한 개월 수. null 이면 소급 불가. */
+    @Column(name = "retroactive_months")
+    private Integer retroactiveMonths;
     
     @Column(name = "benefit_amount")
     private Integer benefitAmount;

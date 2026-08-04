@@ -69,8 +69,12 @@ public class PolicyRecommendationService {
         return scored.size() > limit ? scored.subList(0, limit) : scored;
     }
 
-    /** 연령 조건이 있는데 맞는 아이가 없으면 0점으로 제외한다. */
+    /** 연령·소득·자녀수 조건에 맞지 않으면 0점으로 제외한다. */
     private int score(Policy policy, User user, List<Child> children, LocalDate today, List<String> reasons) {
+        if (!meetsHouseholdConditions(policy, user, children.size(), reasons)) {
+            return 0;
+        }
+
         int score = 1; // 조건 없는 범용 정책도 노출되도록 하는 기본 점수
 
         boolean hasAgeCondition = policy.getTargetAgeMin() != null || policy.getTargetAgeMax() != null;
@@ -97,6 +101,35 @@ public class PolicyRecommendationService {
             score += Math.min(priority, 3);
         }
         return score;
+    }
+
+    /**
+     * 소득·자녀수 요건을 확인한다.
+     * 소득 미입력 사용자를 탈락시키면 받을 수 있는 정책이 통째로 사라지므로, 안내만 붙이고 통과시킨다.
+     */
+    private boolean meetsHouseholdConditions(Policy policy, User user, int childCount, List<String> reasons) {
+        Integer minChildren = policy.getMinChildren();
+        if (minChildren != null) {
+            if (childCount < minChildren) {
+                return false;
+            }
+            reasons.add("자녀 " + minChildren + "명 이상 대상 정책입니다.");
+        }
+
+        Integer threshold = policy.getIncomeThresholdPercent();
+        if (threshold == null) {
+            return true;
+        }
+        Integer income = user.getIncomePercent();
+        if (income == null) {
+            reasons.add("소득 조건이 있는 정책입니다. 소득 정보를 입력하면 정확히 판정됩니다.");
+            return true;
+        }
+        if (income > threshold) {
+            return false;
+        }
+        reasons.add("기준중위소득 " + threshold + "% 이하 대상에 해당합니다.");
+        return true;
     }
 
     /** 정책 대상 월령과 아이의 월령을 비교한다. 시드 데이터 기준 targetAge 단위는 개월이다. */

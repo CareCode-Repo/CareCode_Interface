@@ -150,6 +150,7 @@ public class SecurityConfig {
                 // 정책 API: 개인화·북마크는 인증 필요, 나머지 조회는 공개
                 // 아래 /policies/* 와일드카드보다 먼저 선언해야 적용된다.
                 .requestMatchers("/policies/recommendations").authenticated()
+                .requestMatchers("/policies/missed-benefits").authenticated()
                 .requestMatchers("/policies/bookmarks").authenticated()
                 .requestMatchers("/policies/*/bookmarks").authenticated()
                 .requestMatchers("/policies").permitAll()

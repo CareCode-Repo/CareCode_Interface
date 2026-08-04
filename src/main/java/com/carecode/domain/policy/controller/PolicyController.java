@@ -7,6 +7,7 @@ import com.carecode.core.util.PageRequestUtil;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.PolicyNotFoundException;
+import com.carecode.domain.policy.dto.response.MissedBenefitSummaryResponse;
 import com.carecode.domain.policy.dto.response.PersonalizedPolicyResponse;
 import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
@@ -271,6 +272,14 @@ public class PolicyController extends BaseController {
     public ResponseEntity<List<PersonalizedPolicyResponse>> getRecommendations(
             @Parameter(description = "추천 개수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
         return ResponseEntity.ok(policyFacade.recommendPolicies(PageRequestUtil.normalizeSize(limit)));
+    }
+
+    // 놓친 지원금 발굴
+    @GetMapping("/missed-benefits")
+    @LogExecutionTime
+    @Operation(summary = "놓친 지원금 조회", description = "자녀가 대상이었으나 지나간 지원금과 소급 가능 여부를 조회합니다.")
+    public ResponseEntity<MissedBenefitSummaryResponse> getMissedBenefits() {
+        return ResponseEntity.ok(policyFacade.findMissedBenefits());
     }
 
     private String getAuthenticatedUserCode() {
