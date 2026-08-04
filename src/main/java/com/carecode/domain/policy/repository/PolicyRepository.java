@@ -26,6 +26,9 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
     // 활성화된 정책 목록 조회
     List<Policy> findByIsActiveTrue();
 
+    /** 추천 후보 조회. 우선순위 높은 정책부터 가져와 상위 N건만 채점한다. */
+    Page<Policy> findByIsActiveTrueOrderByPriorityDescViewCountDesc(Pageable pageable);
+
     // 정책 유형별 조회
     List<Policy> findByPolicyType(String policyType);
 
