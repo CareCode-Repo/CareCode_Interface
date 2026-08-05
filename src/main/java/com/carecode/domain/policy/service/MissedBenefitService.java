@@ -1,5 +1,7 @@
 package com.carecode.domain.policy.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.policy.dto.response.MissedBenefitResponse;
 import com.carecode.domain.policy.dto.response.MissedBenefitSummaryResponse;
@@ -32,6 +34,7 @@ public class MissedBenefitService {
     private final PolicyRepository policyRepository;
     private final ChildRepository childRepository;
     private final CurrentUserFacade currentUserFacade;
+    private final EventLogger eventLogger;
 
     public MissedBenefitSummaryResponse findMissedBenefits() {
         User user = currentUserFacade.requireCurrentUser();
@@ -76,6 +79,9 @@ public class MissedBenefitService {
                 }
             }
         }
+
+        eventLogger.log(EventType.MISSED_BENEFIT_VIEWED, user.getId(),
+                null, "claimable=" + claimable.size());
 
         claimable.sort(Comparator.comparingInt(
                 (MissedBenefitResponse m) -> m.getBenefitAmount() == null ? 0 : m.getBenefitAmount()).reversed());

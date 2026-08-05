@@ -5,6 +5,7 @@ import com.carecode.core.client.sync.KindergartenSyncService;
 import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
 import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
+import com.carecode.core.ops.OperationalAlerter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,6 +21,7 @@ public class PublicDataSyncScheduler {
     private final KindergartenSyncService kindergartenSyncService;
     private final GovernmentBenefitSyncService benefitSyncService;
     private final PediatricHospitalSyncService hospitalSyncService;
+    private final OperationalAlerter alerter;
 
     /** 전국 어린이집 동기화. */
     @Scheduled(cron = "${app.scheduler.public-data.facility-cron:0 0 3 * * MON}", zone = "Asia/Seoul")
@@ -52,7 +54,12 @@ public class PublicDataSyncScheduler {
     private void logResult(String label, SyncResult result) {
         if (!result.isCompleted()) {
             log.warn("{} 동기화 미완료 - {}", label, result);
+            alerter.alert("sync-" + label, label + " 동기화 미완료", result.toString());
             return;
+        }
+        if (result.getFailed() > 0) {
+            alerter.alert("sync-failed-" + label,
+                    label + " 동기화 중 " + result.getFailed() + "건 실패", result.toString());
         }
         if (result.getTotalProcessed() == 0 && result.getFailed() == 0) {
             log.debug("{} 동기화: 변경 없음", label);

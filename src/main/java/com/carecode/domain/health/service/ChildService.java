@@ -1,5 +1,7 @@
 package com.carecode.domain.health.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.ChildNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.health.dto.request.ChildCreateRequest;
@@ -28,6 +30,7 @@ public class ChildService {
     private final ChildMapper childMapper;
     private final CurrentUserFacade currentUserFacade;
     private final VaccinationScheduleService vaccinationScheduleService;
+    private final EventLogger eventLogger;
 
     @Transactional
     public ChildInfoResponse createChild(ChildCreateRequest request) {
@@ -43,6 +46,7 @@ public class ChildService {
                 .build();
 
         Child saved = childRepository.save(child);
+        eventLogger.log(EventType.CHILD_REGISTERED, parent.getId(), String.valueOf(saved.getId()));
         log.info("아이 등록 - childId={}, userId={}", saved.getId(), parent.getId());
 
         // 생년월일 기준 표준 접종 일정 자동 생성

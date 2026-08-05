@@ -1,5 +1,7 @@
 package com.carecode.domain.user.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.exception.UserNotFoundException;
@@ -40,6 +42,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
+    private final EventLogger eventLogger;
 
     // 사용자 상세 조회 (String ID) - 삭제되지 않은 사용자만
     @LogExecutionTime
@@ -264,6 +267,7 @@ public class UserService {
                 .build();
         
         User savedUser = userRepository.save(user);
+        eventLogger.log(EventType.SIGNED_UP, savedUser.getId(), userDto.getProvider());
         return convertToDto(savedUser);
     }
 

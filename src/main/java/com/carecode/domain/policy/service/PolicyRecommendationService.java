@@ -1,5 +1,7 @@
 package com.carecode.domain.policy.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.policy.dto.response.PersonalizedPolicyResponse;
 import com.carecode.domain.policy.entity.Policy;
@@ -37,6 +39,7 @@ public class PolicyRecommendationService {
     private final ChildRepository childRepository;
     private final PolicyMapper policyMapper;
     private final CurrentUserFacade currentUserFacade;
+    private final EventLogger eventLogger;
 
     /** 로그인 사용자에게 맞는 정책을 점수 순으로 반환한다. */
     public List<PersonalizedPolicyResponse> recommendForCurrentUser(int limit) {
@@ -64,6 +67,8 @@ public class PolicyRecommendationService {
                     .reasons(reasons)
                     .build());
         }
+
+        eventLogger.log(EventType.RECOMMENDATION_VIEWED, user.getId());
 
         scored.sort(Comparator.comparingInt(PersonalizedPolicyResponse::getScore).reversed());
         return scored.size() > limit ? scored.subList(0, limit) : scored;

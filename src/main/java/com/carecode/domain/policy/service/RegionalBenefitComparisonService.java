@@ -3,6 +3,8 @@ package com.carecode.domain.policy.service;
 import com.carecode.core.benefit.BenefitPaymentType;
 import com.carecode.core.benefit.BenefitProjectionCalculator;
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.policy.dto.response.RegionalBenefitComparisonResponse;
 import com.carecode.domain.policy.dto.response.RegionalBenefitResponse;
@@ -40,6 +42,7 @@ public class RegionalBenefitComparisonService {
     private final PolicyRepository policyRepository;
     private final ChildRepository childRepository;
     private final CurrentUserFacade currentUserFacade;
+    private final EventLogger eventLogger;
     private final BenefitProjectionCalculator calculator;
 
     public RegionalBenefitComparisonResponse compare(Long childId, Integer years, Integer limit) {
@@ -82,6 +85,8 @@ public class RegionalBenefitComparisonService {
 
         int size = limit != null && limit > 0 ? limit : DEFAULT_LIMIT;
 
+        eventLogger.log(EventType.REGIONAL_COMPARISON_VIEWED, user.getId(), baseRegion);
+
         return RegionalBenefitComparisonResponse.builder()
                 .childName(child.getName())
                 .childAgeMonths(currentAgeMonths)
@@ -111,14 +116,25 @@ public class RegionalBenefitComparisonService {
     }
 
     /** 지역 한 곳의 집계 중간 결과. */
-    private record RegionSummary(long amount, int cashCount, int nonCashCount,
+    private record RegionSummary(long amount, int cashCount, int nonCashCount, int verifiedCount,
                                  List<RegionalBenefitResponse.Contribution> contributions) {
 
         RegionSummary merge(RegionSummary other) {
             List<RegionalBenefitResponse.Contribution> merged = new ArrayList<>(contributions);
             merged.addAll(other.contributions);
             return new RegionSummary(amount + other.amount, cashCount + other.cashCount,
-                    nonCashCount + other.nonCashCount, merged);
+                    nonCashCount + other.nonCashCount, verifiedCount + other.verifiedCount, merged);
+        }
+
+        /** 금액에 들어간 정책이 전부 검증됐을 때만 확정으로 표기한다. */
+        String quality() {
+            if (cashCount == 0) {
+                return "ESTIMATED";
+            }
+            if (verifiedCount == cashCount) {
+                return "VERIFIED";
+            }
+            return verifiedCount > 0 ? "PARTIAL" : "ESTIMATED";
         }
 
         RegionalBenefitResponse toResponse(String region, long baseAmount) {
@@ -133,6 +149,8 @@ public class RegionalBenefitComparisonService {
                     .differenceFromBase(amount - baseAmount)
                     .cashPolicyCount(cashCount)
                     .nonCashPolicyCount(nonCashCount)
+                    .verifiedPolicyCount(verifiedCount)
+                    .dataQuality(quality())
                     .topContributors(top)
                     .build();
         }
@@ -142,6 +160,7 @@ public class RegionalBenefitComparisonService {
         long total = 0;
         int cash = 0;
         int nonCash = 0;
+        int verified = 0;
         List<RegionalBenefitResponse.Contribution> contributions = new ArrayList<>();
 
         for (Policy policy : policies) {
@@ -158,13 +177,16 @@ public class RegionalBenefitComparisonService {
             }
             total += projection.amount();
             cash++;
+            if (policy.getVerifiedAt() != null) {
+                verified++;
+            }
             contributions.add(RegionalBenefitResponse.Contribution.builder()
                     .title(policy.getTitle())
                     .amount(projection.amount())
                     .paymentType(projection.paymentType().name())
                     .build());
         }
-        return new RegionSummary(total, cash, nonCash, contributions);
+        return new RegionSummary(total, cash, nonCash, verified, contributions);
     }
 
     private Child resolveChild(List<Child> children, Long childId) {

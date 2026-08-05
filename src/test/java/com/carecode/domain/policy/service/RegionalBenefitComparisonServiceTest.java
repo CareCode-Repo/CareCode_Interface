@@ -10,6 +10,7 @@ import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.ChildRepository;
+import com.carecode.core.analytics.EventLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,8 @@ class RegionalBenefitComparisonServiceTest {
         when(currentUserFacade.requireCurrentUser()).thenReturn(user);
 
         service = new RegionalBenefitComparisonService(
-                policyRepository, childRepository, currentUserFacade, new BenefitProjectionCalculator());
+                policyRepository, childRepository, currentUserFacade, mock(EventLogger.class),
+                new BenefitProjectionCalculator());
     }
 
     @Test

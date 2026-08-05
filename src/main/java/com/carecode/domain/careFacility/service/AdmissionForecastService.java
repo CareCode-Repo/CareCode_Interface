@@ -1,5 +1,7 @@
 package com.carecode.domain.careFacility.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.domain.careFacility.dto.response.AdmissionForecastResponse;
 import com.carecode.domain.careFacility.entity.CareFacility;
@@ -36,6 +38,7 @@ public class AdmissionForecastService {
 
     private final CareFacilityRepository careFacilityRepository;
     private final FacilityCapacitySnapshotRepository snapshotRepository;
+    private final EventLogger eventLogger;
 
     /** 아이 월령 기준으로 목표 시점까지 자리가 날 확률을 추정한다. */
     public AdmissionForecastResponse forecast(Long facilityId, Integer childAgeMonths, Integer horizonMonths) {
@@ -45,6 +48,8 @@ public class AdmissionForecastService {
         LocalDate today = LocalDate.now();
         int horizon = horizonMonths != null && horizonMonths > 0 ? horizonMonths : DEFAULT_HORIZON_MONTHS;
         LocalDate targetDate = today.plusMonths(horizon);
+
+        eventLogger.log(EventType.ADMISSION_FORECAST_VIEWED, null, String.valueOf(facilityId));
 
         List<FacilityCapacitySnapshot> history =
                 snapshotRepository.findHistory(facilityId, today.minusMonths(LOOKBACK_MONTHS));

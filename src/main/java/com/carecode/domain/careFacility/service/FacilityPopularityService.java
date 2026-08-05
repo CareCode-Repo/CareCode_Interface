@@ -1,5 +1,7 @@
 package com.carecode.domain.careFacility.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.domain.careFacility.dto.response.FacilityPopularityResponse;
 import com.carecode.domain.careFacility.entity.CareFacility;
@@ -39,10 +41,13 @@ public class FacilityPopularityService {
 
     private final CareFacilityRepository careFacilityRepository;
     private final FacilityCapacitySnapshotRepository snapshotRepository;
+    private final EventLogger eventLogger;
 
     public FacilityPopularityResponse analyze(Long facilityId) {
         CareFacility facility = careFacilityRepository.findById(facilityId)
                 .orElseThrow(() -> new CareServiceException("시설을 찾을 수 없습니다: " + facilityId));
+
+        eventLogger.log(EventType.FACILITY_POPULARITY_VIEWED, null, String.valueOf(facilityId));
 
         List<FacilityCapacitySnapshot> history =
                 snapshotRepository.findHistory(facilityId, LocalDate.now().minusMonths(LOOKBACK_MONTHS));

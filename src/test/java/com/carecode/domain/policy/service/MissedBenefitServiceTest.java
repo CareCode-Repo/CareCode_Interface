@@ -7,6 +7,7 @@ import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.ChildRepository;
+import com.carecode.core.analytics.EventLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,8 @@ class MissedBenefitServiceTest {
         user = User.builder().id(1L).name("부모").build();
         when(currentUserFacade.requireCurrentUser()).thenReturn(user);
 
-        service = new MissedBenefitService(policyRepository, childRepository, currentUserFacade);
+        service = new MissedBenefitService(policyRepository, childRepository, currentUserFacade,
+                mock(EventLogger.class));
     }
 
     @Test

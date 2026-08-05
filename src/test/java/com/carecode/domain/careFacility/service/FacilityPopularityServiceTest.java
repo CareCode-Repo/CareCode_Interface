@@ -5,6 +5,7 @@ import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.careFacility.entity.FacilityCapacitySnapshot;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import com.carecode.domain.careFacility.repository.FacilityCapacitySnapshotRepository;
+import com.carecode.core.analytics.EventLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,8 @@ class FacilityPopularityServiceTest {
         snapshotRepository = mock(FacilityCapacitySnapshotRepository.class);
         when(facilityRepository.findById(anyLong()))
                 .thenReturn(Optional.of(CareFacility.builder().name("행복어린이집").build()));
-        service = new FacilityPopularityService(facilityRepository, snapshotRepository);
+        service = new FacilityPopularityService(facilityRepository, snapshotRepository,
+                mock(EventLogger.class));
     }
 
     @Test

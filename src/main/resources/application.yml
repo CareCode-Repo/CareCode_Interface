@@ -115,6 +115,10 @@ app:
       secure: ${REFRESH_COOKIE_SECURE:true}
       same-site: ${REFRESH_COOKIE_SAME_SITE:None}
       max-age-days: ${REFRESH_COOKIE_MAX_AGE_DAYS:14}
+  ops:
+    # 동기화 실패·처리되지 않은 예외를 알린다. 비워두면 로그만 남는다
+    slack-webhook-url: ${OPS_SLACK_WEBHOOK_URL:}
+
   rate-limit:
     # 신뢰할 수 있는 프록시 뒤에 있을 때만 X-Forwarded-For 를 사용한다.
     # 프록시가 없는데 true 로 두면 헤더 위조로 rate limit 을 우회할 수 있다.
