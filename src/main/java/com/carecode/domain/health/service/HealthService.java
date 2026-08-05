@@ -1,5 +1,7 @@
 package com.carecode.domain.health.service;
 
+import com.carecode.domain.user.entity.ConsentType;
+import com.carecode.domain.user.service.ConsentGuard;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.CareServiceException;
@@ -66,6 +68,7 @@ public class HealthService {
     private static final int HEALTH_SCORE_MEDIUM_THRESHOLD = 60;
     
     private final HealthRecordRepository healthRecordRepository;
+    private final ConsentGuard consentGuard;
     private final HealthRecordAttachmentRepository healthRecordAttachmentRepository;
     private final ChildRepository childRepository;
     private final UserRepository userRepository;
@@ -80,6 +83,8 @@ public class HealthService {
     @LogExecutionTime
     @Transactional
     public HealthRecordResponse createHealthRecord(HealthCreateHealthRecordRequest request, Long actorUserId) {
+        // 건강정보는 민감정보다. 별도 동의 없이는 수집하지 않는다.
+        consentGuard.require(actorUserId, ConsentType.HEALTH_DATA);
         validateRequest(request);
         log.info("건강 기록 생성: 아이ID={}, 제목={}", request.getChildId(), request.getTitle());
         

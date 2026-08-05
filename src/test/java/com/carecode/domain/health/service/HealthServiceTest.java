@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import com.carecode.domain.user.service.ConsentGuard;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -43,6 +44,10 @@ class HealthServiceTest {
 
     @Mock
     private HealthRecordMapper healthRecordMapper;
+
+    /** 동의 확인은 ConsentGuardTest 에서 검증한다. 여기서는 통과시킨 뒤 기록 로직만 본다. */
+    @Mock
+    private ConsentGuard consentGuard;
 
     @InjectMocks
     private HealthService healthService;

@@ -1,6 +1,9 @@
 package com.carecode.core.handler;
 
 import com.carecode.core.exception.*;
+import com.carecode.core.ops.OperationalAlerter;
+import com.carecode.domain.user.service.ConsentGuard;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,13 +13,17 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /** 전역 예외 핸들러 모든 예외를 일관된 형식으로 처리 */
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class CustomizedResponseEntityExceptionHandler {
+
+    private final OperationalAlerter alerter;
 
     // CareCodeException 계층의 예외 처리
     @ExceptionHandler(CareCodeException.class)
@@ -80,6 +87,23 @@ public class CustomizedResponseEntityExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(errorResponse);
+    }
+
+    /** 동의가 없어 막힌 경우. 클라이언트가 어떤 동의를 받아야 하는지 알아야 화면을 띄울 수 있다. */
+    @ExceptionHandler(ConsentGuard.ConsentRequiredException.class)
+    public ResponseEntity<Map<String, Object>> handleConsentRequired(
+            ConsentGuard.ConsentRequiredException ex, WebRequest request) {
+        log.info("동의 미완료로 접근 차단: {}", ex.getConsentType());
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "CONSENT_REQUIRED");
+        body.put("consentType", ex.getConsentType().name());
+        body.put("displayName", ex.getConsentType().getDisplayName());
+        body.put("sensitive", ex.getConsentType().isSensitive());
+        body.put("message", ex.getMessage());
+        body.put("path", request.getDescription(false));
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
     // CareServiceException 처리 (하위 호환성 유지)
@@ -197,6 +221,10 @@ public class CustomizedResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex, WebRequest request) {
         log.error("예상치 못한 예외 발생", ex);
+        // 5xx 는 사용자가 이미 실패를 겪은 뒤다. 로그만 남기면 아무도 모른 채 지나간다.
+        alerter.alert("unhandled-" + ex.getClass().getSimpleName(),
+                "처리되지 않은 예외: " + ex.getClass().getSimpleName(),
+                ex.getMessage() + System.lineSeparator() + request.getDescription(false));
         
         ErrorResponse errorResponse = ErrorResponse.of(
             ErrorCode.INTERNAL_SERVER_ERROR,
