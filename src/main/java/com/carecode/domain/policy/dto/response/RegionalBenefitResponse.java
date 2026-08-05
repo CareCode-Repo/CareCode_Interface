@@ -24,6 +24,12 @@ public class RegionalBenefitResponse {
     /** 금액이 아닌 혜택(무료검진·서비스 등) 수. 합산에는 빠져 있다. */
     private int nonCashPolicyCount;
 
+    /** 금액이 수기 검증된 정책 수. */
+    private int verifiedPolicyCount;
+
+    /** VERIFIED(전부 검증) / PARTIAL(일부) / ESTIMATED(미검증). */
+    private String dataQuality;
+
     /** 금액 상위 기여 정책. 왜 이 지역이 높은지 설명한다. */
     private List<Contribution> topContributors;
 

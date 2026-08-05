@@ -68,6 +68,17 @@ public class Policy {
     @Column(name = "max_payment_months")
     private Integer maxPaymentMonths;
 
+    /** 수기 검증 시각. null 이면 자동 수집된 추정치이며 확정 금액으로 노출하면 안 된다. */
+    @Column(name = "verified_at")
+    private LocalDateTime verifiedAt;
+
+    @Column(name = "verified_by", length = 100)
+    private String verifiedBy;
+
+    /** 금액 근거 출처. 분쟁 시 확인 경로가 된다. */
+    @Column(name = "source_url", length = 500)
+    private String sourceUrl;
+
     @Column(name = "benefit_type")
     private String benefitType;
     
