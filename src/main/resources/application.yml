@@ -235,6 +235,11 @@ public:
       page-param: ${CHILDCARE_PORTAL_PAGE_PARAM:}
       size-param: ${CHILDCARE_PORTAL_SIZE_PARAM:}
 
+    # 유치원알리미 — 시군구 단위 조회, JSON. 정원·위경도는 basicInfo2 에만 있다
+    kindergarten-info:
+      service-key: ${KINDERGARTEN_INFO_KEY:}
+      base-url: ${KINDERGARTEN_INFO_BASE_URL:https://e-childschoolinfo.moe.go.kr}
+
     # 심평원 병원정보서비스
     hospital:
       # 진료과목 코드. 심평원 코드표 기준 소아청소년과는 "10".
@@ -246,7 +251,7 @@ public:
     # 절대 URL 을 넣으면 base-url 대신 그대로 호출한다(표준데이터는 호스트가 다르다).
     resource:
       childcare: ${PUBLIC_DATA_RESOURCE_CHILDCARE:http://api.childcare.go.kr/mediate/rest/cpmsapi021/cpmsapi021/request}
-      kindergarten: ${PUBLIC_DATA_RESOURCE_KINDERGARTEN:http://api.data.go.kr/openapi/tn_pubr_public_kindergarten_api}
+      kindergarten: ${PUBLIC_DATA_RESOURCE_KINDERGARTEN:https://e-childschoolinfo.moe.go.kr/api/notice/basicInfo2.do}
       benefit: ${PUBLIC_DATA_RESOURCE_BENEFIT:1741000/publicServiceInformations/publicServiceInformation}
       hospital: ${PUBLIC_DATA_RESOURCE_HOSPITAL:B551182/hospInfoServicev2/getHospBasisList}
 
