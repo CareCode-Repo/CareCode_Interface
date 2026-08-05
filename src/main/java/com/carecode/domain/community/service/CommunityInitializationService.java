@@ -21,10 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 커뮤니티 더미 데이터 초기화 서비스
- * 서버 시작 시 자동으로 실행되어 더미 데이터를 생성합니다.
- */
+/** 커뮤니티 더미 데이터 초기화 서비스 */
 @Slf4j
 @Service
 @Profile("dev")
@@ -53,9 +50,7 @@ public class CommunityInitializationService implements CommandLineRunner {
         log.info("커뮤니티 더미 데이터 초기화 완료");
     }
 
-
     // 테스트 사용자 생성
-
     private User createTestUser() {
         Optional<User> existingUser = userRepository.findByEmail("testuser@example.com");
         
@@ -80,9 +75,7 @@ public class CommunityInitializationService implements CommandLineRunner {
         return savedUser;
     }
 
-
     // 태그 생성
-
     private List<Tag> createTags() {
         List<String> tagNames = Arrays.asList("육아팁", "질문", "정보공유", "일상", "고민상담");
         List<Tag> tags = tagNames.stream()
@@ -103,9 +96,7 @@ public class CommunityInitializationService implements CommandLineRunner {
         return tags;
     }
 
-
     // 게시글 생성
-
     private void createPosts(User testUser, List<Tag> tags) {
         // 이미 게시글이 있다면 생성하지 않음
         if (postRepository.count() > 0) {
@@ -245,9 +236,7 @@ public class CommunityInitializationService implements CommandLineRunner {
         log.info("{}개의 게시글 생성 완료", posts.size());
     }
 
-
     // 게시글 생성 헬퍼 메서드
-
     private Post createPost(String title, String content, User author, PostCategory category, 
                            int viewCount, int likeCount, int daysAgo) {
         return Post.builder()

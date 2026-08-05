@@ -17,10 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 관측된 정원 변동으로 입소 가능 시점을 추정한다.
- * 통계적 근거가 부족하면 숫자를 만들어내지 않고 부족하다고 답한다.
- */
+/** 관측된 정원 변동으로 입소 가능 시점을 추정한다. 통계적 근거가 부족하면 숫자를 만들어내지 않고 부족하다고 답한다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -121,10 +118,7 @@ public class AdmissionForecastService {
                 .build();
     }
 
-    /**
-     * 기준선(관측 중 자리 있던 비율)에 자리 발생률을 포아송으로 얹는다.
-     * 정교한 모델이 아니라 관측을 그대로 반영하는 추정치이며, 근거를 함께 노출해 과신을 막는다.
-     */
+    /** 기준선(관측 중 자리 있던 비율)에 자리 발생률을 포아송으로 얹는다. */
     private int estimateProbability(double baseRate, double openingsPerMonth, long months, boolean spansNewTerm) {
         // 기간 내 자리가 최소 1회 열릴 확률 = 1 - e^(-λt)
         double openingProbability = 1 - Math.exp(-openingsPerMonth * Math.max(months, 1));

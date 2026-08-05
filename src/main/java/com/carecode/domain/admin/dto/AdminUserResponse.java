@@ -6,10 +6,7 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-/**
- * 어드민 사용자 목록/상세 응답.
- * <p>비밀번호 해시, OAuth provider ID 등 밖으로 나가면 안 되는 값은 담지 않는다.
- */
+/** 어드민 사용자 목록/상세 응답. 비밀번호 해시, OAuth provider ID 등 밖으로 나가면 안 되는 값은 담지 않는다. */
 @Getter
 @Builder
 public class AdminUserResponse {

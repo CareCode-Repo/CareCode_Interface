@@ -49,4 +49,3 @@ public class UserUpdateRequestDto {
     private Integer householdSize;
 }
 
-

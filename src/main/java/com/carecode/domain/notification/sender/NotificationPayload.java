@@ -4,9 +4,7 @@ import com.carecode.domain.user.entity.User;
 import lombok.Builder;
 import lombok.Getter;
 
-/**
- * 채널 구현체에 전달되는 발송 요청.
- */
+/** 채널 구현체에 전달되는 발송 요청. */
 @Getter
 @Builder
 public class NotificationPayload {

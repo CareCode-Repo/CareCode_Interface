@@ -8,10 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-/**
- * 기동 시 샘플 데이터를 적재한다.
- * 공공데이터 연동 전에 거주지 비교·입소 예측·인기도 분석을 확인하기 위한 개발 편의 기능이다.
- */
+/** 기동 시 샘플 데이터를 적재한다. */
 @Slf4j
 @Component
 @Profile("!prod")

@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 병원 좋아요 요청
- */
+/** 병원 좋아요 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

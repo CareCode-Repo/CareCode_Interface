@@ -1,8 +1,6 @@
 package com.carecode.domain.notification.sender;
 
-/**
- * 알림 전달 채널.
- */
+/** 알림 전달 채널. */
 public enum NotificationChannelType {
     IN_APP("인앱"),
     EMAIL("이메일"),

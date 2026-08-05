@@ -9,10 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * 거주지별 지원금 비교를 확인하기 위한 샘플 정책.
- * 실제 지자체 금액이 아니라 기능 확인용 임의값이다 — 공공데이터 연동 전까지만 쓴다.
- */
+/** 거주지별 지원금 비교를 확인하기 위한 샘플 정책. 실제 지자체 금액이 아니라 기능 확인용 임의값이다 — 공공데이터 연동 전까지만 쓴다. */
 @Slf4j
 @Component
 @RequiredArgsConstructor

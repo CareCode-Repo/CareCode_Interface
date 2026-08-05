@@ -12,9 +12,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-/**
- * 프로필 업데이트 요청
- */
+/** 프로필 업데이트 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

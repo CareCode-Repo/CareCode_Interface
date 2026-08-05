@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 예방접종 스케줄 응답
- */
+/** 예방접종 스케줄 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

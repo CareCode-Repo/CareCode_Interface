@@ -6,9 +6,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * 항목별 현재 동의 상태.
- */
+/** 항목별 현재 동의 상태. */
 @Getter
 @Builder
 public class ConsentStatusResponse {

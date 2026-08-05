@@ -22,10 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 챗봇 API 컨트롤러
- * 육아 관련 챗봇 서비스
- */
+/** 챗봇 API 컨트롤러 육아 관련 챗봇 서비스 */
 @RestController
 @RequestMapping("/chatbot")
 @RequiredArgsConstructor
@@ -37,12 +34,10 @@ public class ChatbotController extends BaseController {
     private final ChatbotFacade chatbotFacade;
     private final CurrentUserFacade currentUserFacade;
 
-
     // 챗봇 메시지 전송
-
     @PostMapping("/chat")
     @LogExecutionTime
-    @Operation(summary = "챗봇 메시지 전송", description = "챗봇과 대화를 시작합니다.")
+    @Operation(summary = "챗봇 메시지 전송", description = "챗봇과 대화를 시작")
     public ResponseEntity<ChatbotMessageResponse> sendMessage(
             @Parameter(description = "챗봇 요청 정보", required = true) @RequestBody ChatbotMessageRequest request) {
         String userId = currentUserFacade.requireCurrentUserId();
@@ -61,12 +56,10 @@ public class ChatbotController extends BaseController {
         }
     }
 
-
     // 대화 기록 조회
-
     @GetMapping("/history")
     @LogExecutionTime
-    @Operation(summary = "대화 기록 조회", description = "사용자의 챗봇 대화 기록을 조회합니다.")
+    @Operation(summary = "대화 기록 조회", description = "사용자의 챗봇 대화 기록 조회")
     public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> getChatHistory(
             @Parameter(description = "세션 ID") @RequestParam(required = false) String sessionId,
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") int page,
@@ -83,12 +76,10 @@ public class ChatbotController extends BaseController {
         }
     }
 
-
     // 세션 목록 조회
-
     @GetMapping("/sessions")
     @LogExecutionTime
-    @Operation(summary = "세션 목록 조회", description = "사용자의 챗봇 세션 목록을 조회합니다.")
+    @Operation(summary = "세션 목록 조회", description = "사용자의 챗봇 세션 목록 조회")
     public ResponseEntity<List<ChatbotSessionDtoResponse>> getSessions(
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
@@ -104,12 +95,10 @@ public class ChatbotController extends BaseController {
         }
     }
 
-
     // 메시지 피드백 처리
-
     @PostMapping("/feedback")
     @LogExecutionTime
-    @Operation(summary = "메시지 피드백 처리", description = "챗봇 메시지에 대한 피드백을 처리합니다.")
+    @Operation(summary = "메시지 피드백 처리", description = "챗봇 메시지에 대한 피드백 처리")
     public ResponseEntity<ChatbotFeedbackDtoResponse> processFeedback(
             @Parameter(description = "메시지 ID", required = true) @RequestParam Long messageId,
             @Parameter(description = "도움됨 여부", required = true) @RequestParam boolean isHelpful) {
@@ -130,14 +119,13 @@ public class ChatbotController extends BaseController {
         }
     }
 
-    // ==================== 챗봇 필터링 기능 ====================
-
+    // ====================
+    // 챗봇 필터링 기능 ====================
 
     // 의도 타입별 메시지 조회
-
     @GetMapping("/messages/intent")
     @LogExecutionTime
-    @Operation(summary = "의도 타입별 메시지 조회", description = "특정 의도 타입의 메시지를 조회합니다.")
+    @Operation(summary = "의도 타입별 메시지 조회")
     public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> getMessagesByIntentType(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "의도 타입 (GREETING, QUESTION, COMPLAINT, THANKS, GOODBYE, HEALTH_INFO, UNKNOWN)", required = true) @RequestParam String intentType) {
@@ -146,12 +134,10 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(messages);
     }
 
-
     // 기간별 메시지 조회
-
     @GetMapping("/messages/date-range")
     @LogExecutionTime
-    @Operation(summary = "기간별 메시지 조회", description = "특정 기간의 메시지를 조회합니다.")
+    @Operation(summary = "기간별 메시지 조회")
     public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> getMessagesByDateRange(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "시작일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String startDate,
@@ -161,12 +147,10 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(messages);
     }
 
-
     // 도움됨 여부별 메시지 조회
-
     @GetMapping("/messages/helpful")
     @LogExecutionTime
-    @Operation(summary = "도움됨 여부별 메시지 조회", description = "도움됨/도움 안됨 여부별 메시지를 조회합니다.")
+    @Operation(summary = "도움됨 여부별 메시지 조회")
     public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> getMessagesByHelpfulStatus(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "도움됨 여부", required = true) @RequestParam Boolean isHelpful) {
@@ -174,12 +158,10 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(messages);
     }
 
-
     // 키워드로 메시지 검색
-
     @GetMapping("/messages/search")
     @LogExecutionTime
-    @Operation(summary = "키워드로 메시지 검색", description = "키워드로 메시지를 검색합니다.")
+    @Operation(summary = "키워드로 메시지 검색")
     public ResponseEntity<List<ChatbotChatHistoryDtoResponse>> searchMessagesByKeyword(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "검색 키워드", required = true) @RequestParam String keyword) {
@@ -187,12 +169,10 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(messages);
     }
 
-
     // 상태별 세션 조회
-
     @GetMapping("/sessions/status")
     @LogExecutionTime
-    @Operation(summary = "상태별 세션 조회", description = "특정 상태의 세션을 조회합니다.")
+    @Operation(summary = "상태별 세션 조회", description = "특정 상태의 세션 조회")
     public ResponseEntity<List<ChatbotSessionDtoResponse>> getSessionsByStatus(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "세션 상태 (ACTIVE, INACTIVE, CLOSED)", required = true) @RequestParam String status) {
@@ -201,12 +181,10 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(sessions);
     }
 
-
     // 기간별 세션 조회
-
     @GetMapping("/sessions/date-range")
     @LogExecutionTime
-    @Operation(summary = "기간별 세션 조회", description = "특정 기간의 세션을 조회합니다.")
+    @Operation(summary = "기간별 세션 조회", description = "특정 기간의 세션 조회")
     public ResponseEntity<List<ChatbotSessionDtoResponse>> getSessionsByDateRange(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId,
             @Parameter(description = "시작일시 (yyyy-MM-ddTHH:mm:ss)", required = true) @RequestParam String startDate,
@@ -216,12 +194,10 @@ public class ChatbotController extends BaseController {
         return ResponseEntity.ok(sessions);
     }
 
-
     // 사용자별 세션 수 조회
-
     @GetMapping("/sessions/count")
     @LogExecutionTime
-    @Operation(summary = "사용자별 세션 수 조회", description = "사용자의 전체 세션 수를 조회합니다.")
+    @Operation(summary = "사용자별 세션 수 조회")
     public ResponseEntity<Map<String, Long>> getSessionCountByUser(
             @Parameter(description = "사용자 ID", required = true) @RequestParam String userId) {
         long count = chatbotFacade.getSessionCountByUser(userId);

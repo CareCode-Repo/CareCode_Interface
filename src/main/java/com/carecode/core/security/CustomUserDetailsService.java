@@ -8,13 +8,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-/**
- * {@link SecurityConfig}에서 등록하는 {@link UserDetailsService}.
- * Stateless JWT API가 기본이며, 이 빈은 필터 체인의 {@code userDetailsService()} 연동 및
- * 향후 폼/세션 인증 확장 시를 위한 이메일·비밀번호 조회용이다.
- * 소셜 전용 계정({@code password == null})은 로드 시 비밀번호가 없을 수 있으므로
- * 폼 로그인 경로에서는 별도 검증이 필요하다.
- */
+/** SecurityConfig에서 등록하는 UserDetailsService. Stateless JWT API가 기본이며 */
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {

@@ -10,9 +10,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-/**
- * 아이 등록/수정 요청.
- */
+/** 아이 등록/수정 요청. */
 @Getter
 @Setter
 @NoArgsConstructor

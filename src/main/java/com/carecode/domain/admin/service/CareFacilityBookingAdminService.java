@@ -30,9 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * 관리자용 육아 시설 예약 서비스 클래스
- */
+/** 관리자용 육아 시설 예약 서비스 클래스 */
 @Slf4j
 @Service
 @RequiredArgsConstructor

@@ -20,10 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * 알림 설정 서비스 클래스
- * 사용자별 알림 설정을 관리
- */
+/** 알림 설정 서비스 클래스 사용자별 알림 설정을 관리 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,9 +30,7 @@ public class NotificationPreferenceService {
     private final NotificationPreferenceRepository preferenceRepository;
     private final UserRepository userRepository;
 
-
     // 사용자별 알림 설정 목록 조회
-
     @LogExecutionTime
     public List<NotificationSettingsResponse> getUserPreferences(String userId) {
         log.info("사용자별 알림 설정 조회: 사용자ID={}", userId);
@@ -55,9 +50,7 @@ public class NotificationPreferenceService {
         }
     }
 
-
     // 특정 알림 타입 설정 조회
-
     @LogExecutionTime
     public NotificationSettingsResponse getPreferenceByType(String userId, Notification.NotificationType notificationType) {
         log.info("알림 타입별 설정 조회: 사용자ID={}, 타입={}", userId, notificationType);
@@ -76,9 +69,7 @@ public class NotificationPreferenceService {
         }
     }
 
-
     // 알림 설정 생성 또는 업데이트
-
     @LogExecutionTime
     @Transactional
     public NotificationSettingsResponse savePreference(String userId, NotificationSettingsResponse preferenceDto) {
@@ -103,9 +94,7 @@ public class NotificationPreferenceService {
         }
     }
 
-
     // 채널별 설정 업데이트
-
     @LogExecutionTime
     @Transactional
     public NotificationSettingsResponse updateChannelPreference(String userId, String notificationType, String channel, boolean enabled) {
@@ -130,9 +119,7 @@ public class NotificationPreferenceService {
         }
     }
 
-
     // 모든 알림 설정 비활성화
-
     @LogExecutionTime
     @Transactional
     public void disableAllNotifications(String userId) {
@@ -157,9 +144,7 @@ public class NotificationPreferenceService {
         }
     }
 
-
     // 기본 설정으로 초기화
-
     @LogExecutionTime
     @Transactional
     public void resetToDefault(String userId) {
@@ -183,9 +168,7 @@ public class NotificationPreferenceService {
         }
     }
 
-
     // 특정 알림 타입의 활성화된 설정 조회
-
     @LogExecutionTime
     public List<NotificationSettingsResponse> getEnabledPreferencesByType(Notification.NotificationType notificationType) {
         log.info("알림 타입별 활성화된 설정 조회: 타입={}", notificationType);
@@ -202,9 +185,7 @@ public class NotificationPreferenceService {
         }
     }
 
-
     // 기본 설정 생성
-
     private NotificationPreference createDefaultPreference(User user, Notification.NotificationType notificationType) {
         NotificationPreference preference = NotificationPreference.builder()
                 .user(user)
@@ -220,9 +201,7 @@ public class NotificationPreferenceService {
         return preferenceRepository.save(preference);
     }
 
-
     // 새 설정 생성
-
     private NotificationPreference createNewPreference(User user, NotificationSettingsResponse preferenceDto) {
         return NotificationPreference.builder()
                 .user(user)
@@ -237,9 +216,7 @@ public class NotificationPreferenceService {
                 .build();
     }
 
-
     // 설정 업데이트
-
     private void updatePreference(NotificationPreference preference, NotificationSettingsResponse preferenceDto) {
         preference.setEmailEnabled(preferenceDto.getEmailEnabled());
         preference.setPushEnabled(preferenceDto.getPushEnabled());
@@ -250,9 +227,7 @@ public class NotificationPreferenceService {
         preference.setDeviceToken(preferenceDto.getDeviceToken());
     }
 
-
     // 채널별 설정 업데이트
-
     private void updateChannelSetting(NotificationPreference preference, String channel, boolean enabled) {
         switch (channel.toLowerCase()) {
             case "email" -> preference.setEmailEnabled(enabled);
@@ -263,9 +238,7 @@ public class NotificationPreferenceService {
         }
     }
 
-
     // DTO 변환
-
     private NotificationSettingsResponse convertToDto(NotificationPreference preference) {
         return NotificationSettingsResponse.builder()
                 .id(preference.getId())
@@ -283,9 +256,7 @@ public class NotificationPreferenceService {
                 .build();
     }
 
-
     // 푸시 알림 토큰 등록
-
     @Transactional
     public void registerPushToken(String userId, NotificationRegisterPushTokenRequest request) {
         User user = userRepository.findByUserId(userId)
@@ -317,9 +288,7 @@ public class NotificationPreferenceService {
         }
     }
 
-
     // 알림 설정 수정
-
     @Transactional
     public void updateSettings(String userId, NotificationUpdateSettingsRequest request) {
         User user = userRepository.findByUserId(userId)

@@ -19,11 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.Map;
 
-/**
- * 관리자용 육아 시설 예약 관리 API.
- *
- * <p>접근 제어는 SecurityConfig 의 {@code /api/admin/**} → hasRole("ADMIN") 규칙이 담당한다.
- */
+/** 관리자용 육아 시설 예약 관리 API. 접근 제어는 SecurityConfig 의 /api/admin/** → hasRole("ADMIN") 규칙이 담당한다. */
 @Slf4j
 @RestController
 @RequestMapping("/api/admin/facilities/bookings")
@@ -132,7 +128,7 @@ public class AdminCareFacilityBookingController extends BaseController {
 
     @GetMapping("/dashboard")
     @LogExecutionTime
-    @Operation(summary = "예약 대시보드 요약", description = "통계, 최근 예약, 오늘의 예약을 함께 반환합니다.")
+    @Operation(summary = "예약 대시보드 요약", description = "통계, 최근 예약, 오늘의 예약을 함께 반환")
     public ResponseEntity<Map<String, Object>> bookingDashboard() {
         AdminBookingSearchRequest recentRequest = AdminBookingSearchRequest.builder()
                 .page(0)

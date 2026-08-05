@@ -23,4 +23,3 @@ public class HospitalReviewMapper implements ResponseMapper<HospitalReview, Hosp
     }
 }
 
-

@@ -11,12 +11,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * 아이별 예방접종 일정.
- *
- * <p>아이를 등록하면 {@link VaccineType} 표준 일정에 따라 접종 예정일이 자동으로 생성된다.
- * 스케줄러가 예정일이 임박한 항목을 찾아 보호자에게 알림을 보낸다.
- */
+/** 아이별 예방접종 일정. 아이를 등록하면 VaccineType 표준 일정에 따라 접종 예정일이 자동으로 생성된다. */
 @Entity
 @Table(
     name = "TBL_VACCINATION_SCHEDULE",

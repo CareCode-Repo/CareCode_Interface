@@ -1,9 +1,6 @@
 package com.carecode.core.exception;
 
-/**
- * 육아 서비스 전용 예외 클래스
- * 육아 관련 비즈니스 로직에서 발생하는 예외를 처리
- */
+/** 육아 서비스 전용 예외 클래스 육아 관련 비즈니스 로직에서 발생하는 예외를 처리 */
 public class CareServiceException extends RuntimeException {
     
     private final String errorCode;

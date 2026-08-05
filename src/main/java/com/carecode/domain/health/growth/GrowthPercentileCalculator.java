@@ -2,20 +2,12 @@ package com.carecode.domain.health.growth;
 
 import java.util.Optional;
 
-/**
- * WHO LMS 방식 백분위 계산기.
- *
- * <p>Z-score = ((측정값 / M)^L - 1) / (L × S), L=0 이면 ln(측정값/M) / S.
- * 계산한 Z-score 를 표준정규 누적분포에 통과시켜 백분위를 얻는다.
- */
+/** WHO LMS 방식 백분위 계산기. Z-score = ((측정값 / M)^L - 1) / (L × S), L=0 이면 ln(측정값/M) / S */
 public final class GrowthPercentileCalculator {
 
     private GrowthPercentileCalculator() {
     }
 
-    /**
-     * @return 계산 결과. 표준표 범위를 벗어나거나 입력이 유효하지 않으면 empty
-     */
     public static Optional<GrowthPercentileResult> calculate(GrowthMetric metric,
                                                              Sex sex,
                                                              int ageMonths,
@@ -48,10 +40,7 @@ public final class GrowthPercentileCalculator {
         return (Math.pow(value / m, l) - 1) / (l * s);
     }
 
-    /**
-     * 표준정규 누적분포함수.
-     * Abramowitz &amp; Stegun 7.1.26 근사식을 사용한다 (오차 &lt; 1.5e-7).
-     */
+    /** 표준정규 누적분포함수. Abramowitz &amp; Stegun 7.1.26 근사식을 사용한다 (오차 &lt; 1.5e-7). */
     static double normalCdf(double z) {
         return 0.5 * (1.0 + erf(z / Math.sqrt(2.0)));
     }

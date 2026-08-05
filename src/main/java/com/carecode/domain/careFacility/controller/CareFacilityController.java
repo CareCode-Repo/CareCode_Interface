@@ -33,10 +33,7 @@ import java.util.List;
 import com.carecode.core.handler.ApiSuccess;
 import java.util.Date;
 
-/**
- * 육아 시설 컨트롤러
- * 육아 시설 관련 REST API 엔드포인트 제공
- */
+/** 육아 시설 컨트롤러 육아 시설 관련 REST API 엔드포인트 제공 */
 @Slf4j
 @RestController
 @RequestMapping("/facilities")
@@ -49,7 +46,7 @@ public class CareFacilityController extends BaseController {
     // 전체 시설 목록 조회
     @GetMapping
     @LogExecutionTime
-    @Operation(summary = "전체 시설 목록 조회", description = "등록된 모든 육아 시설 목록을 조회합니다.")
+    @Operation(summary = "전체 시설 목록 조회", description = "등록된 모든 육아 시설 목록 조회")
     public ResponseEntity<List<CareFacilityInfo>> getAllFacilities(
             @Parameter(description = "페이지 번호 (0부터)") @RequestParam(required = false) Integer page,
             @Parameter(description = "페이지 크기 (최대 200)") @RequestParam(required = false) Integer size) {
@@ -63,7 +60,7 @@ public class CareFacilityController extends BaseController {
     // 시설 ID로 시설 조회
     @GetMapping("/{id}")
     @LogExecutionTime
-    @Operation(summary = "시설 상세 조회", description = "시설 ID로 특정 육아 시설의 상세 정보를 조회합니다.")
+    @Operation(summary = "시설 상세 조회", description = "시설 ID로 특정 육아 시설의 상세 정보 조회")
     public ResponseEntity<CareFacilityInfo> getFacilityById(@Parameter(description = "시설 ID", required = true) @PathVariable Long id) {
 
         CareFacilityInfo facility = careFacilityFacade.getCareFacilityById(id);
@@ -74,7 +71,7 @@ public class CareFacilityController extends BaseController {
     // 시설 유형별 조회
     @GetMapping("/type/{facilityType}")
     @LogExecutionTime
-    @Operation(summary = "시설 유형별 조회", description = "특정 유형의 육아 시설 목록을 조회합니다.")
+    @Operation(summary = "시설 유형별 조회", description = "특정 유형의 육아 시설 목록 조회")
     public ResponseEntity<List<CareFacilityInfo>> getFacilitiesByType(@Parameter(description = "시설 유형 (KINDERGARTEN: 유치원, DAYCARE: 어린이집, PLAYGROUP: 놀이방, NURSERY: 보육원, OTHER: 기타)", required = true) @PathVariable FacilityType facilityType) {
 
         List<CareFacilityInfo> facilities = careFacilityFacade.getCareFacilitiesByType(facilityType);
@@ -86,7 +83,7 @@ public class CareFacilityController extends BaseController {
     @GetMapping("/location/{location}")
     @LogExecutionTime
     @ValidateLocation
-    @Operation(summary = "지역별 시설 조회", description = "특정 지역의 육아 시설 목록을 조회합니다.")
+    @Operation(summary = "지역별 시설 조회", description = "특정 지역의 육아 시설 목록 조회")
     public ResponseEntity<List<CareFacilityInfo>> getFacilitiesByLocation(@Parameter(description = "지역명", required = true) @PathVariable String location) {
 
         List<CareFacilityInfo> facilities = careFacilityFacade.getCareFacilitiesByLocation(location);
@@ -98,7 +95,7 @@ public class CareFacilityController extends BaseController {
     @GetMapping("/age")
     @LogExecutionTime
     @ValidateChildAge
-    @Operation(summary = "연령대별 시설 조회", description = "특정 연령대에 적합한 육아 시설 목록을 조회합니다.")
+    @Operation(summary = "연령대별 시설 조회", description = "특정 연령대에 적합한 육아 시설 목록 조회")
     public ResponseEntity<List<CareFacilityInfo>> getFacilitiesByAgeRange(@Parameter(description = "최소 연령", required = true) @RequestParam Integer minAge,
                                                                                            @Parameter(description = "최대 연령", required = true) @RequestParam Integer maxAge) {
 
@@ -110,7 +107,7 @@ public class CareFacilityController extends BaseController {
     // 운영 시간별 시설 조회
     @GetMapping("/operating-hours")
     @LogExecutionTime
-    @Operation(summary = "운영 시간별 시설 조회", description = "특정 운영 시간을 가진 육아 시설 목록을 조회합니다.")
+    @Operation(summary = "운영 시간별 시설 조회", description = "특정 운영 시간을 가진 육아 시설 목록 조회")
     public ResponseEntity<List<CareFacilityInfo>> getFacilitiesByOperatingHours(@Parameter(description = "운영 시간", required = true) @RequestParam String operatingHours) {
 
         List<CareFacilityInfo> facilities = careFacilityFacade.getCareFacilitiesByOperatingHours(operatingHours);
@@ -121,7 +118,7 @@ public class CareFacilityController extends BaseController {
     // 인기 시설 조회 (평점 기준)
     @GetMapping("/popular")
     @LogExecutionTime
-    @Operation(summary = "인기 시설 조회", description = "평점 기준으로 인기 있는 육아 시설 목록을 조회합니다.")
+    @Operation(summary = "인기 시설 조회", description = "평점 기준으로 인기 있는 육아 시설 목록 조회")
     public ResponseEntity<List<CareFacilityInfo>> getPopularFacilities(@Parameter(description = "조회할 시설 수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
 
         List<CareFacilityInfo> facilities = careFacilityFacade.getPopularCareFacilities(limit);
@@ -132,7 +129,7 @@ public class CareFacilityController extends BaseController {
     // 신규 시설 조회
     @GetMapping("/new")
     @LogExecutionTime
-    @Operation(summary = "신규 시설 조회", description = "최근 등록된 육아 시설 목록을 조회합니다.")
+    @Operation(summary = "신규 시설 조회", description = "최근 등록된 육아 시설 목록 조회")
     public ResponseEntity<List<CareFacilityInfo>> getNewFacilities(@Parameter(description = "조회할 시설 수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
 
         List<CareFacilityInfo> facilities = careFacilityFacade.getNewCareFacilities(limit);
@@ -144,7 +141,7 @@ public class CareFacilityController extends BaseController {
     @GetMapping("/radius")
     @LogExecutionTime
     @ValidateLocation
-    @Operation(summary = "반경 내 시설 검색", description = "특정 위치 기준 반경 내의 육아 시설을 검색합니다.")
+    @Operation(summary = "반경 내 시설 검색", description = "특정 위치 기준 반경 내의 육아 시설 검색")
     public ResponseEntity<List<CareFacilityInfo>> getFacilitiesWithinRadius(@Parameter(description = "위도", required = true) @RequestParam Double latitude,
                                                                             @Parameter(description = "경도", required = true) @RequestParam Double longitude,
                                                                             @Parameter(description = "반경 (km)", required = true) @RequestParam Double radius) {
@@ -157,7 +154,7 @@ public class CareFacilityController extends BaseController {
     // 복합 조건으로 시설 검색 (페이징)
     @PostMapping("/search")
     @LogExecutionTime
-    @Operation(summary = "복합 조건 시설 검색", description = "다양한 조건으로 육아 시설을 검색합니다.")
+    @Operation(summary = "복합 조건 시설 검색", description = "다양한 조건으로 육아 시설 검색")
     public ResponseEntity<CareFacilityListResponse> searchFacilities(@Parameter(description = "검색 조건", required = true) @RequestBody CareFacilitySearchRequest requestDto) {
 
         CareFacilityListResponse response = careFacilityFacade.searchCareFacilities(requestDto);
@@ -168,7 +165,7 @@ public class CareFacilityController extends BaseController {
     // 시설 조회수 증가
     @PostMapping("/{id}/view")
     @LogExecutionTime
-    @Operation(summary = "시설 조회수 증가", description = "특정 시설의 조회수를 증가시킵니다.")
+    @Operation(summary = "시설 조회수 증가", description = "특정 시설의 조회수를 증가시킵니다")
     public ResponseEntity<ApiSuccess> incrementViewCount(@Parameter(description = "시설 ID", required = true) @PathVariable Long id) {
 
         careFacilityFacade.incrementViewCount(id);
@@ -179,7 +176,7 @@ public class CareFacilityController extends BaseController {
     // 시설 평점 업데이트
     @PostMapping("/{id}/rating")
     @LogExecutionTime
-    @Operation(summary = "시설 평점 업데이트", description = "특정 시설의 평점을 업데이트합니다.")
+    @Operation(summary = "시설 평점 업데이트", description = "특정 시설의 평점을 업데이트")
     public ResponseEntity<ApiSuccess> updateRating(@Parameter(description = "시설 ID", required = true) @PathVariable Long id,
                                                    @Parameter(description = "평점 (0.0 ~ 5.0)", required = true) @RequestParam Double rating) {
 
@@ -191,7 +188,7 @@ public class CareFacilityController extends BaseController {
     // 시설 통계 조회
     @GetMapping("/statistics")
     @LogExecutionTime
-    @Operation(summary = "시설 통계 조회", description = "육아 시설 관련 통계 정보를 조회합니다.")
+    @Operation(summary = "시설 통계 조회", description = "육아 시설 관련 통계 정보 조회")
     public ResponseEntity<CareFacilityStatsResponse> getFacilityStatistics() {
 
         CareFacilityStatsResponse stats = careFacilityFacade.getFacilityStats();
@@ -199,75 +196,64 @@ public class CareFacilityController extends BaseController {
         return ResponseEntity.ok(stats);
     }
 
-    // ==================== 고급 검색 기능 ====================
-
+    // ====================
+    // 고급 검색 기능 ====================
 
     // 아이 연령별 시설 추천
-
     @GetMapping("/recommend/age")
     @LogExecutionTime
     @ValidateChildAge
-    @Operation(summary = "아이 연령별 시설 추천", description = "아이의 연령에 맞는 육아 시설을 추천합니다.")
+    @Operation(summary = "아이 연령별 시설 추천", description = "아이의 연령에 맞는 육아 시설을 추천")
     public ResponseEntity<List<CareFacilityInfo>> recommendFacilitiesByAge(
             @Parameter(description = "아이 연령", required = true) @RequestParam Integer childAge) {
         List<CareFacilityInfo> facilities = careFacilityFacade.recommendFacilitiesByChildAge(childAge);
         return ResponseEntity.ok(facilities);
     }
 
-
     // 최소 평점 이상의 시설 조회
-
     @GetMapping("/rating")
     @LogExecutionTime
-    @Operation(summary = "평점별 시설 조회", description = "최소 평점 이상의 육아 시설을 조회합니다.")
+    @Operation(summary = "평점별 시설 조회", description = "최소 평점 이상의 육아 시설 조회")
     public ResponseEntity<List<CareFacilityInfo>> getFacilitiesByRating(
             @Parameter(description = "최소 평점 (0.0 ~ 5.0)", required = true) @RequestParam Double minRating) {
         List<CareFacilityInfo> facilities = careFacilityFacade.getFacilitiesByMinRating(minRating);
         return ResponseEntity.ok(facilities);
     }
 
-
     // 빈 자리가 있는 시설 조회
-
     @GetMapping("/available-spots")
     @LogExecutionTime
-    @Operation(summary = "빈 자리 있는 시설 조회", description = "최소 자리 수 이상의 빈 자리가 있는 시설을 조회합니다.")
+    @Operation(summary = "빈 자리 있는 시설 조회", description = "최소 자리 수 이상의 빈 자리가 있는 시설 조회")
     public ResponseEntity<List<CareFacilityInfo>> getFacilitiesWithSpots(
             @Parameter(description = "최소 자리 수", example = "1") @RequestParam(defaultValue = "1") Integer minSpots) {
         List<CareFacilityInfo> facilities = careFacilityFacade.getFacilitiesWithAvailableSpots(minSpots);
         return ResponseEntity.ok(facilities);
     }
 
-
     // 등록금 범위로 시설 조회
-
     @GetMapping("/tuition-fee")
     @LogExecutionTime
-    @Operation(summary = "등록금 범위별 시설 조회", description = "최대 등록금 이하의 시설을 조회합니다.")
+    @Operation(summary = "등록금 범위별 시설 조회", description = "최대 등록금 이하의 시설 조회")
     public ResponseEntity<List<CareFacilityInfo>> getFacilitiesByTuitionFee(
             @Parameter(description = "최대 등록금 (원)", required = true) @RequestParam Integer maxFee) {
         List<CareFacilityInfo> facilities = careFacilityFacade.getFacilitiesByMaxTuitionFee(maxFee);
         return ResponseEntity.ok(facilities);
     }
 
-
     // 키워드로 시설 검색
-
     @GetMapping("/keyword")
     @LogExecutionTime
-    @Operation(summary = "키워드 검색", description = "키워드로 시설명 또는 주소를 검색합니다.")
+    @Operation(summary = "키워드 검색", description = "키워드로 시설명 또는 주소 검색")
     public ResponseEntity<List<CareFacilityInfo>> searchByKeyword(
             @Parameter(description = "검색 키워드", required = true) @RequestParam String keyword) {
         List<CareFacilityInfo> facilities = careFacilityFacade.searchFacilitiesByKeyword(keyword);
         return ResponseEntity.ok(facilities);
     }
 
-
     // 고급 검색 (복합 조건)
-
     @PostMapping("/advanced-search")
     @LogExecutionTime
-    @Operation(summary = "고급 검색", description = "다양한 조건을 조합하여 시설을 검색합니다.")
+    @Operation(summary = "고급 검색", description = "다양한 조건을 조합하여 시설 검색")
     public ResponseEntity<List<CareFacilityInfo>> advancedSearch(
             @Parameter(description = "검색 조건", required = true) @RequestBody CareFacilityAdvancedSearchRequest request) {
         List<CareFacilityInfo> facilities = careFacilityFacade.searchFacilitiesAdvanced(
@@ -282,12 +268,10 @@ public class CareFacilityController extends BaseController {
         return ResponseEntity.ok(facilities);
     }
 
-
     // 리뷰와 함께 시설 상세 조회
-
     @GetMapping("/{id}/with-reviews")
     @LogExecutionTime
-    @Operation(summary = "시설 상세 조회 (리뷰 포함)", description = "리뷰 정보를 포함한 시설 상세 정보를 조회합니다.")
+    @Operation(summary = "시설 상세 조회 (리뷰 포함)", description = "리뷰 정보를 포함한 시설 상세 정보 조회")
     public ResponseEntity<CareFacilityInfo> getFacilityWithReviews(
             @Parameter(description = "시설 ID", required = true) @PathVariable Long id) {
         CareFacilityInfo facility = careFacilityFacade.getFacilityByIdWithReviews(id);
@@ -296,14 +280,14 @@ public class CareFacilityController extends BaseController {
 
     @GetMapping("/{id}/reviews")
     @LogExecutionTime
-    @Operation(summary = "시설 리뷰 목록 조회", description = "시설의 리뷰 목록을 조회합니다.")
+    @Operation(summary = "시설 리뷰 목록 조회")
     public ResponseEntity<List<ReviewResponse>> getFacilityReviews(@PathVariable Long id) {
         return ResponseEntity.ok(careFacilityFacade.getFacilityReviews(id));
     }
 
     @PostMapping("/{id}/reviews")
     @LogExecutionTime
-    @Operation(summary = "시설 리뷰 작성", description = "시설 리뷰를 작성합니다.")
+    @Operation(summary = "시설 리뷰 작성")
     public ResponseEntity<ReviewResponse> createReview(@PathVariable Long id,
                                                        @RequestBody ReviewRequest request,
                                                        @AuthenticationPrincipal UserDetails userDetails) {
@@ -312,7 +296,7 @@ public class CareFacilityController extends BaseController {
 
     @PutMapping("/reviews/{reviewId}")
     @LogExecutionTime
-    @Operation(summary = "시설 리뷰 수정", description = "작성한 시설 리뷰를 수정합니다.")
+    @Operation(summary = "시설 리뷰 수정")
     public ResponseEntity<ReviewResponse> updateReview(@PathVariable Long reviewId,
                                                        @RequestBody ReviewRequest request,
                                                        @AuthenticationPrincipal UserDetails userDetails) {
@@ -321,7 +305,7 @@ public class CareFacilityController extends BaseController {
 
     @DeleteMapping("/reviews/{reviewId}")
     @LogExecutionTime
-    @Operation(summary = "시설 리뷰 삭제", description = "작성한 시설 리뷰를 삭제합니다.")
+    @Operation(summary = "시설 리뷰 삭제")
     public ResponseEntity<ApiSuccess> deleteReview(@PathVariable Long reviewId,
                                                    @AuthenticationPrincipal UserDetails userDetails) {
         careFacilityFacade.deleteReview(reviewId, userDetails.getUsername());
@@ -331,7 +315,7 @@ public class CareFacilityController extends BaseController {
     // 예약 생성
     @PostMapping("/{facilityId}/bookings")
     @LogExecutionTime
-    @Operation(summary = "시설 예약 생성", description = "특정 육아 시설에 예약을 생성합니다.")
+    @Operation(summary = "시설 예약 생성", description = "특정 육아 시설에 예약 생성")
     public ResponseEntity<BookingResponse> createBooking(@Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId,
                                                          @Parameter(description = "예약 정보", required = true) @RequestBody CreateBookingRequest request,
                                                          @AuthenticationPrincipal UserDetails userDetails) {
@@ -344,7 +328,7 @@ public class CareFacilityController extends BaseController {
     // 예약 상세 조회
     @GetMapping("/bookings/{bookingId}")
     @LogExecutionTime
-    @Operation(summary = "예약 상세 조회", description = "특정 예약의 상세 정보를 조회합니다.")
+    @Operation(summary = "예약 상세 조회", description = "특정 예약의 상세 정보 조회")
     public ResponseEntity<BookingResponse> getBookingById(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
                                                           @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -356,7 +340,7 @@ public class CareFacilityController extends BaseController {
     // 사용자별 예약 목록 조회
     @GetMapping("/bookings/user")
     @LogExecutionTime
-    @Operation(summary = "사용자별 예약 목록 조회", description = "현재 로그인한 사용자의 예약 목록을 조회합니다.")
+    @Operation(summary = "사용자별 예약 목록 조회", description = "현재 로그인한 사용자의 예약 목록 조회")
     public ResponseEntity<List<BookingResponse>> getUserBookings(@AuthenticationPrincipal UserDetails userDetails) {
 
         List<BookingResponse> bookings = careFacilityFacade.getUserBookings(userDetails);
@@ -367,7 +351,7 @@ public class CareFacilityController extends BaseController {
     // 시설별 예약 목록 조회
     @GetMapping("/{facilityId}/bookings")
     @LogExecutionTime
-    @Operation(summary = "시설별 예약 목록 조회", description = "특정 시설의 예약 목록을 조회합니다.")
+    @Operation(summary = "시설별 예약 목록 조회")
     public ResponseEntity<List<BookingResponse>> getFacilityBookings(@Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId) {
 
         List<BookingResponse> bookings = careFacilityFacade.getFacilityBookings(facilityId);
@@ -378,7 +362,7 @@ public class CareFacilityController extends BaseController {
     // 예약 상태 업데이트
     @PutMapping("/bookings/{bookingId}/status")
     @LogExecutionTime
-    @Operation(summary = "예약 상태 업데이트", description = "예약의 상태를 업데이트합니다.")
+    @Operation(summary = "예약 상태 업데이트")
     public ResponseEntity<BookingResponse> updateBookingStatus(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
                                                                @Parameter(description = "새로운 상태", required = true) @RequestParam String status,
                                                                @AuthenticationPrincipal UserDetails userDetails) {
@@ -391,7 +375,7 @@ public class CareFacilityController extends BaseController {
     // 예약 취소
     @DeleteMapping("/bookings/{bookingId}")
     @LogExecutionTime
-    @Operation(summary = "예약 취소", description = "예약을 취소합니다.")
+    @Operation(summary = "예약 취소", description = "예약을 취소")
     public ResponseEntity<ApiSuccess> cancelBooking(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
                                                     @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -403,7 +387,7 @@ public class CareFacilityController extends BaseController {
     // 예약 수정
     @PutMapping("/bookings/{bookingId}")
     @LogExecutionTime
-    @Operation(summary = "예약 수정", description = "기존 예약 정보를 수정합니다.")
+    @Operation(summary = "예약 수정", description = "기존 예약 정보 수정")
     public ResponseEntity<BookingResponse> updateBooking(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
                                                          @Parameter(description = "수정할 예약 정보", required = true) @RequestBody UpdateBookingRequest request,
                                                          @AuthenticationPrincipal UserDetails userDetails) {
@@ -416,7 +400,7 @@ public class CareFacilityController extends BaseController {
     // 오늘의 예약 조회
     @GetMapping("/bookings/today")
     @LogExecutionTime
-    @Operation(summary = "오늘의 예약 조회", description = "오늘 날짜의 예약 목록을 조회합니다.")
+    @Operation(summary = "오늘의 예약 조회", description = "오늘 날짜의 예약 목록 조회")
     public ResponseEntity<List<BookingResponse>> getTodayBookings() {
 
         List<BookingResponse> bookings = careFacilityFacade.getTodayBookings();
@@ -427,7 +411,7 @@ public class CareFacilityController extends BaseController {
     // 시설별 오늘의 예약 조회
     @GetMapping("/{facilityId}/bookings/today")
     @LogExecutionTime
-    @Operation(summary = "시설별 오늘의 예약 조회", description = "특정 시설의 오늘 예약 목록을 조회합니다.")
+    @Operation(summary = "시설별 오늘의 예약 조회", description = "특정 시설의 오늘 예약 목록 조회")
     public ResponseEntity<List<BookingResponse>> getTodayBookingsByFacility(@Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId) {
 
         List<BookingResponse> bookings = careFacilityFacade.getTodayBookingsByFacility(facilityId);
@@ -438,7 +422,7 @@ public class CareFacilityController extends BaseController {
     // 입소 가능 시점 예측
     @GetMapping("/{facilityId}/admission-forecast")
     @LogExecutionTime
-    @Operation(summary = "입소 가능 시점 예측", description = "관측된 정원 변동으로 자리가 날 확률을 추정합니다.")
+    @Operation(summary = "입소 가능 시점 예측", description = "관측된 정원 변동으로 자리가 날 확률을 추정")
     public ResponseEntity<AdmissionForecastResponse> forecastAdmission(
             @Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId,
             @Parameter(description = "아이 월령", example = "18") @RequestParam(required = false) Integer childAgeMonths,
@@ -449,7 +433,7 @@ public class CareFacilityController extends BaseController {
     // 충원율 기반 인기도
     @GetMapping("/{facilityId}/popularity")
     @LogExecutionTime
-    @Operation(summary = "시설 인기도 조회", description = "충원율 추이로 수요 수준과 변동을 분석합니다.")
+    @Operation(summary = "시설 인기도 조회", description = "충원율 추이로 수요 수준과 변동 분석")
     public ResponseEntity<FacilityPopularityResponse> getPopularity(
             @Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId) {
         return ResponseEntity.ok(careFacilityFacade.analyzePopularity(facilityId));

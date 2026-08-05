@@ -10,11 +10,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
-/**
- * 비동기 실행 설정.
- *
- * <p>알림 발송(SMTP/FCM 왕복)이 요청 스레드를 붙잡지 않도록 별도 풀에서 처리한다.
- */
+/** 비동기 실행 설정. 알림 발송(SMTP/FCM 왕복)이 요청 스레드를 붙잡지 않도록 별도 풀에서 처리한다. */
 @Slf4j
 @Configuration
 @EnableAsync

@@ -6,9 +6,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
-/**
- * 이메일 채널 발송기.
- */
+/** 이메일 채널 발송기. */
 @Slf4j
 @Component
 public class EmailNotificationSender implements NotificationSender {

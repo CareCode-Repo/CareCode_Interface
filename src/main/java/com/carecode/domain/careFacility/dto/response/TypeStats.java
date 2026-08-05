@@ -6,9 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Builder;
 import com.carecode.domain.careFacility.entity.FacilityType;
 
-/**
- * 시설 유형별 통계 DTO
- */
+/** 시설 유형별 통계 DTO */
 @Getter
 @Setter
 @NoArgsConstructor

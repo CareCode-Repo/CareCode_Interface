@@ -3,9 +3,7 @@ package com.carecode.core.storage;
 import lombok.Builder;
 import lombok.Getter;
 
-/**
- * 저장된 파일의 메타데이터.
- */
+/** 저장된 파일의 메타데이터. */
 @Getter
 @Builder
 public class StoredFile {

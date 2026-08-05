@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 카카오 회원가입 완료 요청
- */
+/** 카카오 회원가입 완료 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

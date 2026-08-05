@@ -45,4 +45,3 @@ public class PolicyMapper implements ResponseMapper<Policy, PolicyDto> {
     private String formatWebsiteUrl(String applicationUrl) { return applicationUrl; }
 }
 
-

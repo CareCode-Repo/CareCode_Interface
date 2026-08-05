@@ -42,10 +42,7 @@ public enum BenefitPaymentType {
         return normalized.startsWith("월") ? MONTHLY : UNKNOWN;
     }
 
-    /**
-     * 금액 합산에 포함할지.
-     * UNKNOWN 은 포함하되 호출부에서 1회 지급으로 취급한다 — 월 지급으로 잘못 보면 60배까지 부풀려진다.
-     */
+    /** 금액 합산에 포함할지. UNKNOWN 은 포함하되 호출부에서 1회 지급으로 취급한다 — 월 지급으로 잘못 보면 60배까지 부풀려진다. */
     public boolean countsTowardCash() {
         return this != NON_CASH;
     }

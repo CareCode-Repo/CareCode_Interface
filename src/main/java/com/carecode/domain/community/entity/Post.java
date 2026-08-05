@@ -12,9 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 커뮤니티 게시글 엔티티
- */
+/** 커뮤니티 게시글 엔티티 */
 @Entity
 @Table(name = "TBL_POST")
 @Getter
@@ -99,77 +97,59 @@ public class Post {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    
 
     // 게시글에 댓글 추가
-
     public void addComment(Comment comment) {
         comments.add(comment);
         comment.setPost(this);
         this.commentCount = comments.size();
     }
-    
 
     // 게시글에서 댓글 제거
-
     public void removeComment(Comment comment) {
         comments.remove(comment);
         comment.setPost(null);
         this.commentCount = comments.size();
     }
-    
 
     // 조회수 증가
-
     public void incrementViewCount() {
         this.viewCount++;
     }
-    
 
     // 좋아요 수 증가
-
     public void incrementLikeCount() {
         this.likeCount++;
     }
-    
 
     // 좋아요 수 감소
-
     public void decrementLikeCount() {
         if (this.likeCount > 0) {
             this.likeCount--;
         }
     }
-    
 
     // 게시글 상태 변경
-
     public void updateStatus(PostStatus status) {
         this.status = status;
         if (status == PostStatus.DELETED) {
             this.isActive = false;
         }
     }
-    
 
     // 태그 추가
-
     public void addTag(Tag tag) {
         if (!tags.contains(tag)) {
             tags.add(tag);
         }
     }
-    
 
     // 태그 제거
-
     public void removeTag(Tag tag) {
         tags.remove(tag);
     }
-    
 
     // 모든 태그 제거
-
     public void clearTags() {
         tags.clear();
     }

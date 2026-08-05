@@ -9,9 +9,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * 예약 목록 조회 요청
- */
+/** 예약 목록 조회 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

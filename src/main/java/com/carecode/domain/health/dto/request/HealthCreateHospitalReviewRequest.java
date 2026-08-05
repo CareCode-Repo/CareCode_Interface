@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 병원 리뷰 작성 요청
- */
+/** 병원 리뷰 작성 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

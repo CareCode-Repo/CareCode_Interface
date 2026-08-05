@@ -8,12 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * 동의 이력.
- *
- * <p>개인정보보호법상 "언제, 어떤 버전의 약관에, 무엇을 동의했는지" 를 입증할 수 있어야 한다.
- * 따라서 현재 상태를 덮어쓰지 않고 동의·철회를 각각 새 행으로 남긴다(append-only).
- */
+/** 동의 이력. 개인정보보호법상 "언제, 어떤 버전의 약관에, 무엇을 동의했는지" 를 입증할 수 있어야 한다 */
 @Entity
 @Table(
     name = "TBL_USER_CONSENT",

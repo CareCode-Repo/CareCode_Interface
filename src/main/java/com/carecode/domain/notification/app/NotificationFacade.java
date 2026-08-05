@@ -108,9 +108,7 @@ public class NotificationFacade {
         preferenceService.registerPushToken(userId, request);
     }
 
-
     // 알림 설정 수정
-
     @Transactional
     public void updateSettings(String userId, NotificationUpdateSettingsRequest request) {
         preferenceService.updateSettings(userId, request);
@@ -144,37 +142,28 @@ public class NotificationFacade {
         return notificationService.getNotificationCountByReadStatus(user.getId(), isRead);
     }
 
-
     // 테스트 알림 발송
-
     @Transactional
     public void sendTestNotification(String userId, NotificationSendTestRequest request) {
         notificationService.sendTestNotification(userId, request);
     }
 
-
     // 알림 통계 조회
-
     @Transactional(readOnly = true)
     public NotificationStatsResponse getNotificationStats(String userId) {
         return notificationService.getNotificationStats(userId);
     }
 
-
     // 알림 템플릿 조회
-
     @Transactional(readOnly = true)
     public List<NotificationTemplateResponse> getNotificationTemplates(String type) {
         return notificationService.getNotificationTemplates(type);
     }
 
-
     // 알림 전송 상태 조회
-
     @Transactional(readOnly = true)
     public NotificationDeliveryStatusResponse getDeliveryStatus(Long notificationId, String actorUserId) {
         return notificationService.getDeliveryStatus(notificationId, actorUserId);
     }
 }
-
 

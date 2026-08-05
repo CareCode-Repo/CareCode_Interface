@@ -9,9 +9,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * 지식베이스 응답
- */
+/** 지식베이스 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

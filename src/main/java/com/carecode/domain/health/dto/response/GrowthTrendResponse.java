@@ -8,9 +8,7 @@ import lombok.Setter;
 
 import java.util.List;
 
-/**
- * 성장 추이 응답
- */
+/** 성장 추이 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

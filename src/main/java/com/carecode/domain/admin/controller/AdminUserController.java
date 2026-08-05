@@ -18,11 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
-/**
- * 어드민 사용자 관리 API.
- *
- * <p>접근 제어는 SecurityConfig 의 {@code /api/admin/**} → hasRole("ADMIN") 규칙이 담당한다.
- */
+/** 어드민 사용자 관리 API. 접근 제어는 SecurityConfig 의 /api/admin/** → hasRole("ADMIN") 규칙이 담당한다. */
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
@@ -45,7 +41,7 @@ public class AdminUserController {
     }
 
     @PatchMapping("/{id}")
-    @Operation(summary = "사용자 정보 수정", description = "이름·연락처·역할·활성 상태만 변경할 수 있습니다.")
+    @Operation(summary = "사용자 정보 수정", description = "이름·연락처·역할·활성 상태만 변경할 수 있습니다")
     @Transactional
     public ResponseEntity<AdminUserResponse> update(@PathVariable Long id,
                                                     @Valid @RequestBody AdminUserUpdateRequest request) {
@@ -69,7 +65,7 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "사용자 탈퇴 처리", description = "물리 삭제 대신 soft delete 로 비활성화합니다.")
+    @Operation(summary = "사용자 탈퇴 처리", description = "물리 삭제 대신 soft delete 로 비활성화")
     @Transactional
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         User user = findUser(id);

@@ -8,9 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * 정책 북마크 응답
- */
+/** 정책 북마크 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

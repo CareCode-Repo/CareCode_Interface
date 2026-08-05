@@ -7,9 +7,7 @@ import com.carecode.domain.health.dto.response.HealthRecordResponse;
 import com.carecode.domain.health.entity.HealthRecord;
 import org.springframework.stereotype.Component;
 
-/**
- * HealthRecord 변환용 공통 매퍼
- */
+/** HealthRecord 변환용 공통 매퍼 */
 @Component
 public class HealthRecordMapper implements RequestMapper<HealthCreateHealthRecordRequest, HealthRecord>, ResponseMapper<HealthRecord, HealthRecordResponse> {
 
@@ -62,5 +60,4 @@ public class HealthRecordMapper implements RequestMapper<HealthCreateHealthRecor
                 .build();
     }
 }
-
 

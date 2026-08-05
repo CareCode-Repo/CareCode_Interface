@@ -11,20 +11,15 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 알림 템플릿 서비스
- * 공통 알림 템플릿을 관리하고 제공
- */
+/** 알림 템플릿 서비스 공통 알림 템플릿을 관리하고 제공 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationTemplateService {
     
     private final NotificationStrategyFactory strategyFactory;
-    
 
     // 시스템 업데이트 알림 템플릿
-
     public NotificationCreateRequest createSystemUpdateTemplate(User user, String version, String features) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -34,10 +29,8 @@ public class NotificationTemplateService {
                 .priority("NORMAL")
                 .build();
     }
-    
 
     // 정책 변경 알림 템플릿
-
     public NotificationCreateRequest createPolicyChangeTemplate(User user, String policyName, String changeDetails) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -47,10 +40,8 @@ public class NotificationTemplateService {
                 .priority("HIGH")
                 .build();
     }
-    
 
     // 커뮤니티 활동 알림 템플릿
-
     public NotificationCreateRequest createCommunityActivityTemplate(User user, String activityType, String content) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -60,10 +51,8 @@ public class NotificationTemplateService {
                 .priority("LOW")
                 .build();
     }
-    
 
     // 건강 기록 알림 템플릿
-
     public NotificationCreateRequest createHealthRecordTemplate(User user, String childName, String recordType) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -73,10 +62,8 @@ public class NotificationTemplateService {
                 .priority("NORMAL")
                 .build();
     }
-    
 
     // 예방접종 알림 템플릿
-
     public NotificationCreateRequest createVaccinationReminderTemplate(User user, String childName, String vaccineName, String dueDate) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -86,10 +73,8 @@ public class NotificationTemplateService {
                 .priority("HIGH")
                 .build();
     }
-    
 
     // 시설 추천 알림 템플릿
-
     public NotificationCreateRequest createFacilityRecommendationTemplate(User user, String facilityName, String reason) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -99,10 +84,8 @@ public class NotificationTemplateService {
                 .priority("NORMAL")
                 .build();
     }
-    
 
     // 챗봇 응답 알림 템플릿
-
     public NotificationCreateRequest createChatbotResponseTemplate(User user, String question, String answer) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -112,10 +95,8 @@ public class NotificationTemplateService {
                 .priority("LOW")
                 .build();
     }
-    
 
     // 긴급 알림 템플릿
-
     public NotificationCreateRequest createEmergencyTemplate(User user, String emergencyType, String details) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -125,10 +106,8 @@ public class NotificationTemplateService {
                 .priority("HIGH")
                 .build();
     }
-    
 
     // 사용자 정의 알림 템플릿 생성
-
     public NotificationCreateRequest createCustomTemplate(User user, String type, String title, String message, String priority) {
         return NotificationCreateRequest.builder()
                 .userId(user.getUserId())
@@ -138,10 +117,8 @@ public class NotificationTemplateService {
                 .priority(priority)
                 .build();
     }
-    
 
     // 템플릿 유효성 검사
-
     public boolean validateTemplate(NotificationCreateRequest template) {
         if (template == null) return false;
         
@@ -169,10 +146,8 @@ public class NotificationTemplateService {
         
         return true;
     }
-    
 
     // 템플릿 변수 치환
-
     public String replaceTemplateVariables(String template, Map<String, String> variables) {
         String result = template;
         
@@ -182,10 +157,8 @@ public class NotificationTemplateService {
         
         return result;
     }
-    
 
     // 기본 변수 맵 생성
-
     public Map<String, String> createDefaultVariables(User user) {
         Map<String, String> variables = new HashMap<>();
         variables.put("userName", user.getName());

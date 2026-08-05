@@ -3,10 +3,7 @@ package com.carecode.core.exception;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-/**
- * 에러 코드 정의
- * 도메인별로 그룹화하여 관리
- */
+/** 에러 코드 정의 도메인별로 그룹화하여 관리 */
 @Getter
 public enum ErrorCode {
     

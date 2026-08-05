@@ -11,10 +11,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 육아 시설 엔티티
- * 어린이집, 유치원 등 육아 관련 시설 정보를 관리
- */
+/** 육아 시설 엔티티 어린이집, 유치원 등 육아 관련 시설 정보를 관리 */
 @Entity
 @Table(name = "TBL_CARE_FACILITIES")
 @Getter

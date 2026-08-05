@@ -8,9 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * 사용자 활동 통계 응답
- */
+/** 사용자 활동 통계 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

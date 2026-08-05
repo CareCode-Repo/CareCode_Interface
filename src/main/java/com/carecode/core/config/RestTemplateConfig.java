@@ -5,10 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * RestTemplate 설정
- * 공공데이터 API 클라이언트에서 사용할 RestTemplate을 설정
- */
+/** RestTemplate 설정 */
 @Configuration
 public class RestTemplateConfig {
 

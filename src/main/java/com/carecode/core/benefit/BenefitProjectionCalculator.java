@@ -3,10 +3,7 @@ package com.carecode.core.benefit;
 import com.carecode.domain.policy.entity.Policy;
 import org.springframework.stereotype.Component;
 
-/**
- * 아이의 현재 월령과 전망 기간으로 정책 하나의 예상 수령액을 계산한다.
- * 부풀리면 제품 신뢰가 끝나므로, 판별이 애매하면 항상 적게 잡는다.
- */
+/** 아이의 현재 월령과 전망 기간으로 정책 하나의 예상 수령액을 계산한다. */
 @Component
 public class BenefitProjectionCalculator {
 
@@ -22,10 +19,6 @@ public class BenefitProjectionCalculator {
         }
     }
 
-    /**
-     * @param currentAgeMonths 아이의 현재 월령
-     * @param horizonMonths    앞으로 몇 개월을 볼 것인지
-     */
     public Projection project(Policy policy, int currentAgeMonths, int horizonMonths) {
         BenefitPaymentType type = BenefitPaymentType.resolve(policy.getBenefitType());
 
@@ -62,10 +55,7 @@ public class BenefitProjectionCalculator {
         return Math.min(eligibleMonths, max);
     }
 
-    /**
-     * 전망 구간 [현재월령, 현재월령+기간) 과 정책 대상 구간 [min, max] 의 겹치는 개월 수.
-     * 연령 조건이 없는 정책은 기간 내내 대상으로 본다.
-     */
+    /** 전망 구간 [현재월령, 현재월령+기간) 과 정책 대상 구간 [min, max] 의 겹치는 개월 수. 연령 조건이 없는 정책은 기간 내내 대상으로 본다. */
     private int countEligibleMonths(Policy policy, int currentAgeMonths, int horizonMonths) {
         if (horizonMonths <= 0) {
             return 0;

@@ -9,12 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 시스템이 발생시키는 알림 생성 경로.
- *
- * <p>{@link NotificationService#createNotification} 은 "본인이 본인에게" 만드는 사용자 API 라
- * 배치·스케줄러가 쓸 수 없다. 여기서는 액터 검증 없이 대상 사용자에게 직접 알림을 만든다.
- */
+/** 시스템이 발생시키는 알림 생성 경로. NotificationService#createNotification 은 "본인이 본인에게" 만드는 사용자 API 라 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -23,11 +18,7 @@ public class NotificationCreationService {
     private final NotificationRepository notificationRepository;
     private final NotificationDispatcher notificationDispatcher;
 
-    /**
-     * 알림을 저장하고 사용자 설정 채널로 발송한다.
-     *
-     * @return 저장된 알림
-     */
+    /** 알림을 저장하고 사용자 설정 채널로 발송한다. */
     @Transactional
     public Notification createAndSend(User recipient,
                                       Notification.NotificationType type,

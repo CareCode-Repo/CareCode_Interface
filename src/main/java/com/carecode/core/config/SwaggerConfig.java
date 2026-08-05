@@ -14,9 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Swagger/OpenAPI 3 설정
- */
+/** Swagger/OpenAPI 3 설정 */
 @Configuration
 public class SwaggerConfig {
 
@@ -60,10 +58,8 @@ public class SwaggerConfig {
                                 .scheme("basic")
                                 .description("기본 인증 정보를 입력하세요")));
     }
-    
 
     // 환경별 서버 목록 생성
-
     private List<Server> createServerList() {
         List<Server> servers = new ArrayList<>();
         

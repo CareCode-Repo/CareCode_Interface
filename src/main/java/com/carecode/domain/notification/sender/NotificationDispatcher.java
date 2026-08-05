@@ -13,12 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * 알림을 사용자 설정에 맞는 채널로 실제 발송한다.
- *
- * <p>이전에는 알림을 DB 에 저장만 하고 {@code deliveryStatus="SENT"} 를 하드코딩해서,
- * 채널 설정·디바이스 토큰을 모아두고도 실제로는 아무데도 보내지 않았다.
- */
+/** 알림을 사용자 설정에 맞는 채널로 실제 발송한다. */
 @Slf4j
 @Component
 public class NotificationDispatcher {
@@ -36,14 +31,7 @@ public class NotificationDispatcher {
         log.info("알림 발송 채널 등록: {}", senders.keySet());
     }
 
-    /**
-     * 저장된 알림을 사용자 설정 채널로 발송한다.
-     *
-     * <p>요청 스레드를 막지 않도록 비동기로 실행한다. 발송 실패는 로그로 남기고
-     * 다른 채널 발송을 계속한다.
-     *
-     * @return 하나 이상의 채널로 발송에 성공했는지 여부
-     */
+    /** 저장된 알림을 사용자 설정 채널로 발송한다. */
     @Async("notificationExecutor")
     public void dispatchAsync(Notification notification) {
         dispatch(notification);
@@ -94,9 +82,7 @@ public class NotificationDispatcher {
         return anySent;
     }
 
-    /**
-     * 채널 사용 여부. 사용자 설정이 없으면 인앱과 푸시를 기본으로 켠다.
-     */
+    /** 채널 사용 여부. 사용자 설정이 없으면 인앱과 푸시를 기본으로 켠다. */
     private boolean isChannelEnabled(NotificationPreference preference, NotificationChannelType channel) {
         if (preference == null) {
             return channel == NotificationChannelType.IN_APP || channel == NotificationChannelType.PUSH;

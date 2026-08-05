@@ -32,10 +32,7 @@ import java.util.List;
 import com.carecode.core.handler.ApiSuccess;
 import java.util.Date;
 
-/**
- * 육아 정책 API 컨트롤러
- * 정부 육아 정책 정보 제공 및 검색 서비스
- */
+/** 육아 정책 API 컨트롤러 정부 육아 정책 정보 제공 및 검색 서비스 */
 @RestController
 @RequestMapping("/policies")
 @RequiredArgsConstructor
@@ -49,7 +46,7 @@ public class PolicyController extends BaseController {
     // 전체 정책 목록 조회
     @GetMapping
     @LogExecutionTime
-    @Operation(summary = "전체 정책 목록 조회", description = "등록된 모든 육아 정책 목록을 조회합니다.")
+    @Operation(summary = "전체 정책 목록 조회", description = "등록된 모든 육아 정책 목록 조회")
     public ResponseEntity<List<PolicyDto>> getAllPolicies(
             @Parameter(description = "페이지 번호 (0부터)") @RequestParam(required = false) Integer page,
             @Parameter(description = "페이지 크기 (최대 200)") @RequestParam(required = false) Integer size) {
@@ -62,7 +59,7 @@ public class PolicyController extends BaseController {
     // 정책 상세 정보 조회
     @GetMapping("/{policyId}")
     @LogExecutionTime
-    @Operation(summary = "정책 상세 조회", description = "정책 ID로 특정 육아 정책의 상세 정보를 조회합니다.")
+    @Operation(summary = "정책 상세 조회", description = "정책 ID로 특정 육아 정책의 상세 정보 조회")
     public ResponseEntity<PolicyDto> getPolicy(
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
         log.info("정책 상세 조회: 정책ID={}", policyId);
@@ -79,7 +76,7 @@ public class PolicyController extends BaseController {
     // 정책 검색 (페이징)
     @PostMapping("/search")
     @LogExecutionTime
-    @Operation(summary = "정책 검색", description = "다양한 조건으로 육아 정책을 검색합니다.")
+    @Operation(summary = "정책 검색", description = "다양한 조건으로 육아 정책 검색")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "검색 성공",
             content = @Content(schema = @Schema(implementation = PolicyListResponse.class))),
@@ -103,7 +100,7 @@ public class PolicyController extends BaseController {
     // 카테고리별 정책 조회
     @GetMapping("/category/{category}")
     @LogExecutionTime
-    @Operation(summary = "카테고리별 정책 조회", description = "특정 카테고리의 육아 정책 목록을 조회합니다.")
+    @Operation(summary = "카테고리별 정책 조회", description = "특정 카테고리의 육아 정책 목록 조회")
     public ResponseEntity<List<PolicyDto>> getPoliciesByCategory(@Parameter(description = "정책 카테고리", required = true) @PathVariable String category) {
         log.info("카테고리별 정책 조회: 카테고리={}", category);
 
@@ -120,7 +117,7 @@ public class PolicyController extends BaseController {
     @GetMapping("/location/{location}")
     @LogExecutionTime
     @ValidateLocation
-    @Operation(summary = "지역별 정책 조회", description = "특정 지역의 육아 정책 목록을 조회합니다.")
+    @Operation(summary = "지역별 정책 조회", description = "특정 지역의 육아 정책 목록 조회")
     public ResponseEntity<List<PolicyDto>> getPoliciesByLocation(
             @Parameter(description = "지역명", required = true) @PathVariable String location) {
         log.info("지역별 정책 조회: 지역={}", location);
@@ -137,7 +134,7 @@ public class PolicyController extends BaseController {
     // 연령대별 정책 조회
     @GetMapping("/age")
     @LogExecutionTime
-    @Operation(summary = "연령대별 정책 조회", description = "월령 범위에 해당하는 정책을 조회합니다.")
+    @Operation(summary = "연령대별 정책 조회", description = "월령 범위에 해당하는 정책 조회")
     public ResponseEntity<List<PolicyDto>> getPoliciesByAgeRange(
             @Parameter(description = "최소 월령", example = "0", required = true) @RequestParam Integer minAge,
             @Parameter(description = "최대 월령", example = "71", required = true) @RequestParam Integer maxAge) {
@@ -155,7 +152,7 @@ public class PolicyController extends BaseController {
     // 인기 정책 조회
     @GetMapping("/popular")
     @LogExecutionTime
-    @Operation(summary = "인기 정책 조회", description = "인기 있는 육아 정책 목록을 조회합니다.")
+    @Operation(summary = "인기 정책 조회", description = "인기 있는 육아 정책 목록 조회")
     public ResponseEntity<List<PolicyDto>> getPopularPolicies(@Parameter(description = "조회할 정책 수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
         log.info("인기 정책 조회: 제한={}", limit);
 
@@ -171,7 +168,7 @@ public class PolicyController extends BaseController {
     // 최신 정책 조회
     @GetMapping("/latest")
     @LogExecutionTime
-    @Operation(summary = "최신 정책 조회", description = "최근 등록된 육아 정책 목록을 조회합니다.")
+    @Operation(summary = "최신 정책 조회", description = "최근 등록된 육아 정책 목록 조회")
     public ResponseEntity<List<PolicyDto>> getLatestPolicies(@Parameter(description = "조회할 정책 수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
         log.info("최신 정책 조회: 제한={}", limit);
 
@@ -187,7 +184,7 @@ public class PolicyController extends BaseController {
     // 정책 조회수 증가
     @PostMapping("/{policyId}/view")
     @LogExecutionTime
-    @Operation(summary = "정책 조회수 증가", description = "특정 정책의 조회수를 증가시킵니다.")
+    @Operation(summary = "정책 조회수 증가", description = "특정 정책의 조회수를 증가시킵니다")
     public ResponseEntity<ApiSuccess> incrementViewCount(@Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
         log.info("정책 조회수 증가: 정책ID={}", policyId);
         
@@ -203,7 +200,7 @@ public class PolicyController extends BaseController {
     // 정책 카테고리 목록 조회
     @GetMapping("/categories")
     @LogExecutionTime
-    @Operation(summary = "정책 카테고리 목록 조회", description = "사용 가능한 정책 카테고리 목록을 조회합니다.")
+    @Operation(summary = "정책 카테고리 목록 조회")
     public ResponseEntity<List<String>> getPolicyCategories() {
         List<String> categories = policyFacade.getPolicyCategories();
 
@@ -213,7 +210,7 @@ public class PolicyController extends BaseController {
     // 정책 통계 조회
     @GetMapping("/statistics")
     @LogExecutionTime
-    @Operation(summary = "정책 통계 조회", description = "육아 정책 관련 통계 정보를 조회합니다.")
+    @Operation(summary = "정책 통계 조회", description = "육아 정책 관련 통계 정보 조회")
     public ResponseEntity<PolicyStatsSimpleResponse> getPolicyStatistics() {
         PolicyStatsSimpleResponse stats = policyFacade.getPolicyStats();
 
@@ -223,7 +220,7 @@ public class PolicyController extends BaseController {
     // 아이 연령별 정책 조회
     @GetMapping("/child-age")
     @LogExecutionTime
-    @Operation(summary = "아이 연령별 정책 조회", description = "해당 월령의 아이가 받을 수 있는 정책을 조회합니다.")
+    @Operation(summary = "아이 연령별 정책 조회", description = "해당 월령의 아이가 받을 수 있는 정책 조회")
     public ResponseEntity<List<PolicyDto>> getPoliciesByChildAge(
             @Parameter(description = "아이 월령", example = "24", required = true) @RequestParam Integer childAge) {
         List<PolicyDto> policies = policyFacade.getPoliciesByChildAge(childAge);
@@ -234,7 +231,7 @@ public class PolicyController extends BaseController {
     // 신청 기간이 유효한 정책 조회
     @GetMapping("/active")
     @LogExecutionTime
-    @Operation(summary = "신청 기간이 유효한 정책 조회", description = "현재 신청 기간 내에 있는 정책을 조회합니다.")
+    @Operation(summary = "신청 기간이 유효한 정책 조회", description = "현재 신청 기간 내에 있는 정책 조회")
     public ResponseEntity<List<PolicyDto>> getActivePoliciesByDate() {
         List<PolicyDto> policies = policyFacade.getActivePoliciesByDate();
 
@@ -243,7 +240,7 @@ public class PolicyController extends BaseController {
 
     @PostMapping("/{policyId}/bookmarks")
     @LogExecutionTime
-    @Operation(summary = "정책 북마크 추가", description = "현재 로그인한 사용자의 정책 북마크를 추가합니다.")
+    @Operation(summary = "정책 북마크 추가", description = "현재 로그인한 사용자의 정책 북마크 추가")
     public ResponseEntity<PolicyBookmarkResponse> addBookmark(
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
         PolicyBookmarkResponse response = policyFacade.addBookmark(getAuthenticatedUserCode(), policyId);
@@ -252,14 +249,14 @@ public class PolicyController extends BaseController {
 
     @GetMapping("/bookmarks")
     @LogExecutionTime
-    @Operation(summary = "정책 북마크 목록", description = "현재 로그인한 사용자의 정책 북마크 목록을 조회합니다.")
+    @Operation(summary = "정책 북마크 목록", description = "현재 로그인한 사용자의 정책 북마크 목록 조회")
     public ResponseEntity<List<PolicyBookmarkResponse>> getBookmarks() {
         return ResponseEntity.ok(policyFacade.getBookmarks(getAuthenticatedUserCode()));
     }
 
     @DeleteMapping("/{policyId}/bookmarks")
     @LogExecutionTime
-    @Operation(summary = "정책 북마크 삭제", description = "현재 로그인한 사용자의 정책 북마크를 삭제합니다.")
+    @Operation(summary = "정책 북마크 삭제", description = "현재 로그인한 사용자의 정책 북마크 삭제")
     public ResponseEntity<ApiSuccess> removeBookmark(
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
         policyFacade.removeBookmark(getAuthenticatedUserCode(), policyId);
@@ -269,7 +266,7 @@ public class PolicyController extends BaseController {
     // 개인화 정책 추천
     @GetMapping("/recommendations")
     @LogExecutionTime
-    @Operation(summary = "맞춤 정책 추천", description = "자녀 월령과 거주지에 맞는 정책을 추천합니다.")
+    @Operation(summary = "맞춤 정책 추천", description = "자녀 월령과 거주지에 맞는 정책을 추천")
     public ResponseEntity<List<PersonalizedPolicyResponse>> getRecommendations(
             @Parameter(description = "추천 개수", example = "10") @RequestParam(defaultValue = "10") Integer limit) {
         return ResponseEntity.ok(policyFacade.recommendPolicies(PageRequestUtil.normalizeSize(limit)));
@@ -278,7 +275,7 @@ public class PolicyController extends BaseController {
     // 놓친 지원금 발굴
     @GetMapping("/missed-benefits")
     @LogExecutionTime
-    @Operation(summary = "놓친 지원금 조회", description = "자녀가 대상이었으나 지나간 지원금과 소급 가능 여부를 조회합니다.")
+    @Operation(summary = "놓친 지원금 조회", description = "자녀가 대상이었으나 지나간 지원금과 소급 가능 여부 조회")
     public ResponseEntity<MissedBenefitSummaryResponse> getMissedBenefits() {
         return ResponseEntity.ok(policyFacade.findMissedBenefits());
     }
@@ -286,7 +283,7 @@ public class PolicyController extends BaseController {
     // 거주지별 지원금 비교
     @GetMapping("/regional-comparison")
     @LogExecutionTime
-    @Operation(summary = "거주지별 지원금 비교", description = "지역별 예상 수령액을 계산해 현재 거주지와 비교합니다.")
+    @Operation(summary = "거주지별 지원금 비교", description = "지역별 예상 수령액을 계산해 현재 거주지와 비교")
     public ResponseEntity<RegionalBenefitComparisonResponse> compareRegionalBenefits(
             @Parameter(description = "자녀 ID (미지정 시 최근 등록 자녀)") @RequestParam(required = false) Long childId,
             @Parameter(description = "전망 기간(년)", example = "5") @RequestParam(required = false) Integer years,

@@ -16,9 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 개인정보 관련 API: 동의 관리, 내 데이터 열람, 회원 탈퇴.
- */
+/** 개인정보 관련 API: 동의 관리, 내 데이터 열람, 회원 탈퇴. */
 @RestController
 @RequestMapping("/users/privacy")
 @RequiredArgsConstructor
@@ -30,7 +28,7 @@ public class PrivacyController {
 
     @GetMapping("/consents")
     @LogExecutionTime
-    @Operation(summary = "동의 상태 조회", description = "항목별 현재 동의 여부와 동의한 약관 버전을 반환합니다.")
+    @Operation(summary = "동의 상태 조회", description = "항목별 현재 동의 여부와 동의한 약관 버전 반환")
     public ResponseEntity<ConsentStatusResponse> getConsents() {
         return ResponseEntity.ok(privacyService.getConsentStatus());
     }
@@ -38,7 +36,7 @@ public class PrivacyController {
     @PostMapping("/consents")
     @LogExecutionTime
     @Operation(summary = "동의/철회 기록",
-            description = "동의 이력은 덮어쓰지 않고 새 기록으로 남습니다.")
+            description = "동의 이력은 덮어쓰지 않고 새 기록으로 남습니다")
     public ResponseEntity<ConsentStatusResponse> updateConsent(
             @Valid @RequestBody ConsentUpdateRequest request,
             HttpServletRequest httpRequest) {
@@ -56,7 +54,7 @@ public class PrivacyController {
     @GetMapping("/export")
     @LogExecutionTime
     @Operation(summary = "내 데이터 내려받기",
-            description = "개인정보 열람권 행사를 위한 데이터 export. 인증 정보는 포함하지 않습니다.")
+            description = "개인정보 열람권 행사를 위한 데이터 export")
     public ResponseEntity<Map<String, Object>> exportMyData() {
         return ResponseEntity.ok(privacyService.exportMyData());
     }
@@ -64,7 +62,7 @@ public class PrivacyController {
     @DeleteMapping("/account")
     @LogExecutionTime
     @Operation(summary = "회원 탈퇴",
-            description = "개인 식별 정보를 익명화하고 계정을 비활성화합니다.")
+            description = "개인 식별 정보를 익명화하고 계정을 비활성화")
     public ResponseEntity<Void> deleteAccount() {
         privacyService.deleteMyAccount();
         return ResponseEntity.noContent().build();

@@ -12,9 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * 챗봇 메시지 리포지토리
- */
+/** 챗봇 메시지 리포지토리 */
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 

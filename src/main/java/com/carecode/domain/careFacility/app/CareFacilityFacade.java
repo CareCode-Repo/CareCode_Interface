@@ -142,8 +142,8 @@ public class CareFacilityFacade {
         return bookingService.getTodayBookingsByFacility(facilityId);
     }
 
-    // ==================== 고급 검색 기능 ====================
-
+    // ====================
+    // 고급 검색 기능 ====================
     @Transactional(readOnly = true)
     public List<CareFacilityInfo> recommendFacilitiesByChildAge(Integer childAge) {
         return careFacilityService.recommendFacilitiesByChildAge(childAge);

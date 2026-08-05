@@ -10,12 +10,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.nio.file.Paths;
 
-/**
- * 웹 계층 공통 설정.
- *
- * <p>{@link RateLimitInterceptor} 는 {@code @Component} 로 빈 등록만 되어 있고
- * 인터셉터 체인에는 연결되어 있지 않아 동작하지 않는 상태였다. 여기서 등록한다.
- */
+/** 웹 계층 공통 설정. RateLimitInterceptor 는 @Component 로 빈 등록만 되어 있고 인터셉터 체인에는 연결되어 있지 않아 동작하지 않는 상태였다 */
 @Configuration
 @RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -28,10 +23,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${app.storage.public-base-url:/files}")
     private String publicBaseUrl;
 
-    /**
-     * 업로드된 파일을 정적 리소스로 서빙한다.
-     * (S3 로 전환하면 이 매핑 대신 버킷 URL 을 그대로 쓰면 된다.)
-     */
+    /** 업로드된 파일을 정적 리소스로 서빙한다. (S3 로 전환하면 이 매핑 대신 버킷 URL 을 그대로 쓰면 된다.) */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String location = Paths.get(storageRoot).toAbsolutePath().normalize().toUri().toString();

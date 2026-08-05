@@ -23,4 +23,3 @@ public class HospitalMapper implements ResponseMapper<Hospital, HospitalInfoResp
     }
 }
 
-

@@ -16,9 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 사용자 엔티티
- */
+/** 사용자 엔티티 */
 @Entity
 @Table(name = "TBL_USER")
 @Getter

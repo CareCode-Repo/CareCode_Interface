@@ -6,9 +6,7 @@ import lombok.Getter;
 
 import java.time.LocalDate;
 
-/**
- * 예방접종 일정 응답.
- */
+/** 예방접종 일정 응답. */
 @Getter
 @Builder
 public class VaccinationScheduleResponse {

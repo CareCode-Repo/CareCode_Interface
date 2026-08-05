@@ -21,9 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 어드민 알림 관리 API.
- */
+/** 어드민 알림 관리 API. */
 @RestController
 @RequestMapping("/api/admin/notifications")
 @RequiredArgsConstructor
@@ -47,7 +45,7 @@ public class AdminNotificationController {
     }
 
     @PostMapping
-    @Operation(summary = "알림 발송", description = "특정 사용자에게 알림을 생성합니다.")
+    @Operation(summary = "알림 발송", description = "특정 사용자에게 알림 생성")
     @Transactional
     public ResponseEntity<NotificationInfoResponse> create(
             @Valid @RequestBody AdminNotificationCreateRequest request) {

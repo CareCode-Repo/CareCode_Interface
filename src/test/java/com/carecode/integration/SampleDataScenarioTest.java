@@ -35,10 +35,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-/**
- * 샘플 데이터를 넣고 신규 기능 3종이 실제로 값을 내는지 확인한다.
- * 공공데이터 연동 전에도 기능 전체가 살아 있는지 검증하기 위한 것이다.
- */
+/** 샘플 데이터를 넣고 신규 기능 3종이 실제로 값을 내는지 확인한다. */
 @SpringBootTest(
         classes = CareCodeApplication.class,
         properties = {

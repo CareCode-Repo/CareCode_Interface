@@ -8,9 +8,7 @@ import lombok.Setter;
 
 import java.util.List;
 
-/**
- * 페이지 응답
- */
+/** 페이지 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

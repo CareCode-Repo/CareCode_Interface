@@ -10,10 +10,7 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
-/**
- * 메서드 실행 시간 로깅을 위한 Aspect
- * @LogExecutionTime 어노테이션이 붙은 메서드의 실행 시간을 측정하고 로깅합니다.
- */
+/** 메서드 실행 시간 로깅을 위한 Aspect @LogExecutionTime 어노테이션이 붙은 메서드의 실행 시간을 측정하고 로깅합니다. */
 @Aspect
 @Component
 @Slf4j
@@ -73,10 +70,8 @@ public class LoggingAspect {
             MDC.remove("error");
         }
     }
-    
 
     // 메서드 인자를 문자열로 포맷팅
-
     private String formatArgs(Object[] args) {
         if (args == null || args.length == 0) {
             return "[]";

@@ -27,9 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * HealthService 단위 테스트
- */
+/** HealthService 단위 테스트 */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HealthService 테스트")
 class HealthServiceTest {

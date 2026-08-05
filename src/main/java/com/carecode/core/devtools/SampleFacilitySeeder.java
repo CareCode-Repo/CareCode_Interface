@@ -12,10 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
-/**
- * 입소 예측·인기도 분석을 확인하기 위한 샘플 시설과 정원 관측 이력.
- * 각 시설이 서로 다른 충원 패턴을 갖도록 해서 분석 결과가 갈리는지 볼 수 있게 한다.
- */
+/** 입소 예측·인기도 분석을 확인하기 위한 샘플 시설과 정원 관측 이력. 각 시설이 서로 다른 충원 패턴을 갖도록 해서 분석 결과가 갈리는지 볼 수 있게 한다. */
 @Slf4j
 @Component
 @RequiredArgsConstructor

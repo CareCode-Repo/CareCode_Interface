@@ -103,10 +103,7 @@ public class PolicyRecommendationService {
         return score;
     }
 
-    /**
-     * 소득·자녀수 요건을 확인한다.
-     * 소득 미입력 사용자를 탈락시키면 받을 수 있는 정책이 통째로 사라지므로, 안내만 붙이고 통과시킨다.
-     */
+    /** 소득·자녀수 요건을 확인한다. */
     private boolean meetsHouseholdConditions(Policy policy, User user, int childCount, List<String> reasons) {
         Integer minChildren = policy.getMinChildren();
         if (minChildren != null) {

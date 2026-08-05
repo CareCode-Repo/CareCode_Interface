@@ -13,9 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 챗봇 세션 리포지토리
- */
+/** 챗봇 세션 리포지토리 */
 @Repository
 public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> {
 

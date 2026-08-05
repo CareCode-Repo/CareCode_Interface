@@ -9,9 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-/**
- * 카카오 신규 사용자 역할 설정 요청 DTO
- */
+/** 카카오 신규 사용자 역할 설정 요청 DTO */
 @Getter
 @Setter
 @NoArgsConstructor

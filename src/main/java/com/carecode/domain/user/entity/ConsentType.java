@@ -1,11 +1,6 @@
 package com.carecode.domain.user.entity;
 
-/**
- * 동의 항목.
- *
- * <p>필수 항목은 미동의 시 서비스 이용이 불가하고, 선택 항목은 언제든 철회할 수 있다.
- * 아동 정보 수집은 보호자 동의가 별도로 필요하다.
- */
+/** 동의 항목. 필수 항목은 미동의 시 서비스 이용이 불가하고, 선택 항목은 언제든 철회할 수 있다. */
 public enum ConsentType {
 
     TERMS_OF_SERVICE("서비스 이용약관", true),

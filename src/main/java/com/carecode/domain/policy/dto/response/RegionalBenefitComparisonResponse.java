@@ -23,10 +23,7 @@ public class RegionalBenefitComparisonResponse {
     /** 총액 내림차순. */
     private List<RegionalBenefitResponse> rankings;
 
-    /**
-     * 데이터 신뢰 수준. 지자체 정책 수집이 불완전하면 실제와 차이가 날 수 있어 함께 노출한다.
-     * VERIFIED / ESTIMATED
-     */
+    /** 데이터 신뢰 수준. 지자체 정책 수집이 불완전하면 실제와 차이가 날 수 있어 함께 노출한다. */
     private String dataQuality;
 
     private List<String> disclaimers;

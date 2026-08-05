@@ -3,15 +3,7 @@ package com.carecode.domain.health.entity;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * 국가예방접종(NIP) 표준 일정.
- *
- * <p>각 백신의 회차별 접종 시기를 생후 개월 수로 정의한다.
- * 아이 등록 시 생년월일에 이 개월 수를 더해 접종 예정일을 계산한다.
- *
- * <p>주의: 접종 시기는 질병관리청 지침에 따라 바뀔 수 있다.
- * 여기 값은 표준 일정이며, 실제 접종은 의료진 판단을 따른다.
- */
+/** 국가예방접종(NIP) 표준 일정. 각 백신의 회차별 접종 시기를 생후 개월 수로 정의한다. */
 public enum VaccineType {
 
     BCG("BCG(결핵)", List.of(0)),
@@ -49,10 +41,6 @@ public enum VaccineType {
         return doseMonths.size();
     }
 
-    /**
-     * @param doseNumber 1부터 시작하는 회차
-     * @return 해당 회차의 접종 시기(생후 개월 수)
-     */
     public int getMonthsForDose(int doseNumber) {
         if (doseNumber < 1 || doseNumber > doseMonths.size()) {
             throw new IllegalArgumentException(

@@ -13,9 +13,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 어드민 신고 처리 API.
- */
+/** 어드민 신고 처리 API. */
 @RestController
 @RequestMapping("/api/admin/reports")
 @RequiredArgsConstructor
@@ -33,7 +31,7 @@ public class AdminReportController {
 
     @PatchMapping("/{reportId}")
     @Operation(summary = "신고 처리",
-            description = "ACCEPTED 로 처리하면 대상 게시글·댓글이 숨김 처리됩니다.")
+            description = "ACCEPTED 로 처리하면 대상 게시글·댓글이 숨김 처리")
     public ResponseEntity<ReportResponse> resolve(
             @PathVariable Long reportId,
             @Parameter(description = "처리 결과 (ACCEPTED 또는 REJECTED)", required = true)

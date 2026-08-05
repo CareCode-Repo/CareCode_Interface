@@ -18,10 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * JWT 토큰 서비스
- * Access Token과 Refresh Token 생성, 검증, 갱신을 담당
- */
+/** JWT 토큰 서비스 */
 @Slf4j
 @Service
 public class JwtService {
@@ -66,30 +63,22 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-
     // Access Token 생성
-
     public String generateAccessToken(String userId, String email, String role) {
         return generateToken(TOKEN_TYPE_ACCESS, userId, email, role, null, accessTokenExpiration);
     }
 
-
     // Access Token 생성 (name 포함)
-
     public String generateAccessToken(String userId, String email, String role, String name) {
         return generateToken(TOKEN_TYPE_ACCESS, userId, email, role, name, accessTokenExpiration);
     }
 
-
     // Refresh Token 생성
-
     public String generateRefreshToken(String userId, String email) {
         return generateToken(TOKEN_TYPE_REFRESH, userId, email, null, null, refreshTokenExpiration);
     }
 
-
     // 토큰 생성
-
     private String generateToken(String tokenType, String userId, String email, String role, String name, long expiration) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
@@ -115,66 +104,48 @@ public class JwtService {
                 .compact();
     }
 
-
     // 토큰에서 종류(access/refresh) 추출
-
     public String getTokenType(String token) {
         return getClaimFromToken(token, CLAIM_TOKEN_TYPE, String.class);
     }
 
-
     // 토큰에서 사용자 ID 추출
-
     public String getUserIdFromToken(String token) {
         return getClaimFromToken(token, "userId", String.class);
     }
 
-
     // 토큰에서 이메일 추출
-
     public String getEmailFromToken(String token) {
         return getClaimFromToken(token, "email", String.class);
     }
-    
 
     // 토큰에서 이메일 추출 (별칭 메서드)
-
     public String extractEmailFromToken(String token) {
         return getEmailFromToken(token);
     }
 
-
     // 토큰에서 역할 추출
-
     public String getRoleFromToken(String token) {
         return getClaimFromToken(token, "role", String.class);
     }
 
-
     // 토큰에서 이름 추출
-
     public String getNameFromToken(String token) {
         return getClaimFromToken(token, "name", String.class);
     }
 
-
     // 토큰에서 만료 시간 추출
-
     public Date getExpirationDateFromToken(String token) {
         return getClaimFromToken(token, Claims.EXPIRATION, Date.class);
     }
 
-
     // 토큰에서 특정 클레임 추출
-
     public <T> T getClaimFromToken(String token, String claimName, Class<T> requiredType) {
         final Claims claims = getAllClaimsFromToken(token);
         return claims.get(claimName, requiredType);
     }
 
-
     // 토큰에서 모든 클레임 추출
-
     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -183,9 +154,7 @@ public class JwtService {
                 .getBody();
     }
 
-
     // 토큰 만료 여부 확인
-
     public Boolean isTokenExpired(String token) {
         try {
             final Date expiration = getExpirationDateFromToken(token);
@@ -195,9 +164,7 @@ public class JwtService {
         }
     }
 
-
     // 토큰 유효성 검증
-
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -212,16 +179,12 @@ public class JwtService {
         }
     }
 
-
     // Access Token 전용 검증 - typ=access 인 토큰만 통과시킵니다.
-
     public boolean validateAccessToken(String token) {
         return validateTokenOfType(token, TOKEN_TYPE_ACCESS);
     }
 
-
     // Refresh Token 전용 검증 - typ=refresh 인 토큰만 통과시킵니다.
-
     public boolean validateRefreshToken(String token) {
         return validateTokenOfType(token, TOKEN_TYPE_REFRESH);
     }
@@ -243,9 +206,7 @@ public class JwtService {
         }
     }
 
-
     // 토큰 검증 및 정보 추출
-
     public TokenValidationResponse validateTokenAndExtractInfo(String token) {
         try {
             if (!validateToken(token)) {
@@ -275,9 +236,7 @@ public class JwtService {
         }
     }
 
-
     // 토큰 갱신
-
     public TokenDto refreshTokens(String refreshToken) {
         // Access Token 을 Refresh 엔드포인트로 재사용하는 것을 차단합니다.
         if (!validateRefreshToken(refreshToken)) {
@@ -305,9 +264,7 @@ public class JwtService {
                 .build();
     }
 
-
     // 토큰에서 Authorization 헤더 추출
-
     public String extractTokenFromAuthorizationHeader(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             return authorizationHeader.substring(7);

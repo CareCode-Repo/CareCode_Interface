@@ -34,4 +34,3 @@ public class CareFacilityMapper implements ResponseMapper<CareFacility, CareFaci
     }
 }
 
-

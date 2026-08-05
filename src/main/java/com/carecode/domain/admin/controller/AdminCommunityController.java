@@ -16,11 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 어드민 커뮤니티 관리 API.
- *
- * <p>관리자는 게시글을 대신 작성하지 않는다. 모더레이션(조회/삭제)만 제공한다.
- */
+/** 어드민 커뮤니티 관리 API. 관리자는 게시글을 대신 작성하지 않는다. 모더레이션(조회/삭제)만 제공한다. */
 @RestController
 @RequestMapping("/api/admin/community/posts")
 @RequiredArgsConstructor
@@ -44,7 +40,7 @@ public class AdminCommunityController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "게시글 삭제", description = "부적절한 게시글을 관리자 권한으로 삭제합니다.")
+    @Operation(summary = "게시글 삭제", description = "부적절한 게시글을 관리자 권한으로 삭제")
     @Transactional
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         postRepository.delete(findPost(id));

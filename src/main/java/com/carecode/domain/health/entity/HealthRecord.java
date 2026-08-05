@@ -14,9 +14,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 건강 기록 엔티티
- */
+/** 건강 기록 엔티티 */
 @Entity
 @Table(name = "TBL_HEALTH_RECORD")
 @Getter
@@ -135,28 +133,22 @@ public class HealthRecord {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    
 
     // 기록 완료 처리
-
     public void markAsCompleted() {
         this.isCompleted = true;
         this.status = RecordStatus.COMPLETED;
     }
-    
 
     // 기록 상태 업데이트
-
     public void updateStatus(RecordStatus status) {
         this.status = status;
         if (status == RecordStatus.COMPLETED) {
             this.isCompleted = true;
         }
     }
-    
 
     // 기록 내용 업데이트
-
     public void updateRecord(LocalDate recordDate,
                              Double height, Double weight, Double temperature,
                              String bloodPressure, Integer pulseRate, String notes) {
@@ -173,10 +165,8 @@ public class HealthRecord {
         this.pulseRate = pulseRate;
         this.notes = notes;
     }
-    
 
     // 기록 타입 Enum
-
     public enum RecordType {
         VACCINATION("예방접종"),
         CHECKUP("건강검진"),
@@ -197,10 +187,8 @@ public class HealthRecord {
             return displayName;
         }
     }
-    
 
     // 기록 상태 Enum
-
     public enum RecordStatus {
         SCHEDULED("예정"),
         IN_PROGRESS("진행중"),

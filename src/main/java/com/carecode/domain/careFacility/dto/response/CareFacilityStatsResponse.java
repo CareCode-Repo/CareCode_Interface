@@ -9,9 +9,7 @@ import lombok.Setter;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 보육시설 통계 응답
- */
+/** 보육시설 통계 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

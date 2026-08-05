@@ -10,9 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 챗봇 응답
- */
+/** 챗봇 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -15,11 +15,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 충원율 추이로 시설 인기도를 추정한다.
- * 평가인증은 대부분 최고등급이라 변별력이 없고 리뷰는 조작될 수 있지만,
- * 충원율은 공공데이터가 원천이라 시설이 개입할 수 없다.
- */
+/** 충원율 추이로 시설 인기도를 추정한다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor

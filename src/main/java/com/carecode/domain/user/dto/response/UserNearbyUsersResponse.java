@@ -8,9 +8,7 @@ import lombok.Setter;
 
 import java.util.List;
 
-/**
- * 위치 기반 사용자 응답
- */
+/** 위치 기반 사용자 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

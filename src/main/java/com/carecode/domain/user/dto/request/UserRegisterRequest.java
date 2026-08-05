@@ -13,9 +13,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-/**
- * 회원가입 요청
- */
+/** 회원가입 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

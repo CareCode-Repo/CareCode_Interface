@@ -1,9 +1,6 @@
 package com.carecode.core.exception;
 
-/**
- * 돌봄 시설을 찾을 수 없을 때 발생하는 예외
- * 하위 호환성을 위해 유지
- */
+/** 돌봄 시설을 찾을 수 없을 때 발생하는 예외 하위 호환성을 위해 유지 */
 public class CareFacilityNotFoundException extends CareCodeException {
     
     public CareFacilityNotFoundException(Long facilityId) {

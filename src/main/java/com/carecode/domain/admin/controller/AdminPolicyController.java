@@ -18,9 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 어드민 정책 관리 API.
- */
+/** 어드민 정책 관리 API. */
 @RestController
 @RequestMapping("/api/admin/policies")
 @RequiredArgsConstructor
@@ -45,13 +43,13 @@ public class AdminPolicyController {
     }
 
     @PostMapping
-    @Operation(summary = "정책 등록", description = "재배포 없이 새 정책을 추가합니다.")
+    @Operation(summary = "정책 등록", description = "재배포 없이 새 정책 추가")
     public ResponseEntity<PolicyDto> create(@Valid @RequestBody AdminPolicyRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(policyAdminService.create(request));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "정책 수정", description = "수정 시 해당 정책의 캐시가 무효화됩니다.")
+    @Operation(summary = "정책 수정", description = "수정 시 해당 정책의 캐시가 무효화")
     public ResponseEntity<PolicyDto> update(@PathVariable Long id,
                                             @Valid @RequestBody AdminPolicyRequest request) {
         return ResponseEntity.ok(policyAdminService.update(id, request));

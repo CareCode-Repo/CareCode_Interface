@@ -17,11 +17,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
 
-/**
- * 아이 정보 관리.
- *
- * <p>등록 시 표준 예방접종 일정을 함께 생성한다.
- */
+/** 아이 정보 관리. 등록 시 표준 예방접종 일정을 함께 생성한다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -84,10 +80,7 @@ public class ChildService {
         childRepository.delete(requireOwnedChild(childId));
     }
 
-    /**
-     * 아이 조회 + 소유권 검증.
-     * 남의 아이 정보에 접근하지 못하도록 보호자 본인 것만 반환한다.
-     */
+    /** 아이 조회 + 소유권 검증. 남의 아이 정보에 접근하지 못하도록 보호자 본인 것만 반환한다. */
     private Child requireOwnedChild(Long childId) {
         User parent = currentUserFacade.requireCurrentUser();
         Child child = childRepository.findById(childId)

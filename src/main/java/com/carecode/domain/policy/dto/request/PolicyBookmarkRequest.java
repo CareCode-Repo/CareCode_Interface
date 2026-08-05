@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 정책 북마크 요청
- */
+/** 정책 북마크 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

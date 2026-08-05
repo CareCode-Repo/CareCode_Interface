@@ -14,9 +14,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * 건강 기록 수정 요청
- */
+/** 건강 기록 수정 요청 */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -37,8 +35,8 @@ public class HealthUpdateHealthRecordRequest {
     private String hospitalName;
     private Boolean isCompleted;
 
-    // ==================== 측정값 ====================
-
+    // ====================
+    // 측정값 ====================
     @DecimalMin(value = "0.0", inclusive = false, message = "키는 0보다 커야 합니다")
     @DecimalMax(value = "250.0", message = "키는 250cm를 넘을 수 없습니다")
     private Double height; // cm

@@ -13,12 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Claude API 기반 챗봇 응답 생성기.
- *
- * <p>API 키가 없으면 비활성 상태로 동작하고, 호출부가 기존 룰 기반 응답으로 폴백한다.
- * 로컬/CI 환경에서 키 없이도 애플리케이션이 뜨도록 하기 위함이다.
- */
+/** Claude API 기반 챗봇 응답 생성기. API 키가 없으면 비활성 상태로 동작하고, 호출부가 기존 룰 기반 응답으로 폴백한다 */
 @Slf4j
 @Component
 public class ClaudeChatCompletionClient implements ChatCompletionClient {
@@ -91,10 +86,7 @@ public class ClaudeChatCompletionClient implements ChatCompletionClient {
         }
     }
 
-    /**
-     * 검색된 근거를 프롬프트에 넣는다.
-     * 근거가 없으면 그 사실을 명시해 모델이 없는 정보를 지어내지 않게 한다.
-     */
+    /** 검색된 근거를 프롬프트에 넣는다. 근거가 없으면 그 사실을 명시해 모델이 없는 정보를 지어내지 않게 한다. */
     private String buildUserPrompt(String userMessage, RetrievedContext context) {
         StringBuilder sb = new StringBuilder();
         sb.append("<참고자료>\n");

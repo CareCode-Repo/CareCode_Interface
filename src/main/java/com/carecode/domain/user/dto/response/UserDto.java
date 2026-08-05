@@ -10,9 +10,7 @@ import lombok.Builder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * 사용자 정보 전송 객체
- */
+/** 사용자 정보 전송 객체 */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,10 +22,7 @@ public class UserDto {
     private String userId;
     private String email;
 
-    /**
-     * 회원가입/수정 요청에서만 사용한다.
-     * WRITE_ONLY 로 두지 않으면 이 DTO 를 반환하는 모든 응답에 비밀번호 해시가 실려 나간다.
-     */
+    /** 회원가입/수정 요청에서만 사용한다. */
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String name;

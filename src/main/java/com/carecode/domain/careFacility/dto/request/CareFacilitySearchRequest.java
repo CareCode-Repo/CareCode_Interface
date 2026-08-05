@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 보육시설 검색 요청
- */
+/** 보육시설 검색 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -10,9 +10,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-/**
- * 아동 정보 생성 요청
- */
+/** 아동 정보 생성 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

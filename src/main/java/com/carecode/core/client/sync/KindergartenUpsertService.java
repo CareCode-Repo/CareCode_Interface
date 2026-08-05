@@ -88,10 +88,7 @@ public class KindergartenUpsertService {
         return isNew;
     }
 
-    /**
-     * 표준데이터는 고유 식별자를 주지 않는 경우가 많다.
-     * 이름+주소 해시를 코드로 쓰면 재동기화 때 같은 유치원이 중복 생성되지 않는다.
-     */
+    /** 표준데이터는 고유 식별자를 주지 않는 경우가 많다. */
     private String resolveCode(JsonNode row, String name, String address) {
         String external = text(row, "유치원코드", "kindrgrtnCode", "KINDER_CD");
         if (external != null) {

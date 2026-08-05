@@ -25,12 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-/**
- * 아이 성장 곡선.
- *
- * <p>기록된 키/몸무게를 WHO 성장 표준과 비교해 백분위를 함께 제공한다.
- * 기존 차트 API 는 측정값만 나열해서 "또래와 비교해 어떤지" 를 알 수 없었다.
- */
+/** 아이 성장 곡선. 기록된 키/몸무게를 WHO 성장 표준과 비교해 백분위를 함께 제공한다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor

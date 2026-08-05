@@ -2,18 +2,13 @@ package com.carecode.core.util;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * 위치 관련 유틸리티 클래스
- * 육아 서비스에서 위치 기반 검색 및 거리 계산에 활용
- */
+/** 위치 관련 유틸리티 클래스 육아 서비스에서 위치 기반 검색 및 거리 계산에 활용 */
 @Slf4j
 public class LocationUtil {
 
     private static final double EARTH_RADIUS = 6371; // 지구 반지름 (km)
 
-
     // 두 지점 간의 거리를 계산 (Haversine 공식)
-
     public static double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
@@ -27,26 +22,20 @@ public class LocationUtil {
         return EARTH_RADIUS * c;
     }
 
-
     // 주어진 반경 내에 있는지 확인
-
     public static boolean isWithinRadius(double centerLat, double centerLon, 
                                        double targetLat, double targetLon, double radiusKm) {
         double distance = calculateDistance(centerLat, centerLon, targetLat, targetLon);
         return distance <= radiusKm;
     }
 
-
     // 위도/경도 유효성 검사
-
     public static boolean isValidCoordinates(double latitude, double longitude) {
         return latitude >= -90 && latitude <= 90 && 
                longitude >= -180 && longitude <= 180;
     }
 
-
     // 지역 코드를 시/도로 변환
-
     public static String getRegionFromCode(String regionCode) {
         if (regionCode == null || regionCode.length() < 2) {
             return "알 수 없음";

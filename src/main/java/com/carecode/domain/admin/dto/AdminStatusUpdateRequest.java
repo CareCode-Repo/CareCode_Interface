@@ -5,9 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * 관리자용 예약 상태 변경 요청 DTO
- */
+/** 관리자용 예약 상태 변경 요청 DTO */
 @Data
 @Builder
 @NoArgsConstructor

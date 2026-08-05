@@ -20,13 +20,7 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-/**
- * 카카오 OAuth2 <strong>authorization_code</strong> 토큰 교환 및 프로필 조회.
- * <p>
- * 클라이언트 자격 증명은 {@code spring.security.oauth2.client.registration.kakao}에서 읽으며,
- * Spring Security의 OAuth2 Login 필터 체인은 사용하지 않습니다({@code SecurityConfig}에 {@code oauth2Login()} 없음).
- * 프론트엔드가 받은 {@code code}를 {@code /auth/kakao/login}으로 전달하는 REST 플로우만 활성화되어 있습니다.
- */
+/** 카카오 OAuth2 <strong>authorization_code</strong> 토큰 교환 및 프로필 조회 */
 @Component
 @Slf4j
 public class KakaoUtil {
@@ -49,9 +43,7 @@ public class KakaoUtil {
     private final ObjectMapper objectMapper = new ObjectMapper()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    /**
-     * 카카오 로그인 동의 화면 URL (프론트 리다이렉트용). {@link #redirectUri}는 카카오 개발자 콘솔에 등록된 값과 동일해야 합니다.
-     */
+    /** 카카오 로그인 동의 화면 URL (프론트 리다이렉트용). #redirectUri는 카카오 개발자 콘솔에 등록된 값과 동일해야 합니다. */
     public String buildAuthorizationUrl() {
         try {
             return String.format(
@@ -65,7 +57,6 @@ public class KakaoUtil {
     }
 
     // 카카오 액세스 토큰 요청
-
     public KakaoOAuthToken requestToken(String accessCode) {
         if (accessCode == null || accessCode.trim().isEmpty()) {
             throw new IllegalArgumentException("인증 코드가 비어있습니다.");
@@ -124,9 +115,7 @@ public class KakaoUtil {
         }
     }
 
-
     // 카카오 사용자 프로필 요청
-
     public KakaoProfile requestProfile(KakaoOAuthToken oAuthToken) {
         if (oAuthToken == null || oAuthToken.getAccess_token() == null) {
             throw new IllegalArgumentException("유효하지 않은 OAuth 토큰입니다.");

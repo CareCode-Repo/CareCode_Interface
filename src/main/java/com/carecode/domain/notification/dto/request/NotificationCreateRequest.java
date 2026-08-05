@@ -9,9 +9,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * 알림 생성 요청
- */
+/** 알림 생성 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -14,9 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * 육아 시설 예약 리포지토리
- */
+/** 육아 시설 예약 리포지토리 */
 @Repository
 public interface CareFacilityBookingRepository extends JpaRepository<CareFacilityBooking, Long> {
 
@@ -32,15 +30,7 @@ public interface CareFacilityBookingRepository extends JpaRepository<CareFacilit
                                                                   @Param("startDate") LocalDateTime startDate,
                                                                   @Param("endDate") LocalDateTime endDate);
 
-    /**
-     * 주어진 구간과 실제로 겹치는 유효 예약 수.
-     *
-     * <p>겹침 판정은 {@code 기존.start < 신규.end AND 기존.end > 신규.start} 이다.
-     * 시작 시각만 비교하면 09:00~18:00 종일 예약이 있어도 11:00 예약이 통과된다.
-     * 취소/거절된 예약은 자리를 차지하지 않으므로 제외한다.
-     *
-     * @param excludeBookingId 예약 수정 시 자기 자신을 충돌로 세지 않기 위한 제외 ID (신규 생성 시 null)
-     */
+    /** 주어진 구간과 실제로 겹치는 유효 예약 수. 겹침 판정은 기존.start < 신규.end AND 기존.end > 신규.start 이다 */
     // PESSIMISTIC_WRITE: 검사와 저장 사이에 다른 트랜잭션이 같은 구간을 예약하는 경쟁 조건을 막는다.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT COUNT(cb) FROM CareFacilityBooking cb " +
@@ -59,10 +49,7 @@ public interface CareFacilityBookingRepository extends JpaRepository<CareFacilit
     // 예약 타입별 예약 수 조회
     long countByBookingType(CareFacilityBooking.BookingType bookingType);
 
-    // 오늘 예약 목록 조회
-    // 주의: HQL 에 DATE(...) 함수는 없다. Hibernate 6 에서는 파싱 단계에서 실패해
-    // 리포지토리 빈 생성이 깨지고 애플리케이션이 기동되지 않는다.
-    // 범위 비교로 바꾸면 startTime 인덱스도 그대로 탈 수 있다.
+    // 오늘 예약 목록 조회 주의: HQL 에 DATE(...) 함수는 없다. Hibernate 6 에서는 파싱 단계에서 실패해 리포지토리 빈 생성이 깨지고 애플리케이션이
     @Query("SELECT cb FROM CareFacilityBooking cb " +
            "WHERE cb.startTime >= :dayStart AND cb.startTime < :dayEnd ORDER BY cb.startTime ASC")
     List<CareFacilityBooking> findBookingsBetween(@Param("dayStart") LocalDateTime dayStart,
@@ -123,13 +110,11 @@ public interface CareFacilityBookingRepository extends JpaRepository<CareFacilit
                                                   @Param("keyword") String keyword,
                                                   Pageable pageable);
 
-
     // 시설별 예약 통계
     @Query("SELECT cb.facility.id, cb.facility.name, COUNT(cb) FROM CareFacilityBooking cb GROUP BY cb.facility.id, cb.facility.name ORDER BY COUNT(cb) DESC")
     List<Object[]> getFacilityBookingStats();
 
-    // 일별 예약 수 통계
-    // DATE(...) 대신 HQL 표준인 cast(... as date) 를 쓴다. 파라미터 타입도 비교 대상과 맞춘다.
+    // 일별 예약 수 통계 DATE(...) 대신 HQL 표준인 cast(... as date) 를 쓴다. 파라미터 타입도 비교 대상과 맞춘다.
     @Query("SELECT cast(cb.startTime as date), COUNT(cb) FROM CareFacilityBooking cb " +
            "WHERE cb.startTime >= :startDate " +
            "GROUP BY cast(cb.startTime as date) ORDER BY cast(cb.startTime as date) DESC")

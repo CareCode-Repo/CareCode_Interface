@@ -8,25 +8,18 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-/**
- * 자녀 리포지토리 인터페이스
- */
+/** 자녀 리포지토리 인터페이스 */
 @Repository
 public interface ChildRepository extends JpaRepository<Child, Long> {
-    
 
     // 사용자별 자녀 목록 조회
-
     List<Child> findByUserIdOrderByCreatedAtDesc(Long userId);
-    
 
     // 연령 범위별 자녀 조회
-
     @Query("SELECT c FROM Child c WHERE c.user.id = :userId AND c.age >= :minAge AND c.age <= :maxAge")
     List<Child> findByUserIdAndAgeRange(@Param("userId") Long userId, 
                                        @Param("minAge") Integer minAge, 
                                        @Param("maxAge") Integer maxAge);
-    
 
     // 성별 자녀 조회
     List<Child> findByUserIdAndGender(Long userId, String gender);

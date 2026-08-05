@@ -6,12 +6,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * X-Forwarded-For 신뢰 정책에 대한 회귀 테스트.
- *
- * <p>과거에는 이 헤더를 무조건 신뢰해서, 헤더 값만 바꾸면
- * IP 기반 rate limit 을 무한히 우회할 수 있었다.
- */
+/** X-Forwarded-For 신뢰 정책에 대한 회귀 테스트. 과거에는 이 헤더를 무조건 신뢰해서. */
 @DisplayName("ClientIpResolver")
 class ClientIpResolverTest {
 

@@ -5,9 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * 예약 유형별 분포 DTO
- */
+/** 예약 유형별 분포 DTO */
 @Data
 @Builder
 @NoArgsConstructor

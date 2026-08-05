@@ -12,42 +12,29 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-/**
- * 커뮤니티 게시글 리포지토리 인터페이스
- */
+/** 커뮤니티 게시글 리포지토리 인터페이스 */
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-
     // 제목 또는 내용으로 검색
-
     @Query("SELECT p FROM Post p WHERE p.isActive = true AND (p.title LIKE %:keyword% OR p.content LIKE %:keyword%)")
     Page<Post> findByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
-
     // 인기 게시글 조회 (좋아요 순) - 페이징
-
     @Query("SELECT p FROM Post p WHERE p.isActive = true ORDER BY p.likeCount DESC, p.createdAt DESC")
     Page<Post> findPopularPosts(Pageable pageable);
 
-
     // 최신 게시글 조회 - 페이징
-
     @Query("SELECT p FROM Post p WHERE p.isActive = true ORDER BY p.createdAt DESC")
     Page<Post> findLatestPosts(Pageable pageable);
-    
-
 
     // 태그별 게시글 목록 조회
-
     @Query("SELECT p FROM Post p JOIN p.tags t WHERE t = :tag AND p.isActive = true")
     List<Post> findByTagsContaining(@Param("tag") Tag tag);
 
     long countByAuthorId(Long authorId);
 
-    /**
-     * 조회수를 DB 에서 원자적으로 증가시킨다 (lost update 방지).
-     */
+    /** 조회수를 DB 에서 원자적으로 증가시킨다 (lost update 방지). */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Post p SET p.viewCount = COALESCE(p.viewCount, 0) + 1 WHERE p.id = :postId")
     int incrementViewCount(@Param("postId") Long postId);

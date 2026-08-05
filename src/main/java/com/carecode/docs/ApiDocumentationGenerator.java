@@ -10,20 +10,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-/**
- * API 문서 생성기
- * 
- * 기능:
- * 1. Swagger JSON에서 상세한 API 문서 생성
- * 2. 파라미터, 요청/응답 예제, 데이터 모델 정보 포함
- * 3. 태그별 그룹화 및 구조화된 문서 생성
- */
+/** API 문서 생성기 기능: 1. Swagger JSON에서 상세한 API 문서 생성 2. 파라미터, 요청/응답 예제, 데이터 모델 정보 포함 3 */
 @Component
 public class ApiDocumentationGenerator {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
     // 메인 메서드 - 독립 실행용
-
     public static void main(String[] args) {
         if (args.length != 2) {
             System.err.println("사용법: java ApiDocumentationGenerator <swagger-url> <output-path>");
@@ -48,9 +40,7 @@ public class ApiDocumentationGenerator {
         }
     }
 
-
     // 상세한 API 문서 생성
-
     public void generateDetailedDocumentation(String swaggerUrl, String outputPath) throws IOException {
         // Swagger JSON 다운로드
         JsonNode swaggerJson = objectMapper.readTree(new URL(swaggerUrl));
@@ -62,9 +52,7 @@ public class ApiDocumentationGenerator {
         Files.write(Paths.get(outputPath), asciiDoc.getBytes());
     }
 
-
     // Swagger JSON을 파싱하여 상세한 AsciiDoc 생성
-
     private String generateDetailedAsciiDoc(JsonNode swaggerJson) {
         StringBuilder asciiDoc = new StringBuilder();
         
@@ -99,9 +87,7 @@ public class ApiDocumentationGenerator {
         return asciiDoc.toString();
     }
 
-
     // API 정보 생성
-
     private void generateApiInfo(StringBuilder asciiDoc, JsonNode swaggerJson) {
         asciiDoc.append("=== API 정보\n\n");
         
@@ -121,9 +107,7 @@ public class ApiDocumentationGenerator {
         asciiDoc.append("* **인증**: JWT Bearer Token\n\n");
     }
 
-
     // 인증 정보 생성
-
     private void generateAuthenticationInfo(StringBuilder asciiDoc) {
         asciiDoc.append("== 인증\n\n");
         asciiDoc.append("=== JWT 토큰\n\n");
@@ -134,9 +118,7 @@ public class ApiDocumentationGenerator {
         asciiDoc.append("----\n\n");
     }
 
-
     // API 엔드포인트 생성
-
     private void generateApiEndpoints(StringBuilder asciiDoc, JsonNode swaggerJson) {
         asciiDoc.append("== API 엔드포인트\n\n");
         
@@ -168,9 +150,7 @@ public class ApiDocumentationGenerator {
         }
     }
 
-
     // 데이터 모델 생성
-
     private void generateDataModels(StringBuilder asciiDoc, JsonNode swaggerJson) {
         asciiDoc.append("== 데이터 모델\n\n");
         
@@ -189,9 +169,7 @@ public class ApiDocumentationGenerator {
         }
     }
 
-
     // 응답 코드 생성
-
     private void generateResponseCodes(StringBuilder asciiDoc) {
         asciiDoc.append("== 응답 코드\n\n");
         asciiDoc.append("|코드|설명|\n");
@@ -205,9 +183,7 @@ public class ApiDocumentationGenerator {
         asciiDoc.append("|500|서버 오류|\n\n");
     }
 
-
     // 엔드포인트를 태그별로 그룹화
-
     private Map<String, List<Map.Entry<String, JsonNode>>> groupEndpointsByTag(JsonNode paths) {
         Map<String, List<Map.Entry<String, JsonNode>>> grouped = new LinkedHashMap<>();
         
@@ -236,9 +212,7 @@ public class ApiDocumentationGenerator {
         return grouped;
     }
 
-
     // 상세한 엔드포인트 문서 생성
-
     private void generateDetailedEndpointDocumentation(StringBuilder asciiDoc, String path, String method, JsonNode methodNode) {
         // 요약
         if (methodNode.has("summary")) {
@@ -260,9 +234,7 @@ public class ApiDocumentationGenerator {
         generateResponseInfo(asciiDoc, methodNode);
     }
 
-
     // HTTP 요청 예제 생성
-
     private void generateHttpRequestExample(StringBuilder asciiDoc, String path, String method, JsonNode methodNode) {
         asciiDoc.append("[source,http]\n");
         asciiDoc.append("----\n");
@@ -282,9 +254,7 @@ public class ApiDocumentationGenerator {
         asciiDoc.append("----\n\n");
     }
 
-
     // 파라미터 정보 생성
-
     private void generateParameterInfo(StringBuilder asciiDoc, JsonNode methodNode) {
         if (methodNode.has("parameters") && methodNode.get("parameters").isArray()) {
             asciiDoc.append("**파라미터:**\n\n");
@@ -319,9 +289,7 @@ public class ApiDocumentationGenerator {
         }
     }
 
-
     // 응답 정보 생성
-
     private void generateResponseInfo(StringBuilder asciiDoc, JsonNode methodNode) {
         if (methodNode.has("responses")) {
             asciiDoc.append("**응답:**\n\n");
@@ -356,9 +324,7 @@ public class ApiDocumentationGenerator {
         }
     }
 
-
     // 요청 본문 예제 생성
-
     private void generateRequestBodyExample(StringBuilder asciiDoc, JsonNode requestBody) {
         if (requestBody.has("content") && requestBody.get("content").has("application/json")) {
             JsonNode schema = requestBody.get("content").get("application/json").get("schema");
@@ -415,9 +381,7 @@ public class ApiDocumentationGenerator {
         }
     }
 
-
     // 상세한 스키마 문서 생성
-
     private void generateDetailedSchemaDocumentation(StringBuilder asciiDoc, String schemaName, JsonNode schemaNode) {
         asciiDoc.append("=== ").append(schemaName).append("\n\n");
         
@@ -476,9 +440,7 @@ public class ApiDocumentationGenerator {
         }
     }
 
-
     // 스키마 JSON 예제 생성
-
     private void generateSchemaJsonExample(StringBuilder asciiDoc, JsonNode properties) {
         asciiDoc.append("[source,json]\n");
         asciiDoc.append("----\n");

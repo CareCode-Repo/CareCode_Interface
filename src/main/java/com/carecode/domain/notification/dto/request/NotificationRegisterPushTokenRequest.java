@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 푸시 토큰 등록 요청
- */
+/** 푸시 토큰 등록 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

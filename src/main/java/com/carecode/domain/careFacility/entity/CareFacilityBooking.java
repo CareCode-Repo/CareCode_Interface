@@ -7,9 +7,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-/**
- * 육아 시설 예약 엔티티
- */
+/** 육아 시설 예약 엔티티 */
 @Entity
 @Table(name = "care_facility_bookings")
 @EntityListeners(AuditingEntityListener.class)
@@ -150,34 +148,26 @@ public class CareFacilityBooking {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-
     // 예약 취소
-
     public void cancel(String reason) {
         this.status = BookingStatus.CANCELLED;
         this.cancellationReason = reason;
         this.cancelledAt = LocalDateTime.now();
     }
 
-
     // 예약 확정
-
     public void confirm() {
         this.status = BookingStatus.CONFIRMED;
     }
 
-
     // 예약 완료
-
     public void complete() {
         this.status = BookingStatus.COMPLETED;
         this.actualStartTime = this.startTime;
         this.actualEndTime = this.endTime;
     }
 
-
     // 예약 유형 열거형
-
     public enum BookingType {
         VISIT("방문"),
         REGULAR("정기"),
@@ -194,9 +184,7 @@ public class CareFacilityBooking {
         }
     }
 
-
     // 예약 상태 열거형
-
     public enum BookingStatus {
         PENDING("대기중"),
         CONFIRMED("확정"),

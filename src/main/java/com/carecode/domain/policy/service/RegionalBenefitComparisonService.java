@@ -25,10 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * 같은 아이라도 사는 지역에 따라 받는 지원금 총액이 크게 다르다.
- * 지역별 예상 수령액을 계산해 현재 거주지와 비교한다.
- */
+/** 같은 아이라도 사는 지역에 따라 받는 지원금 총액이 크게 다르다. 지역별 예상 수령액을 계산해 현재 거주지와 비교한다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor

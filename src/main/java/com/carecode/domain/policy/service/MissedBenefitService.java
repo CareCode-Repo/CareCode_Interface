@@ -20,10 +20,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * 아이가 이미 지나온 월령 구간을 훑어 받을 수 있었던 지원금을 찾는다.
- * 수급 여부를 알 수 없으므로 "받았다/못 받았다" 가 아니라 "대상이었다" 로만 판정한다.
- */
+/** 아이가 이미 지나온 월령 구간을 훑어 받을 수 있었던 지원금을 찾는다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor

@@ -6,9 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
-/**
- * JWT 토큰 DTO
- */
+/** JWT 토큰 DTO */
 @Getter
 @Setter
 @NoArgsConstructor

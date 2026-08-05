@@ -31,10 +31,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import com.carecode.core.handler.ApiSuccess;
 
-/**
- * 통합 인증 컨트롤러
- * 일반 로그인, 카카오 로그인, 토큰 갱신, 회원가입 등 모든 인증 관련 API
- */
+/** 통합 인증 컨트롤러 */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -51,18 +48,16 @@ public class AuthController extends BaseController {
     private final CurrentUserFacade currentUserFacade;
     private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
-    // ==================== 일반 로그인 ====================
-
+    // ====================
+    // 일반 로그인 ====================
 
     // 일반 로그인
-
     @PostMapping("/login")
     @LogExecutionTime(warnThreshold = 1000)
     @RateLimit(requests = 5, windowSeconds = 60, message = "로그인 시도 횟수를 초과했습니다. 1분 후 다시 시도해주세요.")
-    @Operation(summary = "일반 로그인", description = "이메일과 비밀번호로 로그인합니다.")
+    @Operation(summary = "일반 로그인", description = "이메일과 비밀번호로 로그인")
     public ResponseEntity<TokenDto> login(@Parameter(description = "로그인 정보", required = true) @Valid @RequestBody LoginRequestDto request) {
-        // 가입 여부가 응답으로 새어나가지 않도록, 실패 사유와 무관하게 동일한 401 을 반환한다.
-        // (미가입 404 / 비밀번호 불일치 401 로 나뉘면 이메일 열거가 가능하다.)
+        // 가입 여부가 응답으로 새어나가지 않도록, 실패 사유와 무관하게 동일한 401 을 반환한다. (미가입 404 / 비밀번호 불일치 401 로 나뉘면 이메일 열거가 가능하다.)
         User userEntity = userService.findActiveUserEntityByEmail(request.getEmail()).orElse(null);
 
         if (userEntity == null
@@ -87,7 +82,7 @@ public class AuthController extends BaseController {
     // 회원가입
     @PostMapping("/register")
     @LogExecutionTime
-    @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
+    @Operation(summary = "회원가입", description = "새로운 사용자 등록")
     public ResponseEntity<TokenDto> register(@Parameter(description = "회원가입 정보", required = true) @Valid @RequestBody UserDto request) {
         UserDto createdUser = userService.createUser(request);
         User user = userService.getUserEntityByEmail(createdUser.getEmail());
@@ -96,10 +91,7 @@ public class AuthController extends BaseController {
         return withRefreshCookie(tokenDto);
     }
 
-    /**
-     * 발급된 리프레시 토큰을 HttpOnly 쿠키로도 내려보낸다.
-     * 본문에도 남겨 두어 쿠키를 쓰지 않는 클라이언트가 계속 동작하게 한다.
-     */
+    /** 발급된 리프레시 토큰을 HttpOnly 쿠키로도 내려보낸다. */
     private ResponseEntity<TokenDto> withRefreshCookie(TokenDto tokenDto) {
         if (tokenDto.getRefreshToken() == null) {
             return ResponseEntity.ok(tokenDto);
@@ -110,14 +102,14 @@ public class AuthController extends BaseController {
                 .body(tokenDto);
     }
 
-    // ==================== 토큰 관리 ====================
+    // ====================
+    // 토큰 관리 ====================
 
     // 토큰 갱신
-
     @PostMapping("/refresh")
     @LogExecutionTime
     @Operation(summary = "토큰 갱신",
-            description = "Refresh Token 으로 새로운 Access Token 을 발급합니다. "
+            description = "Refresh Token 으로 새로운 Access Token 을 발급"
                     + "토큰은 HttpOnly 쿠키에서 우선 읽고, 없으면 요청 본문에서 읽습니다.")
     public ResponseEntity<TokenDto> refreshToken(
             @Parameter(description = "토큰 갱신 정보 (쿠키를 쓰는 경우 생략 가능)")
@@ -178,7 +170,7 @@ public class AuthController extends BaseController {
 
     @PostMapping("/logout")
     @LogExecutionTime
-    @Operation(summary = "로그아웃", description = "서버에 등록된 리프레시 토큰 세션을 모두 폐기합니다. (액세스 토큰은 만료 시까지 유효할 수 있음)")
+    @Operation(summary = "로그아웃", description = "서버에 등록된 리프레시 토큰 세션을 모두 폐기합니다")
     public ResponseEntity<ApiSuccess> logout() {
         refreshTokenStore.removeAllForUser(currentUserFacade.requireCurrentUserId());
         return ResponseEntity.ok()
@@ -186,12 +178,13 @@ public class AuthController extends BaseController {
                 .body(ApiSuccess.of("로그아웃되었습니다."));
     }
 
-    // ==================== 이메일 인증 ====================
+    // ====================
+    // 이메일 인증 ====================
 
     // 이메일 인증 토큰 검증
     @GetMapping("/verify")
     @LogExecutionTime
-    @Operation(summary = "이메일 인증", description = "이메일 인증 토큰을 검증합니다.")
+    @Operation(summary = "이메일 인증", description = "이메일 인증 토큰을 검증")
     public ResponseEntity<ApiSuccess> verifyEmail(@RequestParam String token) {
         boolean ok = emailVerificationService.verifyEmail(token);
         String message = ok ? "이메일 인증이 완료되었습니다." : "유효하지 않거나 만료된 토큰입니다.";
@@ -201,7 +194,7 @@ public class AuthController extends BaseController {
     // 인증 코드 발송
     @PostMapping("/send-code")
     @LogExecutionTime
-    @Operation(summary = "이메일 인증 코드 발송", description = "해당 이메일로 인증 코드를 발송합니다.")
+    @Operation(summary = "이메일 인증 코드 발송")
     public ResponseEntity<ApiSuccess> sendVerificationCode(@RequestParam String email) {
         emailVerificationService.sendVerificationCode(email);
         return ResponseEntity.ok(ApiSuccess.of("인증 코드가 발송되었습니다."));
@@ -210,7 +203,7 @@ public class AuthController extends BaseController {
     // 인증 코드 검증
     @PostMapping("/verify-code")
     @LogExecutionTime
-    @Operation(summary = "이메일 인증 코드 검증", description = "발송된 인증 코드를 검증합니다.")
+    @Operation(summary = "이메일 인증 코드 검증", description = "발송된 인증 코드를 검증")
     public ResponseEntity<ApiSuccess> verifyCode(@RequestParam String email, @RequestParam String code) {
         boolean ok = emailVerificationService.verifyCode(email, code);
         String message = ok ? "인증 코드가 확인되었습니다." : "유효하지 않거나 만료된 코드입니다.";

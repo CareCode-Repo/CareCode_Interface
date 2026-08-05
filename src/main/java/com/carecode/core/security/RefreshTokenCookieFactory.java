@@ -10,17 +10,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
 
-/**
- * 리프레시 토큰을 HttpOnly 쿠키로 주고받기 위한 헬퍼.
- *
- * <p>리프레시 토큰을 응답 본문으로만 내리면 클라이언트가 JS 로 접근 가능한 저장소
- * (localStorage 등)에 둘 수밖에 없어 XSS 한 번에 세션 전체가 탈취된다.
- * HttpOnly 쿠키로 내려 스크립트가 읽지 못하게 하고, 경로를 {@code /auth} 로 좁혀
- * 일반 API 요청에는 실려 나가지 않도록 한다.
- *
- * <p>본문 응답도 당분간 유지한다. 쿠키를 쓸 수 없는 클라이언트(모바일 네이티브 등)와
- * 기존 웹 클라이언트가 함께 동작해야 하기 때문이다.
- */
+/** 리프레시 토큰을 HttpOnly 쿠키로 주고받기 위한 헬퍼. 리프레시 토큰을 응답 본문으로만 내리면 클라이언트가 JS 로 접근 가능한 저장소 (localStorage */
 @Component
 public class RefreshTokenCookieFactory {
 

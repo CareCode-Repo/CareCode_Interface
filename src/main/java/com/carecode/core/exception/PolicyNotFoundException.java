@@ -1,9 +1,6 @@
 package com.carecode.core.exception;
 
-/**
- * 육아 정책을 찾을 수 없을 때 발생하는 예외
- * 하위 호환성을 위해 유지
- */
+/** 육아 정책을 찾을 수 없을 때 발생하는 예외 하위 호환성을 위해 유지 */
 public class PolicyNotFoundException extends CareCodeException {
     
     public PolicyNotFoundException(Long policyId) {

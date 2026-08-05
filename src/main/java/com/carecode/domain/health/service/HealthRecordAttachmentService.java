@@ -18,11 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-/**
- * 건강기록 첨부파일 관리.
- *
- * <p>첨부 엔티티와 테이블은 있었지만 업로드 경로가 없어 사용할 수 없던 기능을 연결한다.
- */
+/** 건강기록 첨부파일 관리. 첨부 엔티티와 테이블은 있었지만 업로드 경로가 없어 사용할 수 없던 기능을 연결한다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -77,10 +73,7 @@ public class HealthRecordAttachmentService {
         attachmentRepository.delete(attachment);
     }
 
-    /**
-     * 건강기록 조회 + 소유권 검증.
-     * 건강기록은 민감정보이므로 본인 기록만 접근할 수 있어야 한다.
-     */
+    /** 건강기록 조회 + 소유권 검증. 건강기록은 민감정보이므로 본인 기록만 접근할 수 있어야 한다. */
     private HealthRecord requireOwnedRecord(Long recordId) {
         User currentUser = currentUserFacade.requireCurrentUser();
         HealthRecord record = healthRecordRepository.findById(recordId)

@@ -17,10 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
-/**
- * JWT 인증 필터
- * 요청에서 JWT 토큰을 추출하고 검증하여 인증 정보를 설정
- */
+/** JWT 인증 필터 요청에서 JWT 토큰을 추출하고 검증하여 인증 정보를 설정 */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -85,9 +82,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-
     // 요청에서 JWT 토큰 추출
-
     private String extractTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
 
@@ -103,9 +98,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
         
-        // 다음 경로들은 JWT 인증을 건너뜀.
-        // 주의: /admin 은 여기서 제외하면 안 된다. 세션 기반 어드민 체인(SecurityConfig 참고)이
-        // 별도로 처리하며, 과거처럼 스킵하면 /admin/** 이 인증 주체 없이 항상 403 이 된다.
+        // 다음 경로들은 JWT 인증을 건너뜀. 주의: /admin 은 여기서 제외하면 안 된다. 세션 기반 어드민 체인(SecurityConfig 참고)이 별도로 처리하며
         boolean shouldNotFilter = path.startsWith("/swagger-ui") ||
                path.startsWith("/api-docs") ||
                path.startsWith("/v3/api-docs") ||

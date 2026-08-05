@@ -12,10 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 육아 정책 엔티티
- * 정부에서 제공하는 육아 관련 정책 정보를 관리
- */
+/** 육아 정책 엔티티 정부에서 제공하는 육아 관련 정책 정보를 관리 */
 @Entity
 @Table(name = "TBL_POLICIES")
 @Getter
@@ -67,10 +64,7 @@ public class Policy {
     @Column(name = "benefit_amount")
     private Integer benefitAmount;
     
-    /**
-     * 월 지급 정책의 최대 지급 개월. null 이면 대상 연령 구간 내내 지급한다.
-     * 대상 연령과 지급 기간은 다르다 — 육아휴직급여는 아이가 0~96개월이어도 최대 12개월만 받는다.
-     */
+    /** 월 지급 정책의 최대 지급 개월. null 이면 대상 연령 구간 내내 지급한다. */
     @Column(name = "max_payment_months")
     private Integer maxPaymentMonths;
 

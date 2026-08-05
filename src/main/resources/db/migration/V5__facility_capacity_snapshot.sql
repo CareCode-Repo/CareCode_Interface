@@ -1,6 +1,4 @@
--- 시설 정원·현원 시계열.
--- 동기화 때마다 현원을 덮어쓰면 관측 이력이 사라져 입소 가능 시점을 예측할 수 없다.
--- 이 테이블이 쌓이는 기간 자체가 경쟁 장벽이므로 가능한 이른 시점부터 적재한다.
+-- 시설 정원·현원 시계열. 동기화 때마다 현원을 덮어쓰면 관측 이력이 사라져 입소 가능 시점을 예측할 수 없다
 CREATE TABLE TBL_FACILITY_CAPACITY_SNAPSHOT (
     ID BIGINT AUTO_INCREMENT PRIMARY KEY,
     FACILITY_ID BIGINT NOT NULL COMMENT '시설 ID',

@@ -16,9 +16,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 관리자 정책 관리.
- */
+/** 관리자 정책 관리. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -45,10 +43,7 @@ public class PolicyAdminService {
         return policyMapper.toResponse(saved);
     }
 
-    /**
-     * 정책 수정.
-     * 캐시된 상세 응답이 낡지 않도록 해당 항목을 무효화한다.
-     */
+    /** 정책 수정. 캐시된 상세 응답이 낡지 않도록 해당 항목을 무효화한다. */
     @Transactional
     @CacheEvict(cacheNames = "policy", key = "#policyId")
     public PolicyDto update(Long policyId, AdminPolicyRequest request) {

@@ -7,10 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 어드민 알림 발송 요청.
- * <p>엔티티를 직접 바인딩하지 않고 허용 필드만 받는다.
- */
+/** 어드민 알림 발송 요청. 엔티티를 직접 바인딩하지 않고 허용 필드만 받는다. */
 @Getter
 @Setter
 @NoArgsConstructor

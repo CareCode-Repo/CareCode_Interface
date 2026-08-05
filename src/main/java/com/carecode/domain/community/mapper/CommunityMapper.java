@@ -16,9 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * 커뮤니티 DTO 변환 매퍼 클래스
- */
+/** 커뮤니티 DTO 변환 매퍼 클래스 */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -27,10 +25,8 @@ public class CommunityMapper {
     private final CommentRepository commentRepository;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    
 
     // Post 엔티티를 PostResponse DTO로 변환
-
     public CommunityPostResponse toPostResponse(Post post) {
         List<String> tagNames = post.getTags() != null ? post.getTags().stream().map(Tag::getName).toList() : List.of();
         return CommunityPostResponse.builder()
@@ -50,10 +46,8 @@ public class CommunityMapper {
                 .isBookmarked(false)
                 .build();
     }
-    
 
     // Post 엔티티를 PostDetailResponse DTO로 변환
-
     public CommunityPostDetailResponse toPostDetailResponse(Post post) {
         List<Comment> comments = commentRepository.findByPostIdAndParentCommentIsNull(post.getId());
         List<CommunityCommentResponse> commentResponses = comments.stream()
@@ -81,10 +75,8 @@ public class CommunityMapper {
         
         return response;
     }
-    
 
     // Comment 엔티티를 CommentResponse DTO로 변환
-
     public CommunityCommentResponse toCommentResponse(Comment comment) {
         List<CommunityCommentResponse> replies = comment.getReplies().stream()
                 .map(this::toCommentResponse)
@@ -102,10 +94,8 @@ public class CommunityMapper {
                 .replies(replies)
                 .build();
     }
-    
 
     // Tag 엔티티를 TagResponse DTO로 변환
-
     public CommunityTagResponse toTagResponse(Tag tag) {
         return CommunityTagResponse.builder()
                 .id(tag.getId())
@@ -114,28 +104,22 @@ public class CommunityMapper {
                 .createdAt(tag.getCreatedAt() != null ? tag.getCreatedAt().format(DATE_FORMATTER) : null)
                 .build();
     }
-    
 
     // Post 엔티티 리스트를 PostResponse DTO 리스트로 변환
-
     public List<CommunityPostResponse> toPostResponseList(List<Post> posts) {
         return posts.stream()
                 .map(this::toPostResponse)
                 .collect(Collectors.toList());
     }
-    
 
     // Comment 엔티티 리스트를 CommentResponse DTO 리스트로 변환
-
     public List<CommunityCommentResponse> toCommentResponseList(List<Comment> comments) {
         return comments.stream()
                 .map(this::toCommentResponse)
                 .collect(Collectors.toList());
     }
-    
 
     // Tag 엔티티 리스트를 TagResponse DTO 리스트로 변환
-
     public List<CommunityTagResponse> toTagResponseList(List<Tag> tags) {
         return tags.stream()
                 .map(this::toTagResponse)

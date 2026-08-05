@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * 예약 목록 응답 DTO
- */
+/** 예약 목록 응답 DTO */
 @Data
 @Builder
 @NoArgsConstructor

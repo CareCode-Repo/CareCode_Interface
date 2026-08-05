@@ -7,10 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 고급 시설 검색 요청 DTO
- * 복합 조건으로 시설을 검색합니다.
- */
+/** 고급 시설 검색 요청 DTO 복합 조건으로 시설을 검색합니다. */
 @Getter
 @Setter
 @NoArgsConstructor
