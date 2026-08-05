@@ -46,7 +46,7 @@ public class PolicyUpsertService {
         policy.setTitle(text(row, "서비스명", "servNm", "SVC_NM"));
         policy.setDescription(text(row, "서비스목적요약", "servDgst", "SVC_DGST"));
         policy.setPolicyType(text(row, "서비스분야", "srvPvsnNm", "INTRS_THEMA_NM"));
-        policy.setTargetRegion(text(row, "소관기관명", "jurMnofNm", "JURISDICTION"));
+        policy.setTargetRegion(resolveRegion(row));
         policy.setApplicationUrl(text(row, "상세조회URL", "servDtlLink", "DETAIL_URL"));
         policy.setContactInfo(text(row, "전화문의", "rprsCtadr", "CONTACT"));
         policy.setRequiredDocuments(text(row, "구비서류", "docCn"));
@@ -55,6 +55,20 @@ public class PolicyUpsertService {
 
         policyRepository.save(policy);
         return isNew;
+    }
+
+    /**
+     * 중앙행정기관 정책은 전국 공통이고, 지자체 정책은 소관기관명이 곧 지역이다.
+     * 이 구분이 없으면 "교육부" 가 지역명으로 들어가 거주지 비교가 무의미해진다.
+     */
+    private String resolveRegion(JsonNode row) {
+        String orgType = text(row, "소관기관유형", "orgTypeNm");
+        String orgName = text(row, "소관기관명", "jurMnofNm", "JURISDICTION");
+
+        if (orgType != null && orgType.contains("중앙")) {
+            return "전국";
+        }
+        return orgName != null ? orgName : "전국";
     }
 
     /** 자유 텍스트에서 연령 조건을 개월로 환산해 채운다. 못 찾으면 기존 값을 건드리지 않는다. */

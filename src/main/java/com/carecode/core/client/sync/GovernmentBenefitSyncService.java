@@ -1,6 +1,6 @@
 package com.carecode.core.client.sync;
 
-import com.carecode.core.client.provider.DataGoKrProvider;
+import com.carecode.core.client.provider.OdcloudProvider;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +22,11 @@ public class GovernmentBenefitSyncService {
             "육아", "출산", "임신", "보육", "양육", "아동", "어린이", "영유아",
             "유아", "산모", "신생아", "돌봄", "child", "어린이집", "유치원");
 
-    private final DataGoKrProvider provider;
+    private final OdcloudProvider provider;
     private final PolicyUpsertService upsertService;
     private final PagedSyncTemplate syncTemplate;
 
-    @Value("${public.data.resource.benefit:1741000/publicServiceInformations/publicServiceInformation}")
+    @Value("${public.data.resource.benefit:https://api.odcloud.kr/api/gov24/v3/serviceList}")
     private String resource;
 
     public SyncResult sync() {

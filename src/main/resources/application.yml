@@ -252,7 +252,7 @@ public:
     resource:
       childcare: ${PUBLIC_DATA_RESOURCE_CHILDCARE:http://api.childcare.go.kr/mediate/rest/cpmsapi021/cpmsapi021/request}
       kindergarten: ${PUBLIC_DATA_RESOURCE_KINDERGARTEN:https://e-childschoolinfo.moe.go.kr/api/notice/basicInfo2.do}
-      benefit: ${PUBLIC_DATA_RESOURCE_BENEFIT:1741000/publicServiceInformations/publicServiceInformation}
+      benefit: ${PUBLIC_DATA_RESOURCE_BENEFIT:https://api.odcloud.kr/api/gov24/v3/serviceList}
       hospital: ${PUBLIC_DATA_RESOURCE_HOSPITAL:B551182/hospInfoServicev2/getHospBasisList}
 
     sync:
