@@ -45,7 +45,6 @@ public class HealthFacade {
 
     // ==================== 건강 기록 관리 ====================
     // 트랜잭션은 Service 계층에서 관리하므로 Facade에서는 제거
-
     public HealthRecordResponse createHealthRecord(HealthCreateHealthRecordRequest request, Long actorUserId) {
         return healthService.createHealthRecord(request, actorUserId);
     }
@@ -118,8 +117,8 @@ public class HealthFacade {
         return healthService.searchChildrenByName(userId, name);
     }
 
-    // ==================== 건강 분석 및 리포트 ====================
-
+    // ====================
+    // 건강 분석 및 리포트 ====================
     public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request, Long actorUserId) {
         return healthService.analyzeHealthStatus(request, actorUserId);
     }
@@ -147,9 +146,7 @@ public class HealthFacade {
     }
 
     // ==================== 병원 관리 ====================
-    // 병원 관련 작업은 Facade에서 직접 처리하므로 트랜잭션 필요
-    // 하지만 Service 계층으로 이동하는 것이 더 나음 (향후 개선)
-
+    // 병원 관련 작업은 Facade에서 직접 처리하므로 트랜잭션 필요 하지만
     public List<HospitalInfoResponse> getAllHospitals(int page, int size) {
         // 테이블 전체를 메모리로 올리지 않도록 항상 페이지 단위로 읽는다.
         return hospitalRepository.findAll(PageRequest.of(page, size, Sort.by("name")))
@@ -196,8 +193,15 @@ public class HealthFacade {
 
     public long getLikeCount(Long id) {
         hospitalRepository.findById(id).orElseThrow(() -> new HospitalNotFoundException(id));
-        
+
         return hospitalLikeRepository.countByHospitalId(id);
+    }
+
+    /** 현재 사용자가 이 병원을 찜했는지 여부. 이 값이 없으면 클라이언트가 찜 상태를 화면에 유지할 수 없어 새로고침마다 초기화된다. */
+    public boolean isLikedByUser(Long id, Long userId) {
+        hospitalRepository.findById(id).orElseThrow(() -> new HospitalNotFoundException(id));
+
+        return hospitalLikeRepository.existsByHospitalIdAndUserId(id, userId);
     }
 
     public List<HospitalInfoResponse> getNearbyHospitals(double lat, double lng, double radius) {
@@ -223,8 +227,8 @@ public class HealthFacade {
                 .toList();
     }
 
-    // ==================== 병원 리뷰 관리 ====================
-
+    // ====================
+    // 병원 리뷰 관리 ====================
     public List<HospitalReviewResponse> getHospitalReviews(Long hospitalId) {
         return hospitalReviewRepository.findByHospitalId(hospitalId).stream()
                 .map(hospitalReviewMapper::toResponse)
@@ -272,9 +276,9 @@ public class HealthFacade {
         hospitalReviewRepository.delete(review);
     }
 
-    // ==================== Helper Methods ====================
+    // ====================
+    // Helper Methods ====================
 
     // 매핑은 HospitalMapper/HospitalReviewMapper에 위임
 }
-
 
