@@ -47,9 +47,9 @@ public class NationwideChildcareFacilitySyncService {
 
         int emptyRegions = 0;
         for (String arcode : regions) {
-            JsonNode rows;
+            JsonNode root;
             try {
-                rows = extractRows(provider.fetch(resource, 1, 0, buildParams(arcode)));
+                root = parse(provider.fetch(resource, 1, 0, buildParams(arcode)));
             } catch (Exception e) {
                 // 한 지역 실패로 전국 수집을 중단하지 않는다.
                 log.warn("어린이집 조회 실패 - arcode={}: {}", arcode, e.getMessage());
@@ -57,6 +57,20 @@ public class NationwideChildcareFacilitySyncService {
                 continue;
             }
 
+            // 한도 초과·키 만료를 "검색결과 없음" 으로 넘기면 조용히 0건으로 끝난다.
+            ChildcareApiStatus status = ChildcareApiStatus.of(root);
+            if (status.isFatal()) {
+                result.stop("API 응답: " + status.describe(root));
+                log.error("어린이집 동기화 중단 - {}", status.describe(root));
+                return result;
+            }
+            if (status == ChildcareApiStatus.MISSING_PARAM || status == ChildcareApiStatus.SERVER_ERROR) {
+                log.warn("어린이집 조회 오류 - arcode={}, {}", arcode, status.describe(root));
+                result.countFailed();
+                continue;
+            }
+
+            JsonNode rows = extractRows(root);
             if (rows == null || rows.isEmpty()) {
                 emptyRegions++;
                 continue;
@@ -89,12 +103,12 @@ public class NationwideChildcareFacilitySyncService {
         return params;
     }
 
+    private JsonNode parse(String body) {
+        return body == null || body.isBlank() ? null : xmlResponseParser.parse(body);
+    }
+
     /** 응답은 XML 이고 항목이 response/item 으로 온다. */
-    private JsonNode extractRows(String body) {
-        if (body == null || body.isBlank()) {
-            return null;
-        }
-        JsonNode root = xmlResponseParser.parse(body);
+    private JsonNode extractRows(JsonNode root) {
         if (root == null) {
             return null;
         }
