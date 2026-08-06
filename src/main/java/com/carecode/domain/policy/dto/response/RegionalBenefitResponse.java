@@ -27,6 +27,9 @@ public class RegionalBenefitResponse {
     /** 금액이 수기 검증된 정책 수. */
     private int verifiedPolicyCount;
 
+    /** 대상이지만 금액이 확인되지 않아 합계에서 빠진 정책 수. 0 이 아니면 총액은 과소 집계다. */
+    private int unknownAmountCount;
+
     /** VERIFIED(전부 검증) / PARTIAL(일부) / ESTIMATED(미검증). */
     private String dataQuality;
 

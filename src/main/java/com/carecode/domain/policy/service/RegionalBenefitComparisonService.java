@@ -116,14 +116,16 @@ public class RegionalBenefitComparisonService {
     }
 
     /** 지역 한 곳의 집계 중간 결과. */
-    private record RegionSummary(long amount, int cashCount, int nonCashCount, int verifiedCount,
+    private record RegionSummary(long amount, int cashCount, int nonCashCount,
+                                 int verifiedCount, int unknownAmountCount,
                                  List<RegionalBenefitResponse.Contribution> contributions) {
 
         RegionSummary merge(RegionSummary other) {
             List<RegionalBenefitResponse.Contribution> merged = new ArrayList<>(contributions);
             merged.addAll(other.contributions);
             return new RegionSummary(amount + other.amount, cashCount + other.cashCount,
-                    nonCashCount + other.nonCashCount, verifiedCount + other.verifiedCount, merged);
+                    nonCashCount + other.nonCashCount, verifiedCount + other.verifiedCount,
+                    unknownAmountCount + other.unknownAmountCount, merged);
         }
 
         /** 금액에 들어간 정책이 전부 검증됐을 때만 확정으로 표기한다. */
@@ -150,6 +152,7 @@ public class RegionalBenefitComparisonService {
                     .cashPolicyCount(cashCount)
                     .nonCashPolicyCount(nonCashCount)
                     .verifiedPolicyCount(verifiedCount)
+                    .unknownAmountCount(unknownAmountCount)
                     .dataQuality(quality())
                     .topContributors(top)
                     .build();
@@ -161,6 +164,7 @@ public class RegionalBenefitComparisonService {
         int cash = 0;
         int nonCash = 0;
         int verified = 0;
+        int unknownAmount = 0;
         List<RegionalBenefitResponse.Contribution> contributions = new ArrayList<>();
 
         for (Policy policy : policies) {
@@ -173,7 +177,9 @@ public class RegionalBenefitComparisonService {
                 continue;
             }
             if (!projection.isCash()) {
-                continue; // 금액이 확인되지 않은 정책은 합산하지 않는다
+                // 합산은 못 하지만 "이 지역에 이런 혜택이 있다" 는 사실은 사라지면 안 된다.
+                unknownAmount++;
+                continue;
             }
             total += projection.amount();
             cash++;
@@ -186,7 +192,7 @@ public class RegionalBenefitComparisonService {
                     .paymentType(projection.paymentType().name())
                     .build());
         }
-        return new RegionSummary(total, cash, nonCash, verified, contributions);
+        return new RegionSummary(total, cash, nonCash, verified, unknownAmount, contributions);
     }
 
     private Child resolveChild(List<Child> children, Long childId) {
@@ -239,6 +245,8 @@ public class RegionalBenefitComparisonService {
                     + "소득을 입력하면 정확해집니다.", conditionalCount));
         }
         notes.add("무료검진·서비스 등 금액으로 환산할 수 없는 혜택은 합산에서 제외했습니다.");
+        notes.add("공공데이터는 지원금액을 숫자로 제공하지 않아, 금액이 확인된 정책만 합산됩니다. "
+                + "unknownAmountCount 가 크면 실제 수령액은 표시된 금액보다 많습니다.");
         notes.add("지급 방식이 명시되지 않은 정책은 과대 계상을 피하기 위해 1회 지급으로 계산했습니다.");
         if (baseRegion == null) {
             notes.add("주소가 등록되지 않아 전국 공통 정책만을 기준으로 비교했습니다.");

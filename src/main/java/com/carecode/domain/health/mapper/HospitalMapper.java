@@ -13,6 +13,7 @@ public class HospitalMapper implements ResponseMapper<Hospital, HospitalInfoResp
                 .id(hospital.getId())
                 .name(hospital.getName())
                 .type(hospital.getType())
+                .grade(hospital.getGrade())
                 .address(hospital.getAddress())
                 .phoneNumber(hospital.getPhone())
                 .latitude(hospital.getLatitude())

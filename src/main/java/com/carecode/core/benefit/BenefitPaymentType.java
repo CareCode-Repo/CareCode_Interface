@@ -19,8 +19,10 @@ public enum BenefitPaymentType {
 
     private static final List<String> MONTHLY_MARKERS = List.of("월지급", "월지원", "월급여", "매월", "월 지급");
     private static final List<String> ONE_TIME_MARKERS = List.of("일시", "일회", "1회", "출산지원금", "축하금");
+    // 융자·대출은 갚아야 하는 돈이라 수령액에 넣으면 안 된다. 감면액은 개인별로 달라 산정 불가.
     private static final List<String> NON_CASH_MARKERS = List.of(
-            "서비스", "무료", "할인", "공급", "감면", "면제", "이용권", "제공");
+            "서비스", "무료", "할인", "공급", "감면", "면제", "이용권", "제공",
+            "융자", "대출", "보증", "상담", "교육", "돌봄");
 
     /** 지급 방식 문자열에서 판별한다. 공공데이터 표기가 제각각이라 부분 일치로 본다. */
     public static BenefitPaymentType resolve(String benefitType) {

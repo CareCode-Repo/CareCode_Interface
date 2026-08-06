@@ -128,6 +128,35 @@ class RegionalBenefitComparisonServiceTest {
     }
 
     @Test
+    @DisplayName("금액이 없는 정책도 사라지지 않고 건수로 남는다")
+    void countsPoliciesWithUnknownAmount() {
+        givenChildAgedMonths(0);
+        givenPolicies(
+                policy("금액확인됨", "A시", 0, 11, 200000, "일시지급"),
+                // 공공데이터는 금액을 숫자로 주지 않아 대부분 여기 해당한다
+                policy("금액미상", "A시", 0, 11, null, "현금"));
+        givenRegions("A시");
+
+        RegionalBenefitResponse a = byRegion(service.compare(null, 1, 10), "A시");
+
+        assertThat(a.getTotalAmount()).isEqualTo(200_000);
+        assertThat(a.getCashPolicyCount()).isEqualTo(1);
+        // 이게 없으면 "이 지역에 혜택이 하나뿐" 으로 오해하게 된다
+        assertThat(a.getUnknownAmountCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("금액 미상이 있으면 과소 집계임을 알린다")
+    void warnsWhenAmountsAreIncomplete() {
+        givenChildAgedMonths(0);
+        givenPolicies(policy("금액미상", "A시", 0, 11, null, "현금"));
+        givenRegions("A시");
+
+        assertThat(service.compare(null, 1, 10).getDisclaimers())
+                .anyMatch(d -> d.contains("금액이 확인된 정책만 합산"));
+    }
+
+    @Test
     @DisplayName("금액 기여가 큰 정책을 근거로 노출한다")
     void exposesTopContributors() {
         givenChildAgedMonths(0);

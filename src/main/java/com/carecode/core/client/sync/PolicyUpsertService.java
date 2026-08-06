@@ -50,6 +50,9 @@ public class PolicyUpsertService {
         policy.setApplicationUrl(text(row, "상세조회URL", "servDtlLink", "DETAIL_URL"));
         policy.setContactInfo(text(row, "전화문의", "rprsCtadr", "CONTACT"));
         policy.setRequiredDocuments(text(row, "구비서류", "docCn"));
+        // 지원유형("현금"/"이용권"/"서비스(일자리)")은 명확하지만 금액은 자유 텍스트라 자동 추출하지 않는다.
+        // "국공립 100,000원, 사립 280,000원" 처럼 조건별로 갈리는 표기가 많아 틀린 금액이 확정치로 들어간다.
+        policy.setBenefitType(text(row, "지원유형", "benefitType"));
         applyAgeRange(policy, row);
         policy.setUpdatedAt(LocalDateTime.now());
 
