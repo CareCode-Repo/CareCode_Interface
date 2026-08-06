@@ -157,6 +157,41 @@ class RegionalBenefitComparisonServiceTest {
     }
 
     @Test
+    @DisplayName("중복 수급 불가 정책은 가장 큰 것 하나만 합산한다")
+    void keepsOnlyBestInExclusionGroup() {
+        givenChildAgedMonths(0);
+        Policy parentAllowance = policy("부모급여", "A시", 0, 11, 1000000, "월지급");
+        parentAllowance.setExclusionGroup("INFANT_CARE_0");
+        Policy childcareFee = policy("보육료지원", "A시", 0, 11, 500000, "월지급");
+        childcareFee.setExclusionGroup("INFANT_CARE_0");
+        givenPolicies(parentAllowance, childcareFee);
+        givenRegions("A시");
+
+        RegionalBenefitResponse a = byRegion(service.compare(null, 1, 10), "A시");
+
+        // 둘 다 더하면 1,800만원이 되지만 실제로는 하나만 받는다
+        assertThat(a.getTotalAmount()).isEqualTo(12_000_000);
+        assertThat(a.getCashPolicyCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("배타 그룹이 다르면 각각 합산한다")
+    void addsAcrossDifferentGroups() {
+        givenChildAgedMonths(0);
+        Policy a1 = policy("부모급여", "A시", 0, 11, 1000000, "월지급");
+        a1.setExclusionGroup("INFANT_CARE_0");
+        Policy a2 = policy("누리과정", "A시", 0, 11, 300000, "월지급");
+        a2.setExclusionGroup("PRESCHOOL_EDU");
+        givenPolicies(a1, a2);
+        givenRegions("A시");
+
+        RegionalBenefitResponse a = byRegion(service.compare(null, 1, 10), "A시");
+
+        assertThat(a.getTotalAmount()).isEqualTo(12_000_000 + 3_600_000);
+        assertThat(a.getCashPolicyCount()).isEqualTo(2);
+    }
+
+    @Test
     @DisplayName("금액 기여가 큰 정책을 근거로 노출한다")
     void exposesTopContributors() {
         givenChildAgedMonths(0);

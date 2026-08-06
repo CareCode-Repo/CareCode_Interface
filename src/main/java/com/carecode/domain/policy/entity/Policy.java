@@ -68,6 +68,13 @@ public class Policy {
     @Column(name = "max_payment_months")
     private Integer maxPaymentMonths;
 
+    /**
+     * 중복 수급 불가 그룹. 같은 그룹의 정책은 동시에 받을 수 없다.
+     * null 이면 다른 정책과 함께 받을 수 있다 — 대부분은 여기 해당한다.
+     */
+    @Column(name = "exclusion_group", length = 60)
+    private String exclusionGroup;
+
     /** 수기 검증 시각. null 이면 자동 수집된 추정치이며 확정 금액으로 노출하면 안 된다. */
     @Column(name = "verified_at")
     private LocalDateTime verifiedAt;

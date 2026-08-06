@@ -167,6 +167,11 @@ public class RegionalBenefitComparisonService {
         int unknownAmount = 0;
         List<RegionalBenefitResponse.Contribution> contributions = new ArrayList<>();
 
+        // 부모급여와 양육수당처럼 동시 수급이 불가한 정책은 가장 큰 것 하나만 남긴다.
+        // 이 처리가 없으면 총액이 실제 수령액보다 크게 부풀려진다.
+        Map<String, Long> bestByGroup = new LinkedHashMap<>();
+        Map<String, RegionalBenefitResponse.Contribution> bestContribution = new LinkedHashMap<>();
+
         for (Policy policy : policies) {
             BenefitProjectionCalculator.Projection projection = calculator.project(policy, ageMonths, horizon);
             if (projection.eligibleMonths() == 0) {
@@ -181,17 +186,39 @@ public class RegionalBenefitComparisonService {
                 unknownAmount++;
                 continue;
             }
+            RegionalBenefitResponse.Contribution contribution =
+                    RegionalBenefitResponse.Contribution.builder()
+                            .title(policy.getTitle())
+                            .amount(projection.amount())
+                            .paymentType(projection.paymentType().name())
+                            .build();
+
+            String group = policy.getExclusionGroup();
+            if (group != null && !group.isBlank()) {
+                // 같은 그룹에서 더 큰 금액이 나오면 교체한다. 합산하지 않는다.
+                Long current = bestByGroup.get(group);
+                if (current == null || projection.amount() > current) {
+                    bestByGroup.put(group, projection.amount());
+                    bestContribution.put(group, contribution);
+                }
+                continue;
+            }
+
             total += projection.amount();
             cash++;
             if (policy.getVerifiedAt() != null) {
                 verified++;
             }
-            contributions.add(RegionalBenefitResponse.Contribution.builder()
-                    .title(policy.getTitle())
-                    .amount(projection.amount())
-                    .paymentType(projection.paymentType().name())
-                    .build());
+            contributions.add(contribution);
         }
+
+        // 그룹별 대표 정책만 합계에 넣는다.
+        for (Long amount : bestByGroup.values()) {
+            total += amount;
+            cash++;
+        }
+        contributions.addAll(bestContribution.values());
+
         return new RegionSummary(total, cash, nonCash, verified, unknownAmount, contributions);
     }
 
@@ -238,8 +265,7 @@ public class RegionalBenefitComparisonService {
         List<String> notes = new ArrayList<>();
         notes.add("수집된 정책 기준 추정치이며 실제 수령액과 다를 수 있습니다.");
         // 중복 수급이 불가능한 정책들이 함께 더해질 수 있어, 총액보다 지역 간 차액이 신뢰도가 높다.
-        notes.add("총액은 모든 정책을 단순 합산한 값입니다. 상호 배타적인 정책이 포함될 수 있으므로 "
-                + "지역 간 '차액' 을 기준으로 보세요.");
+        notes.add("중복 수급이 불가한 정책은 같은 그룹에서 가장 큰 금액 하나만 합산했습니다.");
         if (conditionalCount > 0) {
             notes.add(String.format("소득 조건이 걸린 정책 %d건은 소득 미입력 상태로 포함했습니다. "
                     + "소득을 입력하면 정확해집니다.", conditionalCount));
