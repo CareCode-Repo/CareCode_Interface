@@ -110,10 +110,6 @@ public class HealthRecord {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "record_type_id", insertable = false, updatable = false)
-    private HealthRecordType healthRecordType;
-    
     @OneToMany(mappedBy = "healthRecord", cascade = CascadeType.ALL, orphanRemoval = true)
     @lombok.Builder.Default
     private List<HealthRecordAttachment> healthRecordAttachments = new ArrayList<>();
