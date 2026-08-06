@@ -49,8 +49,10 @@
         </appender>
         
         <!-- 파일 로깅 (프로덕션) -->
+        <!-- Logback 의 기본값 문법은 ${VAR:-기본값} 이다. ${VAR:기본값} 은 Spring 문법이라
+             LOG_FILE 이 없으면 "..._IS_UNDEFINED" 경로가 되어 기동 자체가 실패한다. -->
         <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-            <file>${LOG_FILE:/var/log/carecode/application.log}</file>
+            <file>${LOG_FILE:-/var/log/carecode/application.log}</file>
             <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
                 <providers>
                     <timestamp>
@@ -78,7 +80,7 @@
                 </providers>
             </encoder>
             <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-                <fileNamePattern>${LOG_FILE:/var/log/carecode/application.log}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+                <fileNamePattern>${LOG_FILE:-/var/log/carecode/application.log}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
                 <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                     <maxFileSize>100MB</maxFileSize>
                 </timeBasedFileNamingAndTriggeringPolicy>
