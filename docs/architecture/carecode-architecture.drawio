@@ -1,0 +1,278 @@
+<mxfile host="app.diagrams.net" modified="2026-08-06T00:00:00.000Z" agent="CareCode" version="24.7.17" type="device">
+  <diagram id="carecode-system" name="시스템 구성">
+    <mxGraphModel dx="1422" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="CareCode(맘편한) 시스템 구성" style="text;html=1;fontSize=24;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="480" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="clientGroup" value="클라이언트" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="90" width="240" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="client" value="모바일 · 웹" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="70" y="130" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edgeGroup" value="진입 계층" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="330" y="90" width="280" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="sec" value="SecurityConfig&#xa;JWT · OAuth2(카카오)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="355" y="125" width="230" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="rate" value="RateLimitInterceptor&#xa;Redis 카운터" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="355" y="185" width="230" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="exh" value="전역 예외 핸들러&#xa;404·403 을 5xx 로 새지 않게" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="355" y="245" width="230" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="appGroup" value="애플리케이션" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="660" y="90" width="300" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl" value="Controller 20종" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="685" y="125" width="250" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="facade" value="Facade · Service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="685" y="180" width="250" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="guard" value="ConsentGuard&#xa;민감정보 접근 차단" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="685" y="235" width="250" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="domainGroup" value="도메인" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="660" y="350" width="300" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="dPolicy" value="policy — 지원금" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="685" y="385" width="250" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="dFacility" value="careFacility — 어린이집·유치원" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="685" y="425" width="250" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="dHealth" value="health — 건강기록·병원" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="685" y="465" width="250" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="dUser" value="user — 계정·자녀·동의" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="685" y="505" width="250" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="dNoti" value="notification · community · chatbot" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="685" y="545" width="250" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="dAnalytics" value="core.analytics — 이벤트·퍼널" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="685" y="585" width="250" height="32" as="geometry" />
+        </mxCell>
+
+        <mxCell id="batchGroup" value="배치 · 수집" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="330" y="350" width="280" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="sched" value="PublicDataSyncScheduler&#xa;수집 03~05시 · 발송 09~10시" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="355" y="385" width="230" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="syncsvc" value="Sync 서비스&#xa;PagedSyncTemplate · 시군구 순회" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="355" y="450" width="230" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="prov" value="PublicDataProvider&#xa;공급자 추상화" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="355" y="515" width="230" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="geo" value="KakaoGeocoder — 좌표 보정" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="355" y="575" width="230" height="35" as="geometry" />
+        </mxCell>
+
+        <mxCell id="storeGroup" value="저장소" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="350" width="250" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="db" value="MariaDB&#xa;Flyway V1~V17" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="390" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="Redis&#xa;캐시·레이트리밋·토큰&#xa;(없으면 기동 불가)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="475" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="files" value="파일 저장소" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="565" width="170" height="45" as="geometry" />
+        </mxCell>
+
+        <mxCell id="extGroup" value="외부 시스템" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="350" width="250" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="gov1" value="보육통합정보시스템&#xa;어린이집 · XML · HTTPS 전용" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="385" width="210" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="gov2" value="유치원알리미&#xa;유치원 · JSON" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="445" width="210" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="gov3" value="보조금24&#xa;정부지원 서비스 · JSON" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="500" width="210" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="gov4" value="심평원&#xa;소아청소년과 · XML" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="555" width="210" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="kakao" value="카카오 로컬 API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="610" width="210" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="fcm" value="FCM · SMTP · SMS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="655" width="210" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="slack" value="Slack Webhook — 운영 알림" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="692" width="210" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;" edge="1" parent="1" source="client" target="sec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="sec" target="rate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;" edge="1" parent="1" source="rate" target="ctrl">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="ctrl" target="facade">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="facade" target="guard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="guard" target="dPolicy">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;" edge="1" parent="1" source="dPolicy" target="db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="facade" target="redis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="sched" target="syncsvc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="syncsvc" target="prov">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="prov" target="gov1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="prov" target="gov2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="prov" target="gov3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="prov" target="gov4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="geo" target="kakao">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;" edge="1" parent="1" source="syncsvc" target="db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="sched" target="slack">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="dNoti" target="fcm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend" value="범례&#xa;실선 = 동기 호출  ·  점선 = 외부 연동  ·  붉은색 = 접근 차단 지점" style="text;html=1;fontSize=12;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="660" width="380" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="carecode-notification" name="알림 루프">
+    <mxGraphModel dx="1422" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="n0" />
+        <mxCell id="n1" parent="n0" />
+
+        <mxCell id="ntitle" value="리텐션 루프 — 다시 앱을 열 이유를 만드는 경로" style="text;html=1;fontSize=22;fontStyle=1;" vertex="1" parent="n1">
+          <mxGeometry x="40" y="20" width="700" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nSrc" value="① 관측 축적&#xa;정원 스냅샷 · 정책 변경 이력" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" vertex="1" parent="n1">
+          <mxGeometry x="40" y="100" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="nUser" value="① 사용자 입력&#xa;대기 등록 · 자녀 · 주소 · 소득" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" vertex="1" parent="n1">
+          <mxGeometry x="40" y="200" width="240" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nDetect" value="② 감지" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=14;" vertex="1" parent="n1">
+          <mxGeometry x="340" y="90" width="270" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="nD1" value="PolicyChangeDetector&#xa;금액·기한·연령 변경" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="n1">
+          <mxGeometry x="360" y="125" width="230" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="nD2" value="FacilityVacancyNotifier&#xa;빈자리가 &lt;b&gt;늘었는가&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="n1">
+          <mxGeometry x="360" y="190" width="230" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="nD3" value="PolicyDeadlineNotifier&#xa;D-7 · D-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="n1">
+          <mxGeometry x="360" y="255" width="230" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nGuard" value="③ 중복 방지" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=top;fontStyle=1;fontSize=14;" vertex="1" parent="n1">
+          <mxGeometry x="670" y="90" width="250" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="nG1" value="PolicyChange.markNotified()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="n1">
+          <mxGeometry x="690" y="130" width="210" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="nG2" value="vacancyNotifiedAt&#xa;최소 간격 14일" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="n1">
+          <mxGeometry x="690" y="190" width="210" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nG3" value="발송 이력 테이블&#xa;유니크 (정책, 사용자, 날짜)&#xa;Blue/Green 대응" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="n1">
+          <mxGeometry x="690" y="255" width="210" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nSend" value="④ 발송&#xa;NotificationDispatcher&#xa;EMAIL · PUSH · SMS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" vertex="1" parent="n1">
+          <mxGeometry x="980" y="150" width="220" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nLink" value="⑤ 딥링크 클릭&#xa;NotificationLinkController&#xa;오픈 리다이렉트 차단" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" vertex="1" parent="n1">
+          <mxGeometry x="980" y="280" width="220" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nEvent" value="⑥ 측정&#xa;NOTIFICATION_SENT → NOTIFICATION_CLICKED&#xa;알림 → 재방문 전환 퍼널" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;" vertex="1" parent="n1">
+          <mxGeometry x="620" y="430" width="420" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nBack" value="⑦ 재방문이 새 관측·입력을 만든다" style="text;html=1;fontSize=13;fontStyle=2;align=center;" vertex="1" parent="n1">
+          <mxGeometry x="120" y="440" width="420" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ne1" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="n1" source="nSrc" target="nD1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ne2" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="n1" source="nSrc" target="nD2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ne3" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="n1" source="nUser" target="nD2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ne4" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="n1" source="nUser" target="nD3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ne5" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="n1" source="nD1" target="nG1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ne6" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="n1" source="nD2" target="nG2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ne7" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="n1" source="nD3" target="nG3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ne8" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;" edge="1" parent="n1" source="nG2" target="nSend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ne9" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;" edge="1" parent="n1" source="nSend" target="nLink">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ne10" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="n1" source="nLink" target="nEvent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ne11" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeWidth=2;" edge="1" parent="n1" source="nEvent" target="nUser">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
