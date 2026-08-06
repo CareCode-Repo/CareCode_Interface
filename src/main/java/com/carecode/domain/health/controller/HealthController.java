@@ -193,6 +193,8 @@ public class HealthController extends BaseController {
     // 병원 관리 ====================
 
     // 모든 병원 조회
+    // 로그인 전에도 병원을 둘러볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
+    @PreAuthorize("permitAll()")
     @GetMapping("/hospitals")
     @LogExecutionTime
     @Operation(summary = "모든 병원 조회", description = "등록된 모든 병원 정보 조회")
@@ -205,6 +207,8 @@ public class HealthController extends BaseController {
     }
 
     // 병원 상세 조회
+    // 로그인 전에도 병원을 둘러볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
+    @PreAuthorize("permitAll()")
     @GetMapping("/hospitals/{id}")
     @LogExecutionTime
     @Operation(summary = "병원 상세 조회", description = "특정 병원의 상세 정보 조회")
@@ -216,6 +220,8 @@ public class HealthController extends BaseController {
     }
 
     // 근처 병원 조회
+    // 로그인 전에도 병원을 둘러볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
+    @PreAuthorize("permitAll()")
     @GetMapping("/hospitals/nearby")
     @LogExecutionTime
     @Operation(summary = "근처 병원 조회", description = "위치 기반으로 근처 병원 조회")
@@ -229,6 +235,8 @@ public class HealthController extends BaseController {
     }
 
     // 병원 타입별 조회
+    // 로그인 전에도 병원을 둘러볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
+    @PreAuthorize("permitAll()")
     @GetMapping("/hospitals/type/{type}")
     @LogExecutionTime
     @Operation(summary = "병원 타입별 조회", description = "특정 타입의 병원들 조회")
@@ -270,6 +278,8 @@ public class HealthController extends BaseController {
     }
 
     // 병원 좋아요 수 조회
+    // 로그인 전에도 병원을 둘러볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
+    @PreAuthorize("permitAll()")
     @GetMapping("/hospitals/{id}/likes")
     @LogExecutionTime
     @Operation(summary = "병원 좋아요 수 조회")
@@ -294,6 +304,8 @@ public class HealthController extends BaseController {
     }
 
     // 인기 병원 조회
+    // 로그인 전에도 병원을 둘러볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
+    @PreAuthorize("permitAll()")
     @GetMapping("/hospitals/popular")
     @LogExecutionTime
     @Operation(summary = "인기 병원 조회", description = "좋아요가 많은 인기 병원들 조회")
@@ -320,6 +332,8 @@ public class HealthController extends BaseController {
     }
 
     // 병원 리뷰 조회
+    // 로그인 전에도 병원을 둘러볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
+    @PreAuthorize("permitAll()")
     @GetMapping("/hospitals/{id}/reviews")
     @LogExecutionTime
     @Operation(summary = "병원 리뷰 조회", description = "특정 병원의 모든 리뷰 조회")

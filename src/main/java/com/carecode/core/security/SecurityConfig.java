@@ -91,6 +91,8 @@ public class SecurityConfig {
                 // 공개 엔드포인트
                 .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
                 .requestMatchers("/", "/error", "/favicon.ico").permitAll()
+                // 약관·방침은 동의하기 전에 읽어야 하므로 비로그인도 볼 수 있어야 한다.
+                .requestMatchers("/legal/**").permitAll()
                 
                 // 정적 리소스 (공개 접근)
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
@@ -133,15 +135,20 @@ public class SecurityConfig {
                 // 돌봄시설 공공데이터 API (공개 접근)
                 .requestMatchers("/api/public/care-facilities/**").permitAll()
                 
+                // 병원 조회는 로그인 전에도 보여야 한다. 실제 경로가 /health/hospitals/** 라
+                // 아래 /health/** 규칙보다 먼저 선언해야 한다.
+                .requestMatchers(HttpMethod.GET, "/health/hospitals").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/nearby").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/popular").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/type/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/*/reviews").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/*/likes").permitAll()
+                // 좋아요 여부는 "내" 상태라 로그인이 필요하다.
+                .requestMatchers("/health/hospitals/*/like-status").authenticated()
+
                 // 건강 API: 인증된 사용자만 (소유권은 서비스 계층에서 검증)
                 .requestMatchers("/health/**").authenticated()
-                .requestMatchers("/hospitals").permitAll()
-                .requestMatchers("/hospitals/search").permitAll()
-                .requestMatchers(HttpMethod.GET, "/hospitals/*/reviews").permitAll()
-                .requestMatchers(HttpMethod.GET, "/hospitals/*/rating").permitAll()
-                .requestMatchers(HttpMethod.GET, "/hospitals/*/likes").permitAll()
-                .requestMatchers(HttpMethod.POST, "/hospitals/*/like").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/hospitals/*/like").authenticated()
                 
                 // 정책 API: 개인화·북마크는 인증 필요, 나머지 조회는 공개 아래 /policies/* 와일드카드보다 먼저 선언해야 적용된다.
                 .requestMatchers("/policies/recommendations").authenticated()
