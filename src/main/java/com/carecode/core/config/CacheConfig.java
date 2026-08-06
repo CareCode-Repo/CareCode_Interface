@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
@@ -20,9 +21,13 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Redis 캐시 설정 */
+/**
+ * Redis 캐시 설정.
+ * spring.cache.type=none 이면 이 설정을 만들지 않는다 — 그렇지 않으면 Redis 없이 로컬·테스트 구동이 불가능하다.
+ */
 @Configuration
 @EnableCaching
+@ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = true)
 public class CacheConfig {
 
     // 기본 캐시 설정
