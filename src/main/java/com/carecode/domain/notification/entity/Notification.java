@@ -61,6 +61,7 @@ public class Notification {
         POLICY("정책"),
         HEALTH("건강"),
         COMMUNITY("커뮤니티"),
+        FACILITY("시설"),
         SYSTEM("시스템");
         
         private final String displayName;

@@ -60,6 +60,10 @@ public class FacilityWaitlist {
     @Column(name = "NOTE", length = 300)
     private String note;
 
+    /** 마지막으로 빈자리를 알린 관측일. 같은 자리로 반복 발송하지 않기 위한 기준이다. */
+    @Column(name = "VACANCY_NOTIFIED_AT")
+    private LocalDate vacancyNotifiedAt;
+
     @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
 
@@ -98,6 +102,28 @@ public class FacilityWaitlist {
         this.resolvedAt = resolvedAt != null ? resolvedAt : LocalDate.now();
         this.note = note;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    /** 빈자리를 알렸음을 기록한다. */
+    public void markVacancyNotified(LocalDate observedDate) {
+        this.vacancyNotifiedAt = observedDate;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 이 관측일의 빈자리를 알려도 되는지.
+     *
+     * <p>같은 자리를 두 번 알리면 신뢰를 잃고, 정원이 오르내릴 때마다 알리면 스팸이 된다.
+     * 마지막 발송 이후 최소 간격이 지나야 다시 보낸다.
+     */
+    public boolean canNotifyVacancy(LocalDate observedDate, int minIntervalDays) {
+        if (status != WaitStatus.WAITING) {
+            return false;
+        }
+        if (vacancyNotifiedAt == null) {
+            return true;
+        }
+        return ChronoUnit.DAYS.between(vacancyNotifiedAt, observedDate) >= minIntervalDays;
     }
 
     /** 대기 일수. 아직 대기 중이면 오늘까지로 센다. */
