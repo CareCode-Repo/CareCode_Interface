@@ -133,6 +133,17 @@ app:
     batch-size: ${POLICY_CHANGE_BATCH_SIZE:200}
     max-per-user: ${POLICY_CHANGE_MAX_PER_USER:3}
 
+  policy-deadline:
+    # 마감 며칠 전에 알릴지. 남은 일수가 이 값과 정확히 같은 날에만 보내므로
+    # 매일 돌아도 정책 하나당 여기 적은 횟수만큼만 나간다.
+    lead-days: ${POLICY_DEADLINE_LEAD_DAYS:7,1}
+
+  facility-vacancy:
+    # 같은 사람에게 다시 빈자리를 알리기까지의 최소 간격
+    min-interval-days: ${FACILITY_VACANCY_MIN_INTERVAL_DAYS:14}
+    # 이만큼 늘어야 알린다. 1자리 오르내림까지 알리면 스팸이 된다
+    min-increase: ${FACILITY_VACANCY_MIN_INCREASE:1}
+
   geocoding:
     # 어린이집 API 는 좌표를 주지 않아 주소로 보정한다. 키가 없으면 보정을 건너뛴다
     kakao:

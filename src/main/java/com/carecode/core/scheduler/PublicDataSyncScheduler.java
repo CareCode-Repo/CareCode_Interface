@@ -6,8 +6,10 @@ import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
 import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
 import com.carecode.core.geocoding.FacilityGeocodingService;
+import com.carecode.domain.careFacility.service.FacilityVacancyNotifier;
 import com.carecode.domain.policy.service.BenefitReportSolicitor;
 import com.carecode.domain.policy.service.PolicyChangeNotifier;
+import com.carecode.domain.policy.service.PolicyDeadlineNotifier;
 import com.carecode.core.ops.OperationalAlerter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,8 @@ public class PublicDataSyncScheduler {
     private final PediatricHospitalSyncService hospitalSyncService;
     private final FacilityGeocodingService geocodingService;
     private final PolicyChangeNotifier policyChangeNotifier;
+    private final PolicyDeadlineNotifier policyDeadlineNotifier;
+    private final FacilityVacancyNotifier vacancyNotifier;
     private final BenefitReportSolicitor reportSolicitor;
     private final OperationalAlerter alerter;
 
@@ -60,22 +64,37 @@ public class PublicDataSyncScheduler {
     /** 정책 변경 알림. 동기화가 끝난 뒤 돌아야 그날 바뀐 내용이 잡힌다. */
     @Scheduled(cron = "${app.scheduler.public-data.policy-change-cron:0 0 9 * * *}", zone = "Asia/Seoul")
     public void notifyPolicyChanges() {
-        var result = policyChangeNotifier.notifyPendingChanges();
-        log.info("정책 변경 알림 - {}", result);
+        policyChangeNotifier.notifyPendingChanges();
+    }
+
+    /**
+     * 빈자리 알림. 시설 동기화로 새 정원이 들어온 뒤에 돌아야 그날 난 자리가 잡힌다.
+     * 대기 걸어둔 사람이 이 앱을 다시 열 가장 강한 이유다.
+     */
+    @Scheduled(cron = "${app.scheduler.public-data.vacancy-cron:0 30 9 * * *}", zone = "Asia/Seoul")
+    public void notifyFacilityVacancies() {
+        vacancyNotifier.notifyNewVacancies();
+    }
+
+    /**
+     * 신청 마감 임박 알림. 놓친 뒤에 알려주는 것보다 놓치기 전에 막는 편이 낫다.
+     * 마감일까지 남은 일수로 판단하므로 매일 돌아야 D-7·D-1 을 놓치지 않는다.
+     */
+    @Scheduled(cron = "${app.scheduler.public-data.policy-deadline-cron:0 0 10 * * *}", zone = "Asia/Seoul")
+    public void notifyPolicyDeadlines() {
+        policyDeadlineNotifier.notifyUpcomingDeadlines();
     }
 
     /** 실수령액 제보 요청. 매일 보내면 소음이라 주 1회만 묻는다. */
     @Scheduled(cron = "${app.scheduler.public-data.report-ask-cron:0 0 10 * * WED}", zone = "Asia/Seoul")
     public void solicitBenefitReports() {
-        var result = reportSolicitor.solicitReports();
-        log.info("실수령액 제보 요청 - {}", result);
+        reportSolicitor.solicitReports();
     }
 
     /** 좌표 보정. 동기화가 끝난 뒤 돌아야 새로 들어온 시설이 대상에 포함된다. */
     @Scheduled(cron = "${app.scheduler.public-data.geocoding-cron:0 0 5 * * *}", zone = "Asia/Seoul")
     public void fillMissingCoordinates() {
-        var result = geocodingService.fillMissingCoordinates();
-        log.info("시설 좌표 보정 - {}", result);
+        geocodingService.fillMissingCoordinates();
     }
 
     private void logResult(String label, SyncResult result) {
