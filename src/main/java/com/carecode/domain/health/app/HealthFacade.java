@@ -280,5 +280,9 @@ public class HealthFacade {
     // Helper Methods ====================
 
     // 매핑은 HospitalMapper/HospitalReviewMapper에 위임
-}
 
+    /** 조건부 응답용 지문. 일정이 수정되면 값이 바뀌어 캐시가 무효화된다. */
+    public String getVaccineScheduleVersion(String childId) {
+        return healthService.getVaccineScheduleVersion(childId);
+    }
+}

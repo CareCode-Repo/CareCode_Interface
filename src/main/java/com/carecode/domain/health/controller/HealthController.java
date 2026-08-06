@@ -2,6 +2,7 @@ package com.carecode.domain.health.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.controller.BaseController;
+import com.carecode.core.web.ConditionalResponse;
 import com.carecode.core.util.PageRequestUtil;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
@@ -23,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -139,11 +141,19 @@ public class HealthController extends BaseController {
     @GetMapping("/vaccines/schedule")
     @LogExecutionTime
     @Operation(summary = "예방접종 스케줄 조회")
-    public ResponseEntity<List<VaccineScheduleResponse>> getVaccineSchedule(@Parameter(description = "아동 ID", required = true) @RequestParam String childId) {
+    public ResponseEntity<List<VaccineScheduleResponse>> getVaccineSchedule(
+            @Parameter(description = "아동 ID", required = true) @RequestParam String childId,
+            WebRequest webRequest) {
 
         List<VaccineScheduleResponse> schedule = healthFacade.getVaccineSchedule(childId, getAuthenticatedUserPk());
 
-        return ResponseEntity.ok(schedule);
+        // 접종 기록은 병원에서 확인하는 경우가 많다. 바뀌지 않았으면 304 로 본문을 아낀다.
+        return ConditionalResponse.of(webRequest, schedule, fingerprint(childId, schedule.size()));
+    }
+
+    /** 내용이 바뀌면 함께 바뀌는 값. 건수만으로는 수정 감지가 안 되므로 갱신 시각을 섞는다. */
+    private String fingerprint(String key, int size) {
+        return key + ":" + size + ":" + healthFacade.getVaccineScheduleVersion(key);
     }
 
     // 건강 검진 스케줄 조회

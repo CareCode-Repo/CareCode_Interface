@@ -3,6 +3,8 @@ package com.carecode.domain.health.controller;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.domain.health.dto.request.ChildCreateRequest;
 import com.carecode.domain.health.dto.response.ChildInfoResponse;
+import com.carecode.domain.health.dto.response.SiblingOverviewResponse;
+import com.carecode.domain.health.service.SiblingOverviewService;
 import com.carecode.domain.health.dto.response.GrowthPointResponse;
 import com.carecode.domain.health.dto.response.VaccinationScheduleResponse;
 import com.carecode.domain.health.growth.GrowthMetric;
@@ -31,6 +33,7 @@ import java.util.List;
 public class ChildController {
 
     private final ChildService childService;
+    private final SiblingOverviewService siblingOverviewService;
     private final VaccinationScheduleService vaccinationScheduleService;
     private final GrowthChartService growthChartService;
 
@@ -126,5 +129,12 @@ public class ChildController {
         return growthChartService.getLatestPercentile(childId, metric)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    // 형제자매 통합 조회
+    @GetMapping("/overview")
+    @Operation(summary = "자녀 통합 현황", description = "모든 자녀의 접종·대기·다자녀 혜택을 한 번에 조회")
+    public ResponseEntity<SiblingOverviewResponse> overview() {
+        return ResponseEntity.ok(siblingOverviewService.getOverview());
     }
 }

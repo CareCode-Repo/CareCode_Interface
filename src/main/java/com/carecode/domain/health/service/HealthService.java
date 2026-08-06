@@ -26,6 +26,7 @@ import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.health.repository.HealthRecordAttachmentRepository;
 import com.carecode.domain.health.repository.HealthRecordRepository;
+import com.carecode.domain.health.repository.VaccinationScheduleRepository;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import com.carecode.domain.user.entity.Child;
@@ -68,6 +69,7 @@ public class HealthService {
     private static final int HEALTH_SCORE_MEDIUM_THRESHOLD = 60;
     
     private final HealthRecordRepository healthRecordRepository;
+    private final VaccinationScheduleRepository vaccinationScheduleRepository;
     private final ConsentGuard consentGuard;
     private final HealthRecordAttachmentRepository healthRecordAttachmentRepository;
     private final ChildRepository childRepository;
@@ -948,5 +950,21 @@ public class HealthService {
                 .displayOrder(attachment.getDisplayOrder())
                 .createdAt(attachment.getCreatedAt())
                 .build();
+    }
+
+    /** 아이의 접종 일정 중 가장 최근 갱신 시각. 없으면 "0" 을 돌려준다. */
+    @Transactional(readOnly = true)
+    public String getVaccineScheduleVersion(String childId) {
+        try {
+            return vaccinationScheduleRepository
+                    .findByChildIdOrderByDueDateAsc(Long.valueOf(childId)).stream()
+                    .map(v -> v.getUpdatedAt() != null ? v.getUpdatedAt() : v.getCreatedAt())
+                    .filter(java.util.Objects::nonNull)
+                    .max(java.time.LocalDateTime::compareTo)
+                    .map(String::valueOf)
+                    .orElse("0");
+        } catch (Exception e) {
+            return "0";
+        }
     }
 }
