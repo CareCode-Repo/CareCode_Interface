@@ -27,6 +27,12 @@ public class AnalyticsService {
             new StepDef(EventType.MISSED_BENEFIT_VIEWED, "놓친 지원금 확인"),
             new StepDef(EventType.BENEFIT_LINK_CLICKED, "신청 링크 클릭"));
 
+    /** 알림이 실제로 사람을 돌아오게 하는지. 리텐션의 핵심 지표다. */
+    private static final List<StepDef> NOTIFICATION_FUNNEL = List.of(
+            new StepDef(EventType.NOTIFICATION_SENT, "알림 발송"),
+            new StepDef(EventType.NOTIFICATION_CLICKED, "알림 클릭"),
+            new StepDef(EventType.BENEFIT_LINK_CLICKED, "신청 링크 클릭"));
+
     private static final int MAX_COHORT_DAYS = 60;
 
     private final UserEventRepository eventRepository;
@@ -35,15 +41,24 @@ public class AnalyticsService {
     }
 
     public FunnelResponse funnel(LocalDate from, LocalDate to) {
+        return buildFunnel(FUNNEL, from, to);
+    }
+
+    /** 알림 → 재방문 전환. 이 값이 낮으면 알림 내용이나 시점을 바꿔야 한다. */
+    public FunnelResponse notificationFunnel(LocalDate from, LocalDate to) {
+        return buildFunnel(NOTIFICATION_FUNNEL, from, to);
+    }
+
+    private FunnelResponse buildFunnel(List<StepDef> definition, LocalDate from, LocalDate to) {
         List<FunnelResponse.Step> steps = new ArrayList<>();
         long previous = 0;
 
-        for (int i = 0; i < FUNNEL.size(); i++) {
-            StepDef def = FUNNEL.get(i);
+        for (int i = 0; i < definition.size(); i++) {
+            StepDef def = definition.get(i);
             // 두 번째 단계부터는 앞 단계를 거친 사용자만 센다. 그래야 전환율이 의미를 갖는다.
             long users = i == 0
                     ? eventRepository.countDistinctUsers(def.type(), from, to)
-                    : eventRepository.countConverted(FUNNEL.get(i - 1).type(), def.type(), from, to);
+                    : eventRepository.countConverted(definition.get(i - 1).type(), def.type(), from, to);
 
             steps.add(FunnelResponse.Step.builder()
                     .event(def.type().name())

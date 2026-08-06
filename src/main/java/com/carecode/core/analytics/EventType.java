@@ -20,6 +20,12 @@ public enum EventType {
     ADMISSION_FORECAST_VIEWED,
     FACILITY_POPULARITY_VIEWED,
 
+    // 알림 효과 — 이 앱이 "한 번 보고 끝" 을 벗어났는지 판단하는 지표
+    NOTIFICATION_SENT,
+    NOTIFICATION_CLICKED,
+    BENEFIT_AMOUNT_REPORTED,
+    WAITLIST_REGISTERED,
+
     // 유지
     APP_OPENED,
     BOOKING_CREATED,

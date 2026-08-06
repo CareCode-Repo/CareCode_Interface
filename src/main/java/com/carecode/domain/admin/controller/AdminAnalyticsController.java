@@ -40,6 +40,16 @@ public class AdminAnalyticsController {
         return ResponseEntity.ok(analyticsService.funnel(start, end));
     }
 
+    @GetMapping("/notification-funnel")
+    @Operation(summary = "알림 효과 퍼널", description = "발송 → 클릭 → 신청 전환율")
+    public ResponseEntity<FunnelResponse> notificationFunnel(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        LocalDate end = to != null ? to : LocalDate.now();
+        LocalDate start = from != null ? from : end.minusDays(DEFAULT_RANGE_DAYS);
+        return ResponseEntity.ok(analyticsService.notificationFunnel(start, end));
+    }
+
     @GetMapping("/retention")
     @Operation(summary = "코호트 리텐션 조회", description = "가입일 기준 D1/D7/D30 잔존율")
     public ResponseEntity<RetentionResponse> retention(
