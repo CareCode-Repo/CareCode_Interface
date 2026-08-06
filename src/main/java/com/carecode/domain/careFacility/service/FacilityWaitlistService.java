@@ -1,5 +1,7 @@
 package com.carecode.domain.careFacility.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.careFacility.dto.request.WaitlistRequest;
@@ -37,6 +39,7 @@ public class FacilityWaitlistService {
     private final CareFacilityRepository facilityRepository;
     private final ChildRepository childRepository;
     private final CurrentUserFacade currentUserFacade;
+    private final EventLogger eventLogger;
 
     @Transactional
     public Long register(Long facilityId, WaitlistRequest request) {
@@ -61,6 +64,7 @@ public class FacilityWaitlistService {
                 .classAge(monthsOld(child))
                 .note(request.getNote())
                 .build());
+        eventLogger.log(EventType.WAITLIST_REGISTERED, user.getId(), String.valueOf(facilityId));
         return saved.getId();
     }
 

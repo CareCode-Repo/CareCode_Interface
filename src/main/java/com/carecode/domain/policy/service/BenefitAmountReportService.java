@@ -1,5 +1,7 @@
 package com.carecode.domain.policy.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.policy.dto.request.BenefitAmountReportRequest;
@@ -34,6 +36,7 @@ public class BenefitAmountReportService {
     private final BenefitAmountReportRepository reportRepository;
     private final PolicyRepository policyRepository;
     private final CurrentUserFacade currentUserFacade;
+    private final EventLogger eventLogger;
 
     @Transactional
     public BenefitAmountConsensusResponse report(Long policyId, BenefitAmountReportRequest request) {
@@ -59,6 +62,7 @@ public class BenefitAmountReportService {
                                 .createdAt(LocalDateTime.now())
                                 .build()));
 
+        eventLogger.log(EventType.BENEFIT_AMOUNT_REPORTED, user.getId(), String.valueOf(policyId));
         return evaluateConsensus(policy);
     }
 

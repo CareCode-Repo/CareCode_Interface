@@ -46,7 +46,8 @@ class BenefitAmountReportServiceTest {
         when(reportRepository.findByPolicyIdAndUserId(anyLong(), anyLong())).thenReturn(Optional.empty());
         when(reportRepository.findByPolicyId(anyLong())).thenReturn(List.of());
 
-        service = new BenefitAmountReportService(reportRepository, policyRepository, facade);
+        service = new BenefitAmountReportService(reportRepository, policyRepository, facade,
+                mock(com.carecode.core.analytics.EventLogger.class));
         ReflectionTestUtils.setField(service, "consensusThreshold", 3);
     }
 

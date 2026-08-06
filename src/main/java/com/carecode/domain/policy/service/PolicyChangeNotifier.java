@@ -1,5 +1,7 @@
 package com.carecode.domain.policy.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.domain.notification.entity.Notification;
 import com.carecode.domain.notification.repository.NotificationRepository;
 import com.carecode.domain.notification.sender.NotificationDispatcher;
@@ -42,6 +44,7 @@ public class PolicyChangeNotifier {
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationDispatcher dispatcher;
+    private final EventLogger eventLogger;
 
     @Getter
     public static class NotifyResult {
@@ -100,6 +103,9 @@ public class PolicyChangeNotifier {
                     .build());
 
             dispatcher.dispatchAsync(notification);
+            // 발송 대비 클릭률이 알림의 효과를 판단하는 유일한 지표다.
+            eventLogger.log(EventType.NOTIFICATION_SENT, user.getId(),
+                    String.valueOf(notification.getId()), change.getChangeType().name());
             sent++;
         }
         return sent;
