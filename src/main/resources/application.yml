@@ -229,7 +229,7 @@ public:
     # 보육통합정보시스템 — data.go.kr 이 아닌 별도 시스템. 인증 파라미터명이 다르다
     childcare-portal:
       service-key: ${CHILDCARE_PORTAL_KEY:}
-      base-url: ${CHILDCARE_PORTAL_BASE_URL:http://api.childcare.go.kr}
+      base-url: ${CHILDCARE_PORTAL_BASE_URL:https://api.childcare.go.kr}
       # 명세서와 다르면 코드가 아니라 여기를 고친다
       key-param: ${CHILDCARE_PORTAL_KEY_PARAM:key}
       page-param: ${CHILDCARE_PORTAL_PAGE_PARAM:}
@@ -250,7 +250,7 @@ public:
     # 데이터셋 경로. 공공데이터 오퍼레이션은 개편되므로 재배포 없이 바꿀 수 있게 뺀다.
     # 절대 URL 을 넣으면 base-url 대신 그대로 호출한다(표준데이터는 호스트가 다르다).
     resource:
-      childcare: ${PUBLIC_DATA_RESOURCE_CHILDCARE:http://api.childcare.go.kr/mediate/rest/cpmsapi021/cpmsapi021/request}
+      childcare: ${PUBLIC_DATA_RESOURCE_CHILDCARE:https://api.childcare.go.kr/mediate/rest/cpmsapi021/cpmsapi021/request}
       kindergarten: ${PUBLIC_DATA_RESOURCE_KINDERGARTEN:https://e-childschoolinfo.moe.go.kr/api/notice/basicInfo2.do}
       benefit: ${PUBLIC_DATA_RESOURCE_BENEFIT:https://api.odcloud.kr/api/gov24/v3/serviceList}
       hospital: ${PUBLIC_DATA_RESOURCE_HOSPITAL:B551182/hospInfoServicev2/getHospBasisList}

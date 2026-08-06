@@ -2,6 +2,7 @@ package com.carecode.integration;
 
 import com.carecode.CareCodeApplication;
 import com.carecode.core.client.sync.GovernmentBenefitSyncService;
+import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
 import com.carecode.core.client.sync.KindergartenSyncService;
 import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
@@ -67,6 +68,7 @@ class LivePublicDataSyncTest {
     @MockBean private JavaMailSender javaMailSender;
 
     @Autowired private KindergartenSyncService kindergartenSync;
+    @Autowired private NationwideChildcareFacilitySyncService childcareSync;
     @Autowired private GovernmentBenefitSyncService benefitSync;
     @Autowired private PediatricHospitalSyncService hospitalSync;
     @Autowired private CareFacilityRepository facilityRepository;
@@ -135,5 +137,20 @@ class LivePublicDataSyncTest {
                 assertThat(h.getLongitude()).isBetween(124.0, 132.0);
             }
         });
+    }
+
+    @Test
+    @DisplayName("어린이집: 시설코드·정원이 적재된다")
+    void syncsChildcareFacilities() {
+        SyncResult result = childcareSync.sync();
+        System.out.println("@@ 어린이집 " + result);
+
+        assertThat(result.getCreated()).isPositive();
+        CareFacility sample = facilityRepository.findAll().get(0);
+        System.out.println("@@ 예시: " + sample.getName() + " / 정원 " + sample.getCapacity()
+                + " / " + sample.getPhone() + " / " + sample.getAddress());
+
+        assertThat(sample.getName()).isNotBlank();
+        assertThat(sample.getCapacity()).isNotNull();
     }
 }
