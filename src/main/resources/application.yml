@@ -38,6 +38,13 @@ spring:
       max-lifetime: 1800000
 
   jpa:
+    hibernate:
+      naming:
+        # 엔티티가 @Table 로 대문자 이름을 명시하는데, Boot 기본 전략은 이를 소문자로 바꾼다.
+        # Linux MariaDB 는 lower_case_table_names=0 이라 대소문자를 구분해 전 테이블이 검증 실패한다.
+        # 테이블만 선언한 그대로 쓰고 컬럼은 기존처럼 snake_case 로 변환한다.
+        physical-strategy: com.carecode.core.config.CareCodeNamingStrategy
+
     database-platform: org.hibernate.dialect.MariaDBDialect
     open-in-view: false
     properties:
@@ -232,6 +239,10 @@ management:
       enabled: true
     readinessState:
       enabled: true
+    # 메일은 부가 기능이라 SMTP 가 막히면 헬스체크가 통째로 DOWN 이 되고
+    # 로드밸런서가 멀쩡한 인스턴스를 내려버린다. 발송 실패는 알림 쪽에서 따로 잡는다.
+    mail:
+      enabled: false
 
 kakao:
   redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/auth/kakao/callback}
