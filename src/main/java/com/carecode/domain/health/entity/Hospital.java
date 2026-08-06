@@ -28,7 +28,11 @@ public class Hospital {
     private String name;
 
     @Column
-    private String type; // 소아과, 산부인과 등
+    private String type; // 진료과목 (소아청소년과 등)
+
+    /** 요양기관 종별. 동네 의원과 대학병원은 부모의 선택 기준이 다르다. */
+    @Column(name = "GRADE")
+    private String grade;
 
     @Column
     private String address;

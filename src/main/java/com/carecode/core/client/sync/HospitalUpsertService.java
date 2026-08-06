@@ -42,8 +42,9 @@ public class HospitalUpsertService {
         applyIfPresent(text(row, "addr", "ADDR"), hospital::setAddress);
         applyIfPresent(text(row, "telno", "TELNO"), hospital::setPhone);
 
-        String clCdNm = text(row, "clCdNm", "CLCDNM");
-        hospital.setType(clCdNm != null ? clCdNm : defaultType);
+        // clCdNm 은 "상급종합"·"의원" 같은 종별이다. 이걸 type 에 넣으면 소아과 검색이 안 된다.
+        hospital.setType(defaultType);
+        applyIfPresent(text(row, "clCdNm", "CLCDNM"), hospital::setGrade);
 
         // 심평원 좌표는 XPos=경도, YPos=위도 순서다. 뒤집으면 지도에서 엉뚱한 위치가 나온다.
         Double lng = decimal(row, "XPos", "XPOS");
