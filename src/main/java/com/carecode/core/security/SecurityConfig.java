@@ -114,6 +114,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 // 공개 API 엔드포인트
+                // 대기 기록은 본인 것만 다루므로 인증이 필요하다. 와일드카드보다 먼저 선언한다.
+                .requestMatchers("/facilities/waitlist/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/facilities/*/waitlist").authenticated()
                 .requestMatchers("/facilities").permitAll()
                 .requestMatchers("/facilities/type/**").permitAll()
                 .requestMatchers("/facilities/location/**").permitAll()
@@ -144,6 +147,7 @@ public class SecurityConfig {
                 .requestMatchers("/policies/recommendations").authenticated()
                 .requestMatchers("/policies/missed-benefits").authenticated()
                 .requestMatchers("/policies/regional-comparison").authenticated()
+                .requestMatchers(HttpMethod.POST, "/policies/*/amount-reports").authenticated()
                 .requestMatchers("/policies/bookmarks").authenticated()
                 .requestMatchers("/policies/*/bookmarks").authenticated()
                 .requestMatchers("/policies").permitAll()

@@ -7,6 +7,8 @@ import com.carecode.core.util.PageRequestUtil;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.PolicyNotFoundException;
+import com.carecode.domain.policy.dto.request.BenefitAmountReportRequest;
+import com.carecode.domain.policy.dto.response.BenefitAmountConsensusResponse;
 import com.carecode.domain.policy.dto.response.MissedBenefitSummaryResponse;
 import com.carecode.domain.policy.dto.response.PersonalizedPolicyResponse;
 import com.carecode.domain.policy.dto.response.RegionalBenefitComparisonResponse;
@@ -289,6 +291,24 @@ public class PolicyController extends BaseController {
             @Parameter(description = "전망 기간(년)", example = "5") @RequestParam(required = false) Integer years,
             @Parameter(description = "상위 노출 지역 수", example = "10") @RequestParam(required = false) Integer limit) {
         return ResponseEntity.ok(policyFacade.compareRegionalBenefits(childId, years, limit));
+    }
+
+    // 실수령액 제보
+    @PostMapping("/{policyId}/amount-reports")
+    @LogExecutionTime
+    @Operation(summary = "지원금 실수령액 제보", description = "받은 금액을 알려 정보를 함께 채웁니다")
+    public ResponseEntity<BenefitAmountConsensusResponse> reportAmount(
+            @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId,
+            @jakarta.validation.Valid @RequestBody BenefitAmountReportRequest request) {
+        return ResponseEntity.ok(policyFacade.reportBenefitAmount(policyId, request));
+    }
+
+    @GetMapping("/{policyId}/amount-reports")
+    @LogExecutionTime
+    @Operation(summary = "제보 합의 현황", description = "확정까지 몇 명이 더 필요한지 조회")
+    public ResponseEntity<BenefitAmountConsensusResponse> getAmountConsensus(
+            @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
+        return ResponseEntity.ok(policyFacade.getBenefitAmountConsensus(policyId));
     }
 
     private String getAuthenticatedUserCode() {

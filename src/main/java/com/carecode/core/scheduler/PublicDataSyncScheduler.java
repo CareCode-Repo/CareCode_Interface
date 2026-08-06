@@ -6,6 +6,7 @@ import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
 import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
 import com.carecode.core.geocoding.FacilityGeocodingService;
+import com.carecode.domain.policy.service.PolicyChangeNotifier;
 import com.carecode.core.ops.OperationalAlerter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ public class PublicDataSyncScheduler {
     private final GovernmentBenefitSyncService benefitSyncService;
     private final PediatricHospitalSyncService hospitalSyncService;
     private final FacilityGeocodingService geocodingService;
+    private final PolicyChangeNotifier policyChangeNotifier;
     private final OperationalAlerter alerter;
 
     /** 전국 어린이집 동기화. */
@@ -51,6 +53,13 @@ public class PublicDataSyncScheduler {
     public void syncPediatricHospitals() {
         SyncResult result = hospitalSyncService.sync();
         logResult("소아청소년과 병원", result);
+    }
+
+    /** 정책 변경 알림. 동기화가 끝난 뒤 돌아야 그날 바뀐 내용이 잡힌다. */
+    @Scheduled(cron = "${app.scheduler.public-data.policy-change-cron:0 0 9 * * *}", zone = "Asia/Seoul")
+    public void notifyPolicyChanges() {
+        var result = policyChangeNotifier.notifyPendingChanges();
+        log.info("정책 변경 알림 - {}", result);
     }
 
     /** 좌표 보정. 동기화가 끝난 뒤 돌아야 새로 들어온 시설이 대상에 포함된다. */

@@ -1,6 +1,8 @@
 package com.carecode.domain.policy.app;
 
 import com.carecode.domain.policy.dto.request.PolicySearchRequest;
+import com.carecode.domain.policy.dto.request.BenefitAmountReportRequest;
+import com.carecode.domain.policy.dto.response.BenefitAmountConsensusResponse;
 import com.carecode.domain.policy.dto.response.MissedBenefitSummaryResponse;
 import com.carecode.domain.policy.dto.response.PersonalizedPolicyResponse;
 import com.carecode.domain.policy.dto.response.RegionalBenefitComparisonResponse;
@@ -8,6 +10,7 @@ import com.carecode.domain.policy.dto.response.PolicyBookmarkResponse;
 import com.carecode.domain.policy.dto.response.PolicyDto;
 import com.carecode.domain.policy.dto.response.PolicyListResponse;
 import com.carecode.domain.policy.dto.response.PolicyStatsSimpleResponse;
+import com.carecode.domain.policy.service.BenefitAmountReportService;
 import com.carecode.domain.policy.service.MissedBenefitService;
 import com.carecode.domain.policy.service.PolicyRecommendationService;
 import com.carecode.domain.policy.service.RegionalBenefitComparisonService;
@@ -25,6 +28,7 @@ public class PolicyFacade {
     private final PolicyService policyService;
     private final PolicyRecommendationService policyRecommendationService;
     private final MissedBenefitService missedBenefitService;
+    private final BenefitAmountReportService benefitAmountReportService;
     private final RegionalBenefitComparisonService regionalBenefitComparisonService;
 
     @Transactional(readOnly = true)
@@ -94,5 +98,16 @@ public class PolicyFacade {
     @Transactional(readOnly = true)
     public RegionalBenefitComparisonResponse compareRegionalBenefits(Long childId, Integer years, Integer limit) {
         return regionalBenefitComparisonService.compare(childId, years, limit);
+    }
+
+    @Transactional
+    public BenefitAmountConsensusResponse reportBenefitAmount(Long policyId,
+                                                              BenefitAmountReportRequest request) {
+        return benefitAmountReportService.report(policyId, request);
+    }
+
+    @Transactional(readOnly = true)
+    public BenefitAmountConsensusResponse getBenefitAmountConsensus(Long policyId) {
+        return benefitAmountReportService.getConsensus(policyId);
     }
 }
