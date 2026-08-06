@@ -3,6 +3,7 @@ package com.carecode.core.client.sync;
 import com.carecode.core.util.AgeRangeParser;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
+import com.carecode.domain.policy.service.PolicyChangeDetector;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ public class PolicyUpsertService {
     public static final String EXTERNAL_CODE_PREFIX = "GOV-";
 
     private final PolicyRepository policyRepository;
+    private final PolicyChangeDetector changeDetector;
 
     /** 서비스 ID 기준 upsert. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -36,6 +38,8 @@ public class PolicyUpsertService {
         String policyCode = EXTERNAL_CODE_PREFIX + serviceId;
         Policy policy = policyRepository.findByPolicyCode(policyCode).orElse(null);
         boolean isNew = policy == null;
+        // 필드를 덮어쓰기 전에 값을 떠 둔다.
+        PolicyChangeDetector.Before snapshot = isNew ? null : PolicyChangeDetector.Before.of(policy);
         if (isNew) {
             policy = new Policy();
             policy.setPolicyCode(policyCode);
@@ -56,7 +60,15 @@ public class PolicyUpsertService {
         applyAgeRange(policy, row);
         policy.setUpdatedAt(LocalDateTime.now());
 
-        policyRepository.save(policy);
+        // 저장하면 이전 값이 사라진다. 비교는 그 전에 끝내야 한다.
+        PolicyChangeDetector.Before before = snapshot;
+        Policy saved = policyRepository.save(policy);
+
+        if (isNew) {
+            changeDetector.recordCreated(saved);
+        } else {
+            changeDetector.recordUpdates(saved, before);
+        }
         return isNew;
     }
 
