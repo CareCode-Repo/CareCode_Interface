@@ -12,6 +12,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -214,6 +216,40 @@ public class CustomizedResponseEntityExceptionHandler {
         
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
+
+    // @PreAuthorize 거부는 권한 문제지 장애가 아니다.
+    // 그냥 두면 최후 핸들러가 500 을 주고 운영 알림이 울린다.
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationDenied(AuthorizationDeniedException ex, WebRequest request) {
+        log.warn("권한 없는 접근: {}", request.getDescription(false));
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+            ErrorCode.FORBIDDEN,
+            "접근 권한이 없습니다",
+            request.getDescription(false)
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(errorResponse);
+    }
+
+    // 없는 URL 은 잘못된 요청이지 장애가 아니다.
+    // 그냥 두면 아래 최후 핸들러가 500 으로 응답하고 운영 알림까지 울린다.
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex, WebRequest request) {
+        log.warn("존재하지 않는 경로 요청: {}", ex.getResourcePath());
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+            ErrorCode.RESOURCE_NOT_FOUND,
+            "요청하신 경로를 찾을 수 없습니다",
+            request.getDescription(false)
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
                 .body(errorResponse);
     }
 
