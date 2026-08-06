@@ -136,6 +136,17 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
                                              @Param("minLng") double minLng,
                                              @Param("maxLng") double maxLng);
 
+    /** 좌표가 없어 반경 검색에 잡히지 않는 시설. 지오코딩 대상이다. */
+    @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true "
+            + "AND (cf.latitude IS NULL OR cf.longitude IS NULL) "
+            + "AND cf.address IS NOT NULL AND cf.address <> ''")
+    List<CareFacility> findMissingCoordinates(Pageable pageable);
+
+    @Query("SELECT COUNT(cf) FROM CareFacility cf WHERE cf.isActive = true "
+            + "AND (cf.latitude IS NULL OR cf.longitude IS NULL) "
+            + "AND cf.address IS NOT NULL AND cf.address <> ''")
+    long countMissingCoordinates();
+
     /** 전문 검색. LIKE '%키워드%' 와 달리 인덱스를 타고 관련도 순으로 정렬된다. */
     @Query(value = "SELECT * FROM TBL_CARE_FACILITIES "
            + "WHERE IS_ACTIVE = true "

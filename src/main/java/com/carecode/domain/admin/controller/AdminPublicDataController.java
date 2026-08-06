@@ -5,6 +5,7 @@ import com.carecode.core.client.sync.KindergartenSyncService;
 import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
 import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
+import com.carecode.core.geocoding.FacilityGeocodingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class AdminPublicDataController {
     private final KindergartenSyncService kindergartenSyncService;
     private final GovernmentBenefitSyncService benefitSyncService;
     private final PediatricHospitalSyncService hospitalSyncService;
+    private final FacilityGeocodingService geocodingService;
 
     @PostMapping("/facilities/sync")
     @Operation(summary = "전국 어린이집 동기화", description = "시설 코드 기준으로 갱신")
@@ -50,6 +52,18 @@ public class AdminPublicDataController {
     @Operation(summary = "소아청소년과 병원 동기화", description = "요양기호 기준으로 갱신")
     public ResponseEntity<Map<String, Object>> syncHospitals() {
         return ResponseEntity.ok(toResponse(hospitalSyncService.sync()));
+    }
+
+    @PostMapping("/facilities/geocode")
+    @Operation(summary = "시설 좌표 보정", description = "좌표 없는 시설의 주소를 좌표로 변환")
+    public ResponseEntity<Map<String, Object>> geocode() {
+        var result = geocodingService.fillMissingCoordinates();
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("resolved", result.getResolved());
+        body.put("failed", result.getFailed());
+        body.put("remaining", result.getRemaining());
+        body.put("skippedReason", result.getSkippedReason());
+        return ResponseEntity.ok(body);
     }
 
     private Map<String, Object> toResponse(SyncResult result) {

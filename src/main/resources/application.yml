@@ -115,6 +115,15 @@ app:
       secure: ${REFRESH_COOKIE_SECURE:true}
       same-site: ${REFRESH_COOKIE_SAME_SITE:None}
       max-age-days: ${REFRESH_COOKIE_MAX_AGE_DAYS:14}
+  geocoding:
+    # 어린이집 API 는 좌표를 주지 않아 주소로 보정한다. 키가 없으면 보정을 건너뛴다
+    kakao:
+      # 카카오는 OAuth client_id 가 곧 REST API 키다. 별도 발급 없이 재사용한다.
+      # 단, 개발자센터에서 해당 앱의 "카카오맵" 사용 설정이 켜져 있어야 한다.
+      rest-api-key: ${KAKAO_REST_API_KEY:${KAKAO_CLIENT_ID:}}
+    batch-size: ${GEOCODING_BATCH_SIZE:500}
+    delay-ms: ${GEOCODING_DELAY_MS:100}
+
   ops:
     # 동기화 실패·처리되지 않은 예외를 알린다. 비워두면 로그만 남는다
     slack-webhook-url: ${OPS_SLACK_WEBHOOK_URL:}
@@ -159,6 +168,8 @@ app:
       kindergarten-cron: ${PUBLIC_DATA_KINDERGARTEN_CRON:0 0 4 * * MON}
       benefit-cron: ${PUBLIC_DATA_BENEFIT_CRON:0 30 3 * * *}
       hospital-cron: ${PUBLIC_DATA_HOSPITAL_CRON:0 0 3 * * TUE}
+      # 동기화가 끝난 뒤 돌아야 새로 들어온 시설이 대상에 포함된다
+      geocoding-cron: ${PUBLIC_DATA_GEOCODING_CRON:0 0 5 * * *}
 
 jwt:
   secret: ${JWT_SECRET}

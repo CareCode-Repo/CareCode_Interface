@@ -5,6 +5,7 @@ import com.carecode.core.client.sync.KindergartenSyncService;
 import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
 import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
+import com.carecode.core.geocoding.FacilityGeocodingService;
 import com.carecode.core.ops.OperationalAlerter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class PublicDataSyncScheduler {
     private final KindergartenSyncService kindergartenSyncService;
     private final GovernmentBenefitSyncService benefitSyncService;
     private final PediatricHospitalSyncService hospitalSyncService;
+    private final FacilityGeocodingService geocodingService;
     private final OperationalAlerter alerter;
 
     /** 전국 어린이집 동기화. */
@@ -49,6 +51,13 @@ public class PublicDataSyncScheduler {
     public void syncPediatricHospitals() {
         SyncResult result = hospitalSyncService.sync();
         logResult("소아청소년과 병원", result);
+    }
+
+    /** 좌표 보정. 동기화가 끝난 뒤 돌아야 새로 들어온 시설이 대상에 포함된다. */
+    @Scheduled(cron = "${app.scheduler.public-data.geocoding-cron:0 0 5 * * *}", zone = "Asia/Seoul")
+    public void fillMissingCoordinates() {
+        var result = geocodingService.fillMissingCoordinates();
+        log.info("시설 좌표 보정 - {}", result);
     }
 
     private void logResult(String label, SyncResult result) {
