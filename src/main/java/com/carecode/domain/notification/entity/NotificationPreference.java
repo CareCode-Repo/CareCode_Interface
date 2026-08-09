@@ -32,9 +32,11 @@ public class NotificationPreference {
     @Column(nullable = false)
     private Notification.NotificationType notificationType;
 
+    // 사용자가 직접 켜야 하는 채널이다. 기본값을 true 로 두면 값을 지정하지 않은 생성 경로에서
+    // 요청한 적 없는 이메일 알림이 켜진다. (설정 행이 없을 때 실제로 발송되는 채널과 맞춘다)
     @Column(nullable = false)
     @Builder.Default
-    private Boolean emailEnabled = true;
+    private Boolean emailEnabled = false;
 
     @Column(nullable = false)
     @Builder.Default
