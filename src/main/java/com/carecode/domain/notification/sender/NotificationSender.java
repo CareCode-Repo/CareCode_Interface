@@ -12,4 +12,14 @@ public interface NotificationSender {
     default boolean isAvailable() {
         return true;
     }
+
+    /**
+     * 사용할 수 없을 때 그 이유. 설정 화면에 그대로 보여줄 수 있는 문구다.
+     *
+     * 왜 못 쓰는지는 채널마다 다르고(자격증명 미설정, 사업자 미연동 등) 발송기 자신만 안다.
+     * 사용 가능할 때는 {@code null}.
+     */
+    default String getUnavailableReason() {
+        return null;
+    }
 }

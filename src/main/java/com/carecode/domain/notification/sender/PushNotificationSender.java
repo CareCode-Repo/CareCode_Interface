@@ -29,6 +29,11 @@ public class PushNotificationSender implements NotificationSender {
     }
 
     @Override
+    public String getUnavailableReason() {
+        return isAvailable() ? null : "푸시 발송이 아직 설정되지 않았어요.";
+    }
+
+    @Override
     public boolean send(NotificationPayload payload) {
         if (!isAvailable()) {
             log.debug("푸시 발송 건너뜀 - FCM 미설정");

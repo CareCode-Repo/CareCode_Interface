@@ -31,6 +31,11 @@ public class EmailNotificationSender implements NotificationSender {
     }
 
     @Override
+    public String getUnavailableReason() {
+        return isAvailable() ? null : "이메일 발송이 아직 설정되지 않았어요.";
+    }
+
+    @Override
     public boolean send(NotificationPayload payload) {
         String to = payload.resolveEmailAddress();
         if (to == null || to.isBlank()) {

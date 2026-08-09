@@ -9,6 +9,7 @@ import com.carecode.domain.notification.dto.request.NotificationMarkAsReadReques
 import com.carecode.domain.notification.dto.request.NotificationRegisterPushTokenRequest;
 import com.carecode.domain.notification.dto.request.NotificationUpdateSettingsRequest;
 import com.carecode.domain.notification.dto.request.NotificationSendTestRequest;
+import com.carecode.domain.notification.dto.response.NotificationChannelStatusResponse;
 import com.carecode.domain.notification.dto.response.NotificationInfoResponse;
 import com.carecode.domain.notification.dto.response.NotificationSettingsResponse;
 import com.carecode.domain.notification.dto.response.NotificationStatsResponse;
@@ -201,6 +202,15 @@ public class NotificationController extends BaseController {
         NotificationSettingsResponse updatedPreference = notificationFacade.savePreference(getAuthenticatedUserCode(), preferenceDto);
 
         return ResponseEntity.ok(updatedPreference);
+    }
+
+    // 채널별 사용 가능 여부
+    @GetMapping("/channels")
+    @LogExecutionTime
+    @Operation(summary = "알림 채널 상태 조회",
+            description = "각 채널을 이 사용자에게 지금 실제로 발송할 수 있는지와, 불가능하면 그 이유")
+    public ResponseEntity<List<NotificationChannelStatusResponse>> getNotificationChannels() {
+        return ResponseEntity.ok(notificationFacade.getChannelStatuses(getAuthenticatedUserCode()));
     }
 
     // 알림 설정 저장

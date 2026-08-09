@@ -26,6 +26,11 @@ public class SmsNotificationSender implements NotificationSender {
     }
 
     @Override
+    public String getUnavailableReason() {
+        return isAvailable() ? null : "문자 발송은 아직 준비 중이에요.";
+    }
+
+    @Override
     public boolean send(NotificationPayload payload) {
         String to = payload.resolvePhoneNumber();
         if (to == null || to.isBlank()) {
