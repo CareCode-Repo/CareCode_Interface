@@ -21,6 +21,17 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
     // 사용자와 알림 타입으로 설정 조회
     Optional<NotificationPreference> findByUserAndNotificationType(User user, Notification.NotificationType notificationType);
 
+    /**
+     * 사용자에게 등록된 디바이스 토큰.
+     *
+     * 토큰은 기기의 성질이지 알림 유형의 성질이 아닌데 설정 행마다 들고 있다. 등록은 SYSTEM 행에만
+     * 쓰므로 유형별 행에서만 찾으면 SYSTEM 이 아닌 알림은 푸시가 나가지 않는다. 유형과 무관하게 찾는다.
+     */
+    @Query("SELECT np.deviceToken FROM NotificationPreference np "
+            + "WHERE np.user = :user AND np.deviceToken IS NOT NULL AND np.deviceToken <> '' "
+            + "ORDER BY np.updatedAt DESC")
+    List<String> findDeviceTokensByUser(@Param("user") User user);
+
     // 사용자별 활성화된 이메일 알림 설정 조회
     @Query("SELECT np FROM NotificationPreference np WHERE np.user = :user AND np.emailEnabled = true")
     List<NotificationPreference> findEmailEnabledByUser(@Param("user") User user);
