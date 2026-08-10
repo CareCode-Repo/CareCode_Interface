@@ -62,7 +62,6 @@ public class HealthService {
     
     // 상수 정의
     private static final String DEFAULT_ALERT_PRIORITY = "MEDIUM";
-    private static final int DEFAULT_NUTRITION_PROGRESS = 85;
     private static final int DEFAULT_MONTHS_FOR_NEXT_CHECKUP = 3;
     private static final int MAX_UPCOMING_EVENTS = 5;
     private static final int HEALTH_SCORE_HIGH_THRESHOLD = 80;
@@ -547,6 +546,7 @@ public class HealthService {
         goals.put("userId", userId);
         goals.put("vaccineGoal", "모든 예방접종 완료");
         goals.put("checkupGoal", "정기 검진 100% 완료");
+        // 영양은 목표만 제시하고 달성률은 내지 않는다. 섭취를 기록하는 수단이 없다.
         goals.put("nutritionGoal", "균형 잡힌 영양 섭취");
         goals.put("progress", calculateProgress(records));
         
@@ -796,6 +796,12 @@ public class HealthService {
                 "검진 기록 없음";
     }
 
+    /**
+     * 목표별 달성률. 계산할 근거가 없는 항목은 넣지 않는다.
+     *
+     * <p>영양은 목표 문구만 있고 섭취를 기록하는 수단이 없다. 예전에는 여기서 85 를 돌려주어
+     * 모든 사용자가 자기 아이의 영양 상태를 85% 로 봤다. 근거 없는 숫자는 없는 것보다 나쁘다.
+     */
     private Map<String, Integer> calculateProgress(List<HealthRecord> records) {
         Map<String, Integer> progress = new HashMap<>();
         
@@ -811,7 +817,6 @@ public class HealthService {
         
         progress.put("vaccine", totalVaccines > 0 ? (completedVaccines * 100) / totalVaccines : 0);
         progress.put("checkup", totalCheckups > 0 ? (completedCheckups * 100) / totalCheckups : 0);
-        progress.put("nutrition", DEFAULT_NUTRITION_PROGRESS); // TODO: 실제 영양 진행률 계산 로직 필요
         
         return progress;
     }
