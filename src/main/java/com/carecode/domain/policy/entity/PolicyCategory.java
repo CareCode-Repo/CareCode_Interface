@@ -13,20 +13,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 정책 카테고리 엔티티
- * 
- * @author CareCode Team
- * @since 1.0.0
- * @see Policy
- */
+/** 정책 카테고리 엔티티 */
 @Entity
 @Table(name = "TBL_POLICY_CATEGORIES")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class PolicyCategory {
-
 
     // 카테고리 고유 식별자
     @Id

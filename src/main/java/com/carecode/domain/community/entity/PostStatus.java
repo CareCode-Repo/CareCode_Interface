@@ -1,8 +1,6 @@
 package com.carecode.domain.community.entity;
 
-/**
- * 게시글 상태 Enum
- */
+/** 게시글 상태 Enum */
 public enum PostStatus {
     DRAFT("임시저장"),
     PUBLISHED("발행"),

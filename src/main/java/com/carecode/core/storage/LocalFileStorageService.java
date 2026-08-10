@@ -17,12 +17,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * 로컬 디스크 기반 파일 저장소.
- *
- * <p>단일 인스턴스 배포를 전제로 한다. 다중 인스턴스로 확장할 때는
- * 같은 인터페이스로 S3 구현체를 만들어 교체한다.
- */
+/** 로컬 디스크 기반 파일 저장소. 단일 인스턴스 배포를 전제로 한다. */
 @Slf4j
 @Service
 public class LocalFileStorageService implements FileStorageService {

@@ -7,9 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 비밀번호 변경 요청
- */
+/** 비밀번호 변경 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

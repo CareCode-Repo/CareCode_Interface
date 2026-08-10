@@ -5,9 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * 예약 통계 DTO
- */
+/** 예약 통계 DTO */
 @Data
 @Builder
 @NoArgsConstructor

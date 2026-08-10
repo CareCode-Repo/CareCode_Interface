@@ -5,10 +5,7 @@ import com.carecode.domain.user.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * 정책 알림 전략
- * 육아 정책 관련 알림을 처리하는 전략
- */
+/** 정책 알림 전략 육아 정책 관련 알림을 처리하는 전략 */
 @Slf4j
 @Component
 public class PolicyNotificationStrategy implements NotificationStrategy {
@@ -35,8 +32,7 @@ public class PolicyNotificationStrategy implements NotificationStrategy {
     public void processNotification(Notification notification) {
         log.info("정책 알림 처리: 알림ID={}, 제목={}", notification.getId(), notification.getTitle());
         
-        // 정책 알림은 사용자 설정에 따라 전송
-        // 실제로는 사용자의 정책 알림 설정을 확인하여 전송
+        // 정책 알림은 사용자 설정에 따라 전송 실제로는 사용자의 정책 알림 설정을 확인하여 전송
         log.info("정책 알림 전송 완료: {}", notification.getTitle());
     }
     

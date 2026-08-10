@@ -8,10 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-/**
- * 챗봇 대화 메시지 엔티티
- * 사용자와 챗봇 간의 대화 기록을 저장
- */
+/** 챗봇 대화 메시지 엔티티 사용자와 챗봇 간의 대화 기록을 저장 */
 @Entity
 @Table(name = "TBL_CHAT_MESSAGES")
 @Getter

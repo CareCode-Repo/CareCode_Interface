@@ -7,11 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
-/**
- * FCM 푸시 채널 발송기.
- *
- * <p>{@link FirebaseMessaging} 빈이 없으면(자격증명 미설정) 비활성 상태로 동작한다.
- */
+/** FCM 푸시 채널 발송기. FirebaseMessaging 빈이 없으면(자격증명 미설정) 비활성 상태로 동작한다. */
 @Slf4j
 @Component
 public class PushNotificationSender implements NotificationSender {
@@ -30,6 +26,11 @@ public class PushNotificationSender implements NotificationSender {
     @Override
     public boolean isAvailable() {
         return firebaseMessaging != null;
+    }
+
+    @Override
+    public String getUnavailableReason() {
+        return isAvailable() ? null : "푸시 발송이 아직 설정되지 않았어요.";
     }
 
     @Override

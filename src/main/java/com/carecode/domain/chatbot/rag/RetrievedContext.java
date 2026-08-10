@@ -5,9 +5,7 @@ import lombok.Getter;
 
 import java.util.List;
 
-/**
- * 챗봇 답변의 근거로 사용할 검색 결과.
- */
+/** 챗봇 답변의 근거로 사용할 검색 결과. */
 @Getter
 @Builder
 public class RetrievedContext {

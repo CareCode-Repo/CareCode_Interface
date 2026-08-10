@@ -21,4 +21,3 @@ public class ChildMapper implements ResponseMapper<Child, ChildInfoResponse> {
     }
 }
 
-

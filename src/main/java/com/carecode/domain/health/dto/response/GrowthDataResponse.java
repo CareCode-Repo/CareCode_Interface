@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 성장 데이터
- */
+/** 성장 데이터 */
 @Getter
 @Setter
 @NoArgsConstructor

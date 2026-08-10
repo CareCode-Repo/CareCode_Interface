@@ -38,6 +38,13 @@ spring:
       max-lifetime: 1800000
 
   jpa:
+    hibernate:
+      naming:
+        # 엔티티가 @Table 로 대문자 이름을 명시하는데, Boot 기본 전략은 이를 소문자로 바꾼다.
+        # Linux MariaDB 는 lower_case_table_names=0 이라 대소문자를 구분해 전 테이블이 검증 실패한다.
+        # 테이블만 선언한 그대로 쓰고 컬럼은 기존처럼 snake_case 로 변환한다.
+        physical-strategy: com.carecode.core.config.CareCodeNamingStrategy
+
     database-platform: org.hibernate.dialect.MariaDBDialect
     open-in-view: false
     properties:
@@ -107,6 +114,49 @@ app:
   security:
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+  auth:
+    refresh-cookie:
+      # 리프레시 토큰을 HttpOnly 쿠키로 내려 XSS 로 세션이 통째로 털리는 것을 막는다.
+      # 프런트가 다른 오리진에 있으므로 기본값은 SameSite=None + Secure 다.
+      # (브라우저는 localhost 를 보안 컨텍스트로 취급하므로 로컬 개발에서도 그대로 동작한다)
+      secure: ${REFRESH_COOKIE_SECURE:true}
+      same-site: ${REFRESH_COOKIE_SAME_SITE:None}
+      max-age-days: ${REFRESH_COOKIE_MAX_AGE_DAYS:14}
+  benefit-report:
+    # 같은 값을 이만큼 받으면 금액을 확정한다
+    consensus-threshold: ${BENEFIT_CONSENSUS_THRESHOLD:3}
+    # 대상 연령이 지난 뒤 이 기간 안에 있는 사람에게만 묻는다
+    ask-within-months: ${BENEFIT_ASK_WITHIN_MONTHS:6}
+    max-asks-per-user: ${BENEFIT_MAX_ASKS_PER_USER:1}
+
+  policy-change:
+    batch-size: ${POLICY_CHANGE_BATCH_SIZE:200}
+    max-per-user: ${POLICY_CHANGE_MAX_PER_USER:3}
+
+  policy-deadline:
+    # 마감 며칠 전에 알릴지. 남은 일수가 이 값과 정확히 같은 날에만 보내므로
+    # 매일 돌아도 정책 하나당 여기 적은 횟수만큼만 나간다.
+    lead-days: ${POLICY_DEADLINE_LEAD_DAYS:7,1}
+
+  facility-vacancy:
+    # 같은 사람에게 다시 빈자리를 알리기까지의 최소 간격
+    min-interval-days: ${FACILITY_VACANCY_MIN_INTERVAL_DAYS:14}
+    # 이만큼 늘어야 알린다. 1자리 오르내림까지 알리면 스팸이 된다
+    min-increase: ${FACILITY_VACANCY_MIN_INCREASE:1}
+
+  geocoding:
+    # 어린이집 API 는 좌표를 주지 않아 주소로 보정한다. 키가 없으면 보정을 건너뛴다
+    kakao:
+      # 카카오는 OAuth client_id 가 곧 REST API 키다. 별도 발급 없이 재사용한다.
+      # 단, 개발자센터에서 해당 앱의 "카카오맵" 사용 설정이 켜져 있어야 한다.
+      rest-api-key: ${KAKAO_REST_API_KEY:${KAKAO_CLIENT_ID:}}
+    batch-size: ${GEOCODING_BATCH_SIZE:500}
+    delay-ms: ${GEOCODING_DELAY_MS:100}
+
+  ops:
+    # 동기화 실패·처리되지 않은 예외를 알린다. 비워두면 로그만 남는다
+    slack-webhook-url: ${OPS_SLACK_WEBHOOK_URL:}
+
   rate-limit:
     # 신뢰할 수 있는 프록시 뒤에 있을 때만 X-Forwarded-For 를 사용한다.
     # 프록시가 없는데 true 로 두면 헤더 위조로 rate limit 을 우회할 수 있다.
@@ -118,6 +168,8 @@ app:
     public-base-url: ${STORAGE_PUBLIC_BASE_URL:/files}
     max-file-size-bytes: ${STORAGE_MAX_FILE_SIZE:10485760}
   notification:
+    # 알림에서 앱 화면으로 이동하는 스킴. 클릭 집계 후 이 주소로 리다이렉트한다
+    deep-link-base: ${NOTIFICATION_DEEP_LINK_BASE:carecode://}
     fcm:
       # 서비스 계정 JSON 경로 (예: file:/opt/carecode/fcm-service-account.json).
       # 비워두면 푸시 발송이 비활성화된다.
@@ -147,6 +199,12 @@ app:
       kindergarten-cron: ${PUBLIC_DATA_KINDERGARTEN_CRON:0 0 4 * * MON}
       benefit-cron: ${PUBLIC_DATA_BENEFIT_CRON:0 30 3 * * *}
       hospital-cron: ${PUBLIC_DATA_HOSPITAL_CRON:0 0 3 * * TUE}
+      # 동기화가 끝난 뒤 돌아야 새로 들어온 시설이 대상에 포함된다
+      geocoding-cron: ${PUBLIC_DATA_GEOCODING_CRON:0 0 5 * * *}
+      # 알림은 새벽이 아니라 사람이 볼 시간에 보낸다
+      policy-change-cron: ${PUBLIC_DATA_POLICY_CHANGE_CRON:0 0 9 * * *}
+      # 제보 요청은 매일 보내면 소음이 된다
+      report-ask-cron: ${BENEFIT_REPORT_ASK_CRON:0 0 10 * * WED}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -192,6 +250,10 @@ management:
       enabled: true
     readinessState:
       enabled: true
+    # 메일은 부가 기능이라 SMTP 가 막히면 헬스체크가 통째로 DOWN 이 되고
+    # 로드밸런서가 멀쩡한 인스턴스를 내려버린다. 발송 실패는 알림 쪽에서 따로 잡는다.
+    mail:
+      enabled: false
 
 kakao:
   redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/auth/kakao/callback}
@@ -214,6 +276,20 @@ public:
       service-key: ${DATA_GO_KR_SERVICE_KEY:}
       base-url: ${DATA_GO_KR_BASE_URL:https://apis.data.go.kr}
 
+    # 보육통합정보시스템 — data.go.kr 이 아닌 별도 시스템. 인증 파라미터명이 다르다
+    childcare-portal:
+      service-key: ${CHILDCARE_PORTAL_KEY:}
+      base-url: ${CHILDCARE_PORTAL_BASE_URL:https://api.childcare.go.kr}
+      # 명세서와 다르면 코드가 아니라 여기를 고친다
+      key-param: ${CHILDCARE_PORTAL_KEY_PARAM:key}
+      page-param: ${CHILDCARE_PORTAL_PAGE_PARAM:}
+      size-param: ${CHILDCARE_PORTAL_SIZE_PARAM:}
+
+    # 유치원알리미 — 시군구 단위 조회, JSON. 정원·위경도는 basicInfo2 에만 있다
+    kindergarten-info:
+      service-key: ${KINDERGARTEN_INFO_KEY:}
+      base-url: ${KINDERGARTEN_INFO_BASE_URL:https://e-childschoolinfo.moe.go.kr}
+
     # 심평원 병원정보서비스
     hospital:
       # 진료과목 코드. 심평원 코드표 기준 소아청소년과는 "10".
@@ -224,9 +300,9 @@ public:
     # 데이터셋 경로. 공공데이터 오퍼레이션은 개편되므로 재배포 없이 바꿀 수 있게 뺀다.
     # 절대 URL 을 넣으면 base-url 대신 그대로 호출한다(표준데이터는 호스트가 다르다).
     resource:
-      childcare: ${PUBLIC_DATA_RESOURCE_CHILDCARE:B551014/CCEF/childcare}
-      kindergarten: ${PUBLIC_DATA_RESOURCE_KINDERGARTEN:http://api.data.go.kr/openapi/tn_pubr_public_kindergarten_api}
-      benefit: ${PUBLIC_DATA_RESOURCE_BENEFIT:1741000/publicServiceInformations/publicServiceInformation}
+      childcare: ${PUBLIC_DATA_RESOURCE_CHILDCARE:https://api.childcare.go.kr/mediate/rest/cpmsapi021/cpmsapi021/request}
+      kindergarten: ${PUBLIC_DATA_RESOURCE_KINDERGARTEN:https://e-childschoolinfo.moe.go.kr/api/notice/basicInfo2.do}
+      benefit: ${PUBLIC_DATA_RESOURCE_BENEFIT:https://api.odcloud.kr/api/gov24/v3/serviceList}
       hospital: ${PUBLIC_DATA_RESOURCE_HOSPITAL:B551182/hospInfoServicev2/getHospBasisList}
 
     sync:

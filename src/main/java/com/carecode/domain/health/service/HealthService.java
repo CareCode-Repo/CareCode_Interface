@@ -1,5 +1,7 @@
 package com.carecode.domain.health.service;
 
+import com.carecode.domain.user.entity.ConsentType;
+import com.carecode.domain.user.service.ConsentGuard;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.CareServiceException;
@@ -24,6 +26,7 @@ import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.health.repository.HealthRecordAttachmentRepository;
 import com.carecode.domain.health.repository.HealthRecordRepository;
+import com.carecode.domain.health.repository.VaccinationScheduleRepository;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import com.carecode.domain.user.entity.Child;
@@ -50,10 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * 통합 건강 관리 서비스 클래스
- * 건강 기록, 아동 정보, 건강 분석 등 모든 건강 관련 비즈니스 로직을 처리
- */
+/** 통합 건강 관리 서비스 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -62,13 +62,14 @@ public class HealthService {
     
     // 상수 정의
     private static final String DEFAULT_ALERT_PRIORITY = "MEDIUM";
-    private static final int DEFAULT_NUTRITION_PROGRESS = 85;
     private static final int DEFAULT_MONTHS_FOR_NEXT_CHECKUP = 3;
     private static final int MAX_UPCOMING_EVENTS = 5;
     private static final int HEALTH_SCORE_HIGH_THRESHOLD = 80;
     private static final int HEALTH_SCORE_MEDIUM_THRESHOLD = 60;
     
     private final HealthRecordRepository healthRecordRepository;
+    private final VaccinationScheduleRepository vaccinationScheduleRepository;
+    private final ConsentGuard consentGuard;
     private final HealthRecordAttachmentRepository healthRecordAttachmentRepository;
     private final ChildRepository childRepository;
     private final UserRepository userRepository;
@@ -78,13 +79,13 @@ public class HealthService {
     private final ChildMapper childMapper;
     
     // ===== 건강 기록 관리 =====
-    
 
     // 건강 기록 생성
-
     @LogExecutionTime
     @Transactional
     public HealthRecordResponse createHealthRecord(HealthCreateHealthRecordRequest request, Long actorUserId) {
+        // 건강정보는 민감정보다. 별도 동의 없이는 수집하지 않는다.
+        consentGuard.require(actorUserId, ConsentType.HEALTH_DATA);
         validateRequest(request);
         log.info("건강 기록 생성: 아이ID={}, 제목={}", request.getChildId(), request.getTitle());
         
@@ -115,9 +116,7 @@ public class HealthService {
         }
     }
 
-
     // 건강 기록 조회
-
     @LogExecutionTime
     public HealthRecordResponse getHealthRecordById(Long recordId, Long actorUserId) {
         validateRecordId(recordId);
@@ -139,9 +138,7 @@ public class HealthService {
         }
     }
 
-
     // 사용자별 건강 기록 조회 (DTO 반환)
-
     @LogExecutionTime
     public List<HealthRecordResponse> getHealthRecordsByUserId(String userId, Long actorUserId) {
         log.info("사용자별 건강 기록 조회: 사용자ID={}", userId);
@@ -159,10 +156,7 @@ public class HealthService {
 
     // HealthRecord -> DTO 변환은 healthRecordMapper 사용
 
-
-    // 사용자별 건강 기록 조회 (Entity 반환)
-    // JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
-
+    // 사용자별 건강 기록 조회 (Entity 반환) JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
     @LogExecutionTime
     public List<HealthRecord> getHealthRecordsByUserIdAsEntity(String userId) {
         validateUserId(userId);
@@ -171,9 +165,7 @@ public class HealthService {
         return healthRecordRepository.findByUserIdWithChildAndUser(user.getId());
     }
 
-
     // 건강 기록 수정
-
     @LogExecutionTime
     @Transactional
     public HealthRecordResponse updateHealthRecord(Long recordId, HealthUpdateHealthRecordRequest request, Long actorUserId) {
@@ -191,16 +183,21 @@ public class HealthService {
         record.setNextDate(request.getNextDate() != null ? request.getNextDate().toLocalDate() : null);
         record.setLocation(request.getLocation());
         record.setDoctorName(request.getDoctorName());
+        record.setHospitalName(request.getHospitalName());
+        record.setHeight(request.getHeight());
+        record.setWeight(request.getWeight());
+        record.setTemperature(request.getTemperature());
+        record.setBloodPressure(request.getBloodPressure());
+        record.setPulseRate(request.getPulseRate());
+        record.setVaccineName(request.getVaccineName());
         record.setIsCompleted(request.getIsCompleted());
-        
+
         HealthRecord updatedRecord = healthRecordRepository.save(record);
         log.info("건강 기록 수정 완료: 기록ID={}", recordId);
         return healthRecordMapper.toResponse(updatedRecord);
     }
 
-
     // 건강 기록 삭제
-
     @LogExecutionTime
     @Transactional
     public void deleteHealthRecord(Long recordId, Long actorUserId) {
@@ -214,9 +211,7 @@ public class HealthService {
         log.info("건강 기록이 삭제되었습니다: 기록ID={}", recordId);
     }
 
-
     // 건강 기록 목록 조회 (페이징)
-
     @LogExecutionTime
     public List<HealthRecordResponse> getHealthRecords(Long childId, int page, int size, Long actorUserId) {
         validateChildId(childId);
@@ -233,10 +228,7 @@ public class HealthService {
                 .collect(Collectors.toList());
     }
 
-
-    // 기간별 건강 기록 조회
-    // JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
-
+    // 기간별 건강 기록 조회 JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
     @LogExecutionTime
     public List<HealthRecordResponse> getHealthRecordsByDateRange(Long childId, LocalDate startDate, LocalDate endDate, Long actorUserId) {
         validateChildId(childId);
@@ -256,9 +248,7 @@ public class HealthService {
 
     // ===== 아동 정보 관리 =====
 
-
     // 연령 범위별 자녀 조회
-
     @LogExecutionTime
     public List<ChildInfoResponse> getChildrenByAgeRange(Long userId, Integer minAge, Integer maxAge) {
         log.info("연령 범위별 자녀 조회 - 사용자 ID: {}, 최소 연령: {}, 최대 연령: {}", userId, minAge, maxAge);
@@ -269,9 +259,7 @@ public class HealthService {
                 .collect(Collectors.toList());
     }
 
-
     // 성별 자녀 조회
-
     @LogExecutionTime
     public List<ChildInfoResponse> getChildrenByGender(Long userId, String gender) {
         log.info("성별 자녀 조회 - 사용자 ID: {}, 성별: {}", userId, gender);
@@ -282,9 +270,7 @@ public class HealthService {
                 .collect(Collectors.toList());
     }
 
-
     // 특별한 요구사항이 있는 자녀 조회
-
     @LogExecutionTime
     public List<ChildInfoResponse> getChildrenWithSpecialNeeds(Long userId) {
         log.info("특별한 요구사항이 있는 자녀 조회 - 사용자 ID: {}", userId);
@@ -295,9 +281,7 @@ public class HealthService {
                 .collect(Collectors.toList());
     }
 
-
     // 이름으로 자녀 검색
-
     @LogExecutionTime
     public List<ChildInfoResponse> searchChildrenByName(Long userId, String name) {
         log.info("이름으로 자녀 검색 - 사용자 ID: {}, 이름: {}", userId, name);
@@ -308,9 +292,7 @@ public class HealthService {
                 .collect(Collectors.toList());
     }
 
-
     // 건강 상태 분석
-
     @LogExecutionTime
     public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request, Long actorUserId) {
         validateRequest(request);
@@ -333,9 +315,7 @@ public class HealthService {
         return analysis;
     }
 
-
     // 건강 리포트 생성
-
     @LogExecutionTime
     public Map<String, Object> generateHealthReport(HealthCreateHealthRecordRequest request, Long actorUserId) {
         validateRequest(request);
@@ -358,9 +338,7 @@ public class HealthService {
         return report;
     }
 
-
     // 건강 통계 조회
-
     @LogExecutionTime
     public HealthStatsResponse getHealthStatistics(String userId, Long actorUserId) {
         log.info("건강 통계 조회: 사용자ID={}", userId);
@@ -386,9 +364,7 @@ public class HealthService {
 
     // ===== 스케줄 및 알림 관리 =====
 
-
     // 예방접종 스케줄 조회
-
     @LogExecutionTime
     public List<VaccineScheduleResponse> getVaccineSchedule(String childId, Long actorUserId) {
         log.info("예방접종 스케줄 조회: 아동ID={}", childId);
@@ -408,9 +384,7 @@ public class HealthService {
         }
     }
 
-
     // 건강 검진 스케줄 조회
-
     @LogExecutionTime
     public List<CheckupScheduleResponse> getCheckupSchedule(String childId, Long actorUserId) {
         log.info("건강 검진 스케줄 조회: 아동ID={}", childId);
@@ -430,10 +404,7 @@ public class HealthService {
         }
     }
 
-
-    // 기간별 건강 기록 조회 (오래된순)
-    // JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
-
+    // 기간별 건강 기록 조회 (오래된순) JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
     @LogExecutionTime
     public List<HealthRecordResponse> getHealthRecordsByDateRangeAsc(Long childId, LocalDate startDate, LocalDate endDate, Long actorUserId) {
         validateChildId(childId);
@@ -456,10 +427,7 @@ public class HealthService {
         }
     }
 
-
-    // 특정 타입의 건강 기록 조회
-    // JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
-
+    // 특정 타입의 건강 기록 조회 JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
     @LogExecutionTime
     public List<HealthRecordResponse> getHealthRecordsByType(Long childId, HealthRecord.RecordType recordType, Long actorUserId) {
         validateChildId(childId);
@@ -517,9 +485,7 @@ public class HealthService {
         healthRecordAttachmentRepository.save(attachment);
     }
 
-
     // 건강 알림 조회
-
     @LogExecutionTime
     public List<HealthAlertResponse> getHealthAlerts(String userId, Long actorUserId) {
         log.info("건강 알림 조회: 사용자ID={}", userId);
@@ -567,9 +533,7 @@ public class HealthService {
         return recommendations;
     }
 
-
     // 건강 목표 조회
-
     @LogExecutionTime
     public Map<String, Object> getHealthGoals(String userId, Long actorUserId) {
         validateUserId(userId);
@@ -582,6 +546,7 @@ public class HealthService {
         goals.put("userId", userId);
         goals.put("vaccineGoal", "모든 예방접종 완료");
         goals.put("checkupGoal", "정기 검진 100% 완료");
+        // 영양은 목표만 제시하고 달성률은 내지 않는다. 섭취를 기록하는 수단이 없다.
         goals.put("nutritionGoal", "균형 잡힌 영양 섭취");
         goals.put("progress", calculateProgress(records));
         
@@ -590,9 +555,7 @@ public class HealthService {
 
     // ===== 차트 및 시각화 =====
 
-
     // 건강 차트 데이터 조회
-
     @LogExecutionTime
     public List<Map<String, Object>> getHealthChart(String userId, String type, LocalDate from, LocalDate to, Long actorUserId) {
         validateUserId(userId);
@@ -621,9 +584,7 @@ public class HealthService {
 
     // ===== 시스템 관리 =====
 
-
     // 시스템 상태 확인
-
     public Map<String, Object> checkSystemHealth() {
         log.info("시스템 상태 확인");
         
@@ -673,16 +634,11 @@ public class HealthService {
 
     // ===== Helper Methods =====
 
-
-
-
     // Child Entity를 DTO로 변환
 
     // Child 매핑은 ChildMapper 사용
 
-
     // 예방접종 스케줄 응답 DTO 변환
-
     private VaccineScheduleResponse convertToVaccineScheduleResponse(HealthRecord record) {
         return VaccineScheduleResponse.builder()
                 .vaccineName(record.getTitle())
@@ -695,9 +651,7 @@ public class HealthService {
                 .build();
     }
 
-
     // 건강 검진 스케줄 응답 DTO 변환
-
     private CheckupScheduleResponse convertToCheckupScheduleResponse(HealthRecord record) {
         return CheckupScheduleResponse.builder()
                 .checkupName(record.getTitle())
@@ -710,9 +664,7 @@ public class HealthService {
                 .build();
     }
 
-
     // 건강 알림 응답 DTO 변환
-
     private HealthAlertResponse convertToHealthAlertResponse(HealthRecord record) {
         return HealthAlertResponse.builder()
                 .alertId(record.getId().toString())
@@ -726,7 +678,6 @@ public class HealthService {
     }
 
     // ===== 계산 및 분석 Helper Methods =====
-
     private int calculateHealthScore(List<HealthRecord> records) {
         if (records.isEmpty()) return 0;
         
@@ -845,6 +796,12 @@ public class HealthService {
                 "검진 기록 없음";
     }
 
+    /**
+     * 목표별 달성률. 계산할 근거가 없는 항목은 넣지 않는다.
+     *
+     * <p>영양은 목표 문구만 있고 섭취를 기록하는 수단이 없다. 예전에는 여기서 85 를 돌려주어
+     * 모든 사용자가 자기 아이의 영양 상태를 85% 로 봤다. 근거 없는 숫자는 없는 것보다 나쁘다.
+     */
     private Map<String, Integer> calculateProgress(List<HealthRecord> records) {
         Map<String, Integer> progress = new HashMap<>();
         
@@ -860,21 +817,17 @@ public class HealthService {
         
         progress.put("vaccine", totalVaccines > 0 ? (completedVaccines * 100) / totalVaccines : 0);
         progress.put("checkup", totalCheckups > 0 ? (completedCheckups * 100) / totalCheckups : 0);
-        progress.put("nutrition", DEFAULT_NUTRITION_PROGRESS); // TODO: 실제 영양 진행률 계산 로직 필요
         
         return progress;
     }
-
 
     // HealthRecord 엔티티를 HealthRecordResponse DTO로 변환
 
     // HealthRecord 매핑은 HealthRecordMapper 사용
     
     // ===== Validation Helper Methods =====
-    
 
     // User ID 또는 Long ID로 사용자 조회 (중복 로직 제거)
-
     private User findUserByIdOrUserId(String userId) {
         validateUserId(userId);
         
@@ -893,10 +846,8 @@ public class HealthService {
             throw new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId);
         }
     }
-    
 
     // 요청 객체 검증
-
     private void validateRequest(HealthCreateHealthRecordRequest request) {
         if (request == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "요청 정보가 없습니다.");
@@ -905,48 +856,38 @@ public class HealthService {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "아동 ID가 필요합니다.");
         }
     }
-    
 
     // 업데이트 요청 객체 검증
-
     private void validateUpdateRequest(HealthUpdateHealthRecordRequest request) {
         if (request == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "요청 정보가 없습니다.");
         }
     }
-    
 
     // 기록 ID 검증
-
     private void validateRecordId(Long recordId) {
         if (recordId == null || recordId <= 0) {
             throw new BusinessException(ErrorCode.INVALID_RECORD_ID, 
                     ErrorCode.INVALID_RECORD_ID.getMessage() + ": " + recordId);
         }
     }
-    
 
     // 아동 ID 검증
-
     private void validateChildId(Long childId) {
         if (childId == null || childId <= 0) {
             throw new BusinessException(ErrorCode.INVALID_CHILD_ID, 
                     ErrorCode.INVALID_CHILD_ID.getMessage() + ": " + childId);
         }
     }
-    
 
     // 사용자 ID 검증
-
     private void validateUserId(String userId) {
         if (!StringUtils.hasText(userId)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "사용자 ID가 필요합니다.");
         }
     }
-    
 
     // 페이징 파라미터 검증
-
     private void validatePaginationParams(int page, int size) {
         if (page < 0) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, 
@@ -957,7 +898,6 @@ public class HealthService {
                     "페이지 크기는 1 이상 100 이하여야 합니다: " + size);
         }
     }
-    
 
     // 날짜 범위 검증
     private void validateDateRange(LocalDate startDate, LocalDate endDate) {
@@ -965,20 +905,16 @@ public class HealthService {
             throw new BusinessException(ErrorCode.INVALID_DATE_RANGE.getMessage());
         }
     }
-    
 
     // 개월 수 검증
-
     private void validateMonths(int months) {
         if (months <= 0 || months > 120) {
             throw new BusinessException(ErrorCode.INVALID_MONTHS, 
                     ErrorCode.INVALID_MONTHS.getMessage() + ": " + months);
         }
     }
-    
 
     // 차트 타입 검증
-
     private void validateChartType(String type) {
         if (!StringUtils.hasText(type)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "차트 타입이 필요합니다.");
@@ -990,10 +926,8 @@ public class HealthService {
                     ErrorCode.INVALID_CHART_TYPE.getMessage() + ": " + type);
         }
     }
-    
 
     // 차트 값 추출
-
     private Object extractChartValue(HealthRecord record, String type) {
         if (record == null || type == null) {
             return null;
@@ -1021,5 +955,21 @@ public class HealthService {
                 .displayOrder(attachment.getDisplayOrder())
                 .createdAt(attachment.getCreatedAt())
                 .build();
+    }
+
+    /** 아이의 접종 일정 중 가장 최근 갱신 시각. 없으면 "0" 을 돌려준다. */
+    @Transactional(readOnly = true)
+    public String getVaccineScheduleVersion(String childId) {
+        try {
+            return vaccinationScheduleRepository
+                    .findByChildIdOrderByDueDateAsc(Long.valueOf(childId)).stream()
+                    .map(v -> v.getUpdatedAt() != null ? v.getUpdatedAt() : v.getCreatedAt())
+                    .filter(java.util.Objects::nonNull)
+                    .max(java.time.LocalDateTime::compareTo)
+                    .map(String::valueOf)
+                    .orElse("0");
+        } catch (Exception e) {
+            return "0";
+        }
     }
 }

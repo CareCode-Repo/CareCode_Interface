@@ -10,9 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 확장된 알림 템플릿 응답
- */
+/** 확장된 알림 템플릿 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

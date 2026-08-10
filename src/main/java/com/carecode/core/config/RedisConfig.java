@@ -7,16 +7,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-/**
- * Redis 설정 클래스
- * 캐싱과 Rate Limiting에 사용됩니다.
- */
+/** Redis 설정 클래스 캐싱과 Rate Limiting에 사용됩니다. */
 @Configuration
 public class RedisConfig {
-    
 
     // 문자열 기반 RedisTemplate (Rate Limiting용)
-
     @Bean
     public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, String> template = new RedisTemplate<>();
@@ -28,10 +23,8 @@ public class RedisConfig {
         template.afterPropertiesSet();
         return template;
     }
-    
 
     // 객체 기반 RedisTemplate (캐싱용)
-
     @Bean
     public RedisTemplate<String, Object> redisObjectTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();

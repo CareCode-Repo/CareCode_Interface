@@ -9,11 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * 사용자 차단.
- *
- * <p>차단하면 상대의 게시글·댓글이 목록에서 보이지 않는다.
- */
+/** 사용자 차단. 차단하면 상대의 게시글·댓글이 목록에서 보이지 않는다. */
 @Entity
 @Table(
     name = "TBL_USER_BLOCK",

@@ -13,9 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * 건강 기록 리포지토리 인터페이스
- */
+/** 건강 기록 리포지토리 인터페이스 */
 @Repository
 public interface HealthRecordRepository extends JpaRepository<HealthRecord, Long> {
 

@@ -10,9 +10,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * 예방접종 스케줄 조회 요청
- */
+/** 예방접종 스케줄 조회 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -13,10 +13,7 @@ public interface UserConsentRepository extends JpaRepository<UserConsent, Long> 
 
     List<UserConsent> findByUserIdOrderByCreatedAtDesc(Long userId);
 
-    /**
-     * 항목별 가장 최근 동의 이력.
-     * 이력은 append-only 라서 현재 동의 상태는 최신 행으로 판단한다.
-     */
+    /** 항목별 가장 최근 동의 이력. 이력은 append-only 라서 현재 동의 상태는 최신 행으로 판단한다. */
     @Query("SELECT uc FROM UserConsent uc " +
            "WHERE uc.user.id = :userId AND uc.consentType = :consentType " +
            "ORDER BY uc.createdAt DESC LIMIT 1")

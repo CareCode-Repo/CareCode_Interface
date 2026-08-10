@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 프로필 완성도 응답 DTO
- */
+/** 프로필 완성도 응답 DTO */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -9,9 +9,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-/**
- * 읽지 않은 알림 수 응답
- */
+/** 읽지 않은 알림 수 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

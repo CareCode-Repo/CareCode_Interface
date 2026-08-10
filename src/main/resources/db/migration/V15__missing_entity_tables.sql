@@ -1,0 +1,29 @@
+-- 엔티티는 있는데 DDL 에 빠져 있던 테이블.
+-- prod 는 ddl-auto=validate 라 이 둘 때문에 기동 자체가 실패하고 있었다.
+-- 특히 정책 북마크는 API 와 리포지토리까지 있으면서 테이블이 없어 한 번도 동작한 적이 없다.
+
+CREATE TABLE TBL_POLICY_BOOKMARKS (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    policy_id BIGINT NOT NULL,
+    created_at DATETIME NOT NULL,
+    -- 같은 정책을 두 번 북마크하면 목록에 중복으로 뜬다
+    CONSTRAINT UK_POLICY_BOOKMARK UNIQUE (user_id, policy_id),
+    CONSTRAINT FK_POLICY_BOOKMARK_USER FOREIGN KEY (user_id)
+        REFERENCES TBL_USER (ID) ON DELETE CASCADE,
+    CONSTRAINT FK_POLICY_BOOKMARK_POLICY FOREIGN KEY (policy_id)
+        REFERENCES TBL_POLICIES (ID) ON DELETE CASCADE
+) COMMENT '정책 북마크';
+
+CREATE INDEX IDX_POLICY_BOOKMARK_USER ON TBL_POLICY_BOOKMARKS (user_id, created_at DESC);
+
+-- 조회수. 엔티티와 서비스 코드는 쓰고 있는데 컬럼이 없어 저장된 적이 없다.
+ALTER TABLE TBL_POLICIES ADD COLUMN VIEW_COUNT INT NOT NULL DEFAULT 0 COMMENT '조회수';
+
+CREATE TABLE TBL_NOTIFICATION_CHANNEL (
+    ID BIGINT AUTO_INCREMENT PRIMARY KEY,
+    NAME VARCHAR(100) NOT NULL,
+    DESCRIPTION VARCHAR(500),
+    CREATED_AT DATETIME NOT NULL,
+    UPDATED_AT DATETIME
+) COMMENT '알림 채널';

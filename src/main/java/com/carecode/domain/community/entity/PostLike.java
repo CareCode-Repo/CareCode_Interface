@@ -6,9 +6,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-/**
- * 게시글 좋아요 Entity
- */
+/** 게시글 좋아요 Entity */
 @Entity
 @Table(name = "TBL_POST_LIKE",
     uniqueConstraints = @UniqueConstraint(columnNames = {"post_id", "user_id"})

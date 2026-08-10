@@ -8,11 +8,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
-/**
- * WHO LMS 백분위 계산 검증.
- *
- * <p>기존 차트 API 는 상수(DEFAULT_NUTRITION_PROGRESS)를 반환해 또래 비교가 불가능했다.
- */
+/** WHO LMS 백분위 계산 검증. 기존 차트 API 는 상수(DEFAULT_NUTRITION_PROGRESS)를 반환해 또래 비교가 불가능했다. */
 @DisplayName("성장 백분위 계산")
 class GrowthPercentileCalculatorTest {
 

@@ -5,9 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * 일별 예약 수 DTO
- */
+/** 일별 예약 수 DTO */
 @Data
 @Builder
 @NoArgsConstructor

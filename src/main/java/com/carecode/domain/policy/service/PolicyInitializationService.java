@@ -15,10 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * 정책 관련 초기 데이터를 생성하는 서비스
- * 서버 시작 시 실제 대한민국 육아 정책 데이터를 자동으로 생성합니다.
- */
+/** 정책 관련 초기 데이터를 생성하는 서비스 */
 @Slf4j
 @Service
 @Profile("dev")
@@ -50,9 +47,7 @@ public class PolicyInitializationService implements CommandLineRunner {
         }
     }
 
-
     // 정책 카테고리 생성
-
     private List<PolicyCategory> createPolicyCategories() {
         if (policyCategoryRepository.count() > 0) {
             log.info("정책 카테고리가 이미 존재하므로 생성을 건너뜁니다.");
@@ -85,9 +80,7 @@ public class PolicyInitializationService implements CommandLineRunner {
         return savedCategories;
     }
 
-
     // 실제 대한민국 육아 정책 생성
-
     private void createPolicies(List<PolicyCategory> categories) {
         if (policyRepository.count() > 0) {
             log.info("정책이 이미 존재하므로 생성을 건너뜁니다.");
@@ -106,9 +99,7 @@ public class PolicyInitializationService implements CommandLineRunner {
         log.info("정책 데이터 생성 완료");
     }
 
-
     // 출산・육아휴직 정책
-
     private void createMaternityAndChildcareLeave(PolicyCategory category) {
         List<Policy> policies = Arrays.asList(
             Policy.builder()
@@ -137,6 +128,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMax(96)
                 .targetRegion("전국")
                 .benefitAmount(1500000)
+                .maxPaymentMonths(12)
                 .benefitType("월급여")
                 .applicationUrl("https://www.ei.go.kr")
                 .contactInfo("고용보험 고객상담센터 1350")
@@ -155,6 +147,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMax(96)
                 .targetRegion("전국")
                 .benefitAmount(2500000)
+                .maxPaymentMonths(3)
                 .benefitType("월급여")
                 .applicationUrl("https://www.ei.go.kr")
                 .contactInfo("고용보험 고객상담센터 1350")
@@ -169,9 +162,7 @@ public class PolicyInitializationService implements CommandLineRunner {
         log.info("출산・육아휴직 정책 {}개 생성 완료", policies.size());
     }
 
-
     // 양육수당・보육료 정책
-
     private void createChildcareAllowances(PolicyCategory category) {
         List<Policy> policies = Arrays.asList(
             Policy.builder()
@@ -199,6 +190,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .policyType("현금지원")
                 .targetAgeMin(0)
                 .targetAgeMax(11)
+                .exclusionGroup("INFANT_CARE_0")
                 .targetRegion("전국")
                 .benefitAmount(700000)
                 .benefitType("월지급")
@@ -217,6 +209,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .policyType("현금지원")
                 .targetAgeMin(12)
                 .targetAgeMax(23)
+                .exclusionGroup("INFANT_CARE_1")
                 .targetRegion("전국")
                 .benefitAmount(350000)
                 .benefitType("월지급")
@@ -235,6 +228,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .policyType("이용료지원")
                 .targetAgeMin(0)
                 .targetAgeMax(71)
+                .exclusionGroup("INFANT_CARE_0")
                 .targetRegion("전국")
                 .benefitAmount(514000)
                 .benefitType("월지원")
@@ -269,9 +263,7 @@ public class PolicyInitializationService implements CommandLineRunner {
         log.info("양육수당・보육료 정책 {}개 생성 완료", policies.size());
     }
 
-
     // 돌봄서비스 정책
-
     private void createCareServices(PolicyCategory category) {
         List<Policy> policies = Arrays.asList(
             Policy.builder()
@@ -330,9 +322,7 @@ public class PolicyInitializationService implements CommandLineRunner {
         log.info("돌봄서비스 정책 {}개 생성 완료", policies.size());
     }
 
-
     // 의료・건강 정책
-
     private void createHealthcareSupport(PolicyCategory category) {
         List<Policy> policies = Arrays.asList(
             Policy.builder()
@@ -392,9 +382,7 @@ public class PolicyInitializationService implements CommandLineRunner {
         log.info("의료・건강 정책 {}개 생성 완료", policies.size());
     }
 
-
     // 교육지원 정책
-
     private void createEducationSupport(PolicyCategory category) {
         List<Policy> policies = Arrays.asList(
             Policy.builder()
@@ -404,6 +392,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .policyType("교육지원")
                 .targetAgeMin(36)
                 .targetAgeMax(71)
+                .exclusionGroup("PRESCHOOL_EDU")
                 .targetRegion("전국")
                 .benefitAmount(280000)
                 .benefitType("월지원")
@@ -437,9 +426,7 @@ public class PolicyInitializationService implements CommandLineRunner {
         log.info("교육지원 정책 {}개 생성 완료", policies.size());
     }
 
-
     // 주거지원 정책
-
     private void createHousingSupport(PolicyCategory category) {
         List<Policy> policies = Arrays.asList(
             Policy.builder()
@@ -481,9 +468,7 @@ public class PolicyInitializationService implements CommandLineRunner {
         log.info("주거지원 정책 {}개 생성 완료", policies.size());
     }
 
-
     // 다자녀혜택 정책
-
     private void createMultiChildBenefits(PolicyCategory category) {
         List<Policy> policies = Arrays.asList(
             Policy.builder()

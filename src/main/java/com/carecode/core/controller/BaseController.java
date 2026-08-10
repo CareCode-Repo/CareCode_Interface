@@ -2,10 +2,7 @@ package com.carecode.core.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 
-/**
- * 모든 컨트롤러의 기본 클래스
- * 공통 URL 경로와 기본 설정을 제공
- */
+/** 모든 컨트롤러의 기본 클래스 공통 URL 경로와 기본 설정을 제공 */
 @RequestMapping("/api/v1")
 public abstract class BaseController {
     

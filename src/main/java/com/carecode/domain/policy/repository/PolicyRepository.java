@@ -14,9 +14,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 정책 리포지토리 인터페이스
- */
+/** 정책 리포지토리 인터페이스 */
 @Repository
 public interface PolicyRepository extends JpaRepository<Policy, Long> {
 
@@ -25,6 +23,12 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
 
     // 활성화된 정책 목록 조회
     List<Policy> findByIsActiveTrue();
+
+    /** 지역 비교 대상. 전국 정책은 모든 지역에 공통 적용되므로 후보 목록에서 뺀다. */
+    @Query("SELECT DISTINCT p.targetRegion FROM Policy p "
+            + "WHERE p.isActive = true AND p.targetRegion IS NOT NULL "
+            + "AND p.targetRegion <> '' AND p.targetRegion NOT LIKE '%전국%'")
+    List<String> findDistinctTargetRegions();
 
     /** 추천 후보 조회. 우선순위 높은 정책부터 가져와 상위 N건만 채점한다. */
     Page<Policy> findByIsActiveTrueOrderByPriorityDescViewCountDesc(Pageable pageable);
@@ -66,31 +70,23 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
                                @Param("targetRegion") String targetRegion,
                                @Param("benefitType") String benefitType,
                                @Param("childAge") Integer childAge);
-    
 
     // 연령대별 정책 조회
-
     @Query("SELECT p FROM Policy p WHERE p.isActive = true AND " +
            "p.targetAgeMin <= :maxAge AND p.targetAgeMax >= :minAge")
     List<Policy> findByAgeRange(@Param("minAge") int minAge, @Param("maxAge") int maxAge);
-    
 
     // 인기 정책 조회 (우선순위 기준)
-
     @Query("SELECT p FROM Policy p WHERE p.isActive = true " +
            "ORDER BY p.priority DESC, p.createdAt DESC")
     List<Policy> findPopularPolicies(Pageable pageable);
-    
 
     // 최신 정책 조회
-
     @Query("SELECT p FROM Policy p WHERE p.isActive = true " +
            "ORDER BY p.createdAt DESC")
     List<Policy> findLatestPolicies(Pageable pageable);
-    
 
     // 검색 조건으로 정책 검색 (페이징)
-
     @Query("SELECT p FROM Policy p WHERE p.isActive = true " +
            "AND (:keyword IS NULL OR p.title LIKE %:keyword% OR p.description LIKE %:keyword%) " +
            "AND (:category IS NULL OR p.policyType = :category) " +
@@ -100,33 +96,25 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
     Page<Policy> findBySearchCriteria(@Param("keyword") String keyword, @Param("category") String category,
                                       @Param("location") String location, @Param("minAge") Integer minAge,
                                       @Param("maxAge") Integer maxAge, Pageable pageable);
-    
 
     @Query("SELECT COALESCE(SUM(p.viewCount), 0) FROM Policy p WHERE p.isActive = true")
     long getTotalViewCount();
-    
 
     // 카테고리별 통계 조회
 
-    // HQL 의 생성자 표현식은 완전한 패키지 경로를 요구한다.
-    // 실제 클래스는 dto.response 패키지에 있으므로 경로가 틀리면 기동 시점에 실패한다.
+    // HQL 의 생성자 표현식은 완전한 패키지 경로를 요구한다. 실제 클래스는 dto.response 패키지에 있으므로 경로가 틀리면 기동 시점에 실패한다.
     @Query("SELECT new com.carecode.domain.policy.dto.response.PolicyCategoryStatsResponse(" +
            "p.policyType, COUNT(p), 0.0, 0) " +
            "FROM Policy p WHERE p.isActive = true " +
            "GROUP BY p.policyType")
     List<PolicyCategoryStatsResponse> getCategoryStats();
 
-    /**
-     * 조회수를 DB 에서 원자적으로 증가시킨다.
-     * 엔티티를 읽어 +1 후 save 하면 동시 요청 시 증가분이 유실된다(lost update).
-     */
+    /** 조회수를 DB 에서 원자적으로 증가시킨다. */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Policy p SET p.viewCount = COALESCE(p.viewCount, 0) + 1 WHERE p.id = :policyId")
     int incrementViewCount(@Param("policyId") Long policyId);
 
-    /**
-     * 중복 없는 정책 유형 목록. 전체 행을 메모리로 올려 distinct 하지 않는다.
-     */
+    /** 중복 없는 정책 유형 목록. 전체 행을 메모리로 올려 distinct 하지 않는다. */
     @Query("SELECT DISTINCT p.policyType FROM Policy p " +
            "WHERE p.policyType IS NOT NULL AND p.policyType <> '' " +
            "ORDER BY p.policyType")

@@ -12,6 +12,11 @@ spring:
         generate_statistics: true
 
 app:
+  # 공공데이터 연동 전 거주지 비교·입소 예측·인기도를 확인하기 위한 샘플 데이터.
+  # 실제 지원 금액이 아니므로 검증이 끝나면 DELETE /api/admin/dev/sample-data 로 지운다.
+  dev:
+    seed-sample-data: ${SEED_SAMPLE_DATA:false}
+
   monitoring:
     query-count:
       enabled: true

@@ -8,9 +8,7 @@ import lombok.Setter;
 
 import java.util.List;
 
-/**
- * 게시글 검색 요청
- */
+/** 게시글 검색 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

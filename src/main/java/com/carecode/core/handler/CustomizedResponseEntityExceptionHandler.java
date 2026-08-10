@@ -1,6 +1,9 @@
 package com.carecode.core.handler;
 
 import com.carecode.core.exception.*;
+import com.carecode.core.ops.OperationalAlerter;
+import com.carecode.domain.user.service.ConsentGuard;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,21 +12,22 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * 전역 예외 핸들러
- * 모든 예외를 일관된 형식으로 처리
- */
+/** 전역 예외 핸들러 모든 예외를 일관된 형식으로 처리 */
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class CustomizedResponseEntityExceptionHandler {
 
+    private final OperationalAlerter alerter;
 
     // CareCodeException 계층의 예외 처리
-
     @ExceptionHandler(CareCodeException.class)
     public ResponseEntity<ErrorResponse> handleCareCodeException(CareCodeException ex, WebRequest request) {
         log.warn("CareCodeException 발생: {} - {}", ex.getErrorCode().getCode(), ex.getMessage());
@@ -39,9 +43,7 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-
     // UserNotFoundException 처리 (하위 호환성 유지)
-
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) {
         log.warn("UserNotFoundException 발생: {}", ex.getMessage());
@@ -57,9 +59,7 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-
     // ResourceNotFoundException 처리 (하위 호환성 유지)
-
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
         log.warn("ResourceNotFoundException 발생: {}", ex.getMessage());
@@ -75,9 +75,7 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-
     // BusinessException 처리 (하위 호환성 유지)
-
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex, WebRequest request) {
         log.warn("BusinessException 발생: {}", ex.getMessage());
@@ -93,9 +91,24 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
+    /** 동의가 없어 막힌 경우. 클라이언트가 어떤 동의를 받아야 하는지 알아야 화면을 띄울 수 있다. */
+    @ExceptionHandler(ConsentGuard.ConsentRequiredException.class)
+    public ResponseEntity<Map<String, Object>> handleConsentRequired(
+            ConsentGuard.ConsentRequiredException ex, WebRequest request) {
+        log.info("동의 미완료로 접근 차단: {}", ex.getConsentType());
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "CONSENT_REQUIRED");
+        body.put("consentType", ex.getConsentType().name());
+        body.put("displayName", ex.getConsentType().getDisplayName());
+        body.put("sensitive", ex.getConsentType().isSensitive());
+        body.put("message", ex.getMessage());
+        body.put("path", request.getDescription(false));
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
 
     // CareServiceException 처리 (하위 호환성 유지)
-
     @ExceptionHandler(CareServiceException.class)
     public ResponseEntity<ErrorResponse> handleCareServiceException(CareServiceException ex, WebRequest request) {
         log.error("CareServiceException 발생: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
@@ -129,9 +142,7 @@ public class CustomizedResponseEntityExceptionHandler {
         return ErrorCode.INTERNAL_SERVER_ERROR;
     }
 
-
     // PolicyNotFoundException 처리 (하위 호환성 유지)
-
     @ExceptionHandler(PolicyNotFoundException.class)
     public ResponseEntity<ErrorResponse> handlePolicyNotFoundException(PolicyNotFoundException ex, WebRequest request) {
         log.warn("PolicyNotFoundException 발생: {}", ex.getMessage());
@@ -147,9 +158,7 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-
     // CareFacilityNotFoundException 처리 (하위 호환성 유지)
-
     @ExceptionHandler(CareFacilityNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCareFacilityNotFoundException(CareFacilityNotFoundException ex, WebRequest request) {
         log.warn("CareFacilityNotFoundException 발생: {}", ex.getMessage());
@@ -165,9 +174,7 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-
     // Validation 예외 처리 (@Valid 실패)
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex, WebRequest request) {
         log.warn("Validation 실패: {}", ex.getMessage());
@@ -196,9 +203,7 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-
     // IllegalArgumentException 처리
-
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         log.warn("IllegalArgumentException 발생: {}", ex.getMessage());
@@ -214,12 +219,48 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
+    // @PreAuthorize 거부는 권한 문제지 장애가 아니다.
+    // 그냥 두면 최후 핸들러가 500 을 주고 운영 알림이 울린다.
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationDenied(AuthorizationDeniedException ex, WebRequest request) {
+        log.warn("권한 없는 접근: {}", request.getDescription(false));
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+            ErrorCode.FORBIDDEN,
+            "접근 권한이 없습니다",
+            request.getDescription(false)
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(errorResponse);
+    }
+
+    // 없는 URL 은 잘못된 요청이지 장애가 아니다.
+    // 그냥 두면 아래 최후 핸들러가 500 으로 응답하고 운영 알림까지 울린다.
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex, WebRequest request) {
+        log.warn("존재하지 않는 경로 요청: {}", ex.getResourcePath());
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+            ErrorCode.RESOURCE_NOT_FOUND,
+            "요청하신 경로를 찾을 수 없습니다",
+            request.getDescription(false)
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(errorResponse);
+    }
 
     // 모든 예외 처리 (최후의 수단)
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex, WebRequest request) {
         log.error("예상치 못한 예외 발생", ex);
+        // 5xx 는 사용자가 이미 실패를 겪은 뒤다. 로그만 남기면 아무도 모른 채 지나간다.
+        alerter.alert("unhandled-" + ex.getClass().getSimpleName(),
+                "처리되지 않은 예외: " + ex.getClass().getSimpleName(),
+                ex.getMessage() + System.lineSeparator() + request.getDescription(false));
         
         ErrorResponse errorResponse = ErrorResponse.of(
             ErrorCode.INTERNAL_SERVER_ERROR,

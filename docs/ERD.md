@@ -887,9 +887,10 @@ erDiagram
 | ID | BIGINT | PK, AUTO_INCREMENT | 고유 식별자 |
 | USER_ID | BIGINT | FK, NOT NULL | 사용자 ID |
 | NOTIFICATION_TYPE | ENUM | NOT NULL | 알림 유형 |
-| EMAIL_ENABLED | BOOLEAN | DEFAULT TRUE | 이메일 알림 활성화 |
+| EMAIL_ENABLED | BOOLEAN | DEFAULT FALSE | 이메일 알림 활성화 |
 | PUSH_ENABLED | BOOLEAN | DEFAULT TRUE | 푸시 알림 활성화 |
 | SMS_ENABLED | BOOLEAN | DEFAULT FALSE | SMS 알림 활성화 |
+| IN_APP_ENABLED | BOOLEAN | DEFAULT TRUE | 인앱 알림 활성화 |
 | CREATED_AT | DATETIME | NOT NULL | 생성 시간 |
 | UPDATED_AT | DATETIME | NULL | 수정 시간 |
 
@@ -1023,7 +1024,7 @@ TBL_USER (1) ----< (N) TBL_CHAT_SESSION
 | Hospital - HospitalReview | 1:N | 한 병원은 여러 리뷰 받을 수 있음 |
 | HealthRecord - Attachment | 1:N | 한 건강 기록은 여러 첨부파일 가능 |
 | Policy - PolicyDocument | 1:N | 한 정책은 여러 문서를 가질 수 있음 |
-| User - NotificationSettings | 1:1 | 한 사용자는 하나의 알림 설정을 가짐 |
+| User - NotificationPreference | 1:N | 알림 유형별로 한 행씩 가짐 (UNIQUE: USER_ID + NOTIFICATION_TYPE) |
 | ChatSession - ChatMessage | 1:N | 한 세션은 여러 메시지를 포함 |
 
 ---

@@ -1,9 +1,6 @@
 package com.carecode.core.exception;
 
-/**
- * 리소스를 찾을 수 없을 때 발생하는 예외
- * 하위 호환성을 위해 유지
- */
+/** 리소스를 찾을 수 없을 때 발생하는 예외 하위 호환성을 위해 유지 */
 public class ResourceNotFoundException extends CareCodeException {
     
     public ResourceNotFoundException(String resourceName) {

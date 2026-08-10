@@ -5,9 +5,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-/**
- * 카카오 사용자 정보 추출 유틸리티
- */
+/** 카카오 사용자 정보 추출 유틸리티 */
 @Slf4j
 @Component
 public class KakaoUserInfoExtractor {
@@ -37,7 +35,6 @@ public class KakaoUserInfoExtractor {
 
         return null;
     }
-
 
     // 카카오 사용자 정보에서 ID 추출
     public String extractKakaoId(Map<String, Object> attributes) {

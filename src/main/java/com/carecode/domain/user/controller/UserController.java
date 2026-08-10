@@ -32,10 +32,7 @@ import com.carecode.domain.user.dto.response.UserSearchResponse;
 import com.carecode.domain.user.dto.response.UserListResponse;
 import com.carecode.domain.user.dto.response.UserInfoResponse;
 
-/**
- * 통합 사용자 관리 컨트롤러
- * 사용자 프로필, 통계, 위치 관리 등 모든 사용자 관련 API
- */
+/** 통합 사용자 관리 컨트롤러 */
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
@@ -49,14 +46,13 @@ public class UserController extends BaseController {
     private final UserMapper userMapper;
     private final CurrentUserFacade currentUserFacade;
 
-    // ==================== 사용자 프로필 ====================
-
+    // ====================
+    // 사용자 프로필 ====================
 
     // 사용자 프로필 조회
-
     @GetMapping("/{userId}")
     @LogExecutionTime
-    @Operation(summary = "사용자 프로필 조회", description = "특정 사용자의 프로필 정보를 조회합니다.")
+    @Operation(summary = "사용자 프로필 조회", description = "특정 사용자의 프로필 정보 조회")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserDto> getUserProfile(@Parameter(description = "사용자 ID", required = true)
                                                       @PathVariable String userId) {
@@ -64,12 +60,10 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(user);
     }
 
-
     // 현재 사용자 프로필 조회
-
     @GetMapping("/profile")
     @LogExecutionTime
-    @Operation(summary = "현재 사용자 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보를 조회합니다.")
+    @Operation(summary = "현재 사용자 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보 조회")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserDto> getCurrentUserProfile() {
         String currentUserEmail = getCurrentUserEmail();
@@ -81,7 +75,7 @@ public class UserController extends BaseController {
     // 사용자 프로필 업데이트
     @PutMapping("/{userId}")
     @LogExecutionTime
-    @Operation(summary = "사용자 프로필 업데이트", description = "사용자의 프로필 정보를 업데이트합니다.")
+    @Operation(summary = "사용자 프로필 업데이트", description = "사용자의 프로필 정보를 업데이트")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserDto> updateUserProfile(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId,
                                                      @Parameter(description = "업데이트할 사용자 정보", required = true)
@@ -95,7 +89,7 @@ public class UserController extends BaseController {
     // 프로필 완성도 체크
     @GetMapping("/profile/completion")
     @LogExecutionTime
-    @Operation(summary = "프로필 완성도 체크", description = "사용자 프로필의 완성도를 확인합니다.")
+    @Operation(summary = "프로필 완성도 체크", description = "사용자 프로필의 완성도를 확인")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserProfileCompletionResponse> checkProfileCompletion() {
         String currentUserEmail = getCurrentUserEmail();
@@ -107,7 +101,7 @@ public class UserController extends BaseController {
     // 프로필 이미지 업데이트
     @PutMapping("/{userId}/profile-image")
     @LogExecutionTime
-    @Operation(summary = "프로필 이미지 업데이트", description = "사용자의 프로필 이미지를 업데이트합니다.")
+    @Operation(summary = "프로필 이미지 업데이트")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<Void> updateProfileImage(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId,
                                                    @Parameter(description = "프로필 이미지 URL", required = true) @RequestParam String profileImageUrl) {
@@ -115,14 +109,13 @@ public class UserController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
-    // ==================== 사용자 위치 관리 ====================
-
+    // ====================
+    // 사용자 위치 관리 ====================
 
     // 사용자 위치 업데이트
-
     @PutMapping("/{userId}/location")
     @LogExecutionTime
-    @Operation(summary = "사용자 위치 업데이트", description = "사용자의 현재 위치를 업데이트합니다.")
+    @Operation(summary = "사용자 위치 업데이트", description = "사용자의 현재 위치를 업데이트")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserDto> updateUserLocation(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId,
                                                       @Parameter(description = "위도", required = true) @RequestParam Double latitude,
@@ -135,7 +128,7 @@ public class UserController extends BaseController {
     // 회원 탈퇴 (계정 비활성화)
     @PutMapping("/{userId}/deactivate")
     @LogExecutionTime
-    @Operation(summary = "회원 탈퇴 (계정 비활성화)", description = "사용자 계정을 비활성화합니다. 데이터는 보존되며 필요시 복구 가능합니다.")
+    @Operation(summary = "회원 탈퇴 (계정 비활성화)", description = "사용자 계정을 비활성화합니다. 데이터는 보존되며 필요시 복구 가능")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiSuccess> deactivateUser(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
         userFacade.deactivateUser(userId);
@@ -145,7 +138,7 @@ public class UserController extends BaseController {
     // 회원 탈퇴 (소프트 삭제)
     @DeleteMapping("/{userId}")
     @LogExecutionTime
-    @Operation(summary = "회원 탈퇴 (소프트 삭제)", description = "사용자 계정을 소프트 삭제합니다. 데이터는 보존되며 필요시 복구 가능합니다.")
+    @Operation(summary = "회원 탈퇴 (소프트 삭제)", description = "사용자 계정을 소프트 삭제합니다. 데이터는 보존되며 필요시 복구 가능")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiSuccess> deleteUser(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
         userFacade.deleteUser(userId);
@@ -156,7 +149,7 @@ public class UserController extends BaseController {
     // 계정 복구 (비활성화된 계정 재활성화)
     @PutMapping("/{userId}/reactivate")
     @LogExecutionTime
-    @Operation(summary = "계정 복구", description = "비활성화된 사용자 계정을 재활성화합니다.")
+    @Operation(summary = "계정 복구", description = "비활성화된 사용자 계정을 재활성화")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiSuccess> reactivateUser(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
         userFacade.reactivateUser(userId);
@@ -164,13 +157,13 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.of("계정이 성공적으로 복구되었습니다."));
     }
 
-    // ==================== 프로필 관리 ====================
+    // ====================
+    // 프로필 관리 ====================
 
     // 프로필 업데이트 (추가 정보 입력)
-
     @PutMapping("/profile")
     @LogExecutionTime
-    @Operation(summary = "프로필 업데이트", description = "사용자의 추가 정보를 입력/업데이트합니다.")
+    @Operation(summary = "프로필 업데이트", description = "사용자의 추가 정보를 입력/업데이트")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserDto> updateProfile(@Parameter(description = "업데이트할 프로필 정보", required = true)
                                                      @Valid @RequestBody UserUpdateRequestDto updateDto) {
@@ -192,7 +185,7 @@ public class UserController extends BaseController {
     // 닉네임 업데이트 (카카오 닉네임과 별도)
     @PatchMapping("/profile/nickname")
     @LogExecutionTime
-    @Operation(summary = "닉네임 업데이트", description = "사용자의 표시 닉네임을 업데이트합니다.")
+    @Operation(summary = "닉네임 업데이트", description = "사용자의 표시 닉네임을 업데이트")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiSuccess> updateNickname(@Parameter(description = "새로운 닉네임", required = true)
                                                                   @RequestBody Map<String, String> request) {
@@ -215,26 +208,23 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.of("닉네임이 업데이트되었습니다"));
     }
 
-    // ==================== 사용자 관리 (관리자용) ====================
-
+    // ====================
+    // 사용자 관리 (관리자용) ====================
 
     // 사용자 통계 조회
-
     @GetMapping("/statistics")
     @LogExecutionTime
-    @Operation(summary = "사용자 통계 조회", description = "전체 사용자 통계를 조회합니다.")
+    @Operation(summary = "사용자 통계 조회")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserStatsResponse> getUserStatistics() {
         UserStatsResponse stats = userService.getUserStatistics();
         return ResponseEntity.ok(stats);
     }
 
-
     // 사용자 검색
-
     @GetMapping("/search")
     @LogExecutionTime
-    @Operation(summary = "사용자 검색", description = "키워드로 사용자를 검색합니다.")
+    @Operation(summary = "사용자 검색", description = "키워드로 사용자 검색")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserSearchResponse> searchUsers(@Parameter(description = "검색 키워드", required = true) @RequestParam String keyword,
                                                                @Parameter(description = "검색 타입", required = false) @RequestParam(required = false) String type) {
@@ -256,12 +246,10 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(searchResult);
     }
 
-
     // 활성 사용자 목록 조회
-
     @GetMapping("/active")
     @LogExecutionTime
-    @Operation(summary = "활성 사용자 목록", description = "활성화된 사용자 목록을 조회합니다.")
+    @Operation(summary = "활성 사용자 목록", description = "활성화된 사용자 목록 조회")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserListResponse> getActiveUsers() {
         List<UserDto> users = userService.getActiveUsers();
@@ -276,12 +264,10 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userList);
     }
 
-
     // 사용자 유형별 조회
-
     @GetMapping("/by-type/{userType}")
     @LogExecutionTime
-    @Operation(summary = "사용자 유형별 조회", description = "특정 유형의 사용자들을 조회합니다.")
+    @Operation(summary = "사용자 유형별 조회", description = "특정 유형의 사용자들 조회")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserListResponse> getUsersByType(@Parameter(description = "사용자 유형", required = true) @PathVariable String userType) {
         List<UserDto> users = userService.getUsersByType(userType);
@@ -296,12 +282,10 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userList);
     }
 
-
     // 지역별 사용자 조회
-
     @GetMapping("/by-region/{region}")
     @LogExecutionTime
-    @Operation(summary = "지역별 사용자 조회", description = "특정 지역의 사용자들을 조회합니다.")
+    @Operation(summary = "지역별 사용자 조회", description = "특정 지역의 사용자들 조회")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserListResponse> getUsersByRegion(@Parameter(description = "지역", required = true) @PathVariable String region) {
         List<UserDto> users = userService.getUsersByRegion(region);
@@ -316,12 +300,10 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userList);
     }
 
-
     // 인증된 사용자 목록 조회
-
     @GetMapping("/verified")
     @LogExecutionTime
-    @Operation(summary = "인증된 사용자 목록", description = "이메일 인증이 완료된 사용자 목록을 조회합니다.")
+    @Operation(summary = "인증된 사용자 목록", description = "이메일 인증이 완료된 사용자 목록 조회")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserListResponse> getVerifiedUsers() {
         List<UserDto> users = userService.getVerifiedUsers();
@@ -336,12 +318,10 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userList);
     }
 
-
     // 최근 활동 사용자 목록 조회
-
     @GetMapping("/recently-active")
     @LogExecutionTime
-    @Operation(summary = "최근 활동 사용자 목록", description = "최근에 활동한 사용자 목록을 조회합니다.")
+    @Operation(summary = "최근 활동 사용자 목록", description = "최근에 활동한 사용자 목록 조회")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<UserListResponse> getRecentlyActiveUsers() {
         List<UserDto> users = userService.getRecentlyActiveUsers();
@@ -356,12 +336,10 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userList);
     }
 
-
     // 사용자 역할 변경
-
     @PutMapping("/{userId}/role")
     @LogExecutionTime
-    @Operation(summary = "사용자 역할 변경", description = "사용자의 역할을 변경합니다.")
+    @Operation(summary = "사용자 역할 변경", description = "사용자의 역할을 변경")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiSuccess> updateUserRole(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId,
                                                      @Parameter(description = "새로운 역할", required = true) @RequestBody Map<String, String> request) {
@@ -380,30 +358,25 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.of("사용자 역할이 변경되었습니다"));
     }
 
-
     // 사용자 활성화
-
     @PutMapping("/{userId}/activate")
     @LogExecutionTime
-    @Operation(summary = "사용자 활성화", description = "비활성화된 사용자를 활성화합니다.")
+    @Operation(summary = "사용자 활성화", description = "비활성화된 사용자를 활성화")
     @SecurityRequirement(name = "Bearer Authentication")
     public ResponseEntity<ApiSuccess> activateUser(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
         userService.activateUser(userId);
         return ResponseEntity.ok(ApiSuccess.of("사용자가 활성화되었습니다"));
     }
 
-    // ==================== 유틸리티 메서드 ====================
-
+    // ====================
+    // 유틸리티 메서드 ====================
 
     // 현재 로그인한 사용자의 이메일을 가져오기
-
     private String getCurrentUserEmail() {
         return currentUserFacade.requireCurrentUserEmail();
     }
 
-
     // 사용자 프로필 업데이트
-
     private void updateUserProfile(User user, UserUpdateRequestDto updateDto) {
         if (!isBlank(updateDto.getName())) {
             user.setName(updateDto.getName().trim());
@@ -428,9 +401,7 @@ public class UserController extends BaseController {
         }
     }
 
-
     // User Entity를 UserDto로 변환
-
     private UserDto convertToDto(User user) {
         return UserDto.builder()
                 .id(user.getId())
@@ -455,9 +426,7 @@ public class UserController extends BaseController {
                 .build();
     }
 
-
     // 프로필 완성도 계산
-
     private UserProfileCompletionResponse calculateProfileCompletion(User user) {
         UserProfileMissingFields missingFields = 
                 UserProfileMissingFields.builder()
@@ -495,16 +464,12 @@ public class UserController extends BaseController {
                 .build();
     }
 
-
     // 문자열이 비어있는지 확인
-
     private boolean isBlank(String str) {
         return str == null || str.trim().isEmpty();
     }
 
-
     // UserDto를 UserInfoResponse로 변환
-
     private UserInfoResponse convertToUserInfo(UserDto userDto) {
         return UserInfoResponse.builder()
                 .id(userDto.getId())

@@ -27,9 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * 커뮤니티 모더레이션: 신고 접수·처리, 사용자 차단.
- */
+/** 커뮤니티 모더레이션: 신고 접수·처리, 사용자 차단. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -47,8 +45,8 @@ public class ModerationService {
     @Value("${app.community.auto-hide-report-threshold:5}")
     private long autoHideThreshold;
 
-    // ==================== 신고 ====================
-
+    // ====================
+    // 신고 ====================
     @Transactional
     public ReportResponse report(ReportCreateRequest request) {
         User reporter = currentUserFacade.requireCurrentUser();
@@ -102,8 +100,8 @@ public class ModerationService {
         return ReportResponse.from(reportRepository.save(report));
     }
 
-    // ==================== 차단 ====================
-
+    // ====================
+    // 차단 ====================
     @Transactional
     public void blockUser(Long targetUserId) {
         User blocker = currentUserFacade.requireCurrentUser();
@@ -133,8 +131,8 @@ public class ModerationService {
         return userBlockRepository.findBlockedUserIds(blocker.getId());
     }
 
-    // ==================== 내부 ====================
-
+    // ====================
+    // 내부 ====================
     private void applyAutoHideIfNeeded(Report.TargetType targetType, Long targetId) {
         long reportCount = reportRepository.countActiveReports(targetType, targetId);
         if (reportCount >= autoHideThreshold) {

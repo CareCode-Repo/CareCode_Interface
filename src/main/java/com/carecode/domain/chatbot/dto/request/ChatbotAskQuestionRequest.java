@@ -9,9 +9,7 @@ import lombok.Setter;
 
 import java.util.Map;
 
-/**
- * 챗봇 질문 요청
- */
+/** 챗봇 질문 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

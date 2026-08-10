@@ -15,9 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 어드민 병원 관리 API.
- */
+/** 어드민 병원 관리 API. */
 @RestController
 @RequestMapping("/api/admin/hospitals")
 @RequiredArgsConstructor

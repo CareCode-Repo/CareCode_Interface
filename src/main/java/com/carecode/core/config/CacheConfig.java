@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
@@ -21,16 +22,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Redis 캐시 설정
- * Spring Cache Abstraction을 사용한 캐싱 전략
+ * Redis 캐시 설정.
+ * spring.cache.type=none 이면 이 설정을 만들지 않는다 — 그렇지 않으면 Redis 없이 로컬·테스트 구동이 불가능하다.
  */
 @Configuration
 @EnableCaching
+@ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = true)
 public class CacheConfig {
 
-
     // 기본 캐시 설정
-
     private RedisCacheConfiguration defaultCacheConfig() {
         return RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10)) // 기본 TTL: 10분
@@ -41,10 +41,7 @@ public class CacheConfig {
                 .disableCachingNullValues(); // null 값은 캐싱하지 않음
     }
 
-    /**
-     * 캐시 값 직렬화용 ObjectMapper.
-     * JavaTimeModule 이 없으면 LocalDate/LocalDateTime 필드를 가진 DTO 캐싱이 실패한다.
-     */
+    /** 캐시 값 직렬화용 ObjectMapper. JavaTimeModule 이 없으면 LocalDate/LocalDateTime 필드를 가진 DTO 캐싱이 실패한다. */
     private ObjectMapper cacheObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
@@ -61,9 +58,7 @@ public class CacheConfig {
         return mapper;
     }
 
-
     // 캐시별 TTL 설정
-
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory factory) {
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();

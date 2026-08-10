@@ -8,12 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-/**
- * 관리자 정책 생성·수정 요청.
- *
- * <p>정책은 매년 바뀌는데 코드에 하드코딩돼 있어 재배포 없이는 수정할 수 없었다.
- * 이 API 로 운영 중 관리할 수 있게 한다.
- */
+/** 관리자 정책 생성·수정 요청. 정책은 매년 바뀌는데 코드에 하드코딩돼 있어 재배포 없이는 수정할 수 없었다. */
 @Getter
 @Setter
 @NoArgsConstructor

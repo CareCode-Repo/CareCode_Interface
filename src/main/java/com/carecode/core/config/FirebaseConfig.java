@@ -13,13 +13,7 @@ import org.springframework.core.io.ResourceLoader;
 
 import java.io.InputStream;
 
-/**
- * FCM 초기화.
- *
- * <p>서비스 계정 자격증명이 설정되지 않은 환경(로컬/CI)에서도 애플리케이션이 뜨도록
- * 자격증명이 없으면 {@link FirebaseMessaging} 빈을 만들지 않는다.
- * 푸시 발송기는 이 빈이 없으면 자동으로 비활성 상태가 된다.
- */
+/** FCM 초기화. 서비스 계정 자격증명이 설정되지 않은 환경(로컬/CI)에서도 애플리케이션이 뜨도록 자격증명이 없으면 FirebaseMessaging 빈을 만들지 않는다 */
 @Slf4j
 @Configuration
 public class FirebaseConfig {

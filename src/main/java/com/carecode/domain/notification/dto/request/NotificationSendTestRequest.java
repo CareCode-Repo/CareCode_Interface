@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 테스트 알림 발송 요청
- */
+/** 테스트 알림 발송 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

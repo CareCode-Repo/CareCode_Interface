@@ -8,10 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-/**
- * 챗봇 대화 세션 엔티티
- * 사용자별 대화 세션 정보를 관리
- */
+/** 챗봇 대화 세션 엔티티 사용자별 대화 세션 정보를 관리 */
 @Entity
 @Table(name = "TBL_CHAT_SESSIONS")
 @Getter
@@ -59,9 +56,7 @@ public class ChatSession {
     @Column
     private LocalDateTime endedAt;
 
-
     // 세션 상태
-
     public enum SessionStatus {
         ACTIVE,     // 활성
         PAUSED,     // 일시정지

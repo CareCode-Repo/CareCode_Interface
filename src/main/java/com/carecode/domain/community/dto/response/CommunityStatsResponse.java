@@ -8,9 +8,7 @@ import lombok.Setter;
 
 import java.util.Map;
 
-/**
- * 커뮤니티 통계 응답
- */
+/** 커뮤니티 통계 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -6,9 +6,7 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-/**
- * 건강기록 첨부파일 응답.
- */
+/** 건강기록 첨부파일 응답. */
 @Getter
 @Builder
 public class AttachmentResponse {

@@ -1,8 +1,6 @@
 package com.carecode.domain.community.entity;
 
-/**
- * 게시글 카테고리 Enum
- */
+/** 게시글 카테고리 Enum */
 public enum PostCategory {
     GENERAL("일반"),
     QUESTION("질문"),

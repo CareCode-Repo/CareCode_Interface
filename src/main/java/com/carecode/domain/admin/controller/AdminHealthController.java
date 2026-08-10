@@ -16,11 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 어드민 건강기록 관리 API.
- *
- * <p>건강기록은 민감정보다. 관리자가 대신 생성·수정하지 않고 조회와 삭제만 제공한다.
- */
+/** 어드민 건강기록 관리 API. 건강기록은 민감정보다. 관리자가 대신 생성·수정하지 않고 조회와 삭제만 제공한다. */
 @RestController
 @RequestMapping("/api/admin/health/records")
 @RequiredArgsConstructor

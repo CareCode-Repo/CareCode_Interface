@@ -1,5 +1,7 @@
 package com.carecode.domain.health.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.ChildNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.health.dto.request.ChildCreateRequest;
@@ -17,11 +19,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
 
-/**
- * 아이 정보 관리.
- *
- * <p>등록 시 표준 예방접종 일정을 함께 생성한다.
- */
+/** 아이 정보 관리. 등록 시 표준 예방접종 일정을 함께 생성한다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,6 +30,7 @@ public class ChildService {
     private final ChildMapper childMapper;
     private final CurrentUserFacade currentUserFacade;
     private final VaccinationScheduleService vaccinationScheduleService;
+    private final EventLogger eventLogger;
 
     @Transactional
     public ChildInfoResponse createChild(ChildCreateRequest request) {
@@ -47,6 +46,7 @@ public class ChildService {
                 .build();
 
         Child saved = childRepository.save(child);
+        eventLogger.log(EventType.CHILD_REGISTERED, parent.getId(), String.valueOf(saved.getId()));
         log.info("아이 등록 - childId={}, userId={}", saved.getId(), parent.getId());
 
         // 생년월일 기준 표준 접종 일정 자동 생성
@@ -84,10 +84,7 @@ public class ChildService {
         childRepository.delete(requireOwnedChild(childId));
     }
 
-    /**
-     * 아이 조회 + 소유권 검증.
-     * 남의 아이 정보에 접근하지 못하도록 보호자 본인 것만 반환한다.
-     */
+    /** 아이 조회 + 소유권 검증. 남의 아이 정보에 접근하지 못하도록 보호자 본인 것만 반환한다. */
     private Child requireOwnedChild(Long childId) {
         User parent = currentUserFacade.requireCurrentUser();
         Child child = childRepository.findById(childId)

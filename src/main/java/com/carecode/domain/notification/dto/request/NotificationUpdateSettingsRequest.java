@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 알림 설정 수정 요청
- */
+/** 알림 설정 수정 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

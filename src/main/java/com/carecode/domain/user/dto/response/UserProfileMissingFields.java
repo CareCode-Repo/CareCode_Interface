@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 프로필 누락 필드 정보
- */
+/** 프로필 누락 필드 정보 */
 @Getter
 @Setter
 @NoArgsConstructor

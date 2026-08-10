@@ -4,13 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
- * SMS 채널 발송기.
- *
- * <p>아직 계약된 SMS 사업자가 없어 실제 전송은 하지 않는다.
- * 채널 배선은 완성해 두고, 사업자가 정해지면 {@link #send} 구현만 채우면 된다.
- * 설정이 없는 동안에는 {@link #isAvailable()} 이 false 라 디스패처가 건너뛴다.
- */
+/** SMS 채널 발송기. 아직 계약된 SMS 사업자가 없어 실제 전송은 하지 않는다. */
 @Slf4j
 @Component
 public class SmsNotificationSender implements NotificationSender {
@@ -29,6 +23,11 @@ public class SmsNotificationSender implements NotificationSender {
     @Override
     public boolean isAvailable() {
         return enabled;
+    }
+
+    @Override
+    public String getUnavailableReason() {
+        return isAvailable() ? null : "문자 발송은 아직 준비 중이에요.";
     }
 
     @Override

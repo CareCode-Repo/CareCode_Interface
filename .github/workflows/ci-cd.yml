@@ -68,6 +68,22 @@ jobs:
     - name: Run tests
       run: ./gradlew clean test jacocoTestReport
 
+    # Testcontainers 테스트는 Docker 가 없으면 조용히 skip 되고 빌드는 초록불이 된다.
+    # 스키마 정합성 검증이 그렇게 빠지면 마이그레이션 누락을 아무도 못 잡는다.
+    - name: Assert schema validation actually ran
+      run: |
+        report=build/test-results/test/TEST-com.carecode.integration.FlywaySchemaValidationTest.xml
+        if [ ! -f "$report" ]; then
+          echo "::error::스키마 정합성 테스트 리포트가 없습니다."
+          exit 1
+        fi
+        if grep -q 'skipped="0"' "$report"; then
+          echo "스키마 정합성 테스트 실행 확인"
+        else
+          echo "::error::스키마 정합성 테스트가 skip 되었습니다. Docker 환경을 확인하세요."
+          exit 1
+        fi
+
     - name: Publish test report
       uses: mikepenz/action-junit-report@v5
       if: always()

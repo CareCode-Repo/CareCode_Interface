@@ -8,9 +8,7 @@ import lombok.Builder;
 
 import java.time.LocalDateTime;
 
-/**
- * 채팅 메시지 DTO
- */
+/** 채팅 메시지 DTO */
 @Getter
 @Setter
 @NoArgsConstructor

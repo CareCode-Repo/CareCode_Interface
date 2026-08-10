@@ -20,10 +20,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 돌봄시설 공공데이터 API 컨트롤러
- * 보육시설 정보를 공공데이터 포털에서 가져와서 DB에 저장
- */
+/** 돌봄시설 공공데이터 API 컨트롤러 */
 @Slf4j
 @RestController
 @RequestMapping("/api/public/care-facilities")
@@ -36,11 +33,9 @@ public class CareFacilityApiController {
     private final CareFacilityRepository careFacilityRepository;
     private FacilityType facilityType;
 
-
     // 전체 보육시설 정보 동기화 (모든 데이터)
-
     @PostMapping("/sync-all")
-    @Operation(summary = "전체 보육시설 정보 동기화", description = "공공데이터에서 모든 보육시설 정보를 조회하고 DB에 저장합니다.")
+    @Operation(summary = "전체 보육시설 정보 동기화", description = "공공데이터에서 모든 보육시설 정보를 조회하고 DB에 저장")
     public ResponseEntity<Map<String, Object>> syncAllChildcareFacilities(
             @Parameter(description = "시도명", example = "서울특별시") @RequestParam(defaultValue = "서울특별시") String sido,
             @Parameter(description = "시군구명", example = "강남구") @RequestParam(defaultValue = "강남구") String sigungu,
@@ -147,9 +142,7 @@ public class CareFacilityApiController {
         }
     }
 
-
     // Swagger UI용 간단한 보육시설 동기화 (GET 방식)
-
     @GetMapping("/swagger/sync")
     @Operation(summary = "Swagger용 보육시설 동기화", description = "Swagger UI에서 쉽게 테스트할 수 있는 GET 방식 동기화")
     public ResponseEntity<Map<String, Object>> swaggerSync() {
@@ -168,11 +161,9 @@ public class CareFacilityApiController {
         }
     }
 
-
     // DB 저장된 보육시설 목록 조회
-
     @GetMapping("/swagger/db-facilities")
-    @Operation(summary = "DB 저장된 보육시설 목록", description = "DB에 저장된 보육시설 목록을 조회합니다")
+    @Operation(summary = "DB 저장된 보육시설 목록")
     public ResponseEntity<Map<String, Object>> swaggerGetDbFacilities(
             @Parameter(description = "페이지 번호", example = "0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "한 페이지 결과 수", example = "10") @RequestParam(defaultValue = "10") int size) {
@@ -180,8 +171,7 @@ public class CareFacilityApiController {
         try {
             log.info("DB 저장된 보육시설 목록 조회 요청: page={}, size={}", page, size);
             
-            // 전체를 읽어 subList 로 자르면 테이블이 커질수록 그대로 부하가 되고,
-            // start 가 목록 크기를 넘으면 IndexOutOfBoundsException 이 난다. DB 페이징으로 처리한다.
+            // 전체를 읽어 subList 로 자르면 테이블이 커질수록 그대로 부하가 되고, start 가 목록 크기를 넘으면 IndexOutOfBoundsException 이 난다
             int safePage = PageRequestUtil.normalizePage(page);
             int safeSize = PageRequestUtil.normalizeSize(size);
             List<CareFacilityInfo> pagedFacilities = careFacilityService.getAllCareFacilities(safePage, safeSize);
@@ -204,11 +194,9 @@ public class CareFacilityApiController {
         }
     }
 
-
     // 보육시설 통계
-
     @GetMapping("/swagger/stats")
-    @Operation(summary = "보육시설 통계", description = "DB에 저장된 보육시설 통계 정보를 조회합니다")
+    @Operation(summary = "보육시설 통계", description = "DB에 저장된 보육시설 통계 정보 조회")
     public ResponseEntity<Map<String, Object>> swaggerGetStats() {
         try {
             log.info("보육시설 통계 조회 요청");
@@ -231,9 +219,7 @@ public class CareFacilityApiController {
         }
     }
 
-
     // 공공데이터로부터 새로운 CareFacility 엔티티 생성
-
     private CareFacility createCareFacilityFromPublicData(Map<String, Object> facilityData) {
         try {
             return CareFacility.builder()
@@ -261,9 +247,7 @@ public class CareFacilityApiController {
         }
     }
 
-
     // 기존 CareFacility 엔티티를 공공데이터로 업데이트
-
     private void updateCareFacilityFromPublicData(CareFacility existingFacility, Map<String, Object> facilityData) {
         try {
             existingFacility.setName((String) facilityData.get("facilityName"));
@@ -287,9 +271,7 @@ public class CareFacilityApiController {
         }
     }
 
-
     // 서비스 타입을 FacilityType으로 매핑
-
     private FacilityType mapServiceTypeToFacilityType(String serviceType) {
         if (serviceType == null) {
             return FacilityType.OTHER;
@@ -309,9 +291,7 @@ public class CareFacilityApiController {
         }
     }
 
-
     // 운영시간 정보 포맷팅
-
     private String formatOperatingHours(Map<String, Object> facilityData) {
         StringBuilder hours = new StringBuilder();
         
@@ -337,9 +317,7 @@ public class CareFacilityApiController {
         return hours.toString();
     }
 
-
     // 시설 설명 생성
-
     private String generateDescription(Map<String, Object> facilityData) {
         StringBuilder description = new StringBuilder();
         
@@ -367,9 +345,7 @@ public class CareFacilityApiController {
         return description.toString();
     }
 
-
     // Double 파싱 헬퍼 메서드
-
     private Double parseDouble(Object value) {
         if (value == null || value.toString().trim().isEmpty()) {
             return null;
@@ -382,9 +358,7 @@ public class CareFacilityApiController {
         }
     }
 
-
     // Integer 파싱 헬퍼 메서드
-
     private Integer parseInteger(Object value) {
         if (value == null || value.toString().trim().isEmpty()) {
             return null;

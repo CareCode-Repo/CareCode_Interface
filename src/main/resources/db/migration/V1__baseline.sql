@@ -1,15 +1,6 @@
--- ================================================================================
--- CareCode baseline schema (V1)
--- MariaDB/MySQL DDL
---
--- 주의: 이 파일은 Flyway 가 신규 환경에 적용하는 최초 스키마다.
--- 기존 운영 DB 는 flyway.baseline-on-migrate=true + baseline-version=0 으로 건너뛴다.
--- 이후 스키마 변경은 이 파일을 수정하지 말고 V2__*.sql 을 새로 추가한다.
--- ================================================================================
+-- ================================================================================ CareCode baseline s
 
--- ================================================================================
--- 1. User Domain Tables
--- ================================================================================
+-- ================================================================================ 1
 
 -- User Table
 CREATE TABLE TBL_USER (
@@ -91,9 +82,7 @@ CREATE TABLE TBL_EMAIL_VERIFICATION_TOKEN (
     INDEX idx_user_id (USER_ID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='이메일 인증 토큰';
 
--- ================================================================================
--- 2. Care Facility Domain Tables
--- ================================================================================
+-- ================================================================================ 2
 
 -- Care Facility Table
 CREATE TABLE TBL_CARE_FACILITIES (
@@ -190,9 +179,7 @@ CREATE TABLE TBL_REVIEWS (
     INDEX idx_is_active (IS_ACTIVE)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='돌봄시설 리뷰';
 
--- ================================================================================
--- 3. Community Domain Tables
--- ================================================================================
+-- ================================================================================ 3
 
 -- Post Table
 CREATE TABLE TBL_POST (
@@ -293,9 +280,7 @@ CREATE TABLE TBL_BOOKMARK (
     INDEX idx_user_id (USER_ID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='북마크';
 
--- ================================================================================
--- 4. Health Domain Tables
--- ================================================================================
+-- ================================================================================ 4
 
 -- Hospital Table
 CREATE TABLE TBL_HOSPITAL (
@@ -401,9 +386,7 @@ CREATE TABLE TBL_HEALTH_RECORD_ATTACHMENTS (
     INDEX idx_is_active (IS_ACTIVE)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='건강기록 첨부파일';
 
--- ================================================================================
--- 5. Policy Domain Tables
--- ================================================================================
+-- ================================================================================ 5
 
 -- Policy Category Table
 CREATE TABLE TBL_POLICY_CATEGORIES (
@@ -471,9 +454,7 @@ CREATE TABLE TBL_POLICY_DOCUMENTS (
     INDEX idx_is_active (IS_ACTIVE)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='정책 문서';
 
--- ================================================================================
--- 6. Notification Domain Tables
--- ================================================================================
+-- ================================================================================ 6
 
 -- Notification Table
 CREATE TABLE TBL_NOTIFICATION (
@@ -529,9 +510,7 @@ CREATE TABLE TBL_NOTIFICATION_TEMPLATES (
     INDEX idx_is_active (IS_ACTIVE)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='알림 템플릿';
 
--- ================================================================================
--- 7. Chatbot Domain Tables
--- ================================================================================
+-- ================================================================================ 7
 
 -- Chat Session Table
 CREATE TABLE TBL_CHAT_SESSIONS (
@@ -573,6 +552,4 @@ CREATE TABLE TBL_CHAT_MESSAGES (
     INDEX idx_created_at (CREATED_AT)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='채팅 메시지';
 
--- ================================================================================
--- End of CareCode Database Schema
--- ================================================================================
+-- ================================================================================ End of CareCode Dat

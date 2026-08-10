@@ -1,6 +1,8 @@
 package com.carecode.domain.careFacility.app;
 
+import com.carecode.domain.careFacility.dto.response.AdmissionForecastResponse;
 import com.carecode.domain.careFacility.dto.response.BookingResponse;
+import com.carecode.domain.careFacility.dto.response.FacilityPopularityResponse;
 import com.carecode.domain.careFacility.dto.request.ReviewRequest;
 import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
 import com.carecode.domain.careFacility.dto.request.UpdateBookingRequest;
@@ -10,7 +12,9 @@ import com.carecode.domain.careFacility.dto.response.CareFacilityListResponse;
 import com.carecode.domain.careFacility.dto.response.CareFacilityStatsResponse;
 import com.carecode.domain.careFacility.dto.response.ReviewResponse;
 import com.carecode.domain.careFacility.entity.FacilityType;
+import com.carecode.domain.careFacility.service.AdmissionForecastService;
 import com.carecode.domain.careFacility.service.CareFacilityBookingService;
+import com.carecode.domain.careFacility.service.FacilityPopularityService;
 import com.carecode.domain.careFacility.service.CareFacilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,6 +29,8 @@ public class CareFacilityFacade {
 
     private final CareFacilityService careFacilityService;
     private final CareFacilityBookingService bookingService;
+    private final AdmissionForecastService admissionForecastService;
+    private final FacilityPopularityService facilityPopularityService;
 
     @Transactional(readOnly = true)
     public List<CareFacilityInfo> getAllCareFacilities(int page, int size) {
@@ -136,8 +142,8 @@ public class CareFacilityFacade {
         return bookingService.getTodayBookingsByFacility(facilityId);
     }
 
-    // ==================== 고급 검색 기능 ====================
-
+    // ====================
+    // 고급 검색 기능 ====================
     @Transactional(readOnly = true)
     public List<CareFacilityInfo> recommendFacilitiesByChildAge(Integer childAge) {
         return careFacilityService.recommendFacilitiesByChildAge(childAge);
@@ -202,6 +208,14 @@ public class CareFacilityFacade {
     public void deleteReview(Long reviewId, String userEmail) {
         careFacilityService.deleteReview(reviewId, userEmail);
     }
+
+    @Transactional(readOnly = true)
+    public AdmissionForecastResponse forecastAdmission(Long facilityId, Integer childAgeMonths, Integer horizonMonths) {
+        return admissionForecastService.forecast(facilityId, childAgeMonths, horizonMonths);
+    }
+
+    @Transactional(readOnly = true)
+    public FacilityPopularityResponse analyzePopularity(Long facilityId) {
+        return facilityPopularityService.analyze(facilityId);
+    }
 }
-
-

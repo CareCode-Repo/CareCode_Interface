@@ -16,9 +16,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 아이별 예방접종 일정 생성·조회.
- */
+/** 아이별 예방접종 일정 생성·조회. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -28,12 +26,7 @@ public class VaccinationScheduleService {
     private final VaccinationScheduleRepository scheduleRepository;
     private final ChildRepository childRepository;
 
-    /**
-     * 아이의 생년월일을 기준으로 표준 접종 일정을 생성한다.
-     * 이미 일정이 있으면 중복 생성하지 않는다.
-     *
-     * @return 생성된 일정 수
-     */
+    /** 아이의 생년월일을 기준으로 표준 접종 일정을 생성한다. 이미 일정이 있으면 중복 생성하지 않는다. */
     @Transactional
     public int generateScheduleForChild(Long childId) {
         Child child = childRepository.findById(childId)

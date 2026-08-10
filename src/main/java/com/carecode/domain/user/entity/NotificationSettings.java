@@ -10,10 +10,7 @@ import lombok.Builder;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
 
-/**
- * 알림 설정 엔티티
- * 사용자의 알림 설정을 관리
- */
+/** 알림 설정 엔티티 사용자의 알림 설정을 관리 */
 @Entity
 @Table(name = "TBL_NOTIFICATION_SETTINGS")
 @Getter

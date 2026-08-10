@@ -12,10 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 육아 정책 엔티티
- * 정부에서 제공하는 육아 관련 정책 정보를 관리
- */
+/** 육아 정책 엔티티 정부에서 제공하는 육아 관련 정책 정보를 관리 */
 @Entity
 @Table(name = "TBL_POLICIES")
 @Getter
@@ -51,10 +48,44 @@ public class Policy {
     
     @Column(name = "target_region")
     private String targetRegion;
+
+    /** 기준중위소득 대비 상한(%). null 이면 소득 무관 정책이다. */
+    @Column(name = "income_threshold_percent")
+    private Integer incomeThresholdPercent;
+
+    /** 최소 자녀 수 요건. null 이면 무관, 2 이상이면 다자녀 정책이다. */
+    @Column(name = "min_children")
+    private Integer minChildren;
+
+    /** 대상 연령이 지난 뒤에도 신청 가능한 개월 수. null 이면 소급 불가. */
+    @Column(name = "retroactive_months")
+    private Integer retroactiveMonths;
     
     @Column(name = "benefit_amount")
     private Integer benefitAmount;
     
+    /** 월 지급 정책의 최대 지급 개월. null 이면 대상 연령 구간 내내 지급한다. */
+    @Column(name = "max_payment_months")
+    private Integer maxPaymentMonths;
+
+    /**
+     * 중복 수급 불가 그룹. 같은 그룹의 정책은 동시에 받을 수 없다.
+     * null 이면 다른 정책과 함께 받을 수 있다 — 대부분은 여기 해당한다.
+     */
+    @Column(name = "exclusion_group", length = 60)
+    private String exclusionGroup;
+
+    /** 수기 검증 시각. null 이면 자동 수집된 추정치이며 확정 금액으로 노출하면 안 된다. */
+    @Column(name = "verified_at")
+    private LocalDateTime verifiedAt;
+
+    @Column(name = "verified_by", length = 100)
+    private String verifiedBy;
+
+    /** 금액 근거 출처. 분쟁 시 확인 경로가 된다. */
+    @Column(name = "source_url", length = 500)
+    private String sourceUrl;
+
     @Column(name = "benefit_type")
     private String benefitType;
     

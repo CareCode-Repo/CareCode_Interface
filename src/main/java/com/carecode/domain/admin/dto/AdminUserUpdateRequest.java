@@ -5,12 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 어드민이 변경할 수 있는 사용자 속성만 명시한 요청 객체.
- *
- * <p>엔티티를 그대로 바인딩하면(과거 {@code @ModelAttribute User}) 비밀번호 해시나
- * 임의 필드까지 덮어쓸 수 있는 mass assignment 가 된다. 허용 필드를 화이트리스트로 고정한다.
- */
+/** 어드민이 변경할 수 있는 사용자 속성만 명시한 요청 객체. 엔티티를 그대로 바인딩하면(과거 @ModelAttribute User) 비밀번호 해시나 임의 필드까지 덮어쓸 */
 @Getter
 @Setter
 @NoArgsConstructor

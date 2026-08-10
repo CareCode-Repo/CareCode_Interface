@@ -22,9 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Spring Security 설정
- */
+/** Spring Security 설정 */
 @Slf4j
 @Configuration
 @EnableWebSecurity
@@ -49,12 +47,7 @@ public class SecurityConfig {
                 .toList();
     }
 
-    /**
-     * 전체 API 체인.
-     * <p>어드민도 동일한 JWT 인증을 사용하고 {@code /api/admin/**} 에서 ADMIN 역할로 구분한다.
-     * (과거에는 세션 기반 어드민 화면이 별도로 있었으나, 템플릿 엔진이 없어 렌더링 자체가 불가능했고
-     * 컨트롤러가 STATELESS 정책 아래에서 SecurityContextHolder 를 직접 조작해 항상 403 이었다.)
-     */
+    /** 전체 API 체인. 어드민도 동일한 JWT 인증을 사용하고 /api/admin/** 에서 ADMIN 역할로 구분한다 */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -98,6 +91,8 @@ public class SecurityConfig {
                 // 공개 엔드포인트
                 .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
                 .requestMatchers("/", "/error", "/favicon.ico").permitAll()
+                // 약관·방침은 동의하기 전에 읽어야 하므로 비로그인도 볼 수 있어야 한다.
+                .requestMatchers("/legal/**").permitAll()
                 
                 // 정적 리소스 (공개 접근)
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
@@ -110,7 +105,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/kakao/login-url").permitAll() // 카카오 로그인 URL 생성
                 .requestMatchers("/auth/kakao/complete-registration").permitAll() // 카카오 가입 완료
                 
-                // OAuth2 authorize/token (Spring Client beans). Kakao REST login uses KakaoUtil + /auth/kakao/login only; oauth2Login() is not configured.
+                // OAuth2 authorize/token (Spring Client beans).
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers("/kakao-callback.html").permitAll()
                 
@@ -121,6 +116,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 // 공개 API 엔드포인트
+                // 대기 기록은 본인 것만 다루므로 인증이 필요하다. 와일드카드보다 먼저 선언한다.
+                .requestMatchers("/facilities/waitlist/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/facilities/*/waitlist").authenticated()
                 .requestMatchers("/facilities").permitAll()
                 .requestMatchers("/facilities/type/**").permitAll()
                 .requestMatchers("/facilities/location/**").permitAll()
@@ -137,19 +135,26 @@ public class SecurityConfig {
                 // 돌봄시설 공공데이터 API (공개 접근)
                 .requestMatchers("/api/public/care-facilities/**").permitAll()
                 
+                // 병원 조회는 로그인 전에도 보여야 한다. 실제 경로가 /health/hospitals/** 라
+                // 아래 /health/** 규칙보다 먼저 선언해야 한다.
+                .requestMatchers(HttpMethod.GET, "/health/hospitals").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/nearby").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/popular").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/type/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/*/reviews").permitAll()
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/*/likes").permitAll()
+                // 좋아요 여부는 "내" 상태라 로그인이 필요하다.
+                .requestMatchers("/health/hospitals/*/like-status").authenticated()
+
                 // 건강 API: 인증된 사용자만 (소유권은 서비스 계층에서 검증)
                 .requestMatchers("/health/**").authenticated()
-                .requestMatchers("/hospitals").permitAll()
-                .requestMatchers("/hospitals/search").permitAll()
-                .requestMatchers(HttpMethod.GET, "/hospitals/*/reviews").permitAll()
-                .requestMatchers(HttpMethod.GET, "/hospitals/*/rating").permitAll()
-                .requestMatchers(HttpMethod.GET, "/hospitals/*/likes").permitAll()
-                .requestMatchers(HttpMethod.POST, "/hospitals/*/like").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/hospitals/*/like").authenticated()
                 
-                // 정책 API: 개인화·북마크는 인증 필요, 나머지 조회는 공개
-                // 아래 /policies/* 와일드카드보다 먼저 선언해야 적용된다.
+                // 정책 API: 개인화·북마크는 인증 필요, 나머지 조회는 공개 아래 /policies/* 와일드카드보다 먼저 선언해야 적용된다.
                 .requestMatchers("/policies/recommendations").authenticated()
+                .requestMatchers("/policies/missed-benefits").authenticated()
+                .requestMatchers("/policies/regional-comparison").authenticated()
+                .requestMatchers(HttpMethod.POST, "/policies/*/amount-reports").authenticated()
                 .requestMatchers("/policies/bookmarks").authenticated()
                 .requestMatchers("/policies/*/bookmarks").authenticated()
                 .requestMatchers("/policies").permitAll()
@@ -196,11 +201,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * {@code @Component} 로 선언된 필터는 Boot 가 서블릿 컨테이너에 자동 등록한다.
-     * 그대로 두면 어드민 체인에서도 JWT 필터가 돌면서 세션으로 복원된 인증을 지운다.
-     * 필터 체인 등록은 {@link #filterChain(HttpSecurity)} 에서만 이뤄지도록 자동 등록을 끈다.
-     */
+    /** @Component 로 선언된 필터는 Boot 가 서블릿 컨테이너에 자동 등록한다. */
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> disableJwtFilterAutoRegistration(
             JwtAuthenticationFilter filter) {

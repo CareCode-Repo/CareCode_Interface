@@ -16,12 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * 예방접종 사전 알림.
- *
- * <p>접종 예정일 D-{@code reminderDaysBefore} 구간에 들어온 일정을 찾아 보호자에게 알린다.
- * 이미 알림을 보낸 일정은 {@code reminderSentAt} 으로 걸러 중복 발송하지 않는다.
- */
+/** 예방접종 사전 알림. 접종 예정일 D-reminderDaysBefore 구간에 들어온 일정을 찾아 보호자에게 알린다 */
 @Slf4j
 @Component
 @RequiredArgsConstructor

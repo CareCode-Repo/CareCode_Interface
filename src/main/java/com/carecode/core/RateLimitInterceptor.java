@@ -15,16 +15,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.time.Duration;
 
-/**
- * Rate Limiting 인터셉터
- *
- * - 인증된 사용자: userId 기반 분당 300회 (NAT/공유 IP 환경 대응)
- * - 미인증 요청:  IP 기반 분당 120회
- * - 민감 공개 API(/auth/signup 등): IP 기반 분당 30회
- *
- * 학교 환경처럼 다수 사용자가 동일 공인 IP를 쓰는 경우
- * IP 기반 단일 제한은 오탐이 많아 인증 여부로 키를 분리합니다.
- */
+/** Rate Limiting 인터셉터 - 인증된 사용자: userId 기반 분당 300회 (NAT/공유 IP 환경 대응) - 미인증 요청: IP 기반 분당 120회 - 민감 */
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -88,9 +79,7 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         return true;
     }
 
-    /**
-     * SecurityContext에서 인증된 사용자 ID 추출. 미인증이면 null.
-     */
+    /** SecurityContext에서 인증된 사용자 ID 추출. 미인증이면 null. */
     private String resolveUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
@@ -99,17 +88,12 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         return auth.getName();
     }
 
-    /**
-     * 클라이언트 IP 추출.
-     * 프록시 헤더 신뢰 여부는 {@link ClientIpResolver} 가 설정에 따라 판단한다.
-     */
+    /** 클라이언트 IP 추출. 프록시 헤더 신뢰 여부는 ClientIpResolver 가 설정에 따라 판단한다. */
     private String getClientIp(HttpServletRequest request) {
         return clientIpResolver.resolve(request);
     }
 
-    /**
-     * 공개 API 중 민감한 엔드포인트 (낮은 rate limit 적용)
-     */
+    /** 공개 API 중 민감한 엔드포인트 (낮은 rate limit 적용) */
     private boolean isPublicSensitiveEndpoint(String path) {
         return path.startsWith("/api/v1/contact") ||
                 path.startsWith("/api/v1/auth/signup");

@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 알림 템플릿 응답
- */
+/** 알림 템플릿 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -39,12 +39,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * 커뮤니티 게시글/댓글 소유권 검증에 대한 회귀 테스트.
- *
- * <p>과거에는 수정·삭제 시 작성자 확인이 전혀 없어서
- * 로그인한 사용자라면 누구나 남의 글과 댓글을 지울 수 있었다.
- */
+/** 커뮤니티 게시글/댓글 소유권 검증에 대한 회귀 테스트. 과거에는 수정·삭제 시 작성자 확인이 전혀 없어서 로그인한 사용자라면 누구나 남의 글과 댓글을 지울 수 있었다. */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("CommunityService - 소유권 검증")

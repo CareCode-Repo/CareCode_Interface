@@ -58,8 +58,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.springframework.batch:spring-batch-test'
-    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
-    testImplementation 'org.testcontainers:mariadb:1.20.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.21.3'
+    testImplementation 'org.testcontainers:mariadb:1.21.3'
 
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
     // 소셜 로그인(OAuth2)
@@ -78,14 +78,43 @@ dependencies {
     // Logging - JSON 형식 로깅 지원
     implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
     
-    // AsciiDoctor for documentation generation
-    implementation 'org.asciidoctor:asciidoctorj:2.5.7'
-    implementation 'org.asciidoctor:asciidoctorj-pdf:2.3.4'
+    // API 문서는 springdoc-openapi 가 런타임에 생성한다(운영 프로파일에서는 비공개).
+    // asciidoctor 로 정적 산출물을 만들던 시절의 의존성이 남아 있었는데, .adoc 도 사용처도 없이
+    // 실행 jar 에 7.5MB 를 차지하고 취약점 스캔 표면만 늘리고 있었다.
+}
+
+// 소스에 한글 문자열 리터럴이 있다. 인코딩을 지정하지 않으면 Windows(CP949)에서 깨져 컴파일된다.
+// 공공데이터 응답의 한글 필드명("서비스ID" 등) 조회가 전부 실패하는 원인이었다.
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test).configureEach {
+    systemProperty 'file.encoding', 'UTF-8'
+    jvmArgs '-Dfile.encoding=UTF-8'
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        // 외부 API 를 호출하는 테스트는 기본 빌드에서 제외한다. 네트워크 상태로 빌드가 깨지면 안 된다.
+        // 실행: ./gradlew liveSyncCheck
+        excludeTags 'live'
+    }
     finalizedBy(tasks.named('jacocoTestReport'))
+}
+
+/** 공공데이터 실연동 점검. 키를 환경변수로 넘겨 수동 실행한다. */
+tasks.register('liveSyncCheck', Test) {
+    group = 'verification'
+    description = '실제 공공데이터 API 를 호출해 적재까지 확인한다'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'live'
+    }
+    testLogging {
+        showStandardStreams = true
+    }
 }
 
 jacoco {

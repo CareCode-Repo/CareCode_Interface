@@ -16,9 +16,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * 시설 예약 전날 리마인더.
- */
+/** 시설 예약 전날 리마인더. */
 @Slf4j
 @Component
 @RequiredArgsConstructor

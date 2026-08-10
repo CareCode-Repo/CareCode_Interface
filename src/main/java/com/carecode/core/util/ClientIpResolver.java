@@ -5,16 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
- * 클라이언트 IP 해석기.
- *
- * <p>{@code X-Forwarded-For} 는 클라이언트가 임의로 붙일 수 있는 헤더다.
- * 신뢰할 수 있는 리버스 프록시 뒤에 있지 않은데 이 헤더를 그대로 쓰면
- * 헤더 값만 바꿔가며 IP 기반 rate limit 을 무한히 우회할 수 있다.
- *
- * <p>그래서 {@code app.rate-limit.trust-forwarded-headers=true} 인 경우에만
- * 프록시 헤더를 사용하고, 기본값은 TCP 연결의 실제 원격 주소를 쓴다.
- */
+/** 클라이언트 IP 해석기. X-Forwarded-For 는 클라이언트가 임의로 붙일 수 있는 헤더다 */
 @Slf4j
 @Component
 public class ClientIpResolver {

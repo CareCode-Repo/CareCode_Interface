@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * 관리자용 예약 검색 응답 DTO
- */
+/** 관리자용 예약 검색 응답 DTO */
 @Data
 @Builder
 @NoArgsConstructor

@@ -4,15 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * WHO 아동 성장 표준(0~60개월) LMS 표.
- *
- * <p>출처: WHO Child Growth Standards (weight-for-age, length/height-for-age).
- * 표는 6개월 간격 발췌본이며, 사이 값은 선형 보간한다.
- * 정밀한 임상 판단이 필요하면 WHO 전체 표를 적재해 대체할 수 있다.
- *
- * <p>주의: 백분위는 참고 지표다. 진단은 의료진의 판단을 따른다.
- */
+/** WHO 아동 성장 표준(0~60개월) LMS 표. 출처: WHO Child Growth Standards (weight-for-age. */
 public final class GrowthStandardTable {
 
     /** 남아 체중(kg) for age. */
@@ -80,11 +72,7 @@ public final class GrowthStandardTable {
     private GrowthStandardTable() {
     }
 
-    /**
-     * 해당 연령의 LMS 값을 구한다. 표에 없는 개월 수는 인접 구간을 선형 보간한다.
-     *
-     * @return 표 범위를 벗어나면 {@link Optional#empty()}
-     */
+    /** 해당 연령의 LMS 값을 구한다. 표에 없는 개월 수는 인접 구간을 선형 보간한다. */
     public static Optional<GrowthStandard> lookup(GrowthMetric metric, Sex sex, int ageMonths) {
         List<GrowthStandard> table = TABLES.get(new Key(metric, sex));
         if (table == null || ageMonths < 0) {

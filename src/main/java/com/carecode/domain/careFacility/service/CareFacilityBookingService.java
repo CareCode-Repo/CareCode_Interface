@@ -24,10 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * 육아 시설 예약 서비스 클래스
- * 시설 방문 및 상담 예약 기능을 제공
- */
+/** 육아 시설 예약 서비스 클래스 시설 방문 및 상담 예약 기능을 제공 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -41,9 +38,7 @@ public class CareFacilityBookingService {
     private final CareFacilityRepository careFacilityRepository;
     private final UserRepository userRepository;
 
-
     // 예약 생성
-
     @LogExecutionTime
     @Transactional
     public BookingResponse createBooking(Long facilityId, CreateBookingRequest request, UserDetails userDetails) {
@@ -85,9 +80,7 @@ public class CareFacilityBookingService {
         return convertToDto(savedBooking);
     }
 
-
     // 예약 조회
-
     @LogExecutionTime
     public BookingResponse getBookingById(Long bookingId, UserDetails userDetails) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
@@ -101,9 +94,7 @@ public class CareFacilityBookingService {
         return convertToDto(booking);
     }
 
-
     // 사용자별 예약 목록 조회
-
     @LogExecutionTime
     public List<BookingResponse> getUserBookings(UserDetails userDetails) {
         User user = userRepository.findByUserId(userDetails.getUsername())
@@ -116,9 +107,7 @@ public class CareFacilityBookingService {
                 .collect(Collectors.toList());
     }
 
-
     // 시설별 예약 목록 조회
-
     @LogExecutionTime
     public List<BookingResponse> getFacilityBookings(Long facilityId) {
         List<CareFacilityBooking> bookings = bookingRepository.findByFacilityIdOrderByStartTimeAsc(facilityId);
@@ -128,9 +117,7 @@ public class CareFacilityBookingService {
                 .collect(Collectors.toList());
     }
 
-
     // 예약 상태 업데이트
-
     @LogExecutionTime
     @Transactional
     public BookingResponse updateBookingStatus(Long bookingId, String status, UserDetails userDetails) {
@@ -155,9 +142,7 @@ public class CareFacilityBookingService {
             return convertToDto(savedBooking);
     }
 
-
     // 예약 취소
-
     @LogExecutionTime
     @Transactional
     public void cancelBooking(Long bookingId, UserDetails userDetails) {
@@ -181,9 +166,7 @@ public class CareFacilityBookingService {
         bookingRepository.save(booking);
     }
 
-
     // 예약 수정
-
     @LogExecutionTime
     @Transactional
     public BookingResponse updateBooking(Long bookingId, UpdateBookingRequest request, UserDetails userDetails) {
@@ -225,9 +208,7 @@ public class CareFacilityBookingService {
         return convertToDto(savedBooking);
     }
 
-
     // 오늘 예약 목록 조회
-
     @LogExecutionTime
     public List<BookingResponse> getTodayBookings() {
         List<CareFacilityBooking> bookings = bookingRepository.findTodayBookings();
@@ -237,9 +218,7 @@ public class CareFacilityBookingService {
                 .collect(Collectors.toList());
     }
 
-
     // 시설별 오늘 예약 목록 조회
-
     @LogExecutionTime
     public List<BookingResponse> getTodayBookingsByFacility(Long facilityId) {
         List<CareFacilityBooking> bookings = bookingRepository.findTodayBookingsByFacility(facilityId);
@@ -249,16 +228,9 @@ public class CareFacilityBookingService {
                 .collect(Collectors.toList());
     }
 
-
     // 예약 시간 중복 확인
 
-    /**
-     * 예약 가능 여부 검증.
-     *
-     * <p>이전 구현은 시작 시각 ±1시간만 비교해서 (1) 기존 예약의 종료 시각을 무시했고,
-     * (2) 취소된 예약도 충돌로 셌으며, (3) 시설 정원과 무관하게 1건만 있어도 막았다.
-     * 여기서는 실제 구간 겹침을 보고, 겹치는 유효 예약 수가 정원 미만일 때만 허용한다.
-     */
+    /** 예약 가능 여부 검증. 이전 구현은 시작 시각 ±1시간만 비교해서 (1) 기존 예약의 종료 시각을 무시했고, (2) 취소된 예약도 충돌로 셌으며 */
     private void validateBookingTime(CareFacility facility,
                                      LocalDateTime startTime,
                                      LocalDateTime endTime,

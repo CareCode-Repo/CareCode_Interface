@@ -8,9 +8,7 @@ import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * 표준 예방접종 일정 정의 검증.
- */
+/** 표준 예방접종 일정 정의 검증. */
 @DisplayName("예방접종 표준 일정")
 class VaccineTypeTest {
 

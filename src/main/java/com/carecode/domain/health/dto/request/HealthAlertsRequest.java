@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 건강 알림 조회 요청
- */
+/** 건강 알림 조회 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

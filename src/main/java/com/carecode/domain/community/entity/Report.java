@@ -10,11 +10,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * 게시글·댓글 신고.
- *
- * <p>같은 사용자가 같은 대상을 중복 신고하지 못하도록 유니크 제약을 둔다.
- */
+/** 게시글·댓글 신고. 같은 사용자가 같은 대상을 중복 신고하지 못하도록 유니크 제약을 둔다. */
 @Entity
 @Table(
     name = "TBL_REPORT",

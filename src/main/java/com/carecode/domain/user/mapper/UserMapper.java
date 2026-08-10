@@ -39,4 +39,3 @@ public interface UserMapper {
     void updateUserFromRequest(UserUpdateRequestDto request, @MappingTarget User user);
 }
 
-

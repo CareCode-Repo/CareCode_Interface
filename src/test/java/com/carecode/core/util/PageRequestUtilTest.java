@@ -5,9 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * 목록 API 가 무제한 조회로 되돌아가지 않도록 보장하는 테스트.
- */
+/** 목록 API 가 무제한 조회로 되돌아가지 않도록 보장하는 테스트. */
 @DisplayName("PageRequestUtil")
 class PageRequestUtilTest {
 

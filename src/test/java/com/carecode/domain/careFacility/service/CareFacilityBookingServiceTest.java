@@ -33,12 +33,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * 예약 겹침 검증 회귀 테스트.
- *
- * <p>이전 구현은 시작 시각 ±1시간만 비교해서 (1) 기존 예약의 종료 시각을 무시했고,
- * (2) 취소된 예약도 충돌로 셌으며, (3) 시설 정원과 무관하게 1건만 있어도 막았다.
- */
+/** 예약 겹침 검증 회귀 테스트. 이전 구현은 시작 시각 ±1시간만 비교해서 (1) 기존 예약의 종료 시각을 무시했고, (2) 취소된 예약도 충돌로 셌으며 */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("시설 예약 - 겹침 검증")

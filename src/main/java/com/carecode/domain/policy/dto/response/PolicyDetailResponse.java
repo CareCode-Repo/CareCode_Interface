@@ -9,9 +9,7 @@ import lombok.Setter;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 정책 상세 정보 응답
- */
+/** 정책 상세 정보 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -19,11 +19,12 @@ import java.time.LocalDateTime;
 public class CareFacilityUpsertService {
 
     private final CareFacilityRepository careFacilityRepository;
+    private final CapacitySnapshotRecorder snapshotRecorder;
 
     /** 시설 코드 기준 upsert. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean upsert(JsonNode row) {
-        String facilityCode = text(row, "STCODE", "crcodeCd", "crcode");
+        String facilityCode = text(row, "stcode", "STCODE", "crcode");
         if (facilityCode == null) {
             throw new IllegalArgumentException("시설 코드가 없는 응답입니다.");
         }
@@ -38,23 +39,25 @@ public class CareFacilityUpsertService {
                     .build();
         }
 
-        applyIfPresent(text(row, "CRNAME", "crname"), facility::setName);
-        applyIfPresent(text(row, "CRADDR", "craddr"), facility::setAddress);
-        applyIfPresent(text(row, "CRTELNO", "crtelno"), facility::setPhone);
-        applyIfPresent(text(row, "CRHOME", "crhome"), facility::setWebsite);
+        applyIfPresent(text(row, "crname", "CRNAME"), facility::setName);
+        applyIfPresent(text(row, "craddr", "CRADDR"), facility::setAddress);
+        // 실제 응답은 crtel 이다 (crtelno 아님)
+        applyIfPresent(text(row, "crtel", "CRTELNO", "crtelno"), facility::setPhone);
+        applyIfPresent(text(row, "crhome", "CRHOME"), facility::setWebsite);
 
-        String typeName = text(row, "CRTYPENAME", "crtypeName");
+        String typeName = text(row, "crtypename", "CRTYPENAME", "crtypeName");
         if (typeName != null) {
             facility.setFacilityType(resolveType(typeName));
         } else if (isNew) {
             facility.setFacilityType(FacilityType.DAYCARE);
         }
 
-        Integer capacity = integer(row, "CRCAPAT", "crcapat");
+        Integer capacity = integer(row, "crcapat", "CRCAPAT");
         if (capacity != null) {
             facility.setCapacity(capacity);
         }
-        Integer enrollment = integer(row, "CRCHCNT", "crchcnt");
+        // cpmsapi021 은 현원을 주지 않는다. 상세 오퍼레이션이 열리면 채워진다.
+        Integer enrollment = integer(row, "crchcnt", "CRCHCNT");
         if (enrollment != null) {
             facility.setCurrentEnrollment(enrollment);
             Integer effectiveCapacity = capacity != null ? capacity : facility.getCapacity();
@@ -63,8 +66,8 @@ public class CareFacilityUpsertService {
             }
         }
 
-        Double lat = decimal(row, "LA", "la", "LAT");
-        Double lng = decimal(row, "LO", "lo", "LNG");
+        Double lat = decimal(row, "la", "LA", "LAT");
+        Double lng = decimal(row, "lo", "LO", "LNG");
         if (lat != null && lng != null) {
             facility.setLatitude(lat);
             facility.setLongitude(lng);
@@ -72,6 +75,7 @@ public class CareFacilityUpsertService {
 
         facility.setUpdatedAt(LocalDateTime.now());
         careFacilityRepository.save(facility);
+        snapshotRecorder.record(facility);
         return isNew;
     }
 

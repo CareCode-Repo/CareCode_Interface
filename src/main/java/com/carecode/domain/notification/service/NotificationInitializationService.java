@@ -13,10 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-/**
- * 알림 초기화 서비스
- * 애플리케이션 시작 시 테스트용 알림을 생성
- */
+/** 알림 초기화 서비스 애플리케이션 시작 시 테스트용 알림을 생성 */
 @Slf4j
 @Service
 @Profile("dev")
@@ -31,9 +28,7 @@ public class NotificationInitializationService implements CommandLineRunner {
         createTestNotifications();
     }
 
-
     // 테스트용 알림 생성
-
     @Transactional
     public void createTestNotifications() {
         try {
@@ -64,9 +59,7 @@ public class NotificationInitializationService implements CommandLineRunner {
         }
     }
 
-
     // 시스템 알림 생성
-
     private void createSystemNotification(User user) {
         Notification systemNotification = Notification.builder()
                 .user(user)
@@ -80,9 +73,7 @@ public class NotificationInitializationService implements CommandLineRunner {
         log.info("시스템 알림 생성 완료: {}", systemNotification.getTitle());
     }
 
-
     // 정책 알림 생성
-
     private void createPolicyNotification(User user) {
         Notification policyNotification = Notification.builder()
                 .user(user)
@@ -96,9 +87,7 @@ public class NotificationInitializationService implements CommandLineRunner {
         log.info("정책 알림 생성 완료: {}", policyNotification.getTitle());
     }
 
-
     // 커뮤니티 알림 생성
-
     private void createCommunityNotification(User user) {
         Notification communityNotification = Notification.builder()
                 .user(user)

@@ -7,11 +7,7 @@ import lombok.Getter;
 
 import java.time.LocalDate;
 
-/**
- * 성장 곡선의 한 지점.
- *
- * <p>백분위는 성별/생년월일이 없거나 WHO 표준 적용 범위(0~60개월)를 벗어나면 null 이다.
- */
+/** 성장 곡선의 한 지점. 백분위는 성별/생년월일이 없거나 WHO 표준 적용 범위(0~60개월)를 벗어나면 null 이다. */
 @Getter
 @Builder
 public class GrowthPointResponse {

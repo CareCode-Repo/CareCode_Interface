@@ -5,10 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * 자녀 연령 검증을 위한 어노테이션
- * 육아 정책 및 서비스에서 연령별 맞춤 정보 제공 시 활용
- */
+/** 자녀 연령 검증을 위한 어노테이션 */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidateChildAge {

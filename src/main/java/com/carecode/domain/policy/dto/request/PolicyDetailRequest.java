@@ -7,9 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 정책 상세 조회 요청
- */
+/** 정책 상세 조회 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

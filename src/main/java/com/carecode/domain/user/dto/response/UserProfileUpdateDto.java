@@ -12,9 +12,7 @@ import lombok.Builder;
 
 import java.time.LocalDate;
 
-/**
- * 사용자 추가 정보 입력/업데이트 DTO
- */
+/** 사용자 추가 정보 입력/업데이트 DTO */
 @Getter
 @Setter
 @NoArgsConstructor

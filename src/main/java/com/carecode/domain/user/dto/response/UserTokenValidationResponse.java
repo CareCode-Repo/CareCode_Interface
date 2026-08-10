@@ -8,9 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * 토큰 검증 응답
- */
+/** 토큰 검증 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

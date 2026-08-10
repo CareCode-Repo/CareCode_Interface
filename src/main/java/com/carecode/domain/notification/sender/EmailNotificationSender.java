@@ -6,9 +6,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
-/**
- * 이메일 채널 발송기.
- */
+/** 이메일 채널 발송기. */
 @Slf4j
 @Component
 public class EmailNotificationSender implements NotificationSender {
@@ -30,6 +28,11 @@ public class EmailNotificationSender implements NotificationSender {
     @Override
     public boolean isAvailable() {
         return fromAddress != null && !fromAddress.isBlank();
+    }
+
+    @Override
+    public String getUnavailableReason() {
+        return isAvailable() ? null : "이메일 발송이 아직 설정되지 않았어요.";
     }
 
     @Override

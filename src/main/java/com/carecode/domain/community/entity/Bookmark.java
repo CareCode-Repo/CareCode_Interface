@@ -6,9 +6,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-/**
- * 북마크 Entity
- */
+/** 북마크 Entity */
 @Entity
 @Table(name = "TBL_BOOKMARK",
     uniqueConstraints = @UniqueConstraint(columnNames = {"post_id", "user_id"})

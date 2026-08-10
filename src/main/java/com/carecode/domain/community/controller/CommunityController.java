@@ -26,10 +26,7 @@ import java.util.Map;
 import com.carecode.core.handler.ApiSuccess;
 import java.util.Date;
 
-/**
- * 커뮤니티 API 컨트롤러
- * 육아 커뮤니티 게시글 및 댓글 관리 서비스
- */
+/** 커뮤니티 API 컨트롤러 육아 커뮤니티 게시글 및 댓글 관리 서비스 */
 @RestController
 @RequestMapping("/community")
 @RequiredArgsConstructor
@@ -39,12 +36,10 @@ public class CommunityController extends BaseController {
 
     private final CommunityFacade communityFacade;
 
-
     // 게시글 목록 조회 (페이징)
-
     @GetMapping("/posts")
     @LogExecutionTime
-    @Operation(summary = "게시글 목록 조회", description = "커뮤니티 게시글 목록을 페이징으로 조회합니다.")
+    @Operation(summary = "게시글 목록 조회", description = "커뮤니티 게시글 목록을 페이징으로 조회")
     public ResponseEntity<CommunityPageResponse<CommunityPostResponse>> getAllPosts(
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지당 항목 수", example = "10") @RequestParam(defaultValue = "10") int size,
@@ -54,36 +49,30 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-
     // 게시글 상세 조회
-
     @GetMapping("/posts/{postId}")
     @LogExecutionTime
-    @Operation(summary = "게시글 상세 조회", description = "특정 게시글의 상세 정보를 조회합니다.")
+    @Operation(summary = "게시글 상세 조회", description = "특정 게시글의 상세 정보 조회")
     public ResponseEntity<CommunityPostDetailResponse> getPost(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
         CommunityPostDetailResponse post = communityFacade.getPostDetailById(postId);
         return ResponseEntity.ok(post);
     }
 
-
     // 게시글 작성
-
     @PostMapping("/posts")
     @LogExecutionTime
-    @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성합니다.")
+    @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성")
     public ResponseEntity<CommunityPostResponse> createPost(
             @Parameter(description = "게시글 정보", required = true) @RequestBody CommunityCreatePostRequest request) {
         CommunityPostResponse post = communityFacade.createPost(request);
         return ResponseEntity.ok(post);
     }
 
-
     // 게시글 수정
-
     @PutMapping("/posts/{postId}")
     @LogExecutionTime
-    @Operation(summary = "게시글 수정", description = "기존 게시글을 수정합니다.")
+    @Operation(summary = "게시글 수정")
     public ResponseEntity<CommunityPostResponse> updatePost(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
             @Parameter(description = "수정할 게시글 정보", required = true) @RequestBody CommunityUpdatePostRequest request) {
@@ -91,36 +80,30 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(post);
     }
 
-
     // 게시글 삭제
-
     @DeleteMapping("/posts/{postId}")
     @LogExecutionTime
-    @Operation(summary = "게시글 삭제", description = "게시글을 삭제합니다.")
+    @Operation(summary = "게시글 삭제")
     public ResponseEntity<ApiSuccess> deletePost(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
         communityFacade.deletePost(postId);
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("게시글이 삭제되었습니다.").build());
     }
 
-
     // 댓글 목록 조회
-
     @GetMapping("/posts/{postId}/comments")
     @LogExecutionTime
-    @Operation(summary = "댓글 목록 조회", description = "특정 게시글의 댓글 목록을 조회합니다.")
+    @Operation(summary = "댓글 목록 조회", description = "특정 게시글의 댓글 목록 조회")
     public ResponseEntity<List<CommunityCommentResponse>> getComments(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
         List<CommunityCommentResponse> comments = communityFacade.getCommentsByPostId(postId);
         return ResponseEntity.ok(comments);
     }
 
-
     // 댓글 작성
-
     @PostMapping("/posts/{postId}/comments")
     @LogExecutionTime
-    @Operation(summary = "댓글 작성", description = "게시글에 댓글을 작성합니다.")
+    @Operation(summary = "댓글 작성", description = "게시글에 댓글을 작성")
     public ResponseEntity<CommunityCommentResponse> createComment(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
             @Parameter(description = "댓글 정보", required = true) @RequestBody CommunityCreateCommentRequest request) {
@@ -128,12 +111,10 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(comment);
     }
 
-
     // 댓글 수정
-
     @PutMapping("/comments/{commentId}")
     @LogExecutionTime
-    @Operation(summary = "댓글 수정", description = "기존 댓글을 수정합니다.")
+    @Operation(summary = "댓글 수정")
     public ResponseEntity<CommunityCommentResponse> updateComment(
             @Parameter(description = "댓글 ID", required = true) @PathVariable Long commentId,
             @Parameter(description = "수정할 댓글 정보", required = true) @RequestBody CommunityUpdateCommentRequest request) {
@@ -141,24 +122,20 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(comment);
     }
 
-
     // 댓글 삭제
-
     @DeleteMapping("/comments/{commentId}")
     @LogExecutionTime
-    @Operation(summary = "댓글 삭제", description = "댓글을 삭제합니다.")
+    @Operation(summary = "댓글 삭제")
     public ResponseEntity<ApiSuccess> deleteComment(
             @Parameter(description = "댓글 ID", required = true) @PathVariable Long commentId) {
         communityFacade.deleteComment(commentId);
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("댓글이 삭제되었습니다.").build());
     }
 
-
     // 게시글 검색 (페이징)
-
     @GetMapping("/search")
     @LogExecutionTime
-    @Operation(summary = "게시글 검색", description = "키워드로 게시글을 페이징 검색합니다.")
+    @Operation(summary = "게시글 검색", description = "키워드로 게시글을 페이징 검색")
     public ResponseEntity<CommunityPageResponse<CommunityPostResponse>> searchPosts(
             @Parameter(description = "검색 키워드", required = true) @RequestParam String keyword,
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
@@ -167,12 +144,10 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-
     // 인기 게시글 조회 (페이징)
-
     @GetMapping("/popular")
     @LogExecutionTime
-    @Operation(summary = "인기 게시글 조회", description = "인기 있는 게시글 목록을 페이징으로 조회합니다.")
+    @Operation(summary = "인기 게시글 조회", description = "인기 있는 게시글 목록을 페이징으로 조회")
     public ResponseEntity<CommunityPageResponse<CommunityPostResponse>> getPopularPosts(
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지당 항목 수", example = "10") @RequestParam(defaultValue = "10") int size) {
@@ -180,12 +155,10 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-
     // 최신 게시글 조회 (페이징)
-
     @GetMapping("/latest")
     @LogExecutionTime
-    @Operation(summary = "최신 게시글 조회", description = "최근 작성된 게시글 목록을 페이징으로 조회합니다.")
+    @Operation(summary = "최신 게시글 조회", description = "최근 작성된 게시글 목록을 페이징으로 조회")
     public ResponseEntity<CommunityPageResponse<CommunityPostResponse>> getLatestPosts(
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지당 항목 수", example = "10") @RequestParam(defaultValue = "10") int size) {
@@ -193,25 +166,22 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-
     // 태그 목록 조회
-
     @GetMapping("/tags")
     @LogExecutionTime
-    @Operation(summary = "태그 목록 조회", description = "커뮤니티 태그 목록을 조회합니다.")
+    @Operation(summary = "태그 목록 조회")
     public ResponseEntity<List<CommunityTagResponse>> getAllTags() {
         List<CommunityTagResponse> tags = communityFacade.getAllTags();
         return ResponseEntity.ok(tags);
     }
 
-    // ==================== 좋아요 및 북마크 기능 ====================
-
+    // ====================
+    // 좋아요 및 북마크 기능 ====================
 
     // 게시글 좋아요 토글
-
     @PostMapping("/posts/{postId}/like")
     @LogExecutionTime
-    @Operation(summary = "게시글 좋아요", description = "게시글에 좋아요를 추가하거나 제거합니다.")
+    @Operation(summary = "게시글 좋아요", description = "게시글에 좋아요를 추가하거나 제거")
     public ResponseEntity<Map<String, Object>> toggleLike(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
         Long userId = communityFacade.getCurrentAuthenticatedUserId();
@@ -224,12 +194,10 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(response);
     }
 
-
     // 게시글 북마크 토글
-
     @PostMapping("/posts/{postId}/bookmark")
     @LogExecutionTime
-    @Operation(summary = "게시글 북마크", description = "게시글을 북마크에 추가하거나 제거합니다.")
+    @Operation(summary = "게시글 북마크", description = "게시글을 북마크에 추가하거나 제거")
     public ResponseEntity<Map<String, Object>> toggleBookmark(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
         Long userId = communityFacade.getCurrentAuthenticatedUserId();
@@ -242,12 +210,10 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(response);
     }
 
-
     // 사용자가 좋아요한 게시글 목록 조회
-
     @GetMapping("/posts/liked")
     @LogExecutionTime
-    @Operation(summary = "좋아요한 게시글 목록", description = "현재 사용자가 좋아요한 게시글 목록을 조회합니다.")
+    @Operation(summary = "좋아요한 게시글 목록", description = "현재 사용자가 좋아요한 게시글 목록 조회")
     public ResponseEntity<List<CommunityPostResponse>> getLikedPosts(
             ) {
         Long userId = communityFacade.getCurrentAuthenticatedUserId();
@@ -255,12 +221,10 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-
     // 사용자가 북마크한 게시글 목록 조회
-
     @GetMapping("/posts/bookmarked")
     @LogExecutionTime
-    @Operation(summary = "북마크한 게시글 목록", description = "현재 사용자가 북마크한 게시글 목록을 조회합니다.")
+    @Operation(summary = "북마크한 게시글 목록", description = "현재 사용자가 북마크한 게시글 목록 조회")
     public ResponseEntity<List<CommunityPostResponse>> getBookmarkedPosts(
             ) {
         Long userId = communityFacade.getCurrentAuthenticatedUserId();
@@ -268,12 +232,10 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(posts);
     }
 
-
     // 게시글 좋아요 수 조회
-
     @GetMapping("/posts/{postId}/like-count")
     @LogExecutionTime
-    @Operation(summary = "게시글 좋아요 수", description = "특정 게시글의 좋아요 수를 조회합니다.")
+    @Operation(summary = "게시글 좋아요 수", description = "특정 게시글의 좋아요 수 조회")
     public ResponseEntity<Map<String, Long>> getLikeCount(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
         long count = communityFacade.getLikeCount(postId);
@@ -282,12 +244,10 @@ public class CommunityController extends BaseController {
         return ResponseEntity.ok(response);
     }
 
-
     // 게시글 북마크 수 조회
-
     @GetMapping("/posts/{postId}/bookmark-count")
     @LogExecutionTime
-    @Operation(summary = "게시글 북마크 수", description = "특정 게시글의 북마크 수를 조회합니다.")
+    @Operation(summary = "게시글 북마크 수", description = "특정 게시글의 북마크 수 조회")
     public ResponseEntity<Map<String, Long>> getBookmarkCount(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
         long count = communityFacade.getBookmarkCount(postId);

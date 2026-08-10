@@ -14,12 +14,7 @@ import org.springframework.security.web.FilterChainProxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Docker 없이도 도는 컨텍스트 로딩 테스트.
- *
- * <p>보안 필터 체인, 인터셉터, 캐시 설정 등 빈 구성이 깨지면 여기서 바로 잡힌다.
- * MariaDB Testcontainers 통합 테스트는 Docker 가 없으면 스킵되므로 그 공백을 메운다.
- */
+/** Docker 없이도 도는 컨텍스트 로딩 테스트. 보안 필터 체인, 인터셉터, 캐시 설정 등 빈 구성이 깨지면 여기서 바로 잡힌다 */
 @SpringBootTest(
         classes = CareCodeApplication.class,
         properties = {

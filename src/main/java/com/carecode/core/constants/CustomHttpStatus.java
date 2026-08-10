@@ -1,9 +1,6 @@
 package com.carecode.core.constants;
 
-/**
- * 맘편한 서비스 전용 커스텀 HTTP 상태코드 Enum
- * (Spring HttpStatus와 별도 관리)
- */
+/** 맘편한 서비스 */
 public enum CustomHttpStatus {
     CARE_POLICY_NOT_FOUND(460, "Care Policy Not Found"),
     CARE_FACILITY_NOT_FOUND(461, "Care Facility Not Found"),

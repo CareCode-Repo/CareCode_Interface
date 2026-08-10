@@ -22,11 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 개인정보 관련 기능: 동의 이력 관리, 내 데이터 열람, 파기.
- *
- * <p>개인정보보호법상 정보주체는 자신의 정보를 열람하고 처리 정지·삭제를 요구할 수 있다.
- */
+/** 개인정보 관련 기능: 동의 이력 관리, 내 데이터 열람, 파기. 개인정보보호법상 정보주체는 자신의 정보를 열람하고 처리 정지·삭제를 요구할 수 있다. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -40,13 +36,10 @@ public class PrivacyService {
     private final PostRepository postRepository;
     private final CurrentUserFacade currentUserFacade;
 
-    // ==================== 동의 관리 ====================
+    // ====================
+    // 동의 관리 ====================
 
-    /**
-     * 동의 상태를 기록한다.
-     *
-     * <p>기존 행을 수정하지 않고 새 이력을 남긴다. 언제 무엇에 동의/철회했는지 추적해야 하기 때문이다.
-     */
+    /** 동의 상태를 기록한다. 기존 행을 수정하지 않고 새 이력을 남긴다. 언제 무엇에 동의/철회했는지 추적해야 하기 때문이다. */
     @Transactional
     public ConsentStatusResponse recordConsent(ConsentUpdateRequest request, String ipAddress) {
         User user = currentUserFacade.requireCurrentUser();
@@ -100,13 +93,10 @@ public class PrivacyService {
                 .toList();
     }
 
-    // ==================== 데이터 열람 ====================
+    // ====================
+    // 데이터 열람 ====================
 
-    /**
-     * 내 데이터 전체 내려받기.
-     *
-     * <p>정보주체의 열람권 행사에 대응한다. 비밀번호 등 인증 정보는 포함하지 않는다.
-     */
+    /** 내 데이터 전체 내려받기. 정보주체의 열람권 행사에 대응한다. 비밀번호 등 인증 정보는 포함하지 않는다. */
     public Map<String, Object> exportMyData() {
         User user = currentUserFacade.requireCurrentUser();
 
@@ -137,15 +127,10 @@ public class PrivacyService {
         return export;
     }
 
-    // ==================== 파기 ====================
+    // ====================
+    // 파기 ====================
 
-    /**
-     * 회원 탈퇴(파기 요청).
-     *
-     * <p>즉시 물리 삭제하지 않는 이유: 게시글·댓글 등 참조 데이터가 함께 사라지면
-     * 다른 이용자의 대화 맥락이 깨지고, 법령상 일정 기간 보존이 필요한 기록도 있다.
-     * 개인 식별 정보를 익명화하고 soft delete 로 표시한다.
-     */
+    /** 회원 탈퇴(파기 요청). 즉시 물리 삭제하지 않는 이유: 게시글·댓글 등 참조 데이터가 함께 사라지면 다른 이용자의 대화 맥락이 깨지고 */
     @Transactional
     public void deleteMyAccount() {
         User user = currentUserFacade.requireCurrentUser();

@@ -7,9 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 닉네임 변경 요청
- */
+/** 닉네임 변경 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

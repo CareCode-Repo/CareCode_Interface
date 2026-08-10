@@ -10,11 +10,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
-/**
- * 비동기 실행 설정.
- *
- * <p>알림 발송(SMTP/FCM 왕복)이 요청 스레드를 붙잡지 않도록 별도 풀에서 처리한다.
- */
+/** 비동기 실행 설정. 알림 발송(SMTP/FCM 왕복)이 요청 스레드를 붙잡지 않도록 별도 풀에서 처리한다. */
 @Slf4j
 @Configuration
 @EnableAsync
@@ -32,6 +28,22 @@ public class AsyncConfig {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(20);
+        executor.initialize();
+        return executor;
+    }
+
+    /** 행동 로그 전용 풀. 지표 수집이 사용자 응답을 늦추면 안 된다. */
+    @Bean(name = "analyticsExecutor")
+    public Executor analyticsExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(2000);
+        executor.setThreadNamePrefix("analytics-");
+        // 알림과 달리 이벤트는 버려도 서비스에 지장이 없다. 폭주 시 요청 스레드를 붙잡지 않고 버린다.
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(10);
         executor.initialize();
         return executor;
     }

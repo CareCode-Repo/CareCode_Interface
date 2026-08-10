@@ -11,12 +11,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * JWT 토큰 종류 분리에 대한 회귀 테스트.
- *
- * <p>과거에는 Access/Refresh 를 구분하는 클레임이 없어서
- * 30일짜리 Refresh Token 으로 보호된 API 에 접근할 수 있었다.
- */
+/** JWT 토큰 종류 분리에 대한 회귀 테스트. 과거에는 Access/Refresh 를 구분하는 클레임이 없어서 30일짜리 Refresh Token 으로 보호된 API 에 */
 @DisplayName("JwtService - 토큰 종류 검증")
 class JwtServiceTest {
 

@@ -12,10 +12,7 @@ import java.util.Optional;
 public interface EmailVerificationTokenRepository extends JpaRepository<EmailVerificationToken, Long> {
     Optional<EmailVerificationToken> findByToken(String token);
 
-    /**
-     * 만료되었거나 이미 사용된 토큰을 정리한다.
-     * 정리하지 않으면 테이블이 무한히 커진다.
-     */
+    /** 만료되었거나 이미 사용된 토큰을 정리한다. 정리하지 않으면 테이블이 무한히 커진다. */
     @Modifying
     @Query("DELETE FROM EmailVerificationToken t WHERE t.expiryDate < :threshold OR t.used = true")
     int deleteExpiredOrUsed(@Param("threshold") LocalDateTime threshold);

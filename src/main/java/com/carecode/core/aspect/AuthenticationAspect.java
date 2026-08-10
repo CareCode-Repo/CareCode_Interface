@@ -10,18 +10,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-/**
- * RequireAuthentication 어노테이션을 처리하는 Aspect
- * 인증이 필요한 API에 대한 인증 상태를 확인합니다.
- */
+/** RequireAuthentication 어노테이션을 처리하는 Aspect 인증이 필요한 API에 대한 인증 상태를 확인합니다. */
 @Slf4j
 @Aspect
 @Component
 public class AuthenticationAspect {
 
-
     // RequireAuthentication 어노테이션이 붙은 메서드 실행 전에 인증 상태를 확인
-
     @Before("@annotation(requireAuthentication)")
     public void checkAuthentication(JoinPoint joinPoint, RequireAuthentication requireAuthentication) {
         log.debug("인증 상태 확인: {}", joinPoint.getSignature().getName());

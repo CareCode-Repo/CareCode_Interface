@@ -30,10 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * 정책 서비스 클래스
- * 육아 지원 정책 관련 비즈니스 로직 처리
- */
+/** 정책 서비스 클래스 육아 지원 정책 관련 비즈니스 로직 처리 */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -45,13 +42,9 @@ public class PolicyService {
     private final UserRepository userRepository;
     private final PolicyMapper policyMapper;
 
-
     // 정책 목록 조회
 
-    /**
-     * 정책 목록 조회.
-     * <p>테이블 전체를 메모리로 올리지 않도록 항상 페이지 단위로 읽는다.
-     */
+    /** 정책 목록 조회. 테이블 전체를 메모리로 올리지 않도록 항상 페이지 단위로 읽는다. */
     @LogExecutionTime
     public List<PolicyDto> getAllPolicies(int page, int size) {
         log.info("전체 정책 목록 조회 - page={}, size={}", page, size);
@@ -62,9 +55,7 @@ public class PolicyService {
                 .collect(Collectors.toList());
     }
 
-
     // 정책 상세 조회
-
     @LogExecutionTime
     @Cacheable(cacheNames = "policy", key = "#policyId")
     public PolicyDto getPolicyById(Long policyId) {
@@ -197,7 +188,6 @@ public class PolicyService {
                 .collect(Collectors.toList());
     }
 
-
     @Transactional
     public void incrementViewCount(Long policyId) {
         log.info("정책 조회수 증가: 정책ID={}", policyId);
@@ -208,9 +198,7 @@ public class PolicyService {
         }
     }
 
-
     // 정책 카테고리 목록 조회
-
     @LogExecutionTime
     public List<String> getPolicyCategories() {
         log.info("정책 카테고리 목록 조회");
@@ -218,9 +206,7 @@ public class PolicyService {
         return policyRepository.findDistinctPolicyTypes();
     }
 
-
     // 정책 통계 조회
-
     @LogExecutionTime
     public PolicyStatsSimpleResponse getPolicyStats() {
         long totalPolicies = policyRepository.count();
@@ -244,7 +230,6 @@ public class PolicyService {
                 .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
     }
-
 
     // 신청 기간이 유효한 정책 조회
     @LogExecutionTime
@@ -303,5 +288,4 @@ public class PolicyService {
                 .build();
     }
 
-    
 }

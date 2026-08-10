@@ -17,14 +17,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Duration;
 
-/**
- * {@link RateLimit} 이 붙은 메서드에 대한 요청 수 제한.
- *
- * <p>이전 구현은 인스턴스 로컬 {@code ConcurrentHashMap} 을 썼기 때문에
- * (1) 다중 인스턴스에서 무의미했고, (2) IP 별 키가 무한히 쌓여 메모리를 잠식했으며,
- * (3) 윈도우 리셋이 원자적이지 않아 경계에서 한도를 초과할 수 있었다.
- * Redis 의 INCR + EXPIRE 로 교체해 세 문제를 모두 해소한다.
- */
+/** RateLimit 이 붙은 메서드에 대한 요청 수 제한. 이전 구현은 인스턴스 로컬 ConcurrentHashMap 을 썼기 때문에 (1) 다중 인스턴스에서 무의미했고 */
 @Aspect
 @Component
 @Slf4j

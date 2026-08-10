@@ -16,9 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 사용자 엔티티
- */
+/** 사용자 엔티티 */
 @Entity
 @Table(name = "TBL_USER")
 @Getter
@@ -63,6 +61,13 @@ public class User {
     
     @Column(name = "LONGITUDE")
     private Double longitude;
+
+    /** 가구 소득 / 기준중위소득 (%). 실제 금액은 받지 않는다. null 이면 미입력. */
+    @Column(name = "INCOME_PERCENT")
+    private Integer incomePercent;
+
+    @Column(name = "HOUSEHOLD_SIZE")
+    private Integer householdSize;
     
     @Column(name = "PROFILE_IMAGE_URL")
     private String profileImageUrl;

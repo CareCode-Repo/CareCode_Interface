@@ -10,10 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Map;
 
-/**
- * 공공데이터 API 호출을 위한 공통 클라이언트
- * 다양한 공공데이터 포털 API 호출에 사용
- */
+/** 공공데이터 API 호출을 위한 공통 클라이언트 다양한 공공데이터 포털 API 호출에 사용 */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -27,16 +24,9 @@ public class PublicDataApiClient {
     @Value("${public.data.api.base-url:}")
     private String baseUrl;
 
-
-    // GET 요청으로 공공데이터 API 호출
-    // @param endpoint API 엔드포인트
-    // @param params 쿼리 파라미터
-    // @param responseType 응답 타입
-    // @return API 응답
-
+    // GET 요청으로 공공데이터 API 호출 @param endpoint API 엔드포인트 @param params 쿼리 파라미터 @param responseType 응답
     public <T> T get(String endpoint, Map<String, String> params, Class<T> responseType) {
         // 서울시 API URL 구조: http://openapi.seoul.go.kr:8088/KEY/TYPE/SERVICE/START_INDEX/END_INDEX/
-        // endpoint는 SERVICE/START_INDEX/END_INDEX/ 형태로 전달됨
         String url = baseUrl + "/" + apiKey + "/json/" + endpoint;
 
         log.info("공공데이터 API 호출: {}", url);
@@ -61,13 +51,7 @@ public class PublicDataApiClient {
         }
     }
 
-
-    // POST 요청으로 공공데이터 API 호출
-    // @param endpoint API 엔드포인트
-    // @param requestBody 요청 본문
-    // @param responseType 응답 타입
-    // @return API 응답
-
+    // POST 요청으로 공공데이터 API 호출 @param endpoint API 엔드포인트 @param requestBody 요청 본문 @param responseType
     public <T> T post(String endpoint, Object requestBody, Class<T> responseType) {
         String url = baseUrl + endpoint;
         HttpHeaders headers = new HttpHeaders();
@@ -85,14 +69,7 @@ public class PublicDataApiClient {
         }
     }
 
-
-    // 헤더를 포함한 GET 요청
-    // @param endpoint API 엔드포인트
-    // @param params 쿼리 파라미터
-    // @param headers 추가 헤더
-    // @param responseType 응답 타입
-    // @return API 응답
-
+    // 헤더를 포함한 GET 요청 @param endpoint API 엔드포인트 @param params 쿼리 파라미터 @param headers 추가 헤더 @param
     public <T> T getWithHeaders(String endpoint, Map<String, String> params, Map<String, String> headers, Class<T> responseType) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl + endpoint).queryParam("serviceKey", apiKey);
 
@@ -116,18 +93,12 @@ public class PublicDataApiClient {
         }
     }
 
-
-    // API 키 설정
-    // @param apiKey API 키
-
+    // API 키 설정 @param apiKey API 키
     public void setApiKey(String apiKey) {
         this.apiKey = apiKey;
     }
 
-
-    // 기본 URL 설정
-    // @param baseUrl 기본 URL
-
+    // 기본 URL 설정 @param baseUrl 기본 URL
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
     }

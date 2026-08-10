@@ -11,9 +11,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * 관리자용 예약 통계 DTO
- */
+/** 관리자용 예약 통계 DTO */
 @Data
 @Builder
 @NoArgsConstructor

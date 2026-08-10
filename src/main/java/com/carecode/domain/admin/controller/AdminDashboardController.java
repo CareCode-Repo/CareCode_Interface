@@ -20,9 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * 어드민 대시보드 API.
- */
+/** 어드민 대시보드 API. */
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -37,7 +35,7 @@ public class AdminDashboardController {
     private final PolicyRepository policyRepository;
 
     @GetMapping("/dashboard")
-    @Operation(summary = "대시보드 요약 조회", description = "전체 건수, 최근 활동, 가입자 추이를 반환합니다.")
+    @Operation(summary = "대시보드 요약 조회", description = "전체 건수, 최근 활동, 가입자 추이 반환")
     public ResponseEntity<Map<String, Object>> dashboard() {
         Map<String, Object> dashboard = new LinkedHashMap<>();
 

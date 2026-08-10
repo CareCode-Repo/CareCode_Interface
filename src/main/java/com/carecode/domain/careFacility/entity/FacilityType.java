@@ -1,8 +1,6 @@
 package com.carecode.domain.careFacility.entity;
 
-/**
- * 육아 시설 유형 열거형
- */
+/** 육아 시설 유형 열거형 */
 public enum FacilityType {
     KINDERGARTEN("유치원"),
     DAYCARE("어린이집"),
@@ -20,9 +18,7 @@ public enum FacilityType {
         return displayName;
     }
 
-
     // 문자열을 FacilityType으로 안전하게 변환
-
     public static FacilityType fromString(String type) {
         try {
             return FacilityType.valueOf(type.toUpperCase());

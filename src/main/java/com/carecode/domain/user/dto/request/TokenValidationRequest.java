@@ -5,9 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 토큰 검증 요청 DTO
- */
+/** 토큰 검증 요청 DTO */
 @Getter
 @Setter
 @NoArgsConstructor

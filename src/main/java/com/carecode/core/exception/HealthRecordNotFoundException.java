@@ -1,8 +1,6 @@
 package com.carecode.core.exception;
 
-/**
- * 건강 기록을 찾을 수 없을 때 발생하는 예외
- */
+/** 건강 기록을 찾을 수 없을 때 발생하는 예외 */
 public class HealthRecordNotFoundException extends CareCodeException {
     
     public HealthRecordNotFoundException(Long recordId) {

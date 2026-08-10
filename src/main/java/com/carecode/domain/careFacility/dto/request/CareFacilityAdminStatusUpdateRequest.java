@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 관리자 상태 업데이트 요청
- */
+/** 관리자 상태 업데이트 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

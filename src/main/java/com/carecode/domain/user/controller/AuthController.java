@@ -4,6 +4,7 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RateLimit;
 import com.carecode.core.controller.BaseController;
 import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.core.security.RefreshTokenCookieFactory;
 import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.domain.user.dto.request.LoginRequestDto;
 import com.carecode.domain.user.dto.request.RefreshTokenRequest;
@@ -18,9 +19,11 @@ import com.carecode.domain.user.service.refreshtoken.RefreshTokenStore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -28,10 +31,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import com.carecode.core.handler.ApiSuccess;
 
-/**
- * 통합 인증 컨트롤러
- * 일반 로그인, 카카오 로그인, 토큰 갱신, 회원가입 등 모든 인증 관련 API
- */
+/** 통합 인증 컨트롤러 */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -46,19 +46,18 @@ public class AuthController extends BaseController {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenStore refreshTokenStore;
     private final CurrentUserFacade currentUserFacade;
+    private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
-    // ==================== 일반 로그인 ====================
-
+    // ====================
+    // 일반 로그인 ====================
 
     // 일반 로그인
-
     @PostMapping("/login")
     @LogExecutionTime(warnThreshold = 1000)
     @RateLimit(requests = 5, windowSeconds = 60, message = "로그인 시도 횟수를 초과했습니다. 1분 후 다시 시도해주세요.")
-    @Operation(summary = "일반 로그인", description = "이메일과 비밀번호로 로그인합니다.")
+    @Operation(summary = "일반 로그인", description = "이메일과 비밀번호로 로그인")
     public ResponseEntity<TokenDto> login(@Parameter(description = "로그인 정보", required = true) @Valid @RequestBody LoginRequestDto request) {
-        // 가입 여부가 응답으로 새어나가지 않도록, 실패 사유와 무관하게 동일한 401 을 반환한다.
-        // (미가입 404 / 비밀번호 불일치 401 로 나뉘면 이메일 열거가 가능하다.)
+        // 가입 여부가 응답으로 새어나가지 않도록, 실패 사유와 무관하게 동일한 401 을 반환한다. (미가입 404 / 비밀번호 불일치 401 로 나뉘면 이메일 열거가 가능하다.)
         User userEntity = userService.findActiveUserEntityByEmail(request.getEmail()).orElse(null);
 
         if (userEntity == null
@@ -77,46 +76,60 @@ public class AuthController extends BaseController {
         userEntity.setUpdatedAt(LocalDateTime.now());
         userService.saveUser(userEntity);
 
-        return ResponseEntity.ok(authService.issueTokenForUser(userEntity, "로그인 성공!"));
+        return withRefreshCookie(authService.issueTokenForUser(userEntity, "로그인 성공!"));
     }
 
     // 회원가입
     @PostMapping("/register")
     @LogExecutionTime
-    @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
+    @Operation(summary = "회원가입", description = "새로운 사용자 등록")
     public ResponseEntity<TokenDto> register(@Parameter(description = "회원가입 정보", required = true) @Valid @RequestBody UserDto request) {
         UserDto createdUser = userService.createUser(request);
         User user = userService.getUserEntityByEmail(createdUser.getEmail());
         TokenDto tokenDto = authService.issueTokenForUser(user, "회원가입 성공!");
         tokenDto.setUser(createdUser);
-        return ResponseEntity.ok(tokenDto);
+        return withRefreshCookie(tokenDto);
     }
 
-    // ==================== 토큰 관리 ====================
+    /** 발급된 리프레시 토큰을 HttpOnly 쿠키로도 내려보낸다. */
+    private ResponseEntity<TokenDto> withRefreshCookie(TokenDto tokenDto) {
+        if (tokenDto.getRefreshToken() == null) {
+            return ResponseEntity.ok(tokenDto);
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookieFactory.create(tokenDto.getRefreshToken()).toString())
+                .body(tokenDto);
+    }
+
+    // ====================
+    // 토큰 관리 ====================
 
     // 토큰 갱신
-
     @PostMapping("/refresh")
     @LogExecutionTime
-    @Operation(summary = "토큰 갱신", description = "Refresh Token을 사용하여 새로운 Access Token을 발급합니다.")
-    public ResponseEntity<TokenDto> refreshToken(@Parameter(description = "토큰 갱신 정보", required = true) @Valid @RequestBody RefreshTokenRequest request) {
+    @Operation(summary = "토큰 갱신",
+            description = "Refresh Token 으로 새로운 Access Token 을 발급"
+                    + "토큰은 HttpOnly 쿠키에서 우선 읽고, 없으면 요청 본문에서 읽습니다.")
+    public ResponseEntity<TokenDto> refreshToken(
+            @Parameter(description = "토큰 갱신 정보 (쿠키를 쓰는 경우 생략 가능)")
+            @RequestBody(required = false) RefreshTokenRequest request,
+            HttpServletRequest httpRequest) {
 
-        if (!jwtService.validateToken(request.getRefreshToken())) {
-            return ResponseEntity.status(401).body(TokenDto.builder()
-                    .success(false)
-                    .message("유효하지 않은 Refresh Token입니다.")
-                    .build());
+        // 쿠키를 우선한다. 본문은 쿠키를 쓸 수 없는 클라이언트를 위한 대체 경로다.
+        String refreshToken = refreshTokenCookieFactory.read(httpRequest)
+                .orElseGet(() -> request != null ? request.getRefreshToken() : null);
+
+        if (refreshToken == null || refreshToken.isBlank() || !jwtService.validateToken(refreshToken)) {
+            return unauthorizedRefresh("유효하지 않은 Refresh Token입니다.");
         }
 
         // Refresh Token에서 사용자 정보 추출
-        String userId = jwtService.getUserIdFromToken(request.getRefreshToken());
-        String email = jwtService.getEmailFromToken(request.getRefreshToken());
+        String userId = jwtService.getUserIdFromToken(refreshToken);
+        String email = jwtService.getEmailFromToken(refreshToken);
 
-        if (!refreshTokenStore.isRegistered(request.getRefreshToken(), userId)) {
-            return ResponseEntity.status(401).body(TokenDto.builder()
-                    .success(false)
-                    .message("세션이 만료되었거나 로그아웃된 Refresh Token입니다.")
-                    .build());
+        if (!refreshTokenStore.isRegistered(refreshToken, userId)) {
+            return unauthorizedRefresh("세션이 만료되었거나 로그아웃된 Refresh Token입니다.");
         }
 
         // 사용자 존재 확인
@@ -128,7 +141,7 @@ public class AuthController extends BaseController {
         // 새로운 Refresh Token 생성 (토큰 로테이션)
         String newRefreshToken = jwtService.generateRefreshToken(userId, email);
 
-        refreshTokenStore.remove(request.getRefreshToken(), userId);
+        refreshTokenStore.remove(refreshToken, userId);
         refreshTokenStore.register(userId, newRefreshToken);
 
         TokenDto tokenDto = TokenDto.builder()
@@ -142,23 +155,36 @@ public class AuthController extends BaseController {
                 .user(user)
                 .build();
 
-        return ResponseEntity.ok(tokenDto);
+        return withRefreshCookie(tokenDto);
+    }
+
+    /** 갱신 실패 시에는 남아 있는 쿠키도 함께 지워 재시도 루프를 끊는다. */
+    private ResponseEntity<TokenDto> unauthorizedRefresh(String message) {
+        return ResponseEntity.status(401)
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookieFactory.expire().toString())
+                .body(TokenDto.builder()
+                        .success(false)
+                        .message(message)
+                        .build());
     }
 
     @PostMapping("/logout")
     @LogExecutionTime
-    @Operation(summary = "로그아웃", description = "서버에 등록된 리프레시 토큰 세션을 모두 폐기합니다. (액세스 토큰은 만료 시까지 유효할 수 있음)")
+    @Operation(summary = "로그아웃", description = "서버에 등록된 리프레시 토큰 세션을 모두 폐기합니다")
     public ResponseEntity<ApiSuccess> logout() {
         refreshTokenStore.removeAllForUser(currentUserFacade.requireCurrentUserId());
-        return ResponseEntity.ok(ApiSuccess.of("로그아웃되었습니다."));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookieFactory.expire().toString())
+                .body(ApiSuccess.of("로그아웃되었습니다."));
     }
 
-    // ==================== 이메일 인증 ====================
+    // ====================
+    // 이메일 인증 ====================
 
     // 이메일 인증 토큰 검증
     @GetMapping("/verify")
     @LogExecutionTime
-    @Operation(summary = "이메일 인증", description = "이메일 인증 토큰을 검증합니다.")
+    @Operation(summary = "이메일 인증", description = "이메일 인증 토큰을 검증")
     public ResponseEntity<ApiSuccess> verifyEmail(@RequestParam String token) {
         boolean ok = emailVerificationService.verifyEmail(token);
         String message = ok ? "이메일 인증이 완료되었습니다." : "유효하지 않거나 만료된 토큰입니다.";
@@ -168,7 +194,7 @@ public class AuthController extends BaseController {
     // 인증 코드 발송
     @PostMapping("/send-code")
     @LogExecutionTime
-    @Operation(summary = "이메일 인증 코드 발송", description = "해당 이메일로 인증 코드를 발송합니다.")
+    @Operation(summary = "이메일 인증 코드 발송")
     public ResponseEntity<ApiSuccess> sendVerificationCode(@RequestParam String email) {
         emailVerificationService.sendVerificationCode(email);
         return ResponseEntity.ok(ApiSuccess.of("인증 코드가 발송되었습니다."));
@@ -177,7 +203,7 @@ public class AuthController extends BaseController {
     // 인증 코드 검증
     @PostMapping("/verify-code")
     @LogExecutionTime
-    @Operation(summary = "이메일 인증 코드 검증", description = "발송된 인증 코드를 검증합니다.")
+    @Operation(summary = "이메일 인증 코드 검증", description = "발송된 인증 코드를 검증")
     public ResponseEntity<ApiSuccess> verifyCode(@RequestParam String email, @RequestParam String code) {
         boolean ok = emailVerificationService.verifyCode(email, code);
         String message = ok ? "인증 코드가 확인되었습니다." : "유효하지 않거나 만료된 코드입니다.";

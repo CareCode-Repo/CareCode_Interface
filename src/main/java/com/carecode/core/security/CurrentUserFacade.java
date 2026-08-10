@@ -10,10 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-/**
- * Resolves the authenticated user from {@link SecurityContextHolder} and the persistence layer.
- * Keeps controllers free of repeated SecurityContext + repository lookups.
- */
+/** Resolves the authenticated user from SecurityContextHolder and the persistence layer */
 @Component
 @RequiredArgsConstructor
 public class CurrentUserFacade {

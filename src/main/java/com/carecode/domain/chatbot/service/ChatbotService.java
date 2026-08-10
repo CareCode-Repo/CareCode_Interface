@@ -30,10 +30,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * 챗봇 서비스 클래스
- * 육아 관련 챗봇 기능을 제공
- */
+/** 챗봇 서비스 클래스 육아 관련 챗봇 기능을 제공 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -107,9 +104,7 @@ public class ChatbotService {
         ));
     }
 
-
     // 챗봇 메시지 처리
-
     @LogExecutionTime
     @Transactional
     public ChatbotMessageResponse processMessage(ChatbotMessageRequest request) {
@@ -154,9 +149,7 @@ public class ChatbotService {
         }
     }
 
-
     // 대화 기록 조회
-
     @LogExecutionTime
     public List<ChatbotChatHistoryDtoResponse> getChatHistory(String userId, String sessionId, int page, int size) {
         log.info("대화 기록 조회: 사용자ID={}, 세션ID={}", userId, sessionId);
@@ -183,9 +176,7 @@ public class ChatbotService {
         }
     }
 
-
     // 세션 목록 조회
-
     @LogExecutionTime
     public List<ChatbotSessionDtoResponse> getSessions(String userId, int page, int size) {
         log.info("세션 목록 조회: 사용자ID={}", userId);
@@ -206,9 +197,7 @@ public class ChatbotService {
         }
     }
 
-
     // 메시지 피드백 처리
-
     @LogExecutionTime
     @Transactional
     public void processFeedback(Long messageId, boolean isHelpful) {
@@ -227,9 +216,7 @@ public class ChatbotService {
         }
     }
 
-
     // 의도 타입별 메시지 조회
-
     @LogExecutionTime
     public List<ChatbotChatHistoryDtoResponse> getMessagesByIntentType(String userId, ChatMessage.IntentType intentType) {
         log.info("의도 타입별 메시지 조회: 사용자ID={}, 의도타입={}", userId, intentType);
@@ -248,9 +235,7 @@ public class ChatbotService {
         }
     }
 
-
     // 기간별 메시지 조회
-
     @LogExecutionTime
     public List<ChatbotChatHistoryDtoResponse> getMessagesByDateRange(String userId, LocalDateTime startDate, LocalDateTime endDate) {
         log.info("기간별 메시지 조회: 사용자ID={}, 시작일={}, 종료일={}", userId, startDate, endDate);
@@ -269,9 +254,7 @@ public class ChatbotService {
         }
     }
 
-
     // 도움됨 여부별 메시지 조회
-
     @LogExecutionTime
     public List<ChatbotChatHistoryDtoResponse> getMessagesByHelpfulStatus(String userId, Boolean isHelpful) {
         log.info("도움됨 여부별 메시지 조회: 사용자ID={}, 도움됨={}", userId, isHelpful);
@@ -290,9 +273,7 @@ public class ChatbotService {
         }
     }
 
-
     // 키워드로 메시지 검색
-
     @LogExecutionTime
     public List<ChatbotChatHistoryDtoResponse> searchMessagesByKeyword(String userId, String keyword) {
         log.info("키워드로 메시지 검색: 사용자ID={}, 키워드={}", userId, keyword);
@@ -311,9 +292,7 @@ public class ChatbotService {
         }
     }
 
-
     // 상태별 세션 조회
-
     @LogExecutionTime
     public List<ChatbotSessionDtoResponse> getSessionsByStatus(String userId, ChatSession.SessionStatus status) {
         log.info("상태별 세션 조회: 사용자ID={}, 상태={}", userId, status);
@@ -332,9 +311,7 @@ public class ChatbotService {
         }
     }
 
-
     // 기간별 세션 조회
-
     @LogExecutionTime
     public List<ChatbotSessionDtoResponse> getSessionsByDateRange(String userId, LocalDateTime startDate, LocalDateTime endDate) {
         log.info("기간별 세션 조회: 사용자ID={}, 시작일={}, 종료일={}", userId, startDate, endDate);
@@ -353,9 +330,7 @@ public class ChatbotService {
         }
     }
 
-
     // 사용자별 세션 수 조회
-
     @LogExecutionTime
     public long getSessionCountByUser(String userId) {
         log.info("사용자별 세션 수 조회: 사용자ID={}", userId);
@@ -370,9 +345,7 @@ public class ChatbotService {
         }
     }
 
-
     // 세션 생성 또는 조회
-
     private ChatSession getOrCreateSession(User user, String sessionId) {
         if (sessionId != null && !sessionId.isEmpty()) {
             return chatSessionRepository.findBySessionId(sessionId)
@@ -382,9 +355,7 @@ public class ChatbotService {
         }
     }
 
-
     // 새 세션 생성
-
     private ChatSession createNewSession(User user, String sessionId) {
         ChatSession session = ChatSession.builder()
                 .sessionId(sessionId)
@@ -400,9 +371,7 @@ public class ChatbotService {
         return chatSessionRepository.save(session);
     }
 
-
     // 세션 ID 생성
-
     private String generateSessionId() {
         return "session_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
@@ -413,9 +382,7 @@ public class ChatbotService {
                 .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userIdOrEmail));
     }
 
-
     // 의도 분석
-
     private ChatMessage.IntentType analyzeIntent(String message) {
         String lowerMessage = message.toLowerCase();
         
@@ -430,9 +397,7 @@ public class ChatbotService {
         return ChatMessage.IntentType.UNKNOWN;
     }
 
-
     // 신뢰도 계산
-
     private double calculateConfidence(String message, ChatMessage.IntentType intentType) {
         if (intentType == ChatMessage.IntentType.UNKNOWN) {
             return 0.1;
@@ -451,14 +416,7 @@ public class ChatbotService {
         return Math.min(0.9, 0.3 + (matchCount * 0.2));
     }
 
-
-    /**
-     * 응답 생성.
-     *
-     * <p>DB 에서 관련 정책·시설을 검색해 근거로 넘기고 LLM 이 답하게 한다(RAG).
-     * API 키가 없거나 호출이 실패하면 아래 규칙 기반 응답으로 폴백하므로,
-     * LLM 을 붙이지 않은 환경에서도 챗봇은 그대로 동작한다.
-     */
+    /** 응답 생성. DB 에서 관련 정책·시설을 검색해 근거로 넘기고 LLM 이 답하게 한다(RAG) */
     private String generateReply(String message, ChatMessage.IntentType intentType, User user) {
         // 인사·감사·작별처럼 검색이 필요 없는 의도는 정형 응답이 더 빠르고 안정적이다.
         if (intentType == ChatMessage.IntentType.GREETING
@@ -479,9 +437,7 @@ public class ChatbotService {
         return generateResponse(message, intentType, user);
     }
 
-
     // 응답 생성 (규칙 기반 폴백)
-
     private String generateResponse(String message, ChatMessage.IntentType intentType, User user) {
         switch (intentType) {
             case GREETING:
@@ -507,45 +463,33 @@ public class ChatbotService {
         }
     }
 
-
     // 인사 응답 생성
-
     private String generateGreetingResponse(User user) {
         String userName = user.getName() != null ? user.getName() : "게스트";
         return String.format("안녕하세요, %s님! 육아에 관한 궁금한 점이 있으시면 언제든 물어보세요. 건강, 정책, 시설, 교육 등 다양한 정보를 제공해드릴 수 있습니다.", userName);
     }
 
-
     // 질문 응답 생성
-
     private String generateQuestionResponse(String message) {
         return "좋은 질문이네요! 구체적으로 어떤 부분에 대해 알고 싶으신지 말씀해 주시면 더 자세히 답변해드릴 수 있습니다.";
     }
 
-
     // 불만/문의 응답 생성
-
     private String generateComplaintResponse() {
         return "불편하신 점이 있으시군요. 구체적인 상황을 말씀해 주시면 해결 방법을 찾아보겠습니다. 필요하시면 고객센터로 연결해드릴 수도 있습니다.";
     }
 
-
     // 감사 응답 생성
-
     private String generateThanksResponse() {
         return "도움이 되었다니 기쁩니다! 앞으로도 육아에 관한 궁금한 점이 있으시면 언제든 찾아주세요.";
     }
 
-
     // 작별인사 응답 생성
-
     private String generateGoodbyeResponse() {
         return "안녕히 가세요! 언제든 다시 찾아주세요. 육아에 관한 궁금한 점이 생기시면 언제든 도움을 드릴 준비가 되어 있습니다.";
     }
 
-
     // 건강 정보 응답 생성
-
     private String generateHealthInfoResponse(String message) {
         if (message.contains("예방접종") || message.contains("백신")) {
             return "예방접종은 아이의 건강을 지키는 중요한 방법입니다. 연령별 예방접종 일정과 주의사항을 확인해보세요. 구체적인 질문이 있으시면 더 자세히 답변해드릴 수 있습니다.";
@@ -556,9 +500,7 @@ public class ChatbotService {
         }
     }
 
-
     // 정책 정보 응답 생성
-
     private String generatePolicyInfoResponse(String message) {
         String topPolicies = policyRepository.findPopularPolicies(PageRequest.of(0, 3)).stream()
                 .map(p -> "- " + p.getTitle())
@@ -573,9 +515,7 @@ public class ChatbotService {
         }
     }
 
-
     // 시설 정보 응답 생성
-
     private String generateFacilityInfoResponse(String message) {
         String topFacilities = careFacilityRepository.findPopularFacilities(PageRequest.of(0, 3)).stream()
                 .map(f -> "- " + f.getName())
@@ -590,9 +530,7 @@ public class ChatbotService {
         }
     }
 
-
     // 교육 정보 응답 생성
-
     private String generateEducationInfoResponse(String message) {
         if (message.contains("육아") || message.contains("양육")) {
             return "육아와 양육에 관한 다양한 교육 프로그램과 정보를 제공해드릴 수 있습니다. 부모 교육, 양육 스킬, 발달 단계별 놀이 등 어떤 부분에 관심이 있으신가요?";
@@ -603,16 +541,12 @@ public class ChatbotService {
         }
     }
 
-
     // 기본 응답 생성
-
     private String generateDefaultResponse() {
         return "죄송합니다. 질문을 정확히 이해하지 못했습니다. 육아에 관한 건강, 정책, 시설, 교육 등 어떤 부분에 대해 궁금하신지 다시 말씀해 주세요.";
     }
 
-
     // 메시지 저장
-
     private ChatMessage saveChatMessage(User user, ChatSession session, String message, String response, 
                                       ChatMessage.IntentType intentType, double confidence) {
         ChatMessage chatMessage = ChatMessage.builder()
@@ -630,9 +564,7 @@ public class ChatbotService {
         return chatMessageRepository.save(chatMessage);
     }
 
-
     // 세션 업데이트
-
     private void updateSession(ChatSession session, String message) {
         session.setMessageCount(session.getMessageCount() + 1);
         session.setLastActivityAt(LocalDateTime.now());
@@ -646,9 +578,7 @@ public class ChatbotService {
         chatSessionRepository.save(session);
     }
 
-
     // 대화 기록 응답 변환
-
     private ChatbotChatHistoryDtoResponse convertToHistoryResponse(ChatMessage message) {
         return ChatbotChatHistoryDtoResponse.builder()
                 .messageId(message.getId())
@@ -663,9 +593,7 @@ public class ChatbotService {
                 .build();
     }
 
-
     // 세션 응답 변환
-
     private ChatbotSessionDtoResponse convertToSessionResponse(ChatSession session) {
         return ChatbotSessionDtoResponse.builder()
                 .sessionId(session.getSessionId())

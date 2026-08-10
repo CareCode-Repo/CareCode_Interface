@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 로그인 응답
- */
+/** 로그인 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

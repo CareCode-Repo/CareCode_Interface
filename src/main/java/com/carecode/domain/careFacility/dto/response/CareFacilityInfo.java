@@ -10,9 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 보육시설 정보 응답
- */
+/** 보육시설 정보 응답 */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -16,11 +16,7 @@ public interface VaccinationScheduleRepository extends JpaRepository<Vaccination
 
     boolean existsByChildId(Long childId);
 
-    /**
-     * 알림 대상 조회: 예정일이 구간 안에 있고 아직 알림을 보내지 않은 미완료 일정.
-     *
-     * <p>child, user 를 함께 로딩해 알림 발송 시 N+1 을 피한다.
-     */
+    /** 알림 대상 조회: 예정일이 구간 안에 있고 아직 알림을 보내지 않은 미완료 일정. child, user 를 함께 로딩해 알림 발송 시 N+1 을 피한다. */
     @Query("SELECT vs FROM VaccinationSchedule vs " +
            "JOIN FETCH vs.child c JOIN FETCH c.user " +
            "WHERE vs.status = com.carecode.domain.health.entity.VaccinationSchedule.VaccinationStatus.SCHEDULED " +

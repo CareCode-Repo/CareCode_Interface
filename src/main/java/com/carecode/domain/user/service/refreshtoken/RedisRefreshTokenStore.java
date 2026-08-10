@@ -7,9 +7,7 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * 리프레시 JWT를 서명만으로 두지 않고, 서버(Redis)에 활성 세션으로 등록해 재사용·로그아웃 시 제어합니다.
- */
+/** 리프레시 JWT를 서명만으로 두지 않고, 서버(Redis)에 활성 세션으로 등록해 재사용·로그아웃 시 제어합니다. */
 @RequiredArgsConstructor
 public class RedisRefreshTokenStore implements RefreshTokenStore {
 

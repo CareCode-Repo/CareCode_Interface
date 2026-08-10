@@ -125,10 +125,7 @@ public class CareKnowledgeRetriever {
         return keywords.size() > MAX_KEYWORDS ? keywords.subList(0, MAX_KEYWORDS) : keywords;
     }
 
-    /**
-     * 흔한 조사를 떼어낸다. 형태소 분석기 없이 "어린이집은" → "어린이집" 정도만 맞춘다.
-     * 조사를 떼면 2자 미만이 되는 짧은 단어는 원형을 유지한다.
-     */
+    /** 흔한 조사를 떼어낸다. */
     private String stripJosa(String token) {
         for (String josa : JOSA) {
             if (token.length() > josa.length() + 1 && token.endsWith(josa)) {

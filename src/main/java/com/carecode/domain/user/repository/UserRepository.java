@@ -10,9 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 사용자 리포지토리 인터페이스
- */
+/** 사용자 리포지토리 인터페이스 */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 

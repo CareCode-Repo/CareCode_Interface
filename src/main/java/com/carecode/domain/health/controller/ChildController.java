@@ -3,6 +3,8 @@ package com.carecode.domain.health.controller;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.domain.health.dto.request.ChildCreateRequest;
 import com.carecode.domain.health.dto.response.ChildInfoResponse;
+import com.carecode.domain.health.dto.response.SiblingOverviewResponse;
+import com.carecode.domain.health.service.SiblingOverviewService;
 import com.carecode.domain.health.dto.response.GrowthPointResponse;
 import com.carecode.domain.health.dto.response.VaccinationScheduleResponse;
 import com.carecode.domain.health.growth.GrowthMetric;
@@ -22,9 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * 아이 정보 및 예방접종 일정 API.
- */
+/** 아이 정보 및 예방접종 일정 API. */
 @Slf4j
 @RestController
 @RequestMapping("/children")
@@ -33,13 +33,14 @@ import java.util.List;
 public class ChildController {
 
     private final ChildService childService;
+    private final SiblingOverviewService siblingOverviewService;
     private final VaccinationScheduleService vaccinationScheduleService;
     private final GrowthChartService growthChartService;
 
     @PostMapping
     @LogExecutionTime
     @Operation(summary = "아이 등록",
-            description = "아이를 등록하고 생년월일 기준 표준 예방접종 일정을 자동 생성합니다.")
+            description = "아이를 등록하고 생년월일 기준 표준 예방접종 일정을 자동 생성")
     public ResponseEntity<ChildInfoResponse> createChild(@Valid @RequestBody ChildCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(childService.createChild(request));
     }
@@ -74,11 +75,11 @@ public class ChildController {
         return ResponseEntity.noContent().build();
     }
 
-    // ==================== 예방접종 일정 ====================
-
+    // ====================
+    // 예방접종 일정 ====================
     @GetMapping("/{childId}/vaccinations")
     @LogExecutionTime
-    @Operation(summary = "예방접종 일정 조회", description = "표준 일정에 따른 접종 예정일과 완료 여부를 반환합니다.")
+    @Operation(summary = "예방접종 일정 조회", description = "표준 일정에 따른 접종 예정일과 완료 여부 반환")
     public ResponseEntity<List<VaccinationScheduleResponse>> getVaccinationSchedule(@PathVariable Long childId) {
         // 소유권 검증을 위해 아이 조회를 먼저 태운다.
         childService.getChild(childId);
@@ -105,12 +106,12 @@ public class ChildController {
         return ResponseEntity.ok(vaccinationScheduleService.markCompleted(scheduleId, completedDate));
     }
 
-    // ==================== 성장 곡선 ====================
-
+    // ====================
+    // 성장 곡선 ====================
     @GetMapping("/{childId}/growth")
     @LogExecutionTime
     @Operation(summary = "성장 곡선 조회",
-            description = "기록된 키/몸무게를 WHO 성장 표준과 비교한 백분위와 함께 반환합니다. "
+            description = "기록된 키/몸무게를 WHO 성장 표준과 비교한 백분위와 함께 반환"
                     + "백분위는 참고 지표이며 진단은 의료진 판단을 따릅니다.")
     public ResponseEntity<List<GrowthPointResponse>> getGrowthChart(
             @PathVariable Long childId,
@@ -128,5 +129,12 @@ public class ChildController {
         return growthChartService.getLatestPercentile(childId, metric)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    // 형제자매 통합 조회
+    @GetMapping("/overview")
+    @Operation(summary = "자녀 통합 현황", description = "모든 자녀의 접종·대기·다자녀 혜택을 한 번에 조회")
+    public ResponseEntity<SiblingOverviewResponse> overview() {
+        return ResponseEntity.ok(siblingOverviewService.getOverview());
     }
 }

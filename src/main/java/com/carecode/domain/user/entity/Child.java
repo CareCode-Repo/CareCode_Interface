@@ -10,10 +10,7 @@ import lombok.Builder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * 자녀 엔티티
- * 사용자의 자녀 정보를 관리
- */
+/** 자녀 엔티티 사용자의 자녀 정보를 관리 */
 @Entity
 @Table(name = "TBL_CHILD")
 @Getter

@@ -14,9 +14,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 육아 시설 리포지토리 인터페이스
- */
+/** 육아 시설 리포지토리 인터페이스 */
 @Repository
 public interface CareFacilityRepository extends JpaRepository<CareFacility, Long> {
 
@@ -34,7 +32,6 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
            "((cf.ageRangeMin IS NULL OR cf.ageRangeMin <= :childAge) AND " +
            "(cf.ageRangeMax IS NULL OR cf.ageRangeMax >= :childAge))")
     List<CareFacility> findByChildAge(@Param("childAge") Integer childAge);
-    
 
     // 최소 평점 이상의 시설 조회
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true AND cf.rating >= :minRating")
@@ -67,7 +64,6 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
     List<CareFacility> findByLocationAndRadius(@Param("latitude") Double latitude,
                                               @Param("longitude") Double longitude,
                                               @Param("radiusKm") Double radiusKm);
-    
 
     // 복합 조건으로 시설 검색
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true " +
@@ -88,7 +84,6 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
                                        @Param("minAvailableSpots") Integer minAvailableSpots,
                                        @Param("maxTuitionFee") Integer maxTuitionFee,
                                        @Param("childAge") Integer childAge);
-    
 
     // 전체 조회수 합계 조회
     @Query("SELECT COALESCE(SUM(cf.viewCount), 0) FROM CareFacility cf WHERE cf.isActive = true")
@@ -105,7 +100,6 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true AND " +
            "cf.ageRangeMin <= :maxAge AND cf.ageRangeMax >= :minAge")
     List<CareFacility> findByAgeRange(@Param("minAge") int minAge, @Param("maxAge") int maxAge);
-    
 
     // 운영 시간별 시설 조회
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true AND " +
@@ -116,13 +110,11 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true " +
            "ORDER BY cf.rating DESC, cf.reviewCount DESC")
     List<CareFacility> findPopularFacilities(org.springframework.data.domain.Pageable pageable);
-    
 
     // 신규 시설 조회
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true " +
            "ORDER BY cf.createdAt DESC")
     List<CareFacility> findNewFacilities(org.springframework.data.domain.Pageable pageable);
-    
 
     /** 반경 내 시설 조회. 바운딩 박스로 후보를 좁힌 뒤 정확한 거리를 계산한다. */
     @Query(value = "SELECT cf.* FROM ("
@@ -144,6 +136,17 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
                                              @Param("minLng") double minLng,
                                              @Param("maxLng") double maxLng);
 
+    /** 좌표가 없어 반경 검색에 잡히지 않는 시설. 지오코딩 대상이다. */
+    @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true "
+            + "AND (cf.latitude IS NULL OR cf.longitude IS NULL) "
+            + "AND cf.address IS NOT NULL AND cf.address <> ''")
+    List<CareFacility> findMissingCoordinates(Pageable pageable);
+
+    @Query("SELECT COUNT(cf) FROM CareFacility cf WHERE cf.isActive = true "
+            + "AND (cf.latitude IS NULL OR cf.longitude IS NULL) "
+            + "AND cf.address IS NOT NULL AND cf.address <> ''")
+    long countMissingCoordinates();
+
     /** 전문 검색. LIKE '%키워드%' 와 달리 인덱스를 타고 관련도 순으로 정렬된다. */
     @Query(value = "SELECT * FROM TBL_CARE_FACILITIES "
            + "WHERE IS_ACTIVE = true "
@@ -163,14 +166,11 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
                                             @Param("facilityType") FacilityType facilityType,
                                             @Param("address") String address, Pageable pageable);
 
-
     // ID로 시설 조회 (Reviews와 함께)
     @Query("SELECT cf FROM CareFacility cf LEFT JOIN FETCH cf.reviews WHERE cf.id = :id")
     Optional<CareFacility> findByIdWithReviews(@Param("id") Long id);
 
-    /**
-     * 조회수를 DB 에서 원자적으로 증가시킨다 (lost update 방지).
-     */
+    /** 조회수를 DB 에서 원자적으로 증가시킨다 (lost update 방지). */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE CareFacility cf SET cf.viewCount = COALESCE(cf.viewCount, 0) + 1 WHERE cf.id = :facilityId")
     int incrementViewCount(@Param("facilityId") Long facilityId);

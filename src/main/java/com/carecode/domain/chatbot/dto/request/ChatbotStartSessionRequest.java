@@ -9,9 +9,7 @@ import lombok.Setter;
 
 import java.util.Map;
 
-/**
- * 세션 시작 요청
- */
+/** 세션 시작 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

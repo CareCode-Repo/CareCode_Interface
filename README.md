@@ -473,9 +473,26 @@ docker-compose up carecode-mariadb carecode-redis -d
 
 ## API 문서
 
+### 설계 문서
+
+기능별 상세 문서와 아키텍처는 [`docs/`](docs/README.md) 에 있습니다.
+무엇을 만들었는지보다 **왜 그렇게 만들었는지**를 남기는 것을 목표로 합니다.
+
+| 문서 | 내용 |
+|------|------|
+| [시스템 개요](docs/architecture/system-overview.md) | 계층 구조, 요청·배치 흐름 |
+| [데이터 흐름](docs/architecture/data-flow.md) | 공공데이터 수집 → 알림까지의 파이프라인 |
+| [공공데이터 연동](docs/features/public-data-integration.md) | 4개 정부 API, 공급자 추상화 |
+| [지원금 지능화](docs/features/benefit-intelligence.md) | 추천·비교·놓친 지원금·금액 신뢰도 |
+| [시설 지능화](docs/features/facility-intelligence.md) | 정원 시계열·입소 예측·빈자리 알림 |
+| [알림과 리텐션](docs/features/notification-and-retention.md) | 알림 3종과 중복 방지 |
+| [기동 안정화](docs/quality/runtime-hardening.md) | 실기동에서 드러난 차단 8건 |
+| [회귀 방지](docs/quality/regression-safety.md) | 왜 CI 가 못 잡았는지 |
+
 ### Swagger UI
 
 프로젝트는 **SpringDoc OpenAPI 3**를 사용하여 자동으로 API 문서를 생성합니다.
+**운영(prod) 프로파일에서는 차단됩니다.**
 
 **접속 URL**: http://localhost/swagger-ui.html
 

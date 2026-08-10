@@ -1,5 +1,7 @@
 package com.carecode.domain.user.service;
 
+import com.carecode.core.analytics.EventLogger;
+import com.carecode.core.analytics.EventType;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.exception.UserNotFoundException;
@@ -30,10 +32,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * 사용자 서비스 클래스
- * 사용자 관련 비즈니스 로직 처리
- */
+/** 사용자 서비스 클래스 사용자 관련 비즈니스 로직 처리 */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -43,11 +42,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
-
-
+    private final EventLogger eventLogger;
 
     // 사용자 상세 조회 (String ID) - 삭제되지 않은 사용자만
-
     @LogExecutionTime
     public UserDto getUserById(String userId) {
             // 먼저 userId로 조회 시도 (삭제되지 않은 사용자만)
@@ -69,9 +66,7 @@ public class UserService {
             return convertToDto(user);
     }
 
-
     // 이메일로 사용자 조회 (삭제되지 않은 사용자만)
-
     @LogExecutionTime
     public UserDto getUserByEmail(String email) {
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
@@ -80,45 +75,31 @@ public class UserService {
         return convertToDto(user);
     }
 
-
     // 이메일로 사용자 Optional 조회 (삭제되지 않은 사용자만)
-
     @LogExecutionTime
     public Optional<User> getUserByEmailOptional(String email) {
         return userRepository.findByEmailAndDeletedAtIsNull(email);
     }
 
-
-
     // 이메일로 User 엔티티 조회 (비밀번호 포함) - 삭제되지 않은 사용자만
-
     @LogExecutionTime
     public User getUserEntityByEmail(String email) {
         return userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
     }
 
-
-    /**
-     * 예외를 던지지 않는 조회.
-     * 로그인처럼 "존재하지 않음"과 "비밀번호 불일치"를 구분해서 응답하면 안 되는 경로에서 사용한다.
-     */
+    /** 예외를 던지지 않는 조회. 로그인처럼 "존재하지 않음"과 "비밀번호 불일치"를 구분해서 응답하면 안 되는 경로에서 사용한다. */
     public Optional<User> findActiveUserEntityByEmail(String email) {
         return userRepository.findByEmailAndDeletedAtIsNull(email);
     }
 
-
     // User 엔티티 저장
-
     @Transactional
     public User saveUser(User user) {
         return userRepository.save(user);
     }
 
-
-
     // 카카오 API를 통해 사용자 정보 조회
-
     public Map<String, Object> getKakaoUserInfo(String accessToken) {
         log.info("카카오 사용자 정보 조회 시작: accessToken={}", accessToken != null ? accessToken.substring(0, Math.min(20, accessToken.length())) + "..." : "null");
         
@@ -127,8 +108,7 @@ public class UserService {
             headers.set("Authorization", "Bearer " + accessToken);
             headers.set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
             HttpEntity<String> entity = new HttpEntity<>(headers);
-            
-            
+
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 "https://kapi.kakao.com/v2/user/me",
                 HttpMethod.GET,
@@ -175,9 +155,7 @@ public class UserService {
         }
     }
 
-
     // 사용자 통계 조회
-
     @LogExecutionTime
     public UserStatsResponse getUserStatistics() {
         long totalUsers = userRepository.count();
@@ -203,9 +181,7 @@ public class UserService {
                 .build();
     }
 
-
     // 카카오 신규 사용자 가입 완료 (이름 및 역할 설정)
-
     @Transactional
     public UserDto completeKakaoRegistration(String email, String name, String role) {
         if (name == null || name.trim().isEmpty()) {
@@ -247,9 +223,7 @@ public class UserService {
         return convertToDto(updatedUser);
     }
 
-
     // 사용자 생성
-
     @Transactional
     public UserDto createUser(UserDto userDto) {
         log.info("사용자 생성: 이메일={}, provider={}", userDto.getEmail(), userDto.getProvider());
@@ -293,16 +267,11 @@ public class UserService {
                 .build();
         
         User savedUser = userRepository.save(user);
+        eventLogger.log(EventType.SIGNED_UP, savedUser.getId(), userDto.getProvider());
         return convertToDto(savedUser);
     }
 
-
-
-
-
-
     // 비밀번호 변경 (PasswordChangeRequestDto)
-
     @Transactional
     @RequireAuthentication
     public void changePassword(String userId, PasswordChangeRequestDto request) {
@@ -321,10 +290,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-
-
     // 사용자 비활성화 (String ID)
-
     @Transactional
     @RequireAuthentication
     public void deactivateUser(String userId) {
@@ -342,10 +308,7 @@ public class UserService {
         }
     }
 
-
-
     // 사용자 활성화 (String ID)
-
     @Transactional
     @RequireAuthentication
     public void activateUser(String userId) {
@@ -396,10 +359,7 @@ public class UserService {
         }
     }
 
-
-
     // 사용자 검색 (삭제되지 않은 사용자만)
-
     @LogExecutionTime
     @RequireAuthentication
     public List<UserDto> searchUsers(String keyword) {
@@ -409,9 +369,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-
     // 사용자 검색 (타입별, 삭제되지 않은 사용자만)
-
     @LogExecutionTime
     @RequireAuthentication
     public List<UserDto> searchUsers(String keyword, String type) {
@@ -621,15 +579,5 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    // 최근 업데이트된 사용자 조회 ->  나중에 사용
-    //    @LogExecutionTime
-    //    public List<UserDto> getRecentlyUpdatedUsers(int days) {
-    //        log.info("최근 업데이트된 사용자 조회: {}일 이내", days);
-    //
-    //        LocalDateTime dateTime = LocalDateTime.now().minusDays(days);
-    //        List<User> users = userRepository.findByUpdatedAtAfterAndDeletedAtIsNull(dateTime);
-    //        return users.stream()
-    //                .map(this::convertToDto)
-    //                .collect(Collectors.toList());
-    //    }
+    // 최근 업데이트된 사용자 조회 -> 나중에 사용 @LogExecutionTime public List<UserDto> getRecentlyUpdatedUsers(int
 } 

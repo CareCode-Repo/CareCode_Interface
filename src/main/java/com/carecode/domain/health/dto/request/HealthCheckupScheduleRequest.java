@@ -10,9 +10,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * 건강 검진 스케줄 조회 요청
- */
+/** 건강 검진 스케줄 조회 요청 */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -7,9 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 알림 설정 리포지토리 인터페이스
- */
+/** 알림 설정 리포지토리 인터페이스 */
 @Repository
 public interface NotificationSettingsRepository extends JpaRepository<NotificationSettings, Long> {
 

@@ -62,3 +62,6 @@ logs/
 ### Temporary files ###
 *.tmp
 *.temp
+
+# 별도 저장소로 관리되는 프론트엔드
+CareCode_FE/

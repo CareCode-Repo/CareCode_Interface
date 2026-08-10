@@ -6,11 +6,7 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-/**
- * 신고 응답.
- *
- * <p>신고자 신원은 관리자에게도 최소한만 노출한다.
- */
+/** 신고 응답. 신고자 신원은 관리자에게도 최소한만 노출한다. */
 @Getter
 @Builder
 public class ReportResponse {
