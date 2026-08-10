@@ -78,9 +78,9 @@ dependencies {
     // Logging - JSON 형식 로깅 지원
     implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
     
-    // AsciiDoctor for documentation generation
-    implementation 'org.asciidoctor:asciidoctorj:2.5.7'
-    implementation 'org.asciidoctor:asciidoctorj-pdf:2.3.4'
+    // API 문서는 springdoc-openapi 가 런타임에 생성한다(운영 프로파일에서는 비공개).
+    // asciidoctor 로 정적 산출물을 만들던 시절의 의존성이 남아 있었는데, .adoc 도 사용처도 없이
+    // 실행 jar 에 7.5MB 를 차지하고 취약점 스캔 표면만 늘리고 있었다.
 }
 
 // 소스에 한글 문자열 리터럴이 있다. 인코딩을 지정하지 않으면 Windows(CP949)에서 깨져 컴파일된다.
