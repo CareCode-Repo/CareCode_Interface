@@ -43,7 +43,7 @@ SecurityConfig 는 선언 순서에 따라 앞선 규칙이 뒤를 덮습니다.
 
 ```mermaid
 flowchart LR
-    A["Testcontainers<br/>MariaDB 10.11"] --> B["Flyway 전체 적용<br/>V1 ~ V17"]
+    A["Testcontainers<br/>MariaDB 10.11"] --> B["Flyway 전체 적용"]
     B --> C["Hibernate validate"]
     C -->|불일치| F["기동 실패<br/>= 테스트 실패"]
     C -->|일치| D["단언 검증"]

@@ -47,7 +47,7 @@
 
 | 문서 | 내용 |
 |------|------|
-| [데이터베이스 마이그레이션](reference/database-migrations.md) | V1~V17 각각이 왜 필요했는지 |
+| [데이터베이스 마이그레이션](reference/database-migrations.md) | 각 마이그레이션이 왜 필요했는지 |
 | [접근제어 매트릭스](reference/access-control-matrix.md) | 공개·인증·관리자 경로 전수 |
 
 ### 기존 문서

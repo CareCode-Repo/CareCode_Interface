@@ -25,6 +25,7 @@
 | V15 | `missing_entity_tables` | 누락 테이블·컬럼 보충 | **엔티티는 있는데 DDL 에 없어 기동 실패** |
 | V16 | `waitlist_vacancy_notice` | 빈자리 알림 발송 이력 | 같은 자리를 반복 알리면 신뢰를 잃음 |
 | V17 | `policy_deadline_notice` | 마감 알림 발송 이력 | **Blue/Green 에서 인스턴스가 2대가 되면 중복 발송** |
+| V18 | `notification_email_default` | 이메일 알림 DDL 기본값 | 엔티티는 `false` 인데 DDL 이 `TRUE` 라 JPA 를 안 거치면 켜짐 |
 
 ## 특히 기억할 것들
 
@@ -64,6 +65,18 @@ CONSTRAINT UK_POLICY_DEADLINE_NOTICE UNIQUE (POLICY_ID, USER_ID, NOTIFIED_ON)
 Blue/Green 배포로 인스턴스가 잠깐 2대가 되면 모든 알림이 두 번 나갑니다.
 
 존재 확인은 반복 실행을, 유니크 제약은 동시 실행을 막습니다.
+
+### V18 — 엔티티만 고치면 절반만 고친 것
+
+이메일 알림 기본값 버그를 엔티티에서 `false` 로 고쳤는데 DDL 은 `DEFAULT TRUE` 로 남아 있었습니다.
+
+JPA 는 값을 항상 명시해서 쓰기 때문에 **앱을 거치는 생성은 정상**입니다.
+그래서 테스트도 통과하고 실사용에서도 드러나지 않습니다.
+
+문제는 **시드 스크립트나 수기 SQL** 처럼 JPA 를 거치지 않는 삽입입니다.
+그 경로로는 여전히 요청한 적 없는 이메일 알림이 켜진 채 행이 만들어집니다.
+
+기본값을 바꾸는 엔티티 변경은 **DDL 기본값도 함께 봐야 합니다.**
 
 ## 작성 규칙
 

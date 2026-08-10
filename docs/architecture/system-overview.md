@@ -38,7 +38,7 @@ graph TB
     end
 
     subgraph store["저장소"]
-        DB[("MariaDB<br/>Flyway V1~V17")]
+        DB[("MariaDB<br/>Flyway 마이그레이션")]
         REDIS[("Redis<br/>캐시·레이트리밋·토큰")]
         FILES["파일 저장소"]
     end

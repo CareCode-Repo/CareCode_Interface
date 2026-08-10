@@ -83,7 +83,7 @@
         <mxCell id="storeGroup" value="저장소" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=14;" vertex="1" parent="1">
           <mxGeometry x="1010" y="350" width="250" height="270" as="geometry" />
         </mxCell>
-        <mxCell id="db" value="MariaDB&#xa;Flyway V1~V17" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="db" value="MariaDB&#xa;Flyway 마이그레이션" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="1050" y="390" width="170" height="70" as="geometry" />
         </mxCell>
         <mxCell id="redis" value="Redis&#xa;캐시·레이트리밋·토큰&#xa;(없으면 기동 불가)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
