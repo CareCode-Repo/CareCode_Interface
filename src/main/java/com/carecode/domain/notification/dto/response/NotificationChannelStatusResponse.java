@@ -28,4 +28,17 @@ public class NotificationChannelStatusResponse {
 
     /** 쓸 수 없을 때만 채워진다. 화면에 그대로 보여줄 수 있는 문구. */
     private String unavailableReason;
+
+    /**
+     * 쓸 수 없는 이유의 종류. 문구는 바뀔 수 있어 클라이언트가 문자열로 판단하면 안 된다.
+     *
+     * <ul>
+     *   <li>{@code SERVER_NOT_CONFIGURED} - 서버 설정 문제. 사용자가 할 수 있는 일이 없다.</li>
+     *   <li>{@code NO_DESTINATION} - 보낼 곳이 없다. 사용자가 등록하면 해결된다.</li>
+     * </ul>
+     */
+    private String reasonCode;
+
+    public static final String REASON_SERVER_NOT_CONFIGURED = "SERVER_NOT_CONFIGURED";
+    public static final String REASON_NO_DESTINATION = "NO_DESTINATION";
 }

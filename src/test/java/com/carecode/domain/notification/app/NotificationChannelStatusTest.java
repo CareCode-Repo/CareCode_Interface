@@ -117,6 +117,9 @@ class NotificationChannelStatusTest {
 
         assertThat(push.isAvailable()).isFalse();
         assertThat(push.getUnavailableReason()).isNotBlank();
+        // 사용자가 기기를 등록하면 해결되는 문제다. 화면은 이 코드를 보고 등록 버튼을 띄운다.
+        assertThat(push.getReasonCode())
+                .isEqualTo(NotificationChannelStatusResponse.REASON_NO_DESTINATION);
     }
 
     @Test
@@ -144,5 +147,8 @@ class NotificationChannelStatusTest {
 
         assertThat(sms.isAvailable()).isFalse();
         assertThat(sms.getUnavailableReason()).isEqualTo("문자 발송은 아직 준비 중이에요.");
+        // 사용자가 번호를 등록해도 해결되지 않는다. 등록을 권해서는 안 된다.
+        assertThat(sms.getReasonCode())
+                .isEqualTo(NotificationChannelStatusResponse.REASON_SERVER_NOT_CONFIGURED);
     }
 }

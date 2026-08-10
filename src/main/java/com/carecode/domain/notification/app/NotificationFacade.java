@@ -57,14 +57,25 @@ public class NotificationFacade {
     }
 
     private NotificationChannelStatusResponse toChannelStatus(NotificationChannelType channel, User user) {
-        String reason = notificationDispatcher.unavailableReason(channel)
-                .orElseGet(() -> missingDestinationReason(channel, user));
+        // 서버 설정 문제가 먼저다. 둘 다 문제인데 "번호를 등록하세요" 라고 안내하면
+        // 사용자가 등록하고도 알림을 받지 못한다.
+        String serverReason = notificationDispatcher.unavailableReason(channel).orElse(null);
+        String destinationReason = serverReason == null ? missingDestinationReason(channel, user) : null;
+        String reason = serverReason != null ? serverReason : destinationReason;
+
+        String reasonCode = null;
+        if (serverReason != null) {
+            reasonCode = NotificationChannelStatusResponse.REASON_SERVER_NOT_CONFIGURED;
+        } else if (destinationReason != null) {
+            reasonCode = NotificationChannelStatusResponse.REASON_NO_DESTINATION;
+        }
 
         return NotificationChannelStatusResponse.builder()
                 .channel(channel.getKey())
                 .displayName(channel.getDisplayName())
                 .available(reason == null)
                 .unavailableReason(reason)
+                .reasonCode(reasonCode)
                 .build();
     }
 
