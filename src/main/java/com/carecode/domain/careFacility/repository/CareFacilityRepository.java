@@ -96,6 +96,9 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
            "GROUP BY cf.facilityType")
     List<TypeStats> getTypeStats();
 
+    /** 운영 중인 시설 수. 통계 응답이 늘 0 을 내보내고 있었다. */
+    long countByIsActiveTrue();
+
     // 연령대별 시설 조회
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true AND " +
            "cf.ageRangeMin <= :maxAge AND cf.ageRangeMax >= :minAge")

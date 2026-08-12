@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -376,19 +377,31 @@ public class CareFacilityService {
         careFacilityRepository.save(facility);
     }
 
-    // 돌봄 시설 통계 조회
+    /**
+     * 돌봄 시설 통계.
+     *
+     * <p>유형별 분포는 조회해 놓고 버린 채 null 을 내보내고 있었다. 공개 응답에 필드가 있으면
+     * 클라이언트는 값이 온다고 믿는다. 조회한 것을 그대로 담는다.
+     */
     @LogExecutionTime
     public CareFacilityStatsResponse getFacilityStats() {
-        long totalFacilities = careFacilityRepository.count();
-        long totalViews = careFacilityRepository.getTotalViewCount();
         List<TypeStats> typeStats = careFacilityRepository.getTypeStats();
-        
+
+        // 유형 이름을 키로 하는 단순 분포. 소개 사이트처럼 개수만 필요한 곳이 쓴다.
+        Map<String, Long> typeDistribution = typeStats.stream()
+                .filter(stat -> stat.getFacilityType() != null)
+                .collect(Collectors.toMap(
+                        stat -> stat.getFacilityType().name(),
+                        TypeStats::getCount,
+                        Long::sum,
+                        LinkedHashMap::new));
+
         return CareFacilityStatsResponse.builder()
-                .totalFacilities(totalFacilities)
+                .totalFacilities(careFacilityRepository.count())
                 .totalBookings(0L)
-                .activeFacilities(0L)
-                .typeDistribution(null)
-                .typeStats(null)
+                .activeFacilities(careFacilityRepository.countByIsActiveTrue())
+                .typeDistribution(typeDistribution)
+                .typeStats(typeStats)
                 .todayBookings(0L)
                 .thisWeekBookings(0L)
                 .thisMonthBookings(0L)
