@@ -206,6 +206,16 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok(hospitals);
     }
 
+    // 병원 등록 현황
+    // 로그인 전에도 볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
+    @PreAuthorize("permitAll()")
+    @GetMapping("/hospitals/statistics")
+    @LogExecutionTime
+    @Operation(summary = "병원 등록 현황", description = "등록된 병원 수와 진료과목별 집계")
+    public ResponseEntity<HospitalStatsResponse> getHospitalStats() {
+        return ResponseEntity.ok(healthFacade.getHospitalStats());
+    }
+
     // 병원 상세 조회
     // 로그인 전에도 병원을 둘러볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
     @PreAuthorize("permitAll()")

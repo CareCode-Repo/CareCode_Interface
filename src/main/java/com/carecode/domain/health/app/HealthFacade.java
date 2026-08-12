@@ -18,6 +18,7 @@ import com.carecode.domain.health.service.HealthService;
 import com.carecode.domain.health.entity.Hospital;
 import com.carecode.domain.health.entity.HospitalLike;
 import com.carecode.domain.health.entity.HospitalReview;
+import com.carecode.domain.health.dto.response.HospitalStatsResponse;
 import com.carecode.domain.health.repository.HospitalRepository;
 import com.carecode.domain.health.repository.HospitalLikeRepository;
 import com.carecode.domain.health.repository.HospitalReviewRepository;
@@ -30,6 +31,8 @@ import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Service
@@ -153,6 +156,25 @@ public class HealthFacade {
                 .getContent().stream()
                 .map(hospitalMapper::toResponse)
                 .toList();
+    }
+
+    /**
+     * 병원 등록 현황.
+     *
+     * 목록을 받아 세면 페이지 상한에 걸려 실제보다 적게 나온다. 집계는 DB 에서 한다.
+     */
+    public HospitalStatsResponse getHospitalStats() {
+        Map<String, Long> byType = hospitalRepository.countByType().stream()
+                .collect(Collectors.toMap(
+                        HospitalRepository.TypeCount::getType,
+                        HospitalRepository.TypeCount::getCount,
+                        Long::sum,
+                        LinkedHashMap::new));
+
+        return HospitalStatsResponse.builder()
+                .total(hospitalRepository.count())
+                .byType(byType)
+                .build();
     }
 
     public HospitalInfoResponse getHospitalById(Long id) {

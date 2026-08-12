@@ -19,6 +19,22 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
 
     List<Hospital> findTop2ByOrderByCreatedAtDesc();
 
+    /**
+     * 진료과목별 등록 수.
+     *
+     * 소개 사이트가 "소아청소년과 N곳" 을 보여 주는데 그 수를 얻을 공개 경로가 없었다.
+     * 목록을 받아 세면 페이지 상한에 걸려 실제보다 적게 나온다.
+     */
+    @Query("SELECT h.type AS type, COUNT(h) AS count FROM Hospital h WHERE h.type IS NOT NULL GROUP BY h.type")
+    List<TypeCount> countByType();
+
+    /** Object[] 로 받으면 캐스팅이 흩어져 컴파일러가 잡아 주지 못한다. */
+    interface TypeCount {
+        String getType();
+
+        long getCount();
+    }
+
     @Query("""
            SELECT h
            FROM Hospital h

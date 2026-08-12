@@ -137,6 +137,7 @@ public class SecurityConfig {
                 
                 // 병원 조회는 로그인 전에도 보여야 한다. 실제 경로가 /health/hospitals/** 라
                 // 아래 /health/** 규칙보다 먼저 선언해야 한다.
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/statistics").permitAll()
                 .requestMatchers(HttpMethod.GET, "/health/hospitals").permitAll()
                 .requestMatchers(HttpMethod.GET, "/health/hospitals/nearby").permitAll()
                 .requestMatchers(HttpMethod.GET, "/health/hospitals/popular").permitAll()
