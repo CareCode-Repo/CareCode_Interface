@@ -33,12 +33,11 @@ public class KakaoUtil {
     @Value("${kakao.redirect-uri}")
     private String redirectUri;
     
-    @Value("${server.port:8081}")
-    private String serverPort;
-    
-    @Value("${server.address:13.209.36.209}")
-    private String serverAddress;
-    
+    // serverPort/serverAddress 필드가 있었으나 어디에서도 쓰이지 않았다.
+    // 특히 serverAddress 의 기본값에 운영 IP 가 박혀 있었고, server.address 는 원래
+    // "서버가 바인딩할 주소"를 뜻하는 Boot 표준 속성이라 용도도 맞지 않았다.
+    // 카카오 리다이렉트 주소는 kakao.redirect-uri 하나로 관리한다.
+
     // ObjectMapper 설정 - 알 수 없는 필드 무시
     private final ObjectMapper objectMapper = new ObjectMapper()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

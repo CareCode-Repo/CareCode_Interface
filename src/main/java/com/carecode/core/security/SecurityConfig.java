@@ -110,9 +110,16 @@ public class SecurityConfig {
                 .requestMatchers("/kakao-callback.html").permitAll()
                 
                 // 이메일 인증 관련 엔드포인트 (공개 접근)
-                .requestMatchers("/users/send-code", "/users/verify-code", "/users/verify").permitAll()
-                
-                // 관리자 API (ADMIN 권한 필요)
+                //
+                // 주의: 이 규칙은 오랫동안 /users/send-code 등을 가리키고 있었는데, 실제 엔드포인트는
+                // AuthController 의 /auth/* 다. 존재하지 않는 경로를 열어두고 진짜 경로는 아래
+                // anyRequest().authenticated() 에 걸려 있어서, 가입 전 인증코드 발송과
+                // 메일로 받은 인증 링크 클릭이 전부 401 이었다. 경로를 실제 매핑에 맞춘다.
+                .requestMatchers(HttpMethod.POST, "/auth/send-code", "/auth/verify-code").permitAll()
+                .requestMatchers(HttpMethod.GET, "/auth/verify").permitAll()
+
+                // 관리자 API (ADMIN 권한 필요).
+                // /api/** 인증 규칙보다 반드시 먼저 선언해야 한다.
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 // 공개 API 엔드포인트
@@ -182,6 +189,11 @@ public class SecurityConfig {
                 // 인증이 필요한 API 엔드포인트 (로그인/회원가입 제외)
                 .requestMatchers("/auth/user/**").authenticated()
                 .requestMatchers("/auth/logout").authenticated()
+                // /users/** 는 전부 "본인 계정" API 다. 남의 계정을 다루는 관리 기능은
+                // /api/admin/users 로 옮겼으므로 여기에는 인증만 요구하면 충분하다.
+                .requestMatchers("/users/**").authenticated()
+                .requestMatchers("/children/**").authenticated()
+                .requestMatchers("/chatbot/**").authenticated()
                 .requestMatchers("/api/**").authenticated()
                 .requestMatchers("/facilities/search").authenticated()
                 .requestMatchers("/facilities/*/bookings/**").authenticated()

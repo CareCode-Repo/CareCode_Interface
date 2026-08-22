@@ -72,12 +72,20 @@ public class Post {
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();
     
+    /**
+     * 태그 목록.
+     *
+     * <p>목록 응답에 태그 이름이 들어가므로 한 페이지를 그리면 게시글 수만큼 태그 조회가 나갔다.
+     * 페이징 쿼리에 컬렉션을 join fetch 하면 Hibernate 가 전체 행을 읽어 메모리에서 페이징하므로
+     * (HHH000104) 그 방향 대신 배치 로딩을 쓴다. 한 페이지의 태그를 IN 절 한 번으로 가져온다.
+     */
     @ManyToMany
     @JoinTable(
         name = "TBL_POST_TAGS",
         joinColumns = @JoinColumn(name = "POST_ID"),
         inverseJoinColumns = @JoinColumn(name = "TAG_ID")
     )
+    @org.hibernate.annotations.BatchSize(size = 100)
     @Builder.Default
     private List<Tag> tags = new ArrayList<>();
     

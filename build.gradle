@@ -138,25 +138,35 @@ tasks.named('jacocoTestCoverageVerification') {
 
     violationRules {
         // 1) 전체 커버리지: 후퇴 방지선(ratchet).
-        //    현재 라인 커버리지는 약 16% 다. 테스트를 늘릴 때마다 이 값을 함께 올린다.
+        //    현재 라인 커버리지는 약 34% 다. 테스트를 늘릴 때마다 이 값을 함께 올린다.
         //    (기존 0.01 은 사실상 게이트가 없는 것과 같아 통과해도 의미가 없었다.)
         rule {
             element = 'BUNDLE'
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.15
+                minimum = 0.30
             }
         }
 
         // 2) 보안·인증 핵심 클래스는 별도의 높은 기준을 적용한다.
         //    이 경로들이 테스트 없이 수정되면 빌드가 실패해야 한다.
+        //
+        //    목록을 고를 때의 기준은 "여기가 조용히 망가지면 사고가 되는가" 다.
+        //    - CurrentUserFacade: 본인 확인(소유권). 뚫리면 남의 계정을 조작할 수 있다.
+        //    - JwtAuthenticationFilter: 누구로 인증되는지를 정한다.
+        //    - RateLimitInterceptor: fail-open 이 깨지면 Redis 장애가 전면 장애가 된다.
+        //    - EmailVerificationService: 인증번호 난수·시도 제한.
         rule {
             element = 'CLASS'
             includes = [
                 'com.carecode.domain.user.service.JwtService',
                 'com.carecode.core.util.ClientIpResolver',
-                'com.carecode.core.util.PageRequestUtil'
+                'com.carecode.core.util.PageRequestUtil',
+                'com.carecode.core.security.CurrentUserFacade',
+                'com.carecode.core.security.JwtAuthenticationFilter',
+                'com.carecode.core.RateLimitInterceptor',
+                'com.carecode.domain.user.service.EmailVerificationService'
             ]
             limit {
                 counter = 'LINE'

@@ -52,7 +52,8 @@ flowchart TD
 | `/auth/refresh` | 토큰 갱신 |
 | `/auth/kakao/login`, `/auth/kakao/login-url`, `/auth/kakao/complete-registration` | 카카오 |
 | `/oauth2/**` | — |
-| `/users/send-code`, `/users/verify-code`, `/users/verify` | 이메일 인증 |
+| `POST /auth/send-code`, `POST /auth/verify-code` | 이메일 인증번호 발송·검증 |
+| `GET /auth/verify` | 메일로 받은 인증 링크 |
 
 ### 지원금
 
@@ -130,6 +131,7 @@ flowchart TD
 | 경로 | 비고 |
 |------|------|
 | `/auth/user/**`, `/auth/logout` | — |
+| `/users/**` | **본인 계정 전용.** 경로 변수가 있는 구 경로는 서비스 진입 전에 본인인지 확인한다 |
 | `/users/privacy/**` | 열람·동의·탈퇴 |
 | `/children/**` | 자녀 정보 |
 | `/notifications/**` | — |
@@ -164,6 +166,64 @@ flowchart TD
 | `/api/admin/analytics/**` | 퍼널·리텐션 |
 | `/api/admin/policy-verification/**` | 금액 수기 검증 |
 | `/api/admin/reports/**` | 신고 처리 |
+
+### 사용자 관리 (`/users` 에서 이관)
+
+아래 기능은 원래 `/users` 아래에 있었습니다. 그 컨트롤러의 제약은 `isAuthenticated()` 뿐이라
+**가입만 하면 누구나 자기 역할을 `ADMIN` 으로 바꾸고 관리자 API 전체를 열 수 있었습니다.**
+전체 회원 목록·검색도 같은 조건으로 열려 있어 개인정보가 그대로 노출됐습니다.
+
+| 경로 | 이전 경로 | 용도 |
+|------|-----------|------|
+| `PUT /api/admin/users/{id}/role` | `PUT /users/{id}/role` | 역할 변경 (**권한 상승 경로**) |
+| `PUT /api/admin/users/{id}/activate` | `PUT /users/{id}/activate` | 계정 활성화 |
+| `PUT /api/admin/users/{id}/reactivate` | `PUT /users/{id}/reactivate` | 탈퇴 계정 복구 |
+| `GET /api/admin/users/statistics` | `GET /users/statistics` | 회원 통계 |
+| `GET /api/admin/users/search` | `GET /users/search` | 회원 검색 |
+| `GET /api/admin/users/active` | `GET /users/active` | 활성 회원 목록 |
+| `GET /api/admin/users/verified` | `GET /users/verified` | 인증 완료 회원 목록 |
+| `GET /api/admin/users/recently-active` | `GET /users/recently-active` | 최근 활동 회원 |
+| `GET /api/admin/users/by-type/{userType}` | `GET /users/by-type/{userType}` | 유형별 회원 |
+| `GET /api/admin/users/by-region/{region}` | `GET /users/by-region/{region}` | 지역별 회원 |
+
+역할 변경은 URL 규칙에만 의존하지 않습니다. `UserService.updateUserRole` 자체에
+`@PreAuthorize("hasRole('ADMIN')")` 이 붙어 있어, 호출 경로가 어디로 바뀌어도 막힙니다.
+계정 활성화·복구도 같습니다.
+
+### 회원가입 시 서버가 정하는 값
+
+`POST /auth/register` 는 `permitAll` 입니다. 따라서 **요청 본문의 어떤 값도 권한에 영향을 주면 안 됩니다.**
+예전에는 본문의 `role` 을 그대로 엔티티에 넣어서, 로그인 없이 `{"role":"ADMIN"}` 으로 가입하면
+그 자리에서 관리자가 됐습니다.
+
+| 필드 | 처리 |
+|------|------|
+| `role` | 무시하고 항상 `PARENT`. 승격은 `PUT /api/admin/users/{id}/role` 로만 |
+| `provider`, `providerId` | 무시하고 `null`. 소셜 가입은 `AuthServiceImpl` 의 별도 경로가 처리 |
+| `emailVerified` | 무시하고 `false`. 인증 메일을 통과해야 `true` |
+| `password` | 항상 필수. 예전에는 `provider` 를 붙이면 비밀번호 검사를 건너뛸 수 있었음 |
+
+`UserDto` 를 요청 본문으로 그대로 받고 있어 Swagger 에는 위 필드가 여전히 노출됩니다.
+값이 무시된다는 사실은 `UserService.createUser` 가 보장하며,
+회귀 테스트는 `UserServiceSignUpTest` 에 있습니다.
+
+### 본인 확인이 필요한 경로
+
+`/users/{userId}/...` 형태로 남아 있는 구 경로는 기존 클라이언트 호환을 위한 것이며,
+서비스 진입 전에 `CurrentUserFacade.requireSelf` 로 본인인지 확인합니다.
+남의 식별자를 넣으면 **404 가 아니라 403** 입니다. 404 로 응답하면 "그 ID 는 존재하지 않는다"는
+정보가 새어 계정 열거에 쓰입니다.
+
+| 구 경로 | 신규 경로 |
+|---------|-----------|
+| `PUT /users/{userId}/location` | `PUT /users/me/location` |
+| `PUT /users/{userId}/profile-image` | `PUT /users/me/profile-image` |
+| `PUT /users/{userId}/deactivate` | `PUT /users/me/deactivate` |
+| `DELETE /users/{userId}` | `DELETE /users/me` |
+
+`GET /users/{userId}`, `PUT /users/{userId}` 는 삭제했습니다. 전자는 타인 프로필 조회(IDOR),
+후자는 경로 변수를 무시하고 현재 사용자를 수정하던 API 라 시그니처가 동작과 달랐습니다.
+본인 조회·수정은 `GET/PUT /users/profile` (또는 `/users/me`) 을 사용합니다.
 
 ## 프로파일별 차이
 

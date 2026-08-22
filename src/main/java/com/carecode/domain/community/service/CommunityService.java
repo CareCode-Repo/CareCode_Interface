@@ -57,38 +57,47 @@ public class CommunityService {
     private final BookmarkRepository bookmarkRepository;
     private final CommunityMapper communityMapper;
 
-    // 게시글 목록 조회 (페이징)
+    /**
+     * 게시글 목록 조회 (페이징).
+     *
+     * <p>findAll 이 아니라 findAllActive 다. 예전에는 필터 없이 전부 읽어서, 신고 누적으로
+     * 자동 숨김된 글(ModerationService)이 목록 첫 페이지에 그대로 남아 있었다.
+     * 인기·최신·검색 쿼리는 처음부터 isActive 를 걸고 있었는데 기본 목록만 빠져 있었다.
+     */
+    @Transactional(readOnly = true)
     public CommunityPageResponse<CommunityPostResponse> getAllPosts(int page, int size, String sortBy, String sortDirection) {
         log.info("게시글 목록 조회 - 페이지: {}, 크기: {}, 정렬: {}, 방향: {}", page, size, sortBy, sortDirection);
-        try {
-            Sort sort = com.carecode.core.util.SortUtil.createSort(
-                sortBy, sortDirection, "createdAt", Sort.Direction.DESC
-            );
-            Pageable pageable = PageRequest.of(page, size, sort);
-            Page<Post> postPage = postRepository.findAll(pageable);
-            
-            List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
-            
-            return CommunityPageResponse.<CommunityPostResponse>builder()
-                    .content(postResponses)
-                    .page(postPage.getNumber())
-                    .size(postPage.getSize())
-                    .totalElements(postPage.getTotalElements())
-                    .totalPages(postPage.getTotalPages())
-                    .first(postPage.isFirst())
-                    .last(postPage.isLast())
-                    .hasNext(postPage.hasNext())
-                    .hasPrevious(postPage.hasPrevious())
-                    .build();
-        } catch (Exception e) {
-            log.error("게시글 목록 조회 중 오류 발생: {}", e.getMessage());
-            throw new CareServiceException("게시글 목록을 조회하는 중 오류가 발생했습니다.");
-        }
+
+        Sort sort = com.carecode.core.util.SortUtil.createSort(
+            sortBy, sortDirection, "createdAt", Sort.Direction.DESC
+        );
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Post> postPage = postRepository.findAllActive(pageable);
+
+        List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+
+        return CommunityPageResponse.<CommunityPostResponse>builder()
+                .content(postResponses)
+                .page(postPage.getNumber())
+                .size(postPage.getSize())
+                .totalElements(postPage.getTotalElements())
+                .totalPages(postPage.getTotalPages())
+                .first(postPage.isFirst())
+                .last(postPage.isLast())
+                .hasNext(postPage.hasNext())
+                .hasPrevious(postPage.hasPrevious())
+                .build();
     }
     
     // 레거시 전체 조회 메서드 제거 (페이징 API로 일원화)
 
-    // 게시글 상세 조회
+    /**
+     * 게시글 상세 조회.
+     *
+     * <p>숨김 처리된 글은 ID 를 알아도 열리지 않아야 한다. 목록에서만 감추고 상세를 열어두면
+     * 링크가 이미 퍼진 글에 대해서는 숨김이 아무 효과가 없다.
+     * (increment 쿼리 자체가 isActive 조건을 갖고 있어 숨김 글은 조회수도 오르지 않는다.)
+     */
     public CommunityPostDetailResponse getPostById(Long postId) {
         log.info("게시글 상세 조회 - 게시글 ID: {}", postId);
 
@@ -98,7 +107,7 @@ public class CommunityService {
             throw new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId);
         }
 
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findActiveById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
 
         return communityMapper.toPostDetailResponse(post);
@@ -171,8 +180,9 @@ public class CommunityService {
                 throw new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId);
             }
             
-            List<Comment> comments = commentRepository.findByPostIdAndParentCommentIsNull(postId);
-            return communityMapper.toCommentResponseList(comments);
+            // 답글까지 한 번에 읽고 트리는 메모리에서 조립한다 (댓글 수만큼 쿼리가 나가던 경로).
+            List<Comment> comments = commentRepository.findActiveTreeByPostId(postId);
+            return communityMapper.toCommentTree(comments);
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {

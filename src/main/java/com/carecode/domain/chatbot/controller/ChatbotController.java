@@ -1,6 +1,7 @@
 package com.carecode.domain.chatbot.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.annotation.RateLimit;
 import com.carecode.core.controller.BaseController;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.exception.CareServiceException;
@@ -35,8 +36,13 @@ public class ChatbotController extends BaseController {
     private final CurrentUserFacade currentUserFacade;
 
     // 챗봇 메시지 전송
+    //
+    // 이 엔드포인트는 요청 한 건이 곧 Claude API 유료 호출이다. 인증만 통과하면 무제한으로
+    // 부를 수 있으면 계정 하나로 비용을 얼마든지 발생시킬 수 있어, 호출 단위 상한을 둔다.
+    // 사람이 실제로 대화하는 속도(분당 수 건)보다는 넉넉하게 잡았다.
     @PostMapping("/chat")
     @LogExecutionTime
+    @RateLimit(requests = 20, windowSeconds = 60, message = "대화 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
     @Operation(summary = "챗봇 메시지 전송", description = "챗봇과 대화를 시작")
     public ResponseEntity<ChatbotMessageResponse> sendMessage(
             @Parameter(description = "챗봇 요청 정보", required = true) @RequestBody ChatbotMessageRequest request) {

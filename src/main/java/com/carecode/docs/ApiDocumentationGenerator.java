@@ -103,8 +103,22 @@ public class ApiDocumentationGenerator {
                 asciiDoc.append("* **설명**: ").append(info.get("description").asText()).append("\n");
             }
         }
-        asciiDoc.append("* **Base URL**: `http://13.209.36.209:8081`\n");
+        // Base URL 은 문서를 뽑은 서버에서 읽는다. 예전에는 특정 운영 IP 가 박혀 있어서,
+        // 스테이징에서 문서를 생성해도 운영 주소가 찍혔다.
+        asciiDoc.append("* **Base URL**: `").append(resolveBaseUrl(swaggerJson)).append("`\n");
         asciiDoc.append("* **인증**: JWT Bearer Token\n\n");
+    }
+
+    /** springdoc 이 내려주는 servers[0].url 을 쓰고, 없으면 상대 경로로 표기한다. */
+    private String resolveBaseUrl(JsonNode swaggerJson) {
+        JsonNode servers = swaggerJson.get("servers");
+        if (servers != null && servers.isArray() && !servers.isEmpty()) {
+            JsonNode url = servers.get(0).get("url");
+            if (url != null && !url.asText().isBlank()) {
+                return url.asText();
+            }
+        }
+        return "/";
     }
 
     // 인증 정보 생성

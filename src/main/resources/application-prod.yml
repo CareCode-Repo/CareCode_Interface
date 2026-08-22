@@ -14,6 +14,26 @@ spring:
       maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
       minimum-idle: ${DB_POOL_MIN_IDLE:10}
 
+app:
+  rate-limit:
+    # 운영은 Nginx 리버스 프록시 뒤에 있다. 여기서 XFF 를 신뢰하지 않으면 모든 요청이
+    # 프록시 IP 하나로 집계되어, IP 기준 제한(로그인·인증코드 발송)이 전역 카운터처럼 동작한다.
+    # 프록시를 거치지 않고 앱 포트가 직접 노출되면 헤더 위조가 가능해지므로,
+    # 보안그룹/방화벽에서 8082 를 프록시에서만 접근하도록 막아둔 상태여야 한다.
+    trust-forwarded-headers: ${RATE_LIMIT_TRUST_XFF:true}
+
+  auth:
+    email-verification:
+      # 인증 메일에 넣을 링크의 기준 주소. 예전에는 소스에 운영 IP 가 박혀 있었다.
+      base-url: ${EMAIL_VERIFICATION_BASE_URL:}
+
+jwt:
+  refresh-token:
+    # 운영은 반드시 서버 측 세션 저장소를 쓴다.
+    # none 이면 로그아웃이 아무 것도 폐기하지 못하고(무작동), 탈취된 리프레시 토큰을
+    # 만료 전까지 회수할 방법이 없다. 로컬/CI 는 Redis 없이 뜰 수 있도록 기본값을 none 으로 둔다.
+    store: ${JWT_REFRESH_TOKEN_STORE:redis}
+
 # 운영에서는 API 문서를 노출하지 않는다.
 springdoc:
   swagger-ui:

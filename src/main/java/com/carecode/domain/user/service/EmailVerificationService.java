@@ -6,11 +6,17 @@ import com.carecode.domain.user.repository.EmailVerificationTokenRepository;
 import com.carecode.domain.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.RedisTemplate;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import java.time.LocalDateTime;
@@ -19,9 +25,30 @@ import java.util.UUID;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
+
+    private static final String CODE_KEY_PREFIX = "email:verify:";
+    private static final String ATTEMPT_KEY_PREFIX = "email:verify:attempt:";
+    private static final String COOLDOWN_KEY_PREFIX = "email:verify:cooldown:";
+
+    /** 코드 유효 시간. 짧을수록 안전하지만 사용자가 메일함을 여는 시간은 줘야 한다. */
+    private static final Duration CODE_TTL = Duration.ofMinutes(5);
+
+    /** 한 코드에 허용하는 검증 시도 횟수. 6자리 코드를 무제한으로 맞춰볼 수 없게 한다. */
+    private static final int MAX_VERIFY_ATTEMPTS = 5;
+
+    /** 재발송 최소 간격. 같은 주소로 메일을 연타 발송하지 못하게 한다. */
+    private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
+
+    /**
+     * 인증번호는 보안 값이다. Math.random() 은 선형 합동 생성기라 이전 출력에서 다음 값을
+     * 예측할 수 있어 인증 수단으로 쓰면 안 된다.
+     */
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private final EmailVerificationTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
@@ -29,6 +56,15 @@ public class EmailVerificationService {
 
     @Value("${spring.mail.username}")
     private String fromEmail;
+
+    /**
+     * 인증 링크의 기준 주소.
+     *
+     * <p>예전에는 운영 서버 IP 와 포트가 소스에 박혀 있었고, 경로도 실제 매핑에 없는
+     * {@code /users/verify} 였다. 즉 메일의 링크를 눌러도 인증이 되지 않았다.
+     */
+    @Value("${app.auth.email-verification.base-url:http://localhost:8082}")
+    private String verificationBaseUrl;
 
     public void sendVerificationEmail(User user) {
         String token = UUID.randomUUID().toString();
@@ -41,8 +77,8 @@ public class EmailVerificationService {
         tokenRepository.save(verificationToken);
 
         String subject = "[CareCode] 이메일 인증 안내";
-        String text = "아래 링크를 클릭하여 이메일 인증을 완료해 주세요.\n" +
-                "http://13.209.36.209:8081/users/verify?token=" + token;
+        String text = "아래 링크를 클릭하여 이메일 인증을 완료해 주세요.\n"
+                + trimTrailingSlash(verificationBaseUrl) + "/auth/verify?token=" + token;
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(user.getEmail());
@@ -69,9 +105,18 @@ public class EmailVerificationService {
     }
 
     public void sendVerificationCode(String email) {
-        String code = String.valueOf((int)(Math.random() * 900000) + 100000); // 6자리 숫자
-        redisTemplate.opsForValue().set("email:verify:" + email, code, 5, TimeUnit.MINUTES);
-        // HTML 이메일로 code 발송
+        // 재발송 쿨다운. 메일 발송은 비용이 들고, 수신자 입장에서는 그대로 스팸이 된다.
+        String cooldownKey = COOLDOWN_KEY_PREFIX + email;
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(cooldownKey, "1", RESEND_COOLDOWN);
+        if (Boolean.FALSE.equals(acquired)) {
+            throw new IllegalArgumentException("인증번호는 1분에 한 번만 요청할 수 있습니다.");
+        }
+
+        String code = generateCode();
+        redisTemplate.opsForValue().set(CODE_KEY_PREFIX + email, code, CODE_TTL.toMinutes(), TimeUnit.MINUTES);
+        // 새 코드를 냈으니 이전 코드에 쌓인 시도 횟수는 의미가 없다.
+        redisTemplate.delete(ATTEMPT_KEY_PREFIX + email);
+
         String subject = "[CareCode] 이메일 인증번호 안내";
         String htmlContent =
             "<html><body style='font-family: Arial, sans-serif; background: #f9f9f9; padding: 24px;'>" +
@@ -96,17 +141,61 @@ public class EmailVerificationService {
             helper.setText(htmlContent, true); // true = HTML
             mailSender.send(mimeMessage);
         } catch (Exception e) {
+            // 발송이 실패했는데 쿨다운만 남으면 사용자가 1분간 재시도조차 못 한다.
+            redisTemplate.delete(cooldownKey);
             throw new RuntimeException("이메일 발송 중 오류가 발생했습니다.", e);
         }
     }
 
+    /**
+     * 인증번호 검증.
+     *
+     * <p>코드가 6자리 숫자라 후보가 90만 개뿐이다. 시도 횟수를 세지 않으면 유효 시간 5분 안에
+     * 전수 조회가 가능하므로, 코드당 {@value #MAX_VERIFY_ATTEMPTS} 회를 넘기면 코드를 폐기한다.
+     */
     public boolean verifyCode(String email, String code) {
-        String key = "email:verify:" + email;
-        String savedCode = redisTemplate.opsForValue().get(key);
-        if (savedCode != null && savedCode.equals(code)) {
-            redisTemplate.delete(key);
+        String codeKey = CODE_KEY_PREFIX + email;
+        String attemptKey = ATTEMPT_KEY_PREFIX + email;
+
+        String savedCode = redisTemplate.opsForValue().get(codeKey);
+        if (savedCode == null) {
+            return false;
+        }
+
+        Long attempts = redisTemplate.opsForValue().increment(attemptKey);
+        if (attempts != null && attempts == 1L) {
+            // 코드와 수명을 맞춰 둬야 카운터만 남아 다음 코드까지 막는 일이 없다.
+            redisTemplate.expire(attemptKey, CODE_TTL);
+        }
+        if (attempts != null && attempts > MAX_VERIFY_ATTEMPTS) {
+            log.warn("이메일 인증번호 시도 횟수 초과 - 코드를 폐기합니다. email={}", email);
+            redisTemplate.delete(codeKey);
+            redisTemplate.delete(attemptKey);
+            return false;
+        }
+
+        // 코드 길이가 노출되지 않도록 상수 시간 비교를 쓴다.
+        boolean matched = MessageDigest.isEqual(
+                savedCode.getBytes(StandardCharsets.UTF_8),
+                code == null ? new byte[0] : code.getBytes(StandardCharsets.UTF_8));
+
+        if (matched) {
+            redisTemplate.delete(codeKey);
+            redisTemplate.delete(attemptKey);
             return true;
         }
         return false;
     }
-} 
+
+    /** 000000~999999 를 균등하게 뽑는다. 앞자리가 0 이어도 6자리를 유지한다. */
+    private String generateCode() {
+        return String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+    }
+
+    private String trimTrailingSlash(String url) {
+        if (url == null || url.isBlank()) {
+            return "";
+        }
+        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    }
+}
