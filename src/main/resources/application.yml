@@ -164,6 +164,10 @@ app:
   rate-limit:
     # 신뢰할 수 있는 프록시 뒤에 있을 때만 X-Forwarded-For 를 사용한다.
     # 프록시가 없는데 true 로 두면 헤더 위조로 rate limit 을 우회할 수 있다.
+    #
+    # 다만 이 값이 XFF 신뢰를 혼자 결정하지는 않는다. 위 server.forward-headers-strategy
+    # 가 등록하는 ForwardedHeaderFilter 가 getRemoteAddr() 을 이미 헤더 값으로 바꿔치므로,
+    # false 로 둬도 폴백 경로가 같은 값을 돌려준다. (실측: ForwardedClientIpTest, 이슈 #90)
     trust-forwarded-headers: ${RATE_LIMIT_TRUST_XFF:false}
   storage:
     # 다중 인스턴스로 확장할 때는 FileStorageService 의 S3 구현체로 교체한다.
