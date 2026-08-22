@@ -14,11 +14,6 @@ public class UserFacade {
     private final UserService userService;
 
     @Transactional(readOnly = true)
-    public UserDto getUserById(String userId) {
-        return userService.getUserById(userId);
-    }
-
-    @Transactional(readOnly = true)
     public UserDto getUserByEmail(String email) {
         return userService.getUserByEmail(email);
     }
@@ -43,10 +38,7 @@ public class UserFacade {
         userService.deleteUser(userId);
     }
 
-    @Transactional
-    public void reactivateUser(String userId) {
-        userService.reactivateUser(userId);
-    }
+    // 계정 복구는 관리자 전용이라 이 파사드를 거치지 않는다. AdminUserController 참고.
 
     @Transactional(readOnly = true)
     public User getUserEntityByEmail(String email) {

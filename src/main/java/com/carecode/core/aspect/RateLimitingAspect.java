@@ -11,6 +11,9 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -54,11 +57,25 @@ public class RateLimitingAspect {
         return joinPoint.proceed();
     }
 
+    /**
+     * 호출자별 카운터 키를 만든다.
+     *
+     * <p>로그인한 요청은 IP 가 아니라 계정으로 센다. IP 로만 세면 (1) 같은 회사·학교·통신사 NAT
+     * 뒤의 사용자들이 한도를 나눠 쓰게 되고, (2) 챗봇처럼 계정 단위로 비용이 나가는 API 에서
+     * 한 사람이 IP 만 바꿔가며 한도를 초과할 수 있다.
+     *
+     * <p>비로그인 요청(로그인·회원가입·인증코드 발송)은 계정이 없으므로 IP 로 센다.
+     */
     private String generateKey(ProceedingJoinPoint joinPoint, RateLimit rateLimit) {
         String methodName = joinPoint.getSignature().toShortString();
 
         if (!rateLimit.perUser()) {
             return methodName;
+        }
+
+        String principal = currentPrincipal();
+        if (principal != null) {
+            return methodName + ":user:" + principal;
         }
 
         ServletRequestAttributes attributes =
@@ -68,6 +85,18 @@ public class RateLimitingAspect {
         }
 
         HttpServletRequest request = attributes.getRequest();
-        return methodName + ":" + clientIpResolver.resolve(request);
+        return methodName + ":ip:" + clientIpResolver.resolve(request);
+    }
+
+    /** 인증된 호출자의 식별자. 비인증이면 null. */
+    private String currentPrincipal() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            return null;
+        }
+        String name = authentication.getName();
+        return (name == null || name.isBlank() || "anonymousUser".equals(name)) ? null : name;
     }
 }

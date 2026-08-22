@@ -17,7 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
-/** JWT 인증 필터 요청에서 JWT 토큰을 추출하고 검증하여 인증 정보를 설정 */
+/** JWT 인증 필터. 요청에서 JWT 토큰을 추출하고 검증하여 인증 정보를 설정한다. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -28,58 +28,65 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
-        String requestURI = request.getRequestURI();
-        log.debug("JWT 필터 실행: {}", requestURI);
-        
+
+        log.debug("JWT 필터 실행: {}", request.getRequestURI());
+
         try {
-            String token = extractTokenFromRequest(request);
-            log.debug("추출된 토큰: {}", token != null ? "존재함" : "없음");
-            
-            if (StringUtils.hasText(token)) {
-                log.debug("토큰 유효성 검증 시작");
-                // Access Token 만 허용한다. Refresh Token 으로는 API 인증이 되지 않아야 한다.
-                boolean isValid = jwtService.validateAccessToken(token);
-                log.debug("토큰 유효성 검증 결과: {}", isValid);
-
-                if (isValid) {
-                    String userId = jwtService.getUserIdFromToken(token);
-                    String email = jwtService.getEmailFromToken(token);
-                    String role = jwtService.getRoleFromToken(token);
-
-                    if (!StringUtils.hasText(email) || !StringUtils.hasText(role)) {
-                        // role 이 없으면 "ROLE_null" 권한으로 인증되던 문제를 차단한다.
-                        log.warn("JWT 인증 거부: 필수 클레임 누락 (email={}, role={})", email, role);
-                        SecurityContextHolder.clearContext();
-                        filterChain.doFilter(request, response);
-                        return;
-                    }
-
-                    // 인증 정보 생성 - email을 principal로 사용 (일관성을 위해)
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        email,       // principal을 email로 설정 (일관성)
-                        null,        // credentials는 null
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
-                    );
-
-                    // SecurityContext에 인증 정보 설정
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                    log.debug("JWT 인증 성공: userId={}, email={}, role={}", userId, email, role);
-                } else {
-                    log.debug("JWT 토큰이 유효하지 않음");
-                    SecurityContextHolder.clearContext();
-                }
-            } else {
-                log.debug("JWT 토큰이 없음");
-                SecurityContextHolder.clearContext();
-            }
+            authenticateIfTokenPresent(request);
         } catch (Exception e) {
+            // 토큰 처리 중 예상치 못한 예외는 인증 실패로 취급한다.
             log.error("JWT 인증 필터 오류: {}", e.getMessage(), e);
             SecurityContextHolder.clearContext();
         }
-        
+
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Authorization 헤더에 토큰이 있을 때만 인증을 시도한다.
+     *
+     * <p>토큰이 아예 없으면 아무것도 건드리지 않는다. 예전에는 이 경우에도
+     * {@code SecurityContextHolder.clearContext()} 를 호출했다. 운영에서는 JWT 외에
+     * 인증 수단이 없어 결과가 같았지만, 자기가 세우지 않은 컨텍스트를 지우는 필터라
+     * 앞단에서 인증을 넣어주는 경로를 전부 조용히 무력화한다
+     * (테스트의 {@code @WithMockUser}, 나중에 세션·OAuth2 를 병행할 때의 인증 등).
+     * 실제로 접근제어 테스트가 이유 없이 401 로 떨어져 드러난 문제다.
+     */
+    private void authenticateIfTokenPresent(HttpServletRequest request) {
+        String token = extractTokenFromRequest(request);
+
+        if (!StringUtils.hasText(token)) {
+            log.debug("JWT 토큰 없음 - 기존 인증 정보를 유지한 채 통과시킵니다");
+            return;
+        }
+
+        // Access Token 만 허용한다. Refresh Token 으로는 API 인증이 되지 않아야 한다.
+        if (!jwtService.validateAccessToken(token)) {
+            log.debug("JWT 토큰이 유효하지 않음");
+            SecurityContextHolder.clearContext();
+            return;
+        }
+
+        String userId = jwtService.getUserIdFromToken(token);
+        String email = jwtService.getEmailFromToken(token);
+        String role = jwtService.getRoleFromToken(token);
+
+        if (!StringUtils.hasText(email) || !StringUtils.hasText(role)) {
+            // role 이 없으면 "ROLE_null" 권한으로 인증되던 문제를 차단한다.
+            log.warn("JWT 인증 거부: 필수 클레임 누락 (email={}, role={})", email, role);
+            SecurityContextHolder.clearContext();
+            return;
+        }
+
+        // principal 은 email 로 통일한다 (CurrentUserFacade 가 email 로 사용자를 찾는다).
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                email,
+                null,
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        log.debug("JWT 인증 성공: userId={}, email={}, role={}", userId, email, role);
     }
 
     // 요청에서 JWT 토큰 추출
@@ -87,19 +94,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String bearerToken = request.getHeader("Authorization");
 
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            String token = bearerToken.substring(7);
-            return token;
+            return bearerToken.substring(7);
         }
-        
+
         return null;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
-        
-        // 다음 경로들은 JWT 인증을 건너뜀. 주의: /admin 은 여기서 제외하면 안 된다. 세션 기반 어드민 체인(SecurityConfig 참고)이 별도로 처리하며
-        boolean shouldNotFilter = path.startsWith("/swagger-ui") ||
+
+        // 토큰을 볼 필요가 없는 공개 경로. 여기서 빠져도 인가는 SecurityConfig 가 담당한다.
+        return path.startsWith("/swagger-ui") ||
                path.startsWith("/api-docs") ||
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/actuator") ||
@@ -113,7 +119,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/oauth2") ||
                path.startsWith("/login/oauth2") ||
                path.equals("/kakao-callback.html");
-
-        return shouldNotFilter;
     }
-} 
+}

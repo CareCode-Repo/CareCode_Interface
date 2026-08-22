@@ -14,6 +14,37 @@ spring:
       maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
       minimum-idle: ${DB_POOL_MIN_IDLE:10}
 
+app:
+  rate-limit:
+    # 명시적으로 켜 둔다. 다만 이 값이 XFF 신뢰 여부를 혼자 결정하지는 않는다.
+    #
+    # 실질적인 스위치는 application.yml 의 server.forward-headers-strategy: framework 다.
+    # 그 설정이 등록하는 ForwardedHeaderFilter 가 요청을 감싸 getRemoteAddr() 자체를
+    # X-Forwarded-For 의 클라이언트 주소로 바꿔친다. 그래서 이 값을 false 로 둬도
+    # 폴백인 getRemoteAddr() 이 이미 헤더에서 온 값이라 결과가 같다.
+    # (실측: ForwardedClientIpTest)
+    #
+    # 두 설정 모두 "앱 포트에 리버스 프록시만 접근할 수 있다" 는 전제 위에서만 안전하다.
+    # 배포가 -p 8082:8082 로 모든 인터페이스에 바인딩하므로, 보안그룹/방화벽이 유일한
+    # 방어선이다. 확인 항목은 이슈 #90 참고.
+    trust-forwarded-headers: ${RATE_LIMIT_TRUST_XFF:true}
+
+  auth:
+    email-verification:
+      # 인증 메일 링크의 기준 주소. 기본값을 두지 않는다.
+      #
+      # 비워 두면 링크가 "/auth/verify?token=..." 라는 상대 경로로 나가 메일에서 클릭할 수 없고,
+      # 사용자는 이유도 모른 채 이메일 인증에 실패한다. 그런 침묵보다 기동 실패가 낫다.
+      # DB_PASSWORD, JWT_SECRET 과 같은 취급이다.
+      base-url: ${EMAIL_VERIFICATION_BASE_URL}
+
+jwt:
+  refresh-token:
+    # 운영은 반드시 서버 측 세션 저장소를 쓴다.
+    # none 이면 로그아웃이 아무 것도 폐기하지 못하고(무작동), 탈취된 리프레시 토큰을
+    # 만료 전까지 회수할 방법이 없다. 로컬/CI 는 Redis 없이 뜰 수 있도록 기본값을 none 으로 둔다.
+    store: ${JWT_REFRESH_TOKEN_STORE:redis}
+
 # 운영에서는 API 문서를 노출하지 않는다.
 springdoc:
   swagger-ui:

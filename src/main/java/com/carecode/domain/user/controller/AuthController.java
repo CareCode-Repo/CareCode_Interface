@@ -82,6 +82,7 @@ public class AuthController extends BaseController {
     // 회원가입
     @PostMapping("/register")
     @LogExecutionTime
+    @RateLimit(requests = 5, windowSeconds = 3600, message = "가입 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
     @Operation(summary = "회원가입", description = "새로운 사용자 등록")
     public ResponseEntity<TokenDto> register(@Parameter(description = "회원가입 정보", required = true) @Valid @RequestBody UserDto request) {
         UserDto createdUser = userService.createUser(request);
@@ -120,7 +121,11 @@ public class AuthController extends BaseController {
         String refreshToken = refreshTokenCookieFactory.read(httpRequest)
                 .orElseGet(() -> request != null ? request.getRefreshToken() : null);
 
-        if (refreshToken == null || refreshToken.isBlank() || !jwtService.validateToken(refreshToken)) {
+        // validateToken 이 아니라 validateRefreshToken 이어야 한다.
+        // 전자는 서명·만료·issuer 만 보므로 Access Token 도 통과한다. 서버 세션 저장소를 쓰지 않는
+        // 기본 설정(jwt.refresh-token.store=none)에서는 뒤의 isRegistered 도 항상 true 라,
+        // 탈취한 1시간짜리 Access Token 을 30일짜리 Refresh Token 으로 바꿀 수 있었다.
+        if (refreshToken == null || refreshToken.isBlank() || !jwtService.validateRefreshToken(refreshToken)) {
             return unauthorizedRefresh("유효하지 않은 Refresh Token입니다.");
         }
 
@@ -192,8 +197,11 @@ public class AuthController extends BaseController {
     }
 
     // 인증 코드 발송
+    // 메일 발송은 비용이 들고 수신자에게는 스팸이 된다. 서비스 계층의 주소별 쿨다운(60초)과 별개로,
+    // 주소만 바꿔가며 대량 발송하는 것을 막기 위해 호출자 단위 상한을 둔다.
     @PostMapping("/send-code")
     @LogExecutionTime
+    @RateLimit(requests = 5, windowSeconds = 600, message = "인증 코드 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
     @Operation(summary = "이메일 인증 코드 발송")
     public ResponseEntity<ApiSuccess> sendVerificationCode(@RequestParam String email) {
         emailVerificationService.sendVerificationCode(email);
@@ -201,8 +209,11 @@ public class AuthController extends BaseController {
     }
 
     // 인증 코드 검증
+    // 6자리 숫자 코드라 후보가 90만 개뿐이다. 코드당 시도 제한(EmailVerificationService)에 더해
+    // 호출 자체를 제한해 다른 주소로 갈아타며 시도하는 것도 막는다.
     @PostMapping("/verify-code")
     @LogExecutionTime
+    @RateLimit(requests = 10, windowSeconds = 600, message = "인증 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.")
     @Operation(summary = "이메일 인증 코드 검증", description = "발송된 인증 코드를 검증")
     public ResponseEntity<ApiSuccess> verifyCode(@RequestParam String email, @RequestParam String code) {
         boolean ok = emailVerificationService.verifyCode(email, code);

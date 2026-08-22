@@ -14,6 +14,7 @@ import com.carecode.domain.user.entity.Gender;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,9 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 @Transactional(readOnly = true)
 public class UserService {
+
+    /** 자가 가입으로 만들어질 수 있는 유일한 역할. 그 이상은 관리자만 부여한다. */
+    private static final UserRole SELF_SIGNUP_ROLE = UserRole.PARENT;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -233,41 +237,45 @@ public class UserService {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다: " + userDto.getEmail());
         }
 
-        // OAuth 사용자와 일반 사용자 구분
-        String encodedPassword = null;
-        if (userDto.getProvider() == null || userDto.getProvider().isEmpty()) {
-            // 일반 회원가입 사용자 - 비밀번호 필수
-            if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty()) {
-                throw new IllegalArgumentException("일반 회원가입 사용자는 비밀번호가 필수입니다.");
-            }
-            encodedPassword = passwordEncoder.encode(userDto.getPassword());
+        // 이메일 회원가입이므로 비밀번호는 항상 필수다.
+        if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("비밀번호는 필수입니다.");
         }
-        // OAuth 사용자는 비밀번호가 null (카카오에서 인증)
-        
-        // role이 USER인 경우 PARENT로 변경
-        String role = userDto.getRole();
-        if ("USER".equals(role)) {
-            role = "PARENT";
+        String encodedPassword = passwordEncoder.encode(userDto.getPassword());
+
+        // 클라이언트가 보낸 role 은 신뢰하지 않는다.
+        //
+        // 예전에는 요청 본문의 role 을 그대로 썼다. 이 엔드포인트(POST /auth/register)는
+        // permitAll 이므로, 로그인조차 없이 {"role":"ADMIN"} 으로 가입하면 그 자리에서
+        // 관리자가 됐다. 가입은 언제나 일반 사용자로 끝나야 하고, 승격은 관리자만 할 수 있는
+        // 별도 경로(PUT /api/admin/users/{id}/role)로만 가능해야 한다.
+        if (userDto.getRole() != null && !SELF_SIGNUP_ROLE.name().equals(userDto.getRole())) {
+            log.warn("회원가입 요청의 role 을 무시합니다 - 요청값={}, 적용값={}",
+                    userDto.getRole(), SELF_SIGNUP_ROLE);
         }
-        
+
+        // provider/providerId 도 마찬가지다. 소셜 가입은 AuthServiceImpl 의 별도 경로가 처리하며
+        // 그쪽에서 provider 를 직접 지정한다. 여기서 클라이언트가 provider 를 붙일 수 있게 두면
+        // 비밀번호 없이(로그인 불가하지만) 임의 이메일·임의 providerId 로 계정을 미리 만들어 둘 수 있고,
+        // 이메일 인증도 건너뛴 것으로 표시됐다.
         User user = User.builder()
                 .email(userDto.getEmail())
-                .password(encodedPassword) // OAuth 사용자는 null
+                .password(encodedPassword)
                 .name(userDto.getName())
                 .phoneNumber(userDto.getPhoneNumber())
                 .birthDate(userDto.getBirthDate())
                 .gender(userDto.getGender() != null ? Gender.valueOf(userDto.getGender()) : null)
                 .address(userDto.getAddress())
                 .profileImageUrl(userDto.getProfileImageUrl())
-                .role(UserRole.valueOf(role))
-                .provider(userDto.getProvider()) // OAuth 제공자 정보
-                .providerId(userDto.getProviderId()) // OAuth 제공자 ID
+                .role(SELF_SIGNUP_ROLE)
+                .provider(null)
+                .providerId(null)
                 .isActive(true)
-                .emailVerified(userDto.getProvider() != null) // OAuth 사용자는 이메일 인증 완료로 간주
+                .emailVerified(false) // 인증 메일을 통과해야 true 가 된다
                 .build();
-        
+
         User savedUser = userRepository.save(user);
-        eventLogger.log(EventType.SIGNED_UP, savedUser.getId(), userDto.getProvider());
+        eventLogger.log(EventType.SIGNED_UP, savedUser.getId(), null);
         return convertToDto(savedUser);
     }
 
@@ -308,9 +316,9 @@ public class UserService {
         }
     }
 
-    // 사용자 활성화 (String ID)
+    // 사용자 활성화 (String ID) — 남의 계정 상태를 바꾸는 동작이라 관리자만 호출할 수 있다.
     @Transactional
-    @RequireAuthentication
+    @PreAuthorize("hasRole('ADMIN')")
     public void activateUser(String userId) {
         log.info("사용자 활성화: 사용자ID={}", userId);
 
@@ -326,18 +334,35 @@ public class UserService {
         }
     }
 
-    // 사용자 역할 변경
+    /**
+     * 사용자 역할 변경.
+     *
+     * <p>권한 상승의 유일한 경로라 컨트롤러 매핑에만 의존하지 않는다. 호출 경로가 어디로 바뀌든
+     * ADMIN 이 아니면 여기서 막힌다. (예전에는 이 메서드가 {@code PUT /users/{id}/role} 로
+     * 노출돼 있었고 그 경로의 제약이 "로그인만 하면 됨" 이어서, 아무 회원이나 자신을
+     * ADMIN 으로 올릴 수 있었다.)
+     *
+     * <p>알 수 없는 역할 문자열이 오면 {@code UserRole.valueOf} 가 IllegalArgumentException 을
+     * 던지고, 전역 핸들러가 400 으로 변환한다.
+     */
     @Transactional
-    @RequireAuthentication
+    @PreAuthorize("hasRole('ADMIN')")
     public void updateUserRole(Long userId, String newRole) {
         log.info("사용자 역할 변경: 사용자ID={}, 새 역할={}", userId, newRole);
-        
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-        
-        user.setRole(UserRole.valueOf(newRole));
+
+        UserRole role;
+        try {
+            role = UserRole.valueOf(newRole.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("지원하지 않는 역할입니다: " + newRole);
+        }
+
+        user.setRole(role);
         user.setUpdatedAt(LocalDateTime.now());
-        
+
         userRepository.save(user);
     }
 
@@ -512,8 +537,16 @@ public class UserService {
         userRepository.save(user);
     }
 
-    // 사용자 계정 복구 (재활성화)
+    /**
+     * 탈퇴 계정 복구. 관리자 전용이다.
+     *
+     * <p>탈퇴한 본인은 로그인 자체가 되지 않으므로(비활성 계정은 인증에서 걸린다)
+     * "본인이 스스로 복구한다"는 흐름은 성립하지 않는다. 그런데도 이 기능이
+     * 로그인만 하면 되는 경로에 열려 있어, 아무 회원이나 남이 탈퇴시킨 계정을
+     * 되살릴 수 있었다.
+     */
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public void reactivateUser(String userId) {
         User user;
         
