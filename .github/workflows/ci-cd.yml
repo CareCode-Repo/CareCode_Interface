@@ -289,12 +289,21 @@ jobs:
   # Deploy to Production (Blue/Green) Job
   # ===========================================
   deploy-production:
-    name: Deploy to Production (Blue/Green)
+    name: Deploy to Production
     runs-on: ubuntu-latest
     needs: build-docker
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
     environment: production
 
+    # 예전에는 Blue/Green 이었다. 두 색을 바꿔치는 마지막 단계가 라우터 HTTP API
+    # (PRODUCTION_ROUTER_STATUS_URL / _SWITCH_URL) 를 호출했는데, 그 API 를 제공하는
+    # 구현이 어디에도 없다. 별도 저장소의 블루/그린 도구(CareCode_Nohub_Deploy)는
+    # paramiko 로 서버에 붙어 nginx conf 를 고치는 CLI 이지 HTTP 서버가 아니다.
+    # 그래서 시크릿을 다 채워도 전환 단계에서 반드시 멈췄다.
+    #
+    # 진짜 무중단은 nginx 를 제어할 수 있어야 성립한다. 그때까지는 "새 이미지를 예비
+    # 포트에서 먼저 띄워 확인하고, 통과할 때만 교체" 로 간다. 교체 순간에 짧은 순단이
+    # 있지만, 깨진 이미지가 운영에 올라가는 일은 없다.
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -307,14 +316,9 @@ jobs:
         DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
         SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
         HEALTH_URL: ${{ secrets.PRODUCTION_HEALTH_URL }}
-        ROUTER_STATUS_URL: ${{ secrets.PRODUCTION_ROUTER_STATUS_URL }}
-        ROUTER_SWITCH_URL: ${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}
-        ROUTER_TOKEN: ${{ secrets.PRODUCTION_ROUTER_TOKEN }}
-        TARGET_HEALTH_URL_TEMPLATE: ${{ secrets.PRODUCTION_TARGET_HEALTH_URL_TEMPLATE }}
       run: |
         missing=""
-        for name in DEPLOY_HOST DEPLOY_USER SSH_KEY HEALTH_URL \
-                    ROUTER_STATUS_URL ROUTER_SWITCH_URL ROUTER_TOKEN TARGET_HEALTH_URL_TEMPLATE; do
+        for name in DEPLOY_HOST DEPLOY_USER SSH_KEY HEALTH_URL; do
           if [ -z "${!name}" ]; then missing="$missing PRODUCTION_$name"; fi
         done
         if [ -n "$missing" ]; then
@@ -345,91 +349,104 @@ jobs:
         fi
         chmod 600 ~/.ssh/known_hosts
 
-    # blue/green 두 컨테이너는 서로 다른 포트를 점유해야 한다.
-    # 둘 다 8082 를 쓰면 동시에 뜰 수 없어 무중단 전환 자체가 성립하지 않는다.
-    - name: Determine deployment strategy
-      id: strategy
+    # 토큰은 stdin 으로 흘려보낸다. ssh 인자로 넘기면 서버의 프로세스 목록에 그대로 보인다.
+    - name: Log in to registry on the server
       env:
-        ROUTER_STATUS_URL: ${{ secrets.PRODUCTION_ROUTER_STATUS_URL }}
+        DEPLOY_HOST: ${{ secrets.PRODUCTION_DEPLOY_HOST }}
+        DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
+        GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        CURRENT_ENV=$(curl -fsS "$ROUTER_STATUS_URL" || echo "blue")
-        if [ "$CURRENT_ENV" = "blue" ]; then
-          echo "target-env=green"  >> $GITHUB_OUTPUT
-          echo "current-env=blue"  >> $GITHUB_OUTPUT
-          echo "target-port=8083"  >> $GITHUB_OUTPUT
-        else
-          echo "target-env=blue"   >> $GITHUB_OUTPUT
-          echo "current-env=green" >> $GITHUB_OUTPUT
-          echo "target-port=8082"  >> $GITHUB_OUTPUT
-        fi
-        echo "현재 $CURRENT_ENV → 대상 $([ "$CURRENT_ENV" = "blue" ] && echo green || echo blue)"
+        printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+          "docker login ${{ env.REGISTRY }} -u '${{ github.actor }}' --password-stdin"
 
-    - name: Deploy to target environment
+    - name: Deploy
       env:
         DEPLOY_HOST: ${{ secrets.PRODUCTION_DEPLOY_HOST }}
         DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
         IMAGE: ${{ needs.build-docker.outputs.image-tag }}
-        TARGET: ${{ steps.strategy.outputs.target-env }}
-        PORT: ${{ steps.strategy.outputs.target-port }}
       run: |
-        ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
-          "docker pull $IMAGE \
-           && (docker stop carecode-$TARGET || true) \
-           && (docker rm carecode-$TARGET || true) \
-           && docker run -d --name carecode-$TARGET -p $PORT:8082 --env-file /opt/carecode/.env $IMAGE"
+        ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" "IMAGE='$IMAGE' bash -s" <<'REMOTE'
+        set -euo pipefail
 
-    # 전환 전에는 아직 라우팅되지 않는 대기(target) 인스턴스를 직접 확인해야 한다.
-    # 공용 헬스 URL 을 보면 구버전이 UP 이라 항상 통과해버린다.
-    - name: Wait for target instance to be ready
-      env:
-        TARGET_HEALTH_URL_TEMPLATE: ${{ secrets.PRODUCTION_TARGET_HEALTH_URL_TEMPLATE }}
-        PORT: ${{ steps.strategy.outputs.target-port }}
-      run: |
-        TARGET_HEALTH_URL=$(echo "$TARGET_HEALTH_URL_TEMPLATE" | sed "s/{port}/$PORT/")
-        for i in {1..20}; do
-          if curl -fsS "$TARGET_HEALTH_URL/actuator/health" | grep -q '"status":"UP"'; then
-            echo "Production target ($PORT) is healthy"
+        APP=carecode
+        PROBE=carecode-probe
+        PORT=8082
+        # 예전 blue/green 이 8083 을 쓰므로 검증 포트는 겹치지 않는 곳으로 잡는다.
+        PROBE_PORT=18082
+        ENV_FILE=/opt/carecode/.env
+
+        if [ ! -f "$ENV_FILE" ]; then
+          echo "$ENV_FILE 이 없습니다."
+          exit 1
+        fi
+
+        echo "===== pull $IMAGE ====="
+        docker pull "$IMAGE"
+
+        # 이전 실행이 남긴 검증 컨테이너 정리
+        docker rm -f "$PROBE" >/dev/null 2>&1 || true
+
+        # 1) 예비 포트에서 먼저 띄워 본다. 살아 있는 컨테이너는 아직 그대로다.
+        echo "===== 새 이미지 검증 (:$PROBE_PORT) ====="
+        docker run -d --name "$PROBE" -p "127.0.0.1:$PROBE_PORT:8082" --env-file "$ENV_FILE" "$IMAGE"
+
+        ok=0
+        for _ in $(seq 1 40); do
+          if curl -fsS "http://127.0.0.1:$PROBE_PORT/actuator/health" 2>/dev/null | grep -q '"status":"UP"'; then
+            ok=1; break
+          fi
+          sleep 5
+        done
+
+        if [ "$ok" -ne 1 ]; then
+          echo "새 이미지가 기동하지 못했습니다. 운영 컨테이너는 건드리지 않습니다."
+          echo "----- 컨테이너 로그 (마지막 100줄) -----"
+          docker logs --tail 100 "$PROBE" 2>&1 || true
+          docker rm -f "$PROBE" >/dev/null 2>&1 || true
+          exit 1
+        fi
+
+        echo "검증 통과. 교체합니다."
+        docker rm -f "$PROBE" >/dev/null 2>&1 || true
+
+        # 2) 교체. 여기서부터 짧은 순단이 있다.
+        #    예전 워크플로가 만들던 blue/green 이름도 함께 정리한다. 남아 있으면 포트를 잡고 있다.
+        for name in "$APP" carecode-blue carecode-green; do
+          docker rm -f "$name" >/dev/null 2>&1 || true
+        done
+
+        docker run -d --name "$APP" --restart unless-stopped \
+          -p "$PORT:8082" --env-file "$ENV_FILE" "$IMAGE"
+
+        for _ in $(seq 1 40); do
+          if curl -fsS "http://127.0.0.1:$PORT/actuator/health" 2>/dev/null | grep -q '"status":"UP"'; then
+            echo "===== 교체 완료 ====="
+            docker image prune -f >/dev/null 2>&1 || true
             exit 0
           fi
           sleep 5
         done
-        echo "::error::대상 인스턴스($PORT)가 뜨지 않았습니다. 트래픽은 전환하지 않습니다."
+
+        echo "교체 후 기동에 실패했습니다."
+        echo "----- 컨테이너 로그 (마지막 100줄) -----"
+        docker logs --tail 100 "$APP" 2>&1 || true
         exit 1
+        REMOTE
 
-    # id 를 붙이는 이유는 아래 롤백이 "전환이 실제로 일어났을 때만" 돌게 하기 위해서다.
-    - name: Switch traffic to new environment
-      id: switch
-      env:
-        ROUTER_SWITCH_URL: ${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}
-        ROUTER_TOKEN: ${{ secrets.PRODUCTION_ROUTER_TOKEN }}
-        TARGET: ${{ steps.strategy.outputs.target-env }}
-      run: |
-        curl -fsS -X POST "$ROUTER_SWITCH_URL" \
-          -H "Authorization: Bearer $ROUTER_TOKEN" \
-          -H "Content-Type: application/json" \
-          -d "$(jq -n --arg t "$TARGET" '{target:$t}')"
-
-    - name: Verify deployment
+    - name: Verify from outside
       env:
         HEALTH_URL: ${{ secrets.PRODUCTION_HEALTH_URL }}
       run: |
-        curl -fsS "$HEALTH_URL/actuator/health" | grep -q '"status":"UP"'
-
-    # 전환이 성공한 뒤에 실패했을 때만 되돌린다.
-    # 예전에는 조건이 failure() 뿐이라, 배포·헬스체크 단계에서 죽어 트래픽이 움직인 적도 없는데
-    # 롤백을 시도했고, 그 스텝마저 실패해 로그에 실패가 두 번 찍혔다.
-    - name: Rollback if needed
-      if: failure() && steps.switch.outcome == 'success'
-      env:
-        ROUTER_SWITCH_URL: ${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}
-        ROUTER_TOKEN: ${{ secrets.PRODUCTION_ROUTER_TOKEN }}
-        CURRENT: ${{ steps.strategy.outputs.current-env }}
-      run: |
-        echo "::warning::전환 후 검증에 실패했습니다. $CURRENT 로 되돌립니다."
-        curl -fsS -X POST "$ROUTER_SWITCH_URL" \
-          -H "Authorization: Bearer $ROUTER_TOKEN" \
-          -H "Content-Type: application/json" \
-          -d "$(jq -n --arg t "$CURRENT" '{target:$t}')"
+        # 서버 안에서는 UP 인데 밖에서 안 보이면 프록시/보안그룹 문제다. 구분해서 알려준다.
+        for _ in $(seq 1 12); do
+          if curl -fsS "$HEALTH_URL/actuator/health" | grep -q '"status":"UP"'; then
+            echo "외부 확인 완료"
+            exit 0
+          fi
+          sleep 5
+        done
+        echo "::error::컨테이너는 떴지만 외부 헬스 URL 로 보이지 않습니다. 리버스 프록시 설정을 확인하세요."
+        exit 1
 
     # 예전에는 echo 만 있어서 배포가 실패해도 아무에게도 닿지 않았다.
     # OPS_SLACK_WEBHOOK_URL 이 없으면 잡 요약에만 남긴다.
@@ -438,9 +455,8 @@ jobs:
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.OPS_SLACK_WEBHOOK_URL }}
         STATUS: ${{ job.status }}
-        TARGET: ${{ steps.strategy.outputs.target-env }}
       run: |
-        line="[production] 배포 $STATUS - ${{ github.repository }}@${GITHUB_SHA:0:7} → ${TARGET:-?} (${{ github.run_id }})"
+        line="[production] 배포 $STATUS - ${{ github.repository }}@${GITHUB_SHA:0:7} (${{ github.run_id }})"
         echo "$line" >> "$GITHUB_STEP_SUMMARY"
         if [ "$STATUS" != "success" ]; then echo "::error::$line"; fi
         if [ -n "$SLACK_WEBHOOK_URL" ]; then
