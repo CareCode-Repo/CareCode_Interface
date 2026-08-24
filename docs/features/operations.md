@@ -204,6 +204,40 @@ Blue/Green 이라는 사실이 알림 설계에 직접 영향을 줍니다.
 **중복 발송**이 생깁니다. 이 때문에 [마감 임박 알림](notification-and-retention.md#중복-방지--bluegreen-에서-드러난-결함)에
 유니크 제약 기반 발송 이력을 넣었습니다.
 
+### 필요한 GitHub 시크릿
+
+배포 잡은 시작하자마자 아래를 확인하고, 비어 있으면 **이름을 찍어서** 실패합니다.
+예전에는 `test -n "..."` 하나뿐이라 무엇이 없는지 로그에 남지 않았습니다.
+
+| 시크릿 | 용도 |
+|--------|------|
+| `PRODUCTION_DEPLOY_HOST` / `PRODUCTION_DEPLOY_USER` | SSH 접속 대상 |
+| `PRODUCTION_SSH_KEY` | SSH 개인키. **이 스텝이 없어서 시크릿을 채워도 인증에서 막혔습니다** |
+| `PRODUCTION_HEALTH_URL` | 전환 후 최종 확인 |
+| `PRODUCTION_TARGET_HEALTH_URL_TEMPLATE` | 전환 **전** 대기 인스턴스 확인. `{port}` 를 포함해야 합니다 |
+| `PRODUCTION_ROUTER_STATUS_URL` | 현재 활성 색(blue/green) 조회 |
+| `PRODUCTION_ROUTER_SWITCH_URL` / `PRODUCTION_ROUTER_TOKEN` | 트래픽 전환 |
+
+스테이징은 `STAGING_` 접두사로 `DEPLOY_HOST` / `DEPLOY_USER` / `SSH_KEY` / `HEALTH_URL` 네 개입니다.
+
+선택 시크릿:
+
+| 시크릿 | 없을 때 |
+|--------|---------|
+| `PRODUCTION_SSH_KNOWN_HOSTS` / `STAGING_SSH_KNOWN_HOSTS` | `ssh-keyscan` 으로 대체하고 경고를 남깁니다. 최초 접속을 그냥 믿는 건 같으므로, 중간자 공격을 막으려면 호스트키를 시크릿으로 고정하세요 |
+| `OPS_SLACK_WEBHOOK_URL` | 잡 요약에만 남깁니다. 있으면 성공·실패를 슬랙으로 보냅니다 |
+
+서버의 `/opt/carecode/.env` 에는 `EMAIL_VERIFICATION_BASE_URL` 이 있어야 합니다.
+없으면 기동 단계에서 실패합니다(의도된 fail-fast). 자세한 내용은 이슈 #90.
+
+### 롤백이 도는 조건
+
+`Switch traffic` 이 성공한 뒤에 실패했을 때만 되돌립니다.
+
+예전에는 조건이 `failure()` 뿐이어서, 배포나 헬스체크 단계에서 죽어 **트래픽이 움직인 적도 없는데**
+롤백을 시도했고 그 스텝마저 실패해 로그에 실패가 두 번 찍혔습니다.
+지금은 `steps.switch.outcome == 'success'` 를 함께 봅니다.
+
 ## 미해결
 
 | 항목 | 내용 | 이슈 |

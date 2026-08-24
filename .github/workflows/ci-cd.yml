@@ -19,8 +19,8 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  STAGING_HEALTH_URL: ${{ secrets.STAGING_HEALTH_URL }}
-  PRODUCTION_HEALTH_URL: ${{ secrets.PRODUCTION_HEALTH_URL }}
+  # 헬스 URL 은 전역 env 에서 뺐다. 배포 잡의 해당 스텝만 시크릿을 env 로 받는다.
+  # 전역에 두면 배포와 무관한 test/scan 잡 환경에까지 값이 실린다.
 
 permissions:
   contents: read
@@ -199,35 +199,91 @@ jobs:
     needs: build-docker
     if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
     environment: staging
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
+    # 어떤 시크릿이 비어 있는지 먼저 이름으로 알려준다.
+    # 예전에는 `test -n "..."` 하나로 끝나서, 실패해도 무엇이 없는지 로그에 남지 않았다.
+    - name: Check required secrets
+      env:
+        DEPLOY_HOST: ${{ secrets.STAGING_DEPLOY_HOST }}
+        DEPLOY_USER: ${{ secrets.STAGING_DEPLOY_USER }}
+        SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+        HEALTH_URL: ${{ secrets.STAGING_HEALTH_URL }}
+      run: |
+        missing=""
+        for name in DEPLOY_HOST DEPLOY_USER SSH_KEY HEALTH_URL; do
+          if [ -z "${!name}" ]; then missing="$missing STAGING_$name"; fi
+        done
+        if [ -n "$missing" ]; then
+          echo "::error::스테이징 배포에 필요한 시크릿이 없습니다:$missing"
+          exit 1
+        fi
+        echo "필요한 시크릿이 모두 설정되어 있습니다."
+
+    # SSH 개인키를 올리는 스텝이 아예 없어서, 시크릿을 채워도 인증 단계에서 막혔다.
+    # 키는 env 로 넘긴다. run 본문에 ${{ secrets.* }} 를 그대로 쓰면 값이 스크립트 텍스트에 박힌다.
+    - name: Set up SSH
+      env:
+        SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+        KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
+        DEPLOY_HOST: ${{ secrets.STAGING_DEPLOY_HOST }}
+      run: |
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh
+        printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        if [ -n "$KNOWN_HOSTS" ]; then
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+        else
+          # StrictHostKeyChecking=no 를 쓰던 자리다. keyscan 도 최초 접속을 그냥 믿는 건 같지만,
+          # 최소한 이번 실행 안에서는 호스트키가 고정된다. 중간자 공격까지 막으려면
+          # STAGING_SSH_KNOWN_HOSTS 에 호스트키를 넣어 고정해야 한다.
+          echo "::warning::STAGING_SSH_KNOWN_HOSTS 가 없어 ssh-keyscan 으로 대체합니다."
+          ssh-keyscan -H "$DEPLOY_HOST" > ~/.ssh/known_hosts 2>/dev/null
+        fi
+        chmod 600 ~/.ssh/known_hosts
+
     - name: Deploy to staging environment
+      env:
+        DEPLOY_HOST: ${{ secrets.STAGING_DEPLOY_HOST }}
+        DEPLOY_USER: ${{ secrets.STAGING_DEPLOY_USER }}
+        IMAGE: ${{ needs.build-docker.outputs.image-tag }}
       run: |
-        test -n "${{ secrets.STAGING_DEPLOY_HOST }}"
-        ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_DEPLOY_USER }}@${{ secrets.STAGING_DEPLOY_HOST }} \
-          "docker pull ${{ needs.build-docker.outputs.image-tag }} && docker stop carecode-staging || true && docker rm carecode-staging || true && docker run -d --name carecode-staging -p 8082:8082 --env-file /opt/carecode/.env ${{ needs.build-docker.outputs.image-tag }}"
-        
+        ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+          "docker pull $IMAGE && (docker stop carecode-staging || true) && (docker rm carecode-staging || true) && docker run -d --name carecode-staging -p 8082:8082 --env-file /opt/carecode/.env $IMAGE"
+
     - name: Run health check
+      env:
+        HEALTH_URL: ${{ secrets.STAGING_HEALTH_URL }}
       run: |
-        test -n "$STAGING_HEALTH_URL"
         for i in {1..20}; do
-          if curl -fsS "$STAGING_HEALTH_URL/actuator/health" | grep -q '"status":"UP"'; then
+          if curl -fsS "$HEALTH_URL/actuator/health" | grep -q '"status":"UP"'; then
             echo "Staging health check passed"
             exit 0
           fi
           sleep 5
         done
-        echo "Staging health check failed"
+        echo "::error::스테이징 헬스체크 실패 - 컨테이너 로그를 확인하세요"
         exit 1
-        
+
+    # 예전에는 echo 만 있어서 배포가 실패해도 아무에게도 닿지 않았다.
+    # OPS_SLACK_WEBHOOK_URL 이 없으면 잡 요약에만 남긴다.
     - name: Notify deployment status
       if: always()
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.OPS_SLACK_WEBHOOK_URL }}
+        STATUS: ${{ job.status }}
       run: |
-        echo "Staging deployment completed"
-        # 슬랙, 이메일 등 알림 추가
+        line="[staging] 배포 $STATUS - ${{ github.repository }}@${GITHUB_SHA:0:7} (${{ github.run_id }})"
+        echo "$line" >> "$GITHUB_STEP_SUMMARY"
+        if [ "$STATUS" != "success" ]; then echo "::error::$line"; fi
+        if [ -n "$SLACK_WEBHOOK_URL" ]; then
+          curl -fsS -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg t "$line" '{text:$t}')" || echo "::warning::슬랙 알림 전송 실패"
+        fi
 
   # ===========================================
   # Deploy to Production (Blue/Green) Job
@@ -238,17 +294,65 @@ jobs:
     needs: build-docker
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
     environment: production
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
+    # 어떤 시크릿이 비어 있는지 먼저 이름으로 알려준다.
+    # 예전에는 각 스텝의 `test -n "..."` 하나로 끝나서, 실패해도 무엇이 없는지 로그에 남지 않았다.
+    - name: Check required secrets
+      env:
+        DEPLOY_HOST: ${{ secrets.PRODUCTION_DEPLOY_HOST }}
+        DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
+        SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+        HEALTH_URL: ${{ secrets.PRODUCTION_HEALTH_URL }}
+        ROUTER_STATUS_URL: ${{ secrets.PRODUCTION_ROUTER_STATUS_URL }}
+        ROUTER_SWITCH_URL: ${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}
+        ROUTER_TOKEN: ${{ secrets.PRODUCTION_ROUTER_TOKEN }}
+        TARGET_HEALTH_URL_TEMPLATE: ${{ secrets.PRODUCTION_TARGET_HEALTH_URL_TEMPLATE }}
+      run: |
+        missing=""
+        for name in DEPLOY_HOST DEPLOY_USER SSH_KEY HEALTH_URL \
+                    ROUTER_STATUS_URL ROUTER_SWITCH_URL ROUTER_TOKEN TARGET_HEALTH_URL_TEMPLATE; do
+          if [ -z "${!name}" ]; then missing="$missing PRODUCTION_$name"; fi
+        done
+        if [ -n "$missing" ]; then
+          echo "::error::운영 배포에 필요한 시크릿이 없습니다:$missing"
+          exit 1
+        fi
+        echo "필요한 시크릿이 모두 설정되어 있습니다."
+
+    # SSH 개인키를 올리는 스텝이 아예 없어서, 시크릿을 채워도 인증 단계에서 막혔다.
+    # 키는 env 로 넘긴다. run 본문에 ${{ secrets.* }} 를 그대로 쓰면 값이 스크립트 텍스트에 박힌다.
+    - name: Set up SSH
+      env:
+        SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+        KNOWN_HOSTS: ${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}
+        DEPLOY_HOST: ${{ secrets.PRODUCTION_DEPLOY_HOST }}
+      run: |
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh
+        printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        if [ -n "$KNOWN_HOSTS" ]; then
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+        else
+          # StrictHostKeyChecking=no 를 쓰던 자리다. keyscan 도 최초 접속을 그냥 믿는 건 같지만,
+          # 최소한 이번 실행 안에서는 호스트키가 고정된다. 중간자 공격까지 막으려면
+          # PRODUCTION_SSH_KNOWN_HOSTS 에 호스트키를 넣어 고정해야 한다.
+          echo "::warning::PRODUCTION_SSH_KNOWN_HOSTS 가 없어 ssh-keyscan 으로 대체합니다."
+          ssh-keyscan -H "$DEPLOY_HOST" > ~/.ssh/known_hosts 2>/dev/null
+        fi
+        chmod 600 ~/.ssh/known_hosts
+
     # blue/green 두 컨테이너는 서로 다른 포트를 점유해야 한다.
     # 둘 다 8082 를 쓰면 동시에 뜰 수 없어 무중단 전환 자체가 성립하지 않는다.
     - name: Determine deployment strategy
       id: strategy
+      env:
+        ROUTER_STATUS_URL: ${{ secrets.PRODUCTION_ROUTER_STATUS_URL }}
       run: |
-        CURRENT_ENV=$(curl -fsS "${{ secrets.PRODUCTION_ROUTER_STATUS_URL }}" || echo "blue")
+        CURRENT_ENV=$(curl -fsS "$ROUTER_STATUS_URL" || echo "blue")
         if [ "$CURRENT_ENV" = "blue" ]; then
           echo "target-env=green"  >> $GITHUB_OUTPUT
           echo "current-env=blue"  >> $GITHUB_OUTPUT
@@ -258,25 +362,30 @@ jobs:
           echo "current-env=green" >> $GITHUB_OUTPUT
           echo "target-port=8082"  >> $GITHUB_OUTPUT
         fi
+        echo "현재 $CURRENT_ENV → 대상 $([ "$CURRENT_ENV" = "blue" ] && echo green || echo blue)"
 
     - name: Deploy to target environment
+      env:
+        DEPLOY_HOST: ${{ secrets.PRODUCTION_DEPLOY_HOST }}
+        DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
+        IMAGE: ${{ needs.build-docker.outputs.image-tag }}
+        TARGET: ${{ steps.strategy.outputs.target-env }}
+        PORT: ${{ steps.strategy.outputs.target-port }}
       run: |
-        test -n "${{ secrets.PRODUCTION_DEPLOY_HOST }}"
-        TARGET="${{ steps.strategy.outputs.target-env }}"
-        PORT="${{ steps.strategy.outputs.target-port }}"
-        ssh -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_DEPLOY_USER }}@${{ secrets.PRODUCTION_DEPLOY_HOST }} \
-          "docker pull ${{ needs.build-docker.outputs.image-tag }} \
+        ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+          "docker pull $IMAGE \
            && (docker stop carecode-$TARGET || true) \
            && (docker rm carecode-$TARGET || true) \
-           && docker run -d --name carecode-$TARGET -p $PORT:8082 --env-file /opt/carecode/.env ${{ needs.build-docker.outputs.image-tag }}"
+           && docker run -d --name carecode-$TARGET -p $PORT:8082 --env-file /opt/carecode/.env $IMAGE"
 
     # 전환 전에는 아직 라우팅되지 않는 대기(target) 인스턴스를 직접 확인해야 한다.
     # 공용 헬스 URL 을 보면 구버전이 UP 이라 항상 통과해버린다.
     - name: Wait for target instance to be ready
+      env:
+        TARGET_HEALTH_URL_TEMPLATE: ${{ secrets.PRODUCTION_TARGET_HEALTH_URL_TEMPLATE }}
+        PORT: ${{ steps.strategy.outputs.target-port }}
       run: |
-        test -n "${{ secrets.PRODUCTION_TARGET_HEALTH_URL_TEMPLATE }}"
-        PORT="${{ steps.strategy.outputs.target-port }}"
-        TARGET_HEALTH_URL=$(echo "${{ secrets.PRODUCTION_TARGET_HEALTH_URL_TEMPLATE }}" | sed "s/{port}/$PORT/")
+        TARGET_HEALTH_URL=$(echo "$TARGET_HEALTH_URL_TEMPLATE" | sed "s/{port}/$PORT/")
         for i in {1..20}; do
           if curl -fsS "$TARGET_HEALTH_URL/actuator/health" | grep -q '"status":"UP"'; then
             echo "Production target ($PORT) is healthy"
@@ -284,34 +393,61 @@ jobs:
           fi
           sleep 5
         done
-        echo "Production target health check failed"
+        echo "::error::대상 인스턴스($PORT)가 뜨지 않았습니다. 트래픽은 전환하지 않습니다."
         exit 1
-        
+
+    # id 를 붙이는 이유는 아래 롤백이 "전환이 실제로 일어났을 때만" 돌게 하기 위해서다.
     - name: Switch traffic to new environment
+      id: switch
+      env:
+        ROUTER_SWITCH_URL: ${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}
+        ROUTER_TOKEN: ${{ secrets.PRODUCTION_ROUTER_TOKEN }}
+        TARGET: ${{ steps.strategy.outputs.target-env }}
       run: |
-        test -n "${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}"
-        curl -fsS -X POST "${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}" \
-          -H "Authorization: Bearer ${{ secrets.PRODUCTION_ROUTER_TOKEN }}" \
+        curl -fsS -X POST "$ROUTER_SWITCH_URL" \
+          -H "Authorization: Bearer $ROUTER_TOKEN" \
           -H "Content-Type: application/json" \
-          -d "{\"target\":\"${{ steps.strategy.outputs.target-env }}\"}"
-        
+          -d "$(jq -n --arg t "$TARGET" '{target:$t}')"
+
     - name: Verify deployment
+      env:
+        HEALTH_URL: ${{ secrets.PRODUCTION_HEALTH_URL }}
       run: |
-        curl -fsS "$PRODUCTION_HEALTH_URL/actuator/health" | grep -q '"status":"UP"'
-        
+        curl -fsS "$HEALTH_URL/actuator/health" | grep -q '"status":"UP"'
+
+    # 전환이 성공한 뒤에 실패했을 때만 되돌린다.
+    # 예전에는 조건이 failure() 뿐이라, 배포·헬스체크 단계에서 죽어 트래픽이 움직인 적도 없는데
+    # 롤백을 시도했고, 그 스텝마저 실패해 로그에 실패가 두 번 찍혔다.
     - name: Rollback if needed
-      if: failure()
+      if: failure() && steps.switch.outcome == 'success'
+      env:
+        ROUTER_SWITCH_URL: ${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}
+        ROUTER_TOKEN: ${{ secrets.PRODUCTION_ROUTER_TOKEN }}
+        CURRENT: ${{ steps.strategy.outputs.current-env }}
       run: |
-        curl -fsS -X POST "${{ secrets.PRODUCTION_ROUTER_SWITCH_URL }}" \
-          -H "Authorization: Bearer ${{ secrets.PRODUCTION_ROUTER_TOKEN }}" \
+        echo "::warning::전환 후 검증에 실패했습니다. $CURRENT 로 되돌립니다."
+        curl -fsS -X POST "$ROUTER_SWITCH_URL" \
+          -H "Authorization: Bearer $ROUTER_TOKEN" \
           -H "Content-Type: application/json" \
-          -d "{\"target\":\"${{ steps.strategy.outputs.current-env }}\"}"
-        
+          -d "$(jq -n --arg t "$CURRENT" '{target:$t}')"
+
+    # 예전에는 echo 만 있어서 배포가 실패해도 아무에게도 닿지 않았다.
+    # OPS_SLACK_WEBHOOK_URL 이 없으면 잡 요약에만 남긴다.
     - name: Notify deployment status
       if: always()
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.OPS_SLACK_WEBHOOK_URL }}
+        STATUS: ${{ job.status }}
+        TARGET: ${{ steps.strategy.outputs.target-env }}
       run: |
-        echo "Production deployment completed"
-        # 슬랙, 이메일 등 알림 추가
+        line="[production] 배포 $STATUS - ${{ github.repository }}@${GITHUB_SHA:0:7} → ${TARGET:-?} (${{ github.run_id }})"
+        echo "$line" >> "$GITHUB_STEP_SUMMARY"
+        if [ "$STATUS" != "success" ]; then echo "::error::$line"; fi
+        if [ -n "$SLACK_WEBHOOK_URL" ]; then
+          curl -fsS -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg t "$line" '{text:$t}')" || echo "::warning::슬랙 알림 전송 실패"
+        fi
 
   # ===========================================
   # Cleanup Job
