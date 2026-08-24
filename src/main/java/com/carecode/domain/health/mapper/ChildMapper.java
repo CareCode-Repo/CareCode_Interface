@@ -15,6 +15,7 @@ public class ChildMapper implements ResponseMapper<Child, ChildInfoResponse> {
                 .name(child.getName())
                 .birthDate(child.getBirthDate().toString())
                 .gender(child.getGender())
+                .specialNeeds(child.getSpecialNeeds())
                 .createdAt(child.getCreatedAt().toString())
                 .updatedAt(child.getUpdatedAt() != null ? child.getUpdatedAt().toString() : null)
                 .build();
