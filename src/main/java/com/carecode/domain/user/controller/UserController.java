@@ -6,6 +6,7 @@ import com.carecode.core.handler.ApiSuccess;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.user.app.UserFacade;
 import com.carecode.domain.user.dto.request.UserUpdateRequestDto;
+import com.carecode.domain.user.dto.response.ProfileImageResponse;
 import com.carecode.domain.user.dto.response.UserDto;
 import com.carecode.domain.user.dto.response.UserProfileCompletionResponse;
 import com.carecode.domain.user.dto.response.UserProfileMissingFields;
@@ -19,9 +20,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -118,6 +121,21 @@ public class UserController extends BaseController {
             @Parameter(description = "프로필 이미지 URL", required = true) @RequestParam String profileImageUrl) {
         userFacade.updateProfileImage(selfDbId(), profileImageUrl);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 프로필 이미지 업로드.
+     *
+     * 기존 경로는 이미지 **URL 문자열만** 받았다. 클라이언트가 파일을 올릴 곳이 없어서
+     * 프로필 사진을 바꾸는 화면을 만들 수 없었다. 건강기록 첨부와 같은 저장소를 쓴다.
+     */
+    @PostMapping(value = "/me/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @LogExecutionTime
+    @Operation(summary = "프로필 이미지 업로드", description = "이미지 파일을 올리고 저장된 URL 을 돌려준다")
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<ProfileImageResponse> uploadMyProfileImage(
+            @Parameter(description = "이미지 파일", required = true) @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(userFacade.uploadProfileImage(selfDbId(), file));
     }
 
     @PutMapping("/{userId}/profile-image")
