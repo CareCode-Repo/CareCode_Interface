@@ -3,6 +3,7 @@ package com.carecode.domain.health.service;
 import com.carecode.core.exception.HealthRecordNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.storage.FileStorageService;
+import com.carecode.domain.health.dto.response.AttachmentDownload;
 import com.carecode.core.storage.StoredFile;
 import com.carecode.domain.health.dto.response.AttachmentResponse;
 import com.carecode.domain.health.entity.HealthRecord;
@@ -56,6 +57,32 @@ public class HealthRecordAttachmentService {
         return attachmentRepository.findByHealthRecordIdOrderByDisplayOrderAsc(recordId).stream()
                 .map(AttachmentResponse::from)
                 .toList();
+    }
+
+    /**
+     * 첨부파일 본문.
+     *
+     * `/files/**` 로 바로 열 수 없다 — 같은 저장소를 정적으로 공개하면 주소만 아는 사람이
+     * 남의 진료 기록을 볼 수 있다. 여기서 본인 기록인지 확인한 뒤에만 내려준다.
+     */
+    public AttachmentDownload download(Long recordId, Long attachmentId) {
+        // 소유권 확인이 먼저다. 남의 기록이면 존재 여부를 숨기려 404 로 응답한다.
+        requireOwnedRecord(recordId);
+
+        HealthRecordAttachment attachment = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new IllegalArgumentException("첨부파일을 찾을 수 없습니다: " + attachmentId));
+
+        // 다른 기록의 첨부 id 를 끼워 넣어 남의 파일을 받아가지 못하게 한다.
+        if (attachment.getHealthRecord() == null
+                || !attachment.getHealthRecord().getId().equals(recordId)) {
+            throw new IllegalArgumentException("첨부파일을 찾을 수 없습니다: " + attachmentId);
+        }
+
+        return AttachmentDownload.builder()
+                .resource(fileStorageService.load(fileStorageService.toKey(attachment.getFileUrl())))
+                .fileName(attachment.getFileName())
+                .contentType(attachment.getFileType())
+                .build();
     }
 
     @Transactional
