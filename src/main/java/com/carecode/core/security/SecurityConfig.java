@@ -96,6 +96,13 @@ public class SecurityConfig {
                 
                 // 정적 리소스 (공개 접근)
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
+                // 프로필 이미지는 <img src> 로 불러가므로 인증 헤더를 붙일 수 없다.
+                // 파일명이 UUID 라 주소를 모르면 찾을 수 없고, 원래 화면에 노출되는 값이다.
+                //
+                // 업로드 루트(/files/**) 전체를 열지 않는 이유는 같은 저장소에 건강기록 첨부가
+                // 들어 있기 때문이다. 그쪽은 민감정보라 주소만 알면 열리는 상태로 두면 안 되고,
+                // 인증을 거치는 별도 다운로드 경로가 필요하다.
+                .requestMatchers("/files/profile-images/**").permitAll()
                 .requestMatchers("/static/**").permitAll()
                 
                 // 통합 인증 관련 엔드포인트 (공개 접근)

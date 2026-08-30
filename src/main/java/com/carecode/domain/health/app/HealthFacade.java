@@ -20,11 +20,13 @@ import com.carecode.domain.health.entity.HospitalLike;
 import com.carecode.domain.health.entity.HospitalReview;
 import com.carecode.domain.health.repository.HospitalRepository;
 import com.carecode.domain.health.repository.HospitalLikeRepository;
+import com.carecode.domain.user.repository.UserRepository;
 import com.carecode.domain.health.repository.HospitalReviewRepository;
 import lombok.RequiredArgsConstructor;
 import com.carecode.domain.health.mapper.HospitalMapper;
 import com.carecode.domain.health.mapper.HospitalReviewMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
@@ -42,6 +44,7 @@ public class HealthFacade {
     private final HospitalReviewRepository hospitalReviewRepository;
     private final HospitalMapper hospitalMapper;
     private final HospitalReviewMapper hospitalReviewMapper;
+    private final UserRepository userRepository;
 
     // ==================== 건강 기록 관리 ====================
     // 트랜잭션은 Service 계층에서 관리하므로 Facade에서는 제거
@@ -161,6 +164,7 @@ public class HealthFacade {
         return hospitalMapper.toResponse(hospital);
     }
 
+    @Transactional
     public boolean likeHospital(Long id, Long userId) {
         Hospital hospital = hospitalRepository.findById(id)
                 .orElseThrow(() -> new HospitalNotFoundException(id));
@@ -170,15 +174,20 @@ public class HealthFacade {
             return false;
         }
         
+        // userId 필드는 insertable=false 인 읽기 전용 그림자다. 여기에 값을 넣어도
+        // user_id 컬럼에는 아무것도 쓰이지 않아 그동안 모든 찜이 user_id=NULL 로 저장됐다.
+        // 그 결과 중복 확인·해제·찜 여부가 전부 어긋났다. 연관 자체를 채운다.
         HospitalLike like = HospitalLike.builder()
                 .hospital(hospital)
-                .userId(userId)
+                .user(userRepository.getReferenceById(userId))
                 .createdAt(java.time.LocalDateTime.now())
                 .build();
         hospitalLikeRepository.save(like);
         return true;
     }
 
+    /** 파생 delete 는 트랜잭션 없이는 실행되지 않는다. 이게 없어 찜 해제가 항상 500 이었다. */
+    @Transactional
     public boolean unlikeHospital(Long id, Long userId) {
         hospitalRepository.findById(id).orElseThrow(() -> new HospitalNotFoundException(id));
         
@@ -189,6 +198,13 @@ public class HealthFacade {
         
         hospitalLikeRepository.deleteByHospitalIdAndUserId(id, userId);
         return true;
+    }
+
+    /** 내가 찜한 병원 목록. 찜을 걸 수는 있는데 모아 볼 방법이 없었다. */
+    public List<HospitalInfoResponse> getLikedHospitals(Long userId) {
+        return hospitalLikeRepository.findLikedWithHospitalByUserId(userId).stream()
+                .map(like -> hospitalMapper.toResponse(like.getHospital()))
+                .toList();
     }
 
     public long getLikeCount(Long id) {
@@ -235,13 +251,15 @@ public class HealthFacade {
                 .toList();
     }
 
+    @Transactional
     public HospitalReviewResponse createHospitalReview(Long hospitalId, Long userId, Integer rating, String content) {
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new HospitalNotFoundException(hospitalId));
         
+        // 찜과 같은 이유로 user 연관을 채운다 (userId 는 읽기 전용 그림자다)
         HospitalReview review = HospitalReview.builder()
                 .hospital(hospital)
-                .userId(userId)
+                .user(userRepository.getReferenceById(userId))
                 .rating(rating)
                 .content(content)
                 .build();
@@ -250,6 +268,7 @@ public class HealthFacade {
         return hospitalReviewMapper.toResponse(savedReview);
     }
 
+    @Transactional
     public HospitalReviewResponse updateHospitalReview(Long reviewId, Long userId, Integer rating, String content) {
         HospitalReview review = hospitalReviewRepository.findById(reviewId)
                 .orElseThrow(() -> new HospitalReviewNotFoundException(reviewId));
@@ -265,6 +284,7 @@ public class HealthFacade {
         return hospitalReviewMapper.toResponse(updatedReview);
     }
 
+    @Transactional
     public void deleteHospitalReview(Long reviewId, Long userId) {
         HospitalReview review = hospitalReviewRepository.findById(reviewId)
                 .orElseThrow(() -> new HospitalReviewNotFoundException(reviewId));

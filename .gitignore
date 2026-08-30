@@ -65,3 +65,7 @@ logs/
 
 # 별도 저장소로 관리되는 프론트엔드
 CareCode_FE/
+
+# 업로드 저장소(app.storage.local.root 기본값 ./uploads).
+# 프로필 이미지·건강기록 첨부는 실제 사용자 데이터다. 저장소에 들어가면 안 된다.
+uploads/
