@@ -277,6 +277,14 @@ public class HealthController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
+    // 내가 찜한 병원 목록
+    @GetMapping("/hospitals/likes")
+    @LogExecutionTime
+    @Operation(summary = "찜한 병원 목록 조회", description = "로그인한 사용자가 찜해 둔 병원 목록")
+    public ResponseEntity<List<HospitalInfoResponse>> getLikedHospitals() {
+        return ResponseEntity.ok(healthFacade.getLikedHospitals(getAuthenticatedUserPk()));
+    }
+
     // 병원 좋아요 수 조회
     // 로그인 전에도 병원을 둘러볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
     @PreAuthorize("permitAll()")
