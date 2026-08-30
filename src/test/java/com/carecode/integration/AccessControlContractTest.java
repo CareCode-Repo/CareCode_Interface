@@ -121,6 +121,12 @@ class AccessControlContractTest {
             "/health/statistics",
             // 좋아요 "여부" 는 내 상태라 공개 조회와 구분해야 한다
             "/health/hospitals/1/like-status",
+            // "내가 찜한 병원" 목록. 경로가 한 세그먼트라 /health/hospitals/* 와일드카드에
+            // 먼저 걸려 공개로 선언돼 있었다. 병원 상세와 모양이 같아 눈에 띄지 않는다.
+            "/health/hospitals/likes",
+            // 같은 모양의 문제. 게시글 상세(/community/posts/*)에 먹히고 있었다.
+            "/community/posts/liked",
+            "/community/posts/bookmarked",
             "/notifications",
             "/auth/user/profile",
             // 본인 계정 API. 로그인 없이 열리면 남의 프로필이 그대로 노출된다
@@ -186,6 +192,46 @@ class AccessControlContractTest {
         assertThat(result.getResponse().getStatus())
                 .as("%s 는 매핑이 없어야 한다 (404/405)", path)
                 .isIn(404, 405);
+    }
+
+    /**
+     * 공공데이터 동기화는 외부 API 한도를 태우고 DB 에 쓴다. 공개로 두면 누구나 실행할 수 있다.
+     *
+     * <p>{@code /api/public/care-facilities/**} 가 통째로 permitAll 이라, 그 아래 있는
+     * 동기화 트리거까지 열려 있었다. {@code swagger/sync} 는 GET 이라 브라우저 접속이나
+     * 크롤러만으로도 실행된다.
+     */
+    @Test
+    @DisplayName("공공데이터 동기화는 비로그인으로 실행할 수 없다")
+    void publicDataSyncIsNotOpen() throws Exception {
+        assertThat(mockMvc.perform(post("/api/public/care-facilities/sync-all")).andReturn()
+                .getResponse().getStatus())
+                .as("POST 동기화가 열려 있으면 안 된다")
+                .isIn(401, 403);
+
+        assertThat(mockMvc.perform(get("/api/public/care-facilities/swagger/sync")).andReturn()
+                .getResponse().getStatus())
+                .as("GET 동기화는 브라우저 접속만으로도 실행된다")
+                .isIn(401, 403);
+    }
+
+    @Test
+    @DisplayName("일반 회원도 공공데이터 동기화를 실행할 수 없다")
+    @WithMockUser(username = "member@example.com", roles = "PARENT")
+    void publicDataSyncRequiresAdmin() throws Exception {
+        assertThat(mockMvc.perform(post("/api/public/care-facilities/sync-all")).andReturn()
+                .getResponse().getStatus()).isEqualTo(403);
+    }
+
+    /** 시설·정책 조회는 계속 공개여야 한다. 위 제한이 조회까지 막으면 안 된다. */
+    @ParameterizedTest(name = "{0} 은 여전히 공개다")
+    @ValueSource(strings = {
+            "/api/public/care-facilities/swagger/stats",
+            "/api/public/care-facilities/swagger/db-facilities"
+    })
+    void publicDataReadStaysOpen(String path) throws Exception {
+        assertThat(mockMvc.perform(get(path)).andReturn().getResponse().getStatus())
+                .isNotIn(401, 403);
     }
 
     /** 사용자 목록·검색은 전체 회원 개인정보다. 로그인만 했다고 열리면 안 된다. */
