@@ -204,6 +204,65 @@ Blue/Green 이라는 사실이 알림 설계에 직접 영향을 줍니다.
 **중복 발송**이 생깁니다. 이 때문에 [마감 임박 알림](notification-and-retention.md#중복-방지--bluegreen-에서-드러난-결함)에
 유니크 제약 기반 발송 이력을 넣었습니다.
 
+### Blue/Green 을 뺀 이유
+
+전환 마지막 단계가 라우터 HTTP API 두 개(`PRODUCTION_ROUTER_STATUS_URL`, `_SWITCH_URL`)를
+호출했는데, **그 API 를 제공하는 구현이 어디에도 없습니다.**
+
+별도 저장소의 블루/그린 도구(`CareCode_Nohub_Deploy`)는 `paramiko` 로 서버에 붙어
+nginx conf 를 고치는 CLI 입니다. 의존성이 `requests` / `python-dotenv` / `paramiko` 뿐이고
+웹 프레임워크가 없습니다. 즉 시크릿을 다 채워도 전환 단계에서 반드시 멈췄고,
+그 시점에는 이미 서버의 컨테이너가 갈아치워진 뒤라 **어중간한 상태**로 끝났습니다.
+
+진짜 무중단은 nginx 를 제어할 수 있어야 성립합니다. 그때까지는 이렇게 갑니다.
+
+```
+새 이미지 pull
+  → 예비 포트(127.0.0.1:18082)에서 먼저 기동            운영 컨테이너는 그대로
+  → /actuator/health 가 UP 이 될 때까지 대기 (최대 200초)
+     └ 실패하면 컨테이너 로그를 남기고 중단              운영은 건드리지 않음
+  → 통과하면 교체 (여기서 짧은 순단)
+  → 다시 헬스체크 → 외부 URL 로 재확인
+```
+
+**깨진 이미지가 운영에 올라가지 않는다**는 성질은 유지하면서, 순단만 감수합니다.
+검증 포트를 18082 로 잡은 건 예전 blue/green 이 쓰던 8083 과 겹치지 않게 하기 위해서입니다.
+
+### 필요한 GitHub 시크릿
+
+배포 잡은 시작하자마자 아래를 확인하고, 비어 있으면 **이름을 찍어서** 실패합니다.
+예전에는 `test -n "..."` 하나뿐이라 무엇이 없는지 로그에 남지 않았습니다.
+
+| 시크릿 | 용도 |
+|--------|------|
+| `PRODUCTION_DEPLOY_HOST` / `PRODUCTION_DEPLOY_USER` | SSH 접속 대상 |
+| `PRODUCTION_SSH_KEY` | SSH 개인키. **이 스텝이 없어서 시크릿을 채워도 인증에서 막혔습니다** |
+| `PRODUCTION_HEALTH_URL` | 교체 후 외부에서 최종 확인 |
+
+네 개면 됩니다. 라우터 시크릿 4종(`_ROUTER_STATUS_URL`, `_ROUTER_SWITCH_URL`,
+`_ROUTER_TOKEN`, `_TARGET_HEALTH_URL_TEMPLATE`)은 더 이상 쓰지 않습니다.
+
+스테이징은 `STAGING_` 접두사로 `DEPLOY_HOST` / `DEPLOY_USER` / `SSH_KEY` / `HEALTH_URL`.
+
+선택 시크릿:
+
+| 시크릿 | 없을 때 |
+|--------|---------|
+| `PRODUCTION_SSH_KNOWN_HOSTS` / `STAGING_SSH_KNOWN_HOSTS` | `ssh-keyscan` 으로 대체하고 경고를 남깁니다. 최초 접속을 그냥 믿는 건 같으므로, 중간자 공격을 막으려면 호스트키를 시크릿으로 고정하세요 |
+| `OPS_SLACK_WEBHOOK_URL` | 잡 요약에만 남깁니다. 있으면 성공·실패를 슬랙으로 보냅니다 |
+
+레지스트리 로그인은 잡 토큰(`GITHUB_TOKEN`)을 **stdin 으로** 서버에 흘려보냅니다.
+ssh 인자로 넘기면 서버의 프로세스 목록에 그대로 보입니다.
+
+### 서버 쪽 전제
+
+- Docker 가 설치돼 있고 배포 사용자가 `docker` 를 실행할 수 있어야 합니다
+- `/opt/carecode/.env` 가 있어야 합니다. 없으면 배포가 그 자리에서 멈춥니다
+- 그 안에 `EMAIL_VERIFICATION_BASE_URL` 이 있어야 합니다. 없으면 애플리케이션이
+  기동 단계에서 실패합니다(의도된 fail-fast). 검증 단계에서 걸리므로 **운영은 무사합니다**. 이슈 #90
+- 컨테이너 이름은 `carecode` 로 통일합니다. 예전 워크플로가 만들던
+  `carecode-blue` / `carecode-green` 은 교체 단계에서 함께 정리합니다
+
 ## 미해결
 
 | 항목 | 내용 | 이슈 |
