@@ -1,6 +1,7 @@
 package com.carecode.domain.health.service;
 
 import com.carecode.core.exception.HealthRecordNotFoundException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.storage.FileStorageService;
 import com.carecode.domain.health.dto.response.AttachmentDownload;
@@ -69,13 +70,16 @@ public class HealthRecordAttachmentService {
         // 소유권 확인이 먼저다. 남의 기록이면 존재 여부를 숨기려 404 로 응답한다.
         requireOwnedRecord(recordId);
 
+        // 없는 첨부와 "남의 기록에 달린 첨부" 는 같은 404 여야 한다.
+        // IllegalArgumentException 을 쓰면 전역 핸들러가 400 으로 바꾸는데, 그러면
+        // 소유권 실패(404)와 응답이 갈려 "그 id 는 존재한다" 는 사실이 새어 나간다.
         HealthRecordAttachment attachment = attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new IllegalArgumentException("첨부파일을 찾을 수 없습니다: " + attachmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("첨부파일을 찾을 수 없습니다: " + attachmentId));
 
         // 다른 기록의 첨부 id 를 끼워 넣어 남의 파일을 받아가지 못하게 한다.
         if (attachment.getHealthRecord() == null
                 || !attachment.getHealthRecord().getId().equals(recordId)) {
-            throw new IllegalArgumentException("첨부파일을 찾을 수 없습니다: " + attachmentId);
+            throw new ResourceNotFoundException("첨부파일을 찾을 수 없습니다: " + attachmentId);
         }
 
         return AttachmentDownload.builder()
@@ -90,11 +94,11 @@ public class HealthRecordAttachmentService {
         requireOwnedRecord(recordId);
 
         HealthRecordAttachment attachment = attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new IllegalArgumentException("첨부파일을 찾을 수 없습니다: " + attachmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("첨부파일을 찾을 수 없습니다: " + attachmentId));
 
         if (attachment.getHealthRecord() == null
                 || !attachment.getHealthRecord().getId().equals(recordId)) {
-            throw new IllegalArgumentException("첨부파일을 찾을 수 없습니다: " + attachmentId);
+            throw new ResourceNotFoundException("첨부파일을 찾을 수 없습니다: " + attachmentId);
         }
 
         attachmentRepository.delete(attachment);

@@ -1,6 +1,7 @@
 package com.carecode.core.storage;
 
 import com.carecode.core.exception.BusinessException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -92,15 +93,17 @@ public class LocalFileStorageService implements FileStorageService {
 
     @Override
     public Resource load(String key) {
+        // BusinessException 은 전역 핸들러가 ErrorCode 와 무관하게 400 으로 바꾼다.
+        // 없는 파일은 404 여야 하므로 ResourceNotFoundException 을 쓴다.
         if (key == null || key.isBlank()) {
-            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "파일을 찾을 수 없습니다.");
+            throw new ResourceNotFoundException("파일을 찾을 수 없습니다.");
         }
 
         Path target = rootLocation.resolve(key).normalize();
         // 저장소 밖을 가리키는 키는 읽지 않는다. 삭제와 같은 방어다.
         if (!target.startsWith(rootLocation) || !Files.isReadable(target)) {
             log.warn("읽을 수 없는 파일 요청: {}", key);
-            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "파일을 찾을 수 없습니다.");
+            throw new ResourceNotFoundException("파일을 찾을 수 없습니다.");
         }
 
         return new FileSystemResource(target);
