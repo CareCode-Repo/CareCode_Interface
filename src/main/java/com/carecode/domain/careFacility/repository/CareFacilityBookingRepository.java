@@ -35,7 +35,8 @@ public interface CareFacilityBookingRepository extends JpaRepository<CareFacilit
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT COUNT(cb) FROM CareFacilityBooking cb " +
            "WHERE cb.facility.id = :facilityId " +
-           "AND cb.status <> com.carecode.domain.careFacility.entity.CareFacilityBooking.BookingStatus.CANCELLED " +
+           "AND cb.status NOT IN (com.carecode.domain.careFacility.entity.CareFacilityBooking.BookingStatus.CANCELLED, " +
+           "                      com.carecode.domain.careFacility.entity.CareFacilityBooking.BookingStatus.REJECTED) " +
            "AND (:excludeBookingId IS NULL OR cb.id <> :excludeBookingId) " +
            "AND cb.startTime < :newEnd AND cb.endTime > :newStart")
     long countOverlappingBookings(@Param("facilityId") Long facilityId,

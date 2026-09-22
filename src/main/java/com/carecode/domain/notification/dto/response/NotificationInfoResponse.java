@@ -1,5 +1,6 @@
 package com.carecode.domain.notification.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +22,8 @@ public class NotificationInfoResponse {
     private String title;
     private String message;
     private String priority;
+    // 없으면 JSON 키가 "read" 가 되어 프런트가 모든 알림을 안 읽음으로 표시했다.
+    @JsonProperty("isRead")
     private boolean isRead;
     private LocalDateTime createdAt;
     private LocalDateTime readAt;

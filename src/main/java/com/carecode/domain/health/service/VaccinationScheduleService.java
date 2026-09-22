@@ -74,9 +74,14 @@ public class VaccinationScheduleService {
     }
 
     @Transactional
-    public VaccinationScheduleResponse markCompleted(Long scheduleId, LocalDate completedDate) {
+    public VaccinationScheduleResponse markCompleted(Long childId, Long scheduleId, LocalDate completedDate) {
+        // 일정이 경로의 아이 것인지 확인한다. 컨트롤러는 "그 아이가 내 아이인가" 만 보므로,
+        // 이 확인이 없으면 내 아이 ID 에 남의 일정 ID 를 붙여 남의 접종 기록을 바꿀 수 있었다.
+        // 남의 일정이어도 403 이 아니라 404 로 답해 일정 ID 의 존재 여부를 흘리지 않는다.
         VaccinationSchedule schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new IllegalArgumentException("접종 일정을 찾을 수 없습니다: " + scheduleId));
+                .filter(s -> s.getChild() != null && java.util.Objects.equals(s.getChild().getId(), childId))
+                .orElseThrow(() -> new com.carecode.core.exception.ResourceNotFoundException(
+                        "접종 일정을 찾을 수 없습니다: " + scheduleId));
 
         schedule.markCompleted(completedDate != null ? completedDate : LocalDate.now());
         return VaccinationScheduleResponse.from(scheduleRepository.save(schedule));

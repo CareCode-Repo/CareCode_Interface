@@ -181,16 +181,18 @@ public class HealthService {
         record.setDescription(request.getDescription());
         record.setRecordDate(request.getRecordDate() != null ? request.getRecordDate().toLocalDate() : null);
         record.setNextDate(request.getNextDate() != null ? request.getNextDate().toLocalDate() : null);
-        record.setLocation(request.getLocation());
         record.setDoctorName(request.getDoctorName());
         record.setHospitalName(request.getHospitalName());
         record.setHeight(request.getHeight());
         record.setWeight(request.getWeight());
         record.setTemperature(request.getTemperature());
-        record.setBloodPressure(request.getBloodPressure());
-        record.setPulseRate(request.getPulseRate());
-        record.setVaccineName(request.getVaccineName());
-        record.setIsCompleted(request.getIsCompleted());
+        // 아래는 수정 화면에 없는 필드다. 안 보냈다고 null 로 덮으면 수정할 때마다 지워진다
+        // (완료 여부는 false → null 이 됐다). 값을 보냈을 때만 바꾼다.
+        if (request.getLocation() != null) record.setLocation(request.getLocation());
+        if (request.getBloodPressure() != null) record.setBloodPressure(request.getBloodPressure());
+        if (request.getPulseRate() != null) record.setPulseRate(request.getPulseRate());
+        if (request.getVaccineName() != null) record.setVaccineName(request.getVaccineName());
+        if (request.getIsCompleted() != null) record.setIsCompleted(request.getIsCompleted());
 
         HealthRecord updatedRecord = healthRecordRepository.save(record);
         log.info("건강 기록 수정 완료: 기록ID={}", recordId);

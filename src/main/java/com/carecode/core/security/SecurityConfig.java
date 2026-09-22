@@ -147,6 +147,18 @@ public class SecurityConfig {
                 .requestMatchers("/facilities/*/view").permitAll()
                 .requestMatchers(HttpMethod.POST, "/facilities/*/rating").authenticated()
                 .requestMatchers("/facilities/*/rating").permitAll()
+                // 시설 상세·리뷰·검색·예측은 공공데이터와 공개 리뷰뿐이라 비로그인에도 연다.
+                // 프런트는 이 화면들을 로그인 전에도 보여 주는데, 전에는 여기서 401 이 나 빈 화면이었다.
+                // GET /facilities/* 는 한 세그먼트라 /facilities/bookings/{id} 같은 예약 경로에는 걸리지 않는다.
+                .requestMatchers(HttpMethod.GET, "/facilities/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/facilities/recommend/**").permitAll()
+                .requestMatchers(HttpMethod.GET,
+                        "/facilities/*/reviews",
+                        "/facilities/*/with-reviews",
+                        "/facilities/*/admission-forecast",
+                        "/facilities/*/popularity",
+                        "/facilities/*/waitlist/stats").permitAll()
+                .requestMatchers(HttpMethod.POST, "/facilities/search", "/facilities/advanced-search").permitAll()
                 
                 // 돌봄시설 공공데이터 API — 조회만 공개다.
                 //
@@ -224,7 +236,6 @@ public class SecurityConfig {
                 .requestMatchers("/children/**").authenticated()
                 .requestMatchers("/chatbot/**").authenticated()
                 .requestMatchers("/api/**").authenticated()
-                .requestMatchers("/facilities/search").authenticated()
                 .requestMatchers("/facilities/*/bookings/**").authenticated()
                 .requestMatchers("/community/comments/**").authenticated()
                 .requestMatchers("/notifications/**").authenticated()

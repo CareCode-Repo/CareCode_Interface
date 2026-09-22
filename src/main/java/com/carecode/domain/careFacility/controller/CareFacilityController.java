@@ -4,6 +4,7 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.annotation.ValidateChildAge;
 import com.carecode.core.controller.BaseController;
+import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.util.PageRequestUtil;
 import com.carecode.domain.careFacility.dto.request.CareFacilitySearchRequest;
 import com.carecode.domain.careFacility.dto.request.CareFacilityAdvancedSearchRequest;
@@ -25,8 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,6 +42,9 @@ import java.util.Date;
 public class CareFacilityController extends BaseController {
     
     private final CareFacilityFacade careFacilityFacade;
+    // JWT 필터가 principal 로 이메일 문자열을 넣으므로 @AuthenticationPrincipal UserDetails 는 늘 null 이다.
+    // 현재 사용자는 반드시 이 파사드로 얻는다.
+    private final CurrentUserFacade currentUser;
     
     // 전체 시설 목록 조회
     @GetMapping
@@ -289,26 +292,23 @@ public class CareFacilityController extends BaseController {
     @LogExecutionTime
     @Operation(summary = "시설 리뷰 작성")
     public ResponseEntity<ReviewResponse> createReview(@PathVariable Long id,
-                                                       @RequestBody ReviewRequest request,
-                                                       @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(careFacilityFacade.createReview(id, userDetails.getUsername(), request));
+                                                       @RequestBody ReviewRequest request) {
+        return ResponseEntity.ok(careFacilityFacade.createReview(id, currentUser.requireCurrentUserEmail(), request));
     }
 
     @PutMapping("/reviews/{reviewId}")
     @LogExecutionTime
     @Operation(summary = "시설 리뷰 수정")
     public ResponseEntity<ReviewResponse> updateReview(@PathVariable Long reviewId,
-                                                       @RequestBody ReviewRequest request,
-                                                       @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(careFacilityFacade.updateReview(reviewId, userDetails.getUsername(), request));
+                                                       @RequestBody ReviewRequest request) {
+        return ResponseEntity.ok(careFacilityFacade.updateReview(reviewId, currentUser.requireCurrentUserEmail(), request));
     }
 
     @DeleteMapping("/reviews/{reviewId}")
     @LogExecutionTime
     @Operation(summary = "시설 리뷰 삭제")
-    public ResponseEntity<ApiSuccess> deleteReview(@PathVariable Long reviewId,
-                                                   @AuthenticationPrincipal UserDetails userDetails) {
-        careFacilityFacade.deleteReview(reviewId, userDetails.getUsername());
+    public ResponseEntity<ApiSuccess> deleteReview(@PathVariable Long reviewId) {
+        careFacilityFacade.deleteReview(reviewId, currentUser.requireCurrentUserEmail());
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("리뷰가 삭제되었습니다.").build());
     }
     
@@ -317,10 +317,9 @@ public class CareFacilityController extends BaseController {
     @LogExecutionTime
     @Operation(summary = "시설 예약 생성", description = "특정 육아 시설에 예약 생성")
     public ResponseEntity<BookingResponse> createBooking(@Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId,
-                                                         @Parameter(description = "예약 정보", required = true) @RequestBody CreateBookingRequest request,
-                                                         @AuthenticationPrincipal UserDetails userDetails) {
+                                                         @Parameter(description = "예약 정보", required = true) @RequestBody CreateBookingRequest request) {
 
-        BookingResponse booking = careFacilityFacade.createBooking(facilityId, request, userDetails);
+        BookingResponse booking = careFacilityFacade.createBooking(facilityId, request, currentUser.requireCurrentUserId());
 
         return ResponseEntity.ok(booking);
     }
@@ -329,10 +328,9 @@ public class CareFacilityController extends BaseController {
     @GetMapping("/bookings/{bookingId}")
     @LogExecutionTime
     @Operation(summary = "예약 상세 조회", description = "특정 예약의 상세 정보 조회")
-    public ResponseEntity<BookingResponse> getBookingById(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
-                                                          @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<BookingResponse> getBookingById(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId) {
 
-        BookingResponse booking = careFacilityFacade.getBookingById(bookingId, userDetails);
+        BookingResponse booking = careFacilityFacade.getBookingById(bookingId, currentUser.requireCurrentUserId());
 
         return ResponseEntity.ok(booking);
     }
@@ -341,15 +339,16 @@ public class CareFacilityController extends BaseController {
     @GetMapping("/bookings/user")
     @LogExecutionTime
     @Operation(summary = "사용자별 예약 목록 조회", description = "현재 로그인한 사용자의 예약 목록 조회")
-    public ResponseEntity<List<BookingResponse>> getUserBookings(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<BookingResponse>> getUserBookings() {
 
-        List<BookingResponse> bookings = careFacilityFacade.getUserBookings(userDetails);
+        List<BookingResponse> bookings = careFacilityFacade.getUserBookings(currentUser.requireCurrentUserId());
 
         return ResponseEntity.ok(bookings);
     }
     
     // 시설별 예약 목록 조회
     @GetMapping("/{facilityId}/bookings")
+    @PreAuthorize("hasRole('ADMIN')") // 다른 사용자의 예약(보호자 이름·연락처)이 담긴다
     @LogExecutionTime
     @Operation(summary = "시설별 예약 목록 조회")
     public ResponseEntity<List<BookingResponse>> getFacilityBookings(@Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId) {
@@ -361,13 +360,13 @@ public class CareFacilityController extends BaseController {
     
     // 예약 상태 업데이트
     @PutMapping("/bookings/{bookingId}/status")
+    @PreAuthorize("hasRole('ADMIN')") // 확정·완료는 시설 측 업무. 본인 취소는 DELETE 로 한다
     @LogExecutionTime
     @Operation(summary = "예약 상태 업데이트")
     public ResponseEntity<BookingResponse> updateBookingStatus(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
-                                                               @Parameter(description = "새로운 상태", required = true) @RequestParam String status,
-                                                               @AuthenticationPrincipal UserDetails userDetails) {
+                                                               @Parameter(description = "새로운 상태", required = true) @RequestParam String status) {
 
-        BookingResponse booking = careFacilityFacade.updateBookingStatus(bookingId, status, userDetails);
+        BookingResponse booking = careFacilityFacade.updateBookingStatus(bookingId, status);
 
         return ResponseEntity.ok(booking);
     }
@@ -376,10 +375,9 @@ public class CareFacilityController extends BaseController {
     @DeleteMapping("/bookings/{bookingId}")
     @LogExecutionTime
     @Operation(summary = "예약 취소", description = "예약을 취소")
-    public ResponseEntity<ApiSuccess> cancelBooking(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
-                                                    @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ApiSuccess> cancelBooking(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId) {
 
-        careFacilityFacade.cancelBooking(bookingId, userDetails);
+        careFacilityFacade.cancelBooking(bookingId, currentUser.requireCurrentUserId());
 
         return ResponseEntity.ok(ApiSuccess.builder().timestamp(new Date()).message("예약이 성공적으로 취소되었습니다.").build());
     }
@@ -389,16 +387,16 @@ public class CareFacilityController extends BaseController {
     @LogExecutionTime
     @Operation(summary = "예약 수정", description = "기존 예약 정보 수정")
     public ResponseEntity<BookingResponse> updateBooking(@Parameter(description = "예약 ID", required = true) @PathVariable Long bookingId,
-                                                         @Parameter(description = "수정할 예약 정보", required = true) @RequestBody UpdateBookingRequest request,
-                                                         @AuthenticationPrincipal UserDetails userDetails) {
+                                                         @Parameter(description = "수정할 예약 정보", required = true) @RequestBody UpdateBookingRequest request) {
 
-        BookingResponse booking = careFacilityFacade.updateBooking(bookingId, request, userDetails);
+        BookingResponse booking = careFacilityFacade.updateBooking(bookingId, request, currentUser.requireCurrentUserId());
 
         return ResponseEntity.ok(booking);
     }
     
     // 오늘의 예약 조회
     @GetMapping("/bookings/today")
+    @PreAuthorize("hasRole('ADMIN')") // 다른 사용자의 예약(보호자 이름·연락처)이 담긴다
     @LogExecutionTime
     @Operation(summary = "오늘의 예약 조회", description = "오늘 날짜의 예약 목록 조회")
     public ResponseEntity<List<BookingResponse>> getTodayBookings() {
@@ -410,6 +408,7 @@ public class CareFacilityController extends BaseController {
     
     // 시설별 오늘의 예약 조회
     @GetMapping("/{facilityId}/bookings/today")
+    @PreAuthorize("hasRole('ADMIN')") // 다른 사용자의 예약(보호자 이름·연락처)이 담긴다
     @LogExecutionTime
     @Operation(summary = "시설별 오늘의 예약 조회", description = "특정 시설의 오늘 예약 목록 조회")
     public ResponseEntity<List<BookingResponse>> getTodayBookingsByFacility(@Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId) {

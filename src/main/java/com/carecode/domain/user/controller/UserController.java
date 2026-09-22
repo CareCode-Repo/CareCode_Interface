@@ -85,6 +85,10 @@ public class UserController extends BaseController {
             @Valid @RequestBody UserUpdateRequestDto updateDto) {
         User user = userService.getUserEntityByEmail(getCurrentUserEmail());
         userMapper.updateUserFromRequest(updateDto, user);
+        // 매퍼는 null 을 무시(IGNORE)하므로 "지우기" 는 빈 문자열로 들어온다. 저장은 null 로 한다.
+        if (updateDto.getPhoneNumber() != null && updateDto.getPhoneNumber().isEmpty()) {
+            user.setPhoneNumber(null);
+        }
         user.setUpdatedAt(LocalDateTime.now());
         return ResponseEntity.ok(userMapper.toDto(userService.saveUser(user)));
     }

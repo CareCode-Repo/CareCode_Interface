@@ -14,7 +14,7 @@ public class HealthRecordMapper implements RequestMapper<HealthCreateHealthRecor
     @Override
     public HealthRecord toEntity(HealthCreateHealthRecordRequest request) {
         HealthRecord.HealthRecordBuilder builder = HealthRecord.builder()
-                .recordType(HealthRecord.RecordType.valueOf(request.getRecordType()))
+                .recordType(HealthRecord.RecordType.parse(request.getRecordType()))
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .recordDate(request.getRecordDate() != null ? request.getRecordDate().toLocalDate() : null)

@@ -16,7 +16,7 @@ import lombok.Setter;
 @Builder
 public class CommunityUpdateCommentRequest {
     @NotBlank(message = "댓글 내용은 필수입니다")
-    @Size(max = 500, message = "댓글은 500자 이하여야 합니다")
+    @Size(max = 2000, message = "댓글은 2000자 이하여야 합니다")
     private String content;
 }
 

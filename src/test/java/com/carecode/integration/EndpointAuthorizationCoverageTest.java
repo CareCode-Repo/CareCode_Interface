@@ -122,7 +122,12 @@ class EndpointAuthorizationCoverageTest {
             // 조회수 증가. 쓰기지만 비로그인 방문자의 조회도 세야 하므로 공개다.
             // 다만 이 값이 /facilities/popular 순위에 쓰이므로 부풀릴 수 있다.
             // 인기 순위를 조작에 민감하게 다뤄야 한다면 여기부터 손봐야 한다.
-            "POST /facilities/1/view"
+            "POST /facilities/1/view",
+
+            // 시설 검색. 조건을 본문으로 받아 POST 지만 읽기다. 공공데이터만 돌려준다.
+            // 프런트가 로그인 전 탐색 화면에서 부른다.
+            "POST /facilities/search",
+            "POST /facilities/advanced-search"
     ));
 
     /**

@@ -155,6 +155,13 @@ public class CareFacilityBooking {
         this.cancelledAt = LocalDateTime.now();
     }
 
+    // 예약 반려 (시설·관리자 측). 사유는 취소 사유 칼럼을 같이 쓴다.
+    public void reject(String reason) {
+        this.status = BookingStatus.REJECTED;
+        this.cancellationReason = reason;
+        this.cancelledAt = LocalDateTime.now();
+    }
+
     // 예약 확정
     public void confirm() {
         this.status = BookingStatus.CONFIRMED;
@@ -189,7 +196,9 @@ public class CareFacilityBooking {
         PENDING("대기중"),
         CONFIRMED("확정"),
         CANCELLED("취소됨"),
-        COMPLETED("완료");
+        COMPLETED("완료"),
+        // 시설 측이 받지 않은 예약. 사용자가 스스로 거둔 CANCELLED 와 구분한다.
+        REJECTED("반려");
 
         private final String displayName;
 

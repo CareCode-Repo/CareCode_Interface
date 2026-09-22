@@ -76,6 +76,9 @@ flowchart TD
 | `/facilities/statistics` | — |
 | `/facilities/{id}/view` | 조회수 증가 |
 | `/facilities/{id}/rating` (GET) | 평점 조회 |
+| `GET /facilities/{id}`, `/facilities/{id}/with-reviews`, `/facilities/{id}/reviews` | 시설 상세·공개 리뷰. 프런트가 로그인 전에도 보여 준다 |
+| `GET /facilities/{id}/admission-forecast`, `/facilities/{id}/popularity`, `/facilities/{id}/waitlist/stats` | 공공데이터 기반 예측·집계 |
+| `POST /facilities/search`, `POST /facilities/advanced-search` | 조건을 본문으로 받는 조회 |
 | `/api/public/care-facilities/**` | 공공데이터 조회 |
 
 ### 병원
@@ -135,8 +138,8 @@ flowchart TD
 | `/users/privacy/**` | 열람·동의·탈퇴 |
 | `/children/**` | 자녀 정보 |
 | `/notifications/**` | — |
-| `/facilities/search` | 개인화 검색 |
-| `/facilities/{id}/bookings/**` | 예약 |
+| `POST /facilities/{id}/bookings`, `/facilities/bookings/user`, `/facilities/bookings/{bookingId}` | 본인 예약. 남의 예약은 403 |
+| `/facilities/{id}/reviews` (POST), `/facilities/reviews/{reviewId}` | 리뷰 작성·수정·삭제 (본인 것만) |
 | `/facilities/waitlist/**`, `POST /facilities/{facilityId}/waitlist` | 대기 등록 |
 | `/community/comments/**` | 댓글 작성·수정 |
 | `POST /facilities/{id}/rating` | 평점 등록 |
@@ -166,6 +169,8 @@ flowchart TD
 | `/api/admin/analytics/**` | 퍼널·리텐션 |
 | `/api/admin/policy-verification/**` | 금액 수기 검증 |
 | `/api/admin/reports/**` | 신고 처리 |
+| `GET /facilities/{id}/bookings`, `/facilities/{id}/bookings/today`, `/facilities/bookings/today` | 다른 사용자의 예약(보호자 이름·연락처)이 담긴다. 메서드 `@PreAuthorize` |
+| `PUT /facilities/bookings/{bookingId}/status` | 확정·완료·반려는 시설 측 업무. 본인 취소는 `DELETE` 로 한다 |
 
 ### 사용자 관리 (`/users` 에서 이관)
 

@@ -53,6 +53,7 @@ class CommunityServiceHiddenPostTest {
     @Mock private PostLikeRepository postLikeRepository;
     @Mock private BookmarkRepository bookmarkRepository;
     @Mock private CommunityMapper communityMapper;
+    @Mock private com.carecode.core.security.CurrentUserFacade currentUserFacade;
 
     @InjectMocks private CommunityService communityService;
 

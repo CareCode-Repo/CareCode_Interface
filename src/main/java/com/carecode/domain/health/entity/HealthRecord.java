@@ -171,12 +171,29 @@ public class HealthRecord {
         DENTAL("치과"),
         EYE("안과"),
         EMERGENCY("응급"),
+        // 프런트 기록 폼이 처음부터 보여 주던 유형. 서버에 없어 이 둘을 고르면 저장이 실패했다.
+        MEDICATION("투약"),
+        SYMPTOM("증상"),
         OTHER("기타");
         
         private final String displayName;
         
         RecordType(String displayName) {
             this.displayName = displayName;
+        }
+
+        /** 모르는 값은 IllegalArgumentException(→500) 대신 400 으로 돌려준다. */
+        public static RecordType parse(String raw) {
+            if (raw == null || raw.isBlank()) {
+                throw new com.carecode.core.exception.BusinessException(
+                        com.carecode.core.exception.ErrorCode.INVALID_INPUT, "기록 유형은 필수입니다.");
+            }
+            try {
+                return valueOf(raw.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new com.carecode.core.exception.BusinessException(
+                        com.carecode.core.exception.ErrorCode.INVALID_INPUT, "알 수 없는 기록 유형입니다: " + raw);
+            }
         }
         
         public String getDisplayName() {

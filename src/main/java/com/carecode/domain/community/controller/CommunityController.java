@@ -12,6 +12,7 @@ import com.carecode.domain.community.dto.response.CommunityCommentResponse;
 import com.carecode.domain.community.dto.response.CommunityTagResponse;
 import com.carecode.domain.community.dto.response.CommunityPageResponse;
 import com.carecode.domain.community.app.CommunityFacade;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -64,7 +65,7 @@ public class CommunityController extends BaseController {
     @LogExecutionTime
     @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성")
     public ResponseEntity<CommunityPostResponse> createPost(
-            @Parameter(description = "게시글 정보", required = true) @RequestBody CommunityCreatePostRequest request) {
+            @Parameter(description = "게시글 정보", required = true) @Valid @RequestBody CommunityCreatePostRequest request) {
         CommunityPostResponse post = communityFacade.createPost(request);
         return ResponseEntity.ok(post);
     }
@@ -75,7 +76,7 @@ public class CommunityController extends BaseController {
     @Operation(summary = "게시글 수정")
     public ResponseEntity<CommunityPostResponse> updatePost(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
-            @Parameter(description = "수정할 게시글 정보", required = true) @RequestBody CommunityUpdatePostRequest request) {
+            @Parameter(description = "수정할 게시글 정보", required = true) @Valid @RequestBody CommunityUpdatePostRequest request) {
         CommunityPostResponse post = communityFacade.updatePost(postId, request);
         return ResponseEntity.ok(post);
     }
@@ -106,7 +107,7 @@ public class CommunityController extends BaseController {
     @Operation(summary = "댓글 작성", description = "게시글에 댓글을 작성")
     public ResponseEntity<CommunityCommentResponse> createComment(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId,
-            @Parameter(description = "댓글 정보", required = true) @RequestBody CommunityCreateCommentRequest request) {
+            @Parameter(description = "댓글 정보", required = true) @Valid @RequestBody CommunityCreateCommentRequest request) {
         CommunityCommentResponse comment = communityFacade.createComment(postId, request);
         return ResponseEntity.ok(comment);
     }
@@ -117,7 +118,7 @@ public class CommunityController extends BaseController {
     @Operation(summary = "댓글 수정")
     public ResponseEntity<CommunityCommentResponse> updateComment(
             @Parameter(description = "댓글 ID", required = true) @PathVariable Long commentId,
-            @Parameter(description = "수정할 댓글 정보", required = true) @RequestBody CommunityUpdateCommentRequest request) {
+            @Parameter(description = "수정할 댓글 정보", required = true) @Valid @RequestBody CommunityUpdateCommentRequest request) {
         CommunityCommentResponse comment = communityFacade.updateComment(commentId, request);
         return ResponseEntity.ok(comment);
     }
