@@ -55,9 +55,9 @@ public class SecurityConfig {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowCredentials(true);
                 configuration.setAllowedOriginPatterns(allowedOrigins);
-                configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+                configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-API-Version"));
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-                configuration.setExposedHeaders(List.of("Authorization", "X-Refresh-Token"));
+                configuration.setExposedHeaders(List.of("Authorization", "X-Refresh-Token", "X-API-Version", "X-Request-Id"));
                 return configuration;
             })) // CORS 활성화
             .csrf(AbstractHttpConfigurer::disable)

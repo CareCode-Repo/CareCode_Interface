@@ -1,9 +1,12 @@
 package com.carecode.core.controller;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-
-/** 모든 컨트롤러의 기본 클래스 공통 URL 경로와 기본 설정을 제공 */
-@RequestMapping("/api/v1")
+/**
+ * 컨트롤러 공통 상수.
+ *
+ * <p>예전에는 여기에 {@code @RequestMapping("/api/v1")} 이 있었지만, 하위 컨트롤러가 전부 자기
+ * {@code @RequestMapping} 으로 덮어써서 어떤 경로에도 적용된 적이 없다. "경로 버전을 쓰고 있다" 는
+ * 오해만 낳아 지웠다. API 버전은 {@link com.carecode.core.web.ApiVersionFilter} 가 헤더로 다룬다.
+ */
 public abstract class BaseController {
     
     // 공통 응답 메시지 상수
