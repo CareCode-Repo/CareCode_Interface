@@ -14,18 +14,19 @@
 
 ## 목차
 
-1. [프로젝트 소개](#-프로젝트-소개)
-2. [프로젝트 배경 및 목적](#-프로젝트-배경-및-목적)
-3. [핵심 기능](#-핵심-기능)
-4. [기술 스택](#-기술-스택)
-5. [시스템 아키텍처](#-시스템-아키텍처)
-6. [도메인 구조](#-도메인-구조)
-7. [빠른 시작](#-빠른-시작)
-8. [API 문서](#-api-문서)
-9. [배포 가이드](#-배포-가이드)
-10. [개발 로드맵](#-개발-로드맵)
-11. [기여하기](#-기여하기)
-12. [라이선스](#-라이선스)
+1. [프로젝트 소개](#프로젝트-소개)
+2. [프로젝트 배경 및 목적](#프로젝트-배경-및-목적)
+3. [핵심 기능](#핵심-기능)
+4. [기술 스택](#기술-스택)
+5. [시스템 아키텍처](#시스템-아키텍처)
+6. [도메인 구조](#도메인-구조)
+7. [빠른 시작](#빠른-시작)
+8. [API 문서](#api-문서)
+9. [배포 가이드](#배포-가이드)
+10. [개발 로드맵](#개발-로드맵)
+11. [프로젝트 구조](#프로젝트-구조)
+12. [기여하기](#기여하기)
+13. [라이선스](#라이선스)
 
 ---
 
@@ -391,83 +392,122 @@ GET    /chatbot/history                     - 대화 기록
 
 ## 빠른 시작
 
-### 필수 요구사항
+### 필요한 것
 
-- **Java**: 17 이상
-- **Docker**: 20.x 이상
-- **Docker Compose**: 2.x 이상
-- **Gradle**: 8.x 이상 (또는 포함된 Gradle Wrapper 사용)
+- **Docker Desktop** (Compose v2 포함). 이것만 있으면 됩니다. JDK·MariaDB·Redis 를 따로 설치하지 않습니다.
+- IDE 에서 앱을 직접 띄우려면 **JDK 17** 이 추가로 필요합니다 (Gradle 은 포함된 `./gradlew` 를 씁니다).
 
-### 로컬 개발 환경 설정
-
-#### 1. 프로젝트 클론
+### 1. 한 줄로 띄우기
 
 ```bash
-git clone https://github.com/your-organization/carecode-interface.git
-cd carecode-interface
+git clone https://github.com/CareCode-Repo/CareCode_Interface.git
+cd CareCode_Interface
+docker compose up --build
 ```
 
-#### 2. 환경 변수 설정
+앱 + MariaDB + Redis 가 함께 뜹니다. **`.env` 없이도 뜹니다.** 로컬 전용 기본값이 `docker-compose.yml` 에 들어 있습니다.
+처음에는 이미지와 의존성을 받고 스키마를 만드느라 몇 분 걸립니다(`docker compose ps` 에서 app 이 `healthy` 가 되면 준비 완료).
 
-`.env` 파일을 생성하고 다음 정보를 입력하세요:
+| 무엇 | 주소 |
+|------|------|
+| API | http://localhost:8082 |
+| 헬스체크 | http://localhost:8082/actuator/health |
+| Swagger UI | http://localhost:8082/swagger-ui.html |
+| MariaDB | `localhost:3307` (DB·계정 `carecode` / 비밀번호 `carecode-local`) |
+| Redis | `localhost:6380` |
 
-```env
-# Database
-DB_USERNAME=carecode_user
-DB_PASSWORD=your_secure_password
-DB_NAME=carecode_db
+포트가 이미 쓰이고 있으면 바꿔서 띄웁니다: `APP_PORT=18082 DB_PORT=3317 docker compose up --build`
 
-# JWT
-JWT_SECRET=your_jwt_secret_key_here
+스키마는 **Flyway 마이그레이션(V1~V18)으로 만들고 Hibernate 는 검증만** 합니다(운영과 같은 방식).
+엔티티와 마이그레이션이 어긋나면 로컬에서도 기동이 실패하므로 바로 알 수 있습니다.
 
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6380
-
-# OAuth2
-KAKAO_CLIENT_ID=your_kakao_client_id
-KAKAO_CLIENT_SECRET=your_kakao_client_secret
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# Email
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_email_app_password
-
-# Public Data API
-PUBLIC_DATA_API_KEY=your_public_data_api_key
-```
-
-#### 3. 프로젝트 빌드
+### 2. 가입하고 로그인해 보기
 
 ```bash
-./gradlew clean build
+# 가입 (역할은 서버가 PARENT 로 정한다)
+curl -X POST http://localhost:8082/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"me@example.com","password":"password1234","name":"테스트"}'
+
+# 로그인 → 본문에 accessToken 이 온다. 리프레시 토큰은 HttpOnly 쿠키(refreshToken)로도 내려간다.
+curl -X POST http://localhost:8082/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"me@example.com","password":"password1234"}'
+
+# 받은 토큰으로 내 정보
+curl http://localhost:8082/users/me -H "Authorization: Bearer <accessToken>"
 ```
 
-#### 4. Docker로 실행
+> Windows 의 PowerShell·Git Bash 에서 한글이 든 JSON 을 `-d` 로 보내면 인코딩이 깨져
+> `400 요청 본문을 읽을 수 없습니다` 가 납니다. 이름을 영문으로 바꾸거나 Swagger UI 에서 호출하세요.
+
+미리 만들어 둔 관리자 계정은 없습니다. 관리자 화면(`/api/admin/**`)을 보려면 가입한 계정을 DB 에서 올립니다.
 
 ```bash
-docker-compose up -d
+docker compose exec mariadb mariadb -ucarecode -pcarecode-local carecode \
+  -e "UPDATE TBL_USER SET ROLE='ADMIN' WHERE EMAIL='me@example.com';"
 ```
 
-#### 5. 애플리케이션 접속
+역할은 토큰에 실리므로 **다시 로그인**해야 반영됩니다.
 
-- **웹 애플리케이션**: http://localhost
-- **API 문서 (Swagger UI)**: http://localhost/swagger-ui.html
-- **MariaDB**: localhost:3307
-- **Redis**: localhost:6380
+### 3. 화면을 채우고 싶다면 — 샘플 데이터
 
-### 로컬 개발 (IDE)
-
-데이터베이스와 Redis만 Docker로 실행하고, Spring Boot 애플리케이션은 IDE에서 실행:
+공공데이터 키가 없으면 시설·정책 목록이 비어 있습니다. 샘플 데이터를 넣고 띄울 수 있습니다.
 
 ```bash
-# 데이터베이스/레디스만 실행
-docker-compose up carecode-mariadb carecode-redis -d
-
-# 애플리케이션 실행
-./gradlew bootRun
+SEED_SAMPLE_DATA=true docker compose up --build
 ```
+
+실제 지원 금액이 아닙니다. 확인이 끝나면 관리자 토큰으로 `DELETE /api/admin/dev/sample-data` 를 호출해 지웁니다.
+
+### 4. 외부 연동을 켜려면 — `.env`
+
+카카오 로그인·인증 메일·공공데이터 동기화·AI 챗봇은 외부 키가 있어야 동작합니다.
+키가 없어도 앱은 뜨고, **해당 기능만** 실패하거나 대체 동작(챗봇은 규칙 기반 응답)을 합니다.
+
+```bash
+cp .env.example .env   # 필요한 줄만 주석을 풀고 값을 넣는다
+docker compose up --build
+```
+
+항목별 설명은 [`.env.example`](.env.example) 에 있습니다. `.env` 는 커밋되지 않습니다.
+
+### 5. 프런트엔드와 함께
+
+[CareCode_FE](https://github.com/CareCode-Repo/CareCode_FE) 를 `http://localhost:3000` 에서 띄우면 그대로 붙습니다.
+CORS 허용 오리진과 로컬용 쿠키 설정(`Secure=false`, `SameSite=Lax`)이 compose 에 이미 들어 있습니다.
+
+### IDE 에서 앱만 띄우기
+
+DB·Redis 만 컨테이너로 띄우고 앱은 IDE 나 Gradle 로 실행합니다.
+
+```bash
+docker compose up -d mariadb redis
+
+DB_URL=jdbc:mariadb://localhost:3307/carecode DB_USERNAME=carecode DB_PASSWORD=carecode-local \
+REDIS_PORT=6380 SPRING_FLYWAY_ENABLED=true \
+JWT_SECRET=local-only-jwt-secret-do-not-use-in-production-0123456789 \
+KAKAO_CLIENT_ID=x KAKAO_CLIENT_SECRET=x MAIL_USERNAME=x MAIL_PASSWORD=x \
+EMAIL_VERIFICATION_BASE_URL=http://localhost:8082 \
+./gradlew bootRun --args='--spring.profiles.active=dev'
+```
+
+### 정리
+
+```bash
+docker compose down        # 컨테이너만 내린다 (데이터 유지)
+docker compose down -v     # DB·업로드 볼륨까지 지운다
+```
+
+### 테스트
+
+```bash
+./gradlew test
+```
+
+H2 기반 테스트는 Docker 없이 돕니다. 스키마 정합성 테스트(`FlywaySchemaValidationTest`)는 Testcontainers 로
+MariaDB 를 띄우므로 Docker 가 켜져 있어야 하고, 꺼져 있으면 건너뛰고 끝에 경고를 띄웁니다.
+자세한 내용은 [회귀 방지](docs/quality/regression-safety.md) 를 보세요.
 
 ---
 
@@ -494,7 +534,7 @@ docker-compose up carecode-mariadb carecode-redis -d
 프로젝트는 **SpringDoc OpenAPI 3**를 사용하여 자동으로 API 문서를 생성합니다.
 **운영(prod) 프로파일에서는 차단됩니다.**
 
-**접속 URL**: http://localhost/swagger-ui.html
+**접속 URL**: http://localhost:8082/swagger-ui.html (로컬 `dev` 프로파일)
 
 ### 주요 API 엔드포인트
 
@@ -519,114 +559,72 @@ docker-compose up carecode-mariadb carecode-redis -d
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-**로그인 API**:
-```bash
-curl -X POST http://localhost/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@carecode.com",
-    "password": "admin123"
-  }'
-```
-
-**응답**(요약 — 실제 필드는 `TokenDto` 및 `user` 객체 포함):
-```json
-{
-  "success": true,
-  "message": "로그인 성공!",
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "tokenType": "Bearer",
-  "expiresIn": 3600000,
-  "refreshExpiresIn": 2592000000
-}
-```
+**로그인**: 가입·로그인 예시는 [빠른 시작](#2-가입하고-로그인해-보기) 에 있습니다.
+로그인 응답 본문에 액세스 토큰이 실리고, 리프레시 토큰은 HttpOnly 쿠키로도 내려갑니다.
 
 ---
 
 ## 배포 가이드
 
-### Docker Compose를 이용한 배포
+운영 배포는 **GitHub Actions** 가 합니다. 서버에서 직접 빌드하지 않습니다.
 
-#### 1. 프로덕션 빌드
-
-```bash
-./gradlew clean build -Pprofile=prod
+```
+main 에 머지
+  → 테스트 + 스키마 정합성 검사 + 커버리지 게이트
+  → Docker 이미지 빌드 → GHCR(ghcr.io) 에 push
+  → 서버에 SSH 접속
+      1) 새 이미지를 예비 포트(127.0.0.1:18082)에 먼저 띄워 헬스체크
+      2) 통과하면 운영 컨테이너(8082)를 새 이미지로 교체
+      3) 실패하면 예비 컨테이너만 지우고 기존 운영은 그대로 둔다
+  → 외부 헬스체크 URL 로 한 번 더 확인 → Slack 알림
 ```
 
-#### 2. Docker 이미지 빌드
+`develop` 에 머지하면 같은 흐름으로 스테이징에 배포됩니다. Actions 탭에서 수동 실행(`workflow_dispatch`)도 됩니다.
 
-```bash
-docker build -t carecode-interface:latest .
-```
-
-#### 3. Docker Compose 실행
-
-```bash
-docker-compose up -d
-```
-
-#### 4. 로그 확인
-
-```bash
-# 전체 로그
-docker-compose logs -f
-
-# API 로그만
-docker-compose logs -f carecode-api
-
-# 특정 줄 수만
-docker-compose logs -f --tail=100 carecode-api
-```
-
-#### 5. 컨테이너 상태 확인
-
-```bash
-docker-compose ps
-```
+필요한 GitHub 시크릿, 서버 쪽 전제(`.env` 위치, 포트), Blue/Green 을 쓰지 않는 이유는
+[운영 문서의 배포 절](docs/features/operations.md#배포) 에 정리돼 있습니다.
 
 ### 환경별 프로파일
 
-- **dev**: 개발 환경 (`application-dev.yml`)
-- **prod**: 프로덕션 환경 (`application-prod.yml`)
-- **docker**: Docker 환경 (`application-docker.yml`)
+| 프로파일 | 파일 | 쓰는 곳 |
+|---------|------|--------|
+| (기본) | `application.yml` | 모든 환경의 공통값 |
+| `dev` | `application-dev.yml` | 로컬·`docker compose`. Swagger 공개, 상세 로그, 샘플 데이터 옵션 |
+| `prod` | `application-prod.yml` | 운영. Swagger 차단, 필수 환경변수가 없으면 기동 실패 |
 
-프로파일 변경:
-```bash
-SPRING_PROFILES_ACTIVE=prod docker-compose up -d
-```
+운영 설정은 비밀값을 기본값으로 두지 않습니다. `JWT_SECRET`, `EMAIL_VERIFICATION_BASE_URL` 같은 값이 빠지면
+잘못된 값으로 조용히 뜨는 대신 **기동 단계에서 멈춥니다.**
 
 ### 데이터베이스 마이그레이션
 
-초기 데이터베이스 스키마는 JPA의 `ddl-auto` 설정으로 자동 생성됩니다.
+스키마는 **Flyway** 로 관리합니다 (`src/main/resources/db/migration`, 현재 V1~V18).
+운영은 `ddl-auto=validate` 라 엔티티와 스키마가 다르면 기동하지 않습니다.
 
-**프로덕션 환경**에서는 `ddl-auto: validate`로 설정하고, 별도의 마이그레이션 도구(Flyway, Liquibase 등)를 사용할 것을 권장합니다.
+엔티티에 필드나 테이블을 추가하면 **반드시 다음 번호의 마이그레이션도 함께** 작성합니다.
+빠뜨리면 CI 의 스키마 정합성 테스트가 실패합니다.
 
 ---
 
 ## 데이터베이스 구조
 
-### ERD (Entity Relationship Diagram)
-
-총 **25개 테이블**로 구성되어 있습니다.
-
-자세한 ERD는 [ERD 문서](src/main/resources/documents/ERD.md)를 참고하세요.
+MariaDB 10.11, 테이블 38개(Flyway 이력 테이블 제외). 전체 ERD 는 [docs/ERD.md](docs/ERD.md) 에 있습니다.
 
 ### 주요 테이블
 
-| 테이블명 | 설명 | 주요 컬럼 |
-|---------|------|----------|
-| TBL_USER | 사용자 | user_id, email, password, username |
-| TBL_CHILD | 자녀 정보 | child_id, user_id, name, birth_date |
-| TBL_CARE_FACILITY | 돌봄 시설 | facility_id, name, type, location |
-| TBL_POST | 게시글 | post_id, user_id, title, content, category |
-| TBL_HEALTH_RECORD | 건강 기록 | record_id, child_id, record_type, date |
-| TBL_POLICY | 정책 | policy_id, title, category, target_age |
-| TBL_NOTIFICATION | 알림 | notification_id, user_id, type, message |
-| TBL_CHAT_SESSION | 챗봇 세션 | session_id, user_id, created_at |
+| 테이블 | 설명 |
+|--------|------|
+| `TBL_USER` | 사용자. 이메일 가입과 카카오 가입을 함께 담는다 |
+| `TBL_CHILD` | 자녀 |
+| `TBL_CARE_FACILITIES` | 돌봄 시설 (공공데이터 동기화) |
+| `care_facility_bookings` | 시설 방문·상담 예약 |
+| `TBL_POST`, `TBL_COMMENT` | 커뮤니티 게시글·댓글 |
+| `TBL_HEALTH_RECORD` | 건강 기록 |
+| `TBL_VACCINATION_SCHEDULE` | 예방접종 일정 |
+| `TBL_POLICIES` | 육아 지원 정책 |
+| `TBL_NOTIFICATION` | 알림 |
+| `TBL_CHAT_SESSIONS`, `TBL_CHAT_MESSAGES` | 챗봇 대화 |
 
 ---
-
 ## 개발 로드맵
 
 ### Phase 1: 긴급 개선 (완료)
@@ -641,12 +639,12 @@ SPRING_PROFILES_ACTIVE=prod docker-compose up -d
 - [x] JSON 형식 로깅 (Logstash)
 - [x] 캐싱 전략 확장 (Redis)
 - [x] 트랜잭션 관리 개선
-- [ ] 통합 테스트 확대
+- [x] 통합 테스트 확대 (접근제어·스키마 정합성·API 계약)
 - [ ] API 응답 시간 최적화
 
 ### Phase 3: 장기 개선 (예정)
 
-- [ ] N+1 쿼리 최적화
+- [x] N+1 쿼리 최적화
 - [ ] 모니터링 대시보드 구축
 - [ ] API 버전 관리 (v2)
 - [ ] WebSocket 기반 실시간 알림
@@ -665,64 +663,45 @@ SPRING_PROFILES_ACTIVE=prod docker-compose up -d
 
 ```
 CareCode_Interface/
-├── src/
-│   ├── main/
-│   │   ├── java/com/carecode/
-│   │   │   ├── domain/                   # 도메인별 패키지
-│   │   │   │   ├── user/                 # 사용자 도메인
-│   │   │   │   │   ├── controller/
-│   │   │   │   │   ├── service/
-│   │   │   │   │   ├── repository/
-│   │   │   │   │   ├── entity/
-│   │   │   │   │   └── dto/
-│   │   │   │   ├── careFacility/         # 돌봄 시설 도메인
-│   │   │   │   ├── community/            # 커뮤니티 도메인
-│   │   │   │   ├── health/               # 건강 도메인
-│   │   │   │   ├── policy/               # 정책 도메인
-│   │   │   │   ├── notification/         # 알림 도메인
-│   │   │   │   ├── chatbot/              # 챗봇 도메인
-│   │   │   │   └── admin/                # 관리자 도메인
-│   │   │   ├── core/                     # 공통 컴포넌트
-│   │   │   │   ├── security/             # 보안 (JWT, OAuth2)
-│   │   │   │   ├── exception/            # 예외 처리
-│   │   │   │   ├── config/               # 설정
-│   │   │   │   ├── aop/                  # AOP 기능
-│   │   │   │   └── util/                 # 유틸리티
-│   │   │   └── CareCodeApplication.java  # 메인 클래스
-│   │   └── resources/
-│   │       ├── application.yml           # 기본 설정
-│   │       ├── application-dev.yml       # 개발 환경 설정
-│   │       ├── application-prod.yml      # 프로덕션 설정
-│   │       ├── application-docker.yml    # Docker 설정
-│   │       ├── templates/                # Thymeleaf 템플릿
-│   │       ├── static/                   # 정적 리소스
-│   │       └── documents/                # 문서
-│   │           └── ERD.md                # ERD 문서
-│   └── test/                             # 테스트 코드
-│       ├── java/com/carecode/
-│       │   ├── domain/                   # 도메인별 테스트
-│       │   └── core/                     # 공통 기능 테스트
-│       └── resources/
-│           └── application-test.yml      # 테스트 설정
-├── scripts/                              # 배포 스크립트
-│   └── deploy.sh
-├── .github/                              # GitHub 설정
-│   ├── workflows/                        # CI/CD 워크플로우
-│   ├── ISSUE_TEMPLATE/                   # 이슈 템플릿
-│   └── pull_request_template.md          # PR 템플릿
-├── docker-compose.yml                    # Docker Compose 설정
-├── Dockerfile                            # Docker 이미지 빌드
-├── build.gradle                          # Gradle 빌드 설정
-├── settings.gradle                       # Gradle 프로젝트 설정
-├── .env                                  # 환경 변수 (Git 제외)
-├── .gitignore                            # Git 제외 파일
-├── README.md                             # 프로젝트 소개 (본 문서)
-├── ARCHITECTURE_IMPROVEMENTS.md          # 아키텍처 개선 문서
-└── IMPROVEMENTS_SUMMARY.md               # 개선 사항 요약
+├── src/main/java/com/carecode/
+│   ├── domain/                     # 도메인별 패키지 (controller / service / repository / entity / dto / mapper)
+│   │   ├── user/                   #   가입·로그인·카카오·프로필
+│   │   ├── careFacility/           #   시설 조회·예약·리뷰·대기·입소 예측
+│   │   ├── community/              #   게시글·댓글·좋아요·신고
+│   │   ├── health/                 #   건강 기록·병원·예방접종·성장 곡선
+│   │   ├── policy/                 #   지원 정책·추천·놓친 지원금
+│   │   ├── notification/           #   알림·채널 설정·푸시
+│   │   ├── chatbot/                #   AI 챗봇
+│   │   └── admin/                  #   관리자 API (/api/admin/**)
+│   ├── core/                       # 공통
+│   │   ├── security/               #   JWT 필터, SecurityConfig, CurrentUserFacade
+│   │   ├── aspect/                 #   로깅·Rate Limit·입력 검증 AOP
+│   │   ├── handler/                #   전역 예외 → HTTP 상태 매핑
+│   │   ├── exception/              #   ErrorCode, 도메인 예외
+│   │   ├── config/ scheduler/ storage/ monitoring/ ...
+│   │   └── devtools/               #   로컬 샘플 데이터
+│   └── CareCodeApplication.java
+├── src/main/resources/
+│   ├── application.yml / application-dev.yml / application-prod.yml
+│   ├── db/migration/               # Flyway V1~V18
+│   ├── legal/                      # 개인정보처리방침·약관
+│   └── public-data/                # 공공데이터 매핑
+├── src/test/                       # 단위(Mockito) · 통합(H2) · 스키마(Testcontainers MariaDB)
+├── docs/                           # 설계 문서 (아래 표)
+├── .github/workflows/ci-cd.yml     # 테스트 → 이미지 → 배포
+├── docker-compose.yml              # 로컬 실행 (앱 + MariaDB + Redis)
+├── .env.example                    # 선택 연동 키 예시
+└── Dockerfile
 ```
 
----
+| 문서 | 내용 |
+|------|------|
+| [접근제어 매트릭스](docs/reference/access-control-matrix.md) | 경로별 공개/인증/관리자 여부와 근거 |
+| [마이그레이션](docs/reference/database-migrations.md) | Flyway 버전별 변경 이력 |
+| [운영](docs/features/operations.md) | 배포·헬스체크·알림·스케줄러 |
+| [이슈 관리](docs/ISSUE_MANAGEMENT.md) | 이슈 제목·라벨·마일스톤 규칙 |
 
+---
 ## 주요 개선 사항
 
 ### 1. 예외 처리 개선
@@ -757,7 +736,7 @@ CareCode_Interface/
 
 ### 5. 성능 최적화
 
-- **N+1 쿼리 해결**: JOIN FETCH 활용
+- **N+1 쿼리 해결**: `@EntityGraph`·`@BatchSize`, 댓글 트리는 한 번에 읽어 메모리에서 조립
 - **페이징 처리**: 대용량 데이터 효율적 조회
 - **인덱스 최적화**: 50개 이상의 인덱스 설정
 
@@ -807,7 +786,7 @@ style: 코드 포맷팅 (기능 변경 없음)
 **프로젝트명**: CareCode Interface (맘편한)
 **개발 기간**: 2024.10 ~ 현재
 **참여 인원**: 5명
-**GitHub**: https://github.com/your-organization/carecode-interface
+**GitHub**: https://github.com/CareCode-Repo
 
 ---
 
@@ -816,7 +795,7 @@ style: 코드 포맷팅 (기능 변경 없음)
 프로젝트에 대한 문의사항이 있으시면 아래로 연락 주세요: 정보제공 책임자 - 오태훈
 
 - **이메일**: dhxogns920@gmail.com
-- **이슈 트래커**: https://github.com/CareCode-Repo/carecode-interface/issues
+- **이슈 트래커**: https://github.com/CareCode-Repo/CareCode_Interface/issues
 
 ---
 

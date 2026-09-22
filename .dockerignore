@@ -10,3 +10,8 @@ ORGANIZATION_README.md
 .cursor
 agent-transcripts
 mcps
+# 비밀값과 사용자 업로드 파일은 빌드 컨텍스트로 보내지 않는다.
+.env
+.env.*
+!.env.example
+uploads

@@ -27,12 +27,14 @@ WORKDIR /app
 COPY --from=builder /app/build/libs/carecode-app.jar app.jar
 
 RUN addgroup --system carecode && adduser --system --ingroup carecode carecode
-RUN chown -R carecode:carecode /app
+# 업로드 저장소. 이미지에 폴더가 있어야 볼륨을 처음 붙일 때 소유권이 이어진다.
+# 없으면 볼륨이 root 소유로 생겨 carecode 사용자가 파일을 쓰지 못한다.
+RUN mkdir -p /app/uploads && chown -R carecode:carecode /app
 USER carecode
 
 EXPOSE 8082
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=180s --retries=3 \
   CMD wget -qO- http://127.0.0.1:8082/actuator/health | grep -q '"status":"UP"' || exit 1
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
