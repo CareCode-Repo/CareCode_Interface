@@ -311,6 +311,17 @@ public class HealthController extends BaseController {
                 .build());
     }
 
+    // 병원 수집 현황
+    // 소개 사이트가 수치를 자동으로 가져간다. 클래스 레벨 isAuthenticated() 를 덮는다.
+    // 경로는 /hospitals/{id} 와 모양이 같지만 Spring 은 리터럴 경로를 먼저 고른다.
+    @PreAuthorize("permitAll()")
+    @GetMapping("/hospitals/statistics")
+    @LogExecutionTime
+    @Operation(summary = "병원 수집 현황", description = "전체 병원 수와 진료과목별 병원 수")
+    public ResponseEntity<com.carecode.domain.health.dto.response.HospitalStatsResponse> getHospitalStatistics() {
+        return ResponseEntity.ok(healthFacade.getHospitalStats());
+    }
+
     // 인기 병원 조회
     // 로그인 전에도 병원을 둘러볼 수 있어야 한다. 클래스 레벨 isAuthenticated() 를 덮는다.
     @PreAuthorize("permitAll()")

@@ -235,6 +235,27 @@ public class HealthFacade {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public com.carecode.domain.health.dto.response.HospitalStatsResponse getHospitalStats() {
+        java.util.Map<String, Long> byType = new java.util.HashMap<>();
+        long total = 0;
+        for (Object[] row : hospitalRepository.countByType()) {
+            String type = row[0] == null || row[0].toString().isBlank() ? "기타" : row[0].toString();
+            long count = ((Number) row[1]).longValue();
+            byType.merge(type, count, Long::sum);
+            total += count;
+        }
+        java.util.Map<String, Long> sorted = new java.util.LinkedHashMap<>();
+        byType.entrySet().stream()
+                .sorted(java.util.Map.Entry.<String, Long>comparingByValue().reversed()
+                        .thenComparing(java.util.Map.Entry.comparingByKey()))
+                .forEach(e -> sorted.put(e.getKey(), e.getValue()));
+        return com.carecode.domain.health.dto.response.HospitalStatsResponse.builder()
+                .totalHospitals(total)
+                .byType(sorted)
+                .build();
+    }
+
     public List<HospitalInfoResponse> getPopularHospitals(int limit) {
         int safeLimit = Math.max(limit, 1);
         return hospitalRepository.findPopularHospitals(PageRequest.of(0, safeLimit)).stream()
