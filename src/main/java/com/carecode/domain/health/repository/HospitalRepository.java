@@ -27,4 +27,8 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
            ORDER BY COUNT(hl.id) DESC
            """)
     List<Hospital> findPopularHospitals(Pageable pageable);
-} 
+
+    /** 진료과목별 병원 수. [type, count] */
+    @Query("SELECT h.type, COUNT(h) FROM Hospital h GROUP BY h.type")
+    List<Object[]> countByType();
+}

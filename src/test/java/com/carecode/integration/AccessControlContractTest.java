@@ -99,6 +99,7 @@ class AccessControlContractTest {
             "/facilities/statistics",
             "/health/hospitals",
             "/health/hospitals/popular",
+            "/health/hospitals/statistics",
             "/community/posts",
             "/community/tags"
     })

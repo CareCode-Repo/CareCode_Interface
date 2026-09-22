@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 public class CareFacilityService {
 
     private final CareFacilityRepository careFacilityRepository;
+    private final com.carecode.domain.careFacility.repository.CareFacilityBookingRepository bookingRepository;
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final CareFacilityMapper careFacilityMapper;
@@ -408,19 +409,25 @@ public class CareFacilityService {
     // 돌봄 시설 통계 조회
     @LogExecutionTime
     public CareFacilityStatsResponse getFacilityStats() {
-        long totalFacilities = careFacilityRepository.count();
-        long totalViews = careFacilityRepository.getTotalViewCount();
+        // 예전에는 유형별 통계를 조회해 놓고 버린 뒤 null 을, 활성 시설 수와 예약 수는 0 을 넣었다.
+        // 필드가 있으면 클라이언트는 값이 온다고 믿으므로(소개 사이트가 이 값을 그대로 보여 준다) 실제 값을 채운다.
         List<TypeStats> typeStats = careFacilityRepository.getTypeStats();
-        
+        java.util.Map<String, Long> typeDistribution = new java.util.LinkedHashMap<>();
+        for (TypeStats stats : typeStats) {
+            if (stats.getFacilityType() != null) {
+                typeDistribution.put(stats.getFacilityType().name(), stats.getCount());
+            }
+        }
+
         return CareFacilityStatsResponse.builder()
-                .totalFacilities(totalFacilities)
-                .totalBookings(0L)
-                .activeFacilities(0L)
-                .typeDistribution(null)
-                .typeStats(null)
-                .todayBookings(0L)
-                .thisWeekBookings(0L)
-                .thisMonthBookings(0L)
+                .totalFacilities(careFacilityRepository.count())
+                .activeFacilities(careFacilityRepository.countByIsActiveTrue())
+                .typeDistribution(typeDistribution)
+                .typeStats(typeStats)
+                .totalBookings(bookingRepository.count())
+                .todayBookings(bookingRepository.countTodayBookings())
+                .thisWeekBookings(bookingRepository.countThisWeekBookings())
+                .thisMonthBookings(bookingRepository.countThisMonthBookings())
                 .build();
     }
 

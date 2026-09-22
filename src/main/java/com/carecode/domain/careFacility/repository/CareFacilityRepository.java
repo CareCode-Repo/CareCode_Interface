@@ -85,6 +85,8 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
                                        @Param("maxTuitionFee") Integer maxTuitionFee,
                                        @Param("childAge") Integer childAge);
 
+    long countByIsActiveTrue();
+
     // 전체 조회수 합계 조회
     @Query("SELECT COALESCE(SUM(cf.viewCount), 0) FROM CareFacility cf WHERE cf.isActive = true")
     long getTotalViewCount();

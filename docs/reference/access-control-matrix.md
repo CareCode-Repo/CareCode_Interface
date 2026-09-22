@@ -92,6 +92,7 @@ flowchart TD
 | `/health/hospitals/{id}` | GET | 상세 |
 | `/health/hospitals/nearby` | GET | 반경 검색 |
 | `/health/hospitals/popular` | GET | 인기 |
+| `/health/hospitals/statistics` | GET | 수집 현황(총계·진료과목별). 소개 사이트가 자동으로 가져간다 |
 | `/health/hospitals/type/{type}` | GET | 진료과목별 |
 | `/health/hospitals/{id}/reviews` | GET | 리뷰 조회 |
 | `/health/hospitals/{id}/likes` | GET | 좋아요 수 |
