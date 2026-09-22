@@ -107,7 +107,7 @@ server:
 
 app:
   api:
-    base-url: /api/v1
+    # 버전은 경로가 아니라 X-API-Version 헤더로 협상한다 (docs/reference/api-versioning.md).
     version: v1
     title: 맘편한 API
     description: 육아 지원 플랫폼 맘편한의 REST API

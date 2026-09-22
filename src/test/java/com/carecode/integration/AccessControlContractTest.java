@@ -235,6 +235,17 @@ class AccessControlContractTest {
                 .isNotIn(401, 403);
     }
 
+    /** 버전 필터가 실제 필터 체인에 걸려 있는지. 단위 테스트만으로는 등록 누락을 모른다. */
+    @Test
+    @DisplayName("응답에 API 버전 헤더가 붙고, 모르는 버전은 400 이다")
+    void apiVersionHeader() throws Exception {
+        MvcResult ok = mockMvc.perform(get("/facilities")).andReturn();
+        assertThat(ok.getResponse().getHeader("X-API-Version")).isEqualTo("1");
+
+        MvcResult unsupported = mockMvc.perform(get("/facilities").header("X-API-Version", "9")).andReturn();
+        assertThat(unsupported.getResponse().getStatus()).isEqualTo(400);
+    }
+
     /** 사용자 목록·검색은 전체 회원 개인정보다. 로그인만 했다고 열리면 안 된다. */
     @ParameterizedTest(name = "{0} 은 일반 회원에게 403 이다")
     @ValueSource(strings = {

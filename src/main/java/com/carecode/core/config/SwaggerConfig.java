@@ -29,8 +29,10 @@ public class SwaggerConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("CareCode API")
-                        .description("육아 지원 플랫폼 맘편한의 REST API 문서")
-                        .version("1.0.0")
+                        .description("육아 지원 플랫폼 맘편한의 REST API 문서. "
+                                + "API 버전은 `X-API-Version` 요청 헤더로 지정합니다. 생략하면 현재 버전(1)이며, "
+                                + "응답의 `X-API-Version` 헤더가 실제로 처리한 버전입니다.")
+                        .version("1")
                         .contact(new Contact()
                                 .name("CareCode Team")
                                 .email("dhxogns920@naver.com")
@@ -57,6 +59,17 @@ public class SwaggerConfig {
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("basic")
                                 .description("기본 인증 정보를 입력하세요")));
+    }
+
+    /** 모든 API 에 선택 헤더 X-API-Version 을 문서로 보여 준다. */
+    @Bean
+    public org.springdoc.core.customizers.OperationCustomizer apiVersionHeader() {
+        return (operation, handlerMethod) -> operation.addParametersItem(
+                new io.swagger.v3.oas.models.parameters.HeaderParameter()
+                        .name(com.carecode.core.web.ApiVersionFilter.HEADER)
+                        .required(false)
+                        .description("API 버전. 생략하면 현재 버전(1). 지원하지 않는 값이면 400")
+                        .schema(new io.swagger.v3.oas.models.media.StringSchema()._default("1")));
     }
 
     // 환경별 서버 목록 생성
