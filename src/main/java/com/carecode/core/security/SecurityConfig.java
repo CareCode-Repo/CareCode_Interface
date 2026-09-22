@@ -78,6 +78,10 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(authz -> {
+                // 비동기 응답(알림 SSE)이 끝날 때 서블릿 컨테이너가 ASYNC 디스패치를 한 번 더 한다.
+                // JWT 필터는 그 디스패치에서 돌지 않아 인증 정보가 비어 있고, 여기서 막으면 이미 커밋된
+                // 응답에 401 을 쓰려다 오류 로그만 남는다. 원래 요청에서 이미 인가를 통과했으므로 연다.
+                authz.dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll();
                 if (!environment.matchesProfiles("prod")) {
                     authz.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll();
                 }
