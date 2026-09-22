@@ -146,7 +146,17 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/facilities/*/rating").authenticated()
                 .requestMatchers("/facilities/*/rating").permitAll()
                 
-                // 돌봄시설 공공데이터 API (공개 접근)
+                // 돌봄시설 공공데이터 API — 조회만 공개다.
+                //
+                // 동기화는 외부 공공데이터 API 를 페이지 단위로 호출하고 DB 에 쓴다.
+                // 공개로 두면 누구나 공공데이터 일일 한도를 태우고 DB 를 두드릴 수 있다.
+                // (이 프로젝트는 "공공데이터 한도 초과" 를 운영 알림으로 잡고 있는데,
+                //  그 상황을 외부에서 마음대로 만들 수 있는 셈이다.)
+                // swagger/sync 는 GET 이라 브라우저 접속이나 크롤러만으로도 실행된다.
+                //
+                // 같은 기능이 POST /api/admin/public-data/facilities/sync 로 이미 있다.
+                .requestMatchers("/api/public/care-facilities/sync-all").hasRole("ADMIN")
+                .requestMatchers("/api/public/care-facilities/swagger/sync").hasRole("ADMIN")
                 .requestMatchers("/api/public/care-facilities/**").permitAll()
                 
                 // 병원 조회는 로그인 전에도 보여야 한다. 실제 경로가 /health/hospitals/** 라
@@ -155,6 +165,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/health/hospitals/nearby").permitAll()
                 .requestMatchers(HttpMethod.GET, "/health/hospitals/popular").permitAll()
                 .requestMatchers(HttpMethod.GET, "/health/hospitals/type/*").permitAll()
+                // "내가 찜한 병원" 은 개인 목록이다. 경로가 한 세그먼트라 바로 아래
+                // /health/hospitals/* 와일드카드에 먼저 걸리므로 그보다 앞에 선언해야 한다.
+                // (병원 상세 /health/hospitals/{id} 와 같은 모양이라 눈에 잘 띄지 않는다.)
+                .requestMatchers(HttpMethod.GET, "/health/hospitals/likes").authenticated()
                 .requestMatchers(HttpMethod.GET, "/health/hospitals/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/health/hospitals/*/reviews").permitAll()
                 .requestMatchers(HttpMethod.GET, "/health/hospitals/*/likes").permitAll()
@@ -182,6 +196,12 @@ public class SecurityConfig {
                 
                 // 커뮤니티 API - 조회는 공개, 작성/수정/삭제는 인증 필요
                 .requestMatchers(HttpMethod.GET, "/community/posts").permitAll() // 게시글 목록 조회
+                // "내가 좋아요/북마크한 글" 은 개인 목록이다. 경로가 한 세그먼트라
+                // 아래 게시글 상세 와일드카드에 먼저 걸리므로 그보다 앞에 선언한다.
+                // (현재는 컨트롤러가 현재 사용자를 다시 확인해 401 을 내지만,
+                //  나중에 userId 파라미터를 받도록 바뀌면 그대로 남의 목록이 열린다.)
+                .requestMatchers(HttpMethod.GET, "/community/posts/liked").authenticated()
+                .requestMatchers(HttpMethod.GET, "/community/posts/bookmarked").authenticated()
                 .requestMatchers(HttpMethod.GET, "/community/posts/*").permitAll() // 게시글 상세 조회
                 .requestMatchers(HttpMethod.GET, "/community/search").permitAll() // 게시글 검색
                 .requestMatchers(HttpMethod.GET, "/community/popular").permitAll() // 인기 게시글

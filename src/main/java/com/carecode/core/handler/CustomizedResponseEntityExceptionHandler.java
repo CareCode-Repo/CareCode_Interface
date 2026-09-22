@@ -75,19 +75,30 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
-    // BusinessException 처리 (하위 호환성 유지)
+    /**
+     * BusinessException 처리 (하위 호환성 유지).
+     *
+     * <p>예전에는 여기서 ErrorCode 를 {@code INVALID_INPUT} 으로, 상태를 400 으로 고정했다.
+     * {@code BusinessException} 은 {@code CareCodeException} 의 하위 타입이라 자기 ErrorCode 와
+     * HttpStatus 를 이미 들고 있는데, 그 값을 통째로 버린 것이다.
+     *
+     * <p>그래서 세션 만료·권한 없음이 전부 400 으로 나갔다.
+     * 프런트 인터셉터는 <b>401 에서만</b> 토큰을 갱신하고 로그인으로 보내므로,
+     * 만료된 세션으로 건강기록이나 알림에 접근하면 갱신도 재로그인도 일어나지 않고
+     * "입력값이 유효하지 않습니다" 만 보였다. (해당 경로 9곳: HealthService 6, NotificationService 2, JwtService 1)
+     */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex, WebRequest request) {
-        log.warn("BusinessException 발생: {}", ex.getMessage());
-        
+        log.warn("BusinessException 발생: {} - {}", ex.getErrorCode().getCode(), ex.getMessage());
+
         ErrorResponse errorResponse = ErrorResponse.of(
-            ErrorCode.INVALID_INPUT,
+            ex.getErrorCode(),
             ex.getMessage(),
             request.getDescription(false)
         );
-        
+
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .status(ex.getHttpStatus())
                 .body(errorResponse);
     }
 
