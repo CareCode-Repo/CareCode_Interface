@@ -110,7 +110,9 @@ public class SecurityConfig {
                 .requestMatchers("/auth/refresh").permitAll() // 토큰 갱신
                 .requestMatchers("/auth/kakao/login").permitAll() // 카카오 로그인
                 .requestMatchers("/auth/kakao/login-url").permitAll() // 카카오 로그인 URL 생성
-                .requestMatchers("/auth/kakao/complete-registration").permitAll() // 카카오 가입 완료
+                // 카카오 가입 완료는 로그인한 사용자가 자기 계정에 하는 동작이다(대상은 토큰의 이메일).
+                // permitAll 로 두면 JWT 필터 예외와 겹쳐 인증 없이 들어오고, 컨트롤러가 401 을 냈다.
+                .requestMatchers("/auth/kakao/complete-registration").authenticated()
                 
                 // OAuth2 authorize/token (Spring Client beans).
                 .requestMatchers("/oauth2/**").permitAll()

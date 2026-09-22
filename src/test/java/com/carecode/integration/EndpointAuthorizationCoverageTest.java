@@ -96,7 +96,9 @@ class EndpointAuthorizationCoverageTest {
             "POST /auth/login", "POST /auth/register", "POST /auth/refresh",
             "POST /auth/send-code", "POST /auth/verify-code", "GET /auth/verify",
             "POST /auth/kakao/login", "GET /auth/kakao/login-url",
-            "POST /auth/kakao/complete-registration",
+            // /auth/kakao/complete-registration 은 공개가 아니다. 카카오 로그인이 준 토큰으로
+            // 자기 계정의 가입을 끝내는 동작이다. 예전에 여기 공개로 적혀 있었고, 그래서
+            // JWT 필터가 건너뛰어 흐름 전체가 401 이었다.
 
             // 둘러보기 — 로그인 전에 보여야 가입 전환이 생긴다
             "GET /facilities", "GET /facilities/popular", "GET /facilities/new",

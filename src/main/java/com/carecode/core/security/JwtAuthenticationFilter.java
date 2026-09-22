@@ -115,7 +115,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/auth/login") ||
                path.startsWith("/auth/register") ||
                path.equals("/auth/refresh") ||
-               path.startsWith("/auth/kakao") ||
+               // /auth/kakao 전체가 아니다. 가입 완료(/auth/kakao/complete-registration)는
+               // 카카오 로그인이 발급한 토큰으로 호출되는데, 접두사로 통째로 건너뛰면 토큰이
+               // 해석되지 않아 항상 401 이었다. 카카오로 처음 들어온 사람은 가입을 끝낼 수 없었다.
+               path.equals("/auth/kakao/login") ||
+               path.equals("/auth/kakao/login-url") ||
                path.startsWith("/oauth2") ||
                path.startsWith("/login/oauth2") ||
                path.equals("/kakao-callback.html");
