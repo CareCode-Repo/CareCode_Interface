@@ -17,6 +17,10 @@ import com.carecode.domain.notification.dto.response.NotificationTemplateRespons
 import com.carecode.domain.notification.dto.response.NotificationDeliveryStatusResponse;
 import com.carecode.domain.notification.app.NotificationFacade;
 import com.carecode.domain.notification.entity.Notification;
+import com.carecode.domain.notification.realtime.NotificationStreamService;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.MediaType;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,6 +47,19 @@ public class NotificationController extends BaseController {
 
     private final NotificationFacade notificationFacade;
     private final CurrentUserFacade currentUserFacade;
+    private final NotificationStreamService notificationStreamService;
+
+    // 실시간 수신 (SSE)
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "알림 실시간 수신 (SSE)",
+            description = "연결 직후 connected 이벤트, 새 알림마다 notification 이벤트(JSON, id=알림 id)가 온다. "
+                    + "25초마다 heartbeat 주석. 끊기면 다시 연결하고 목록을 새로 불러온다.")
+    public SseEmitter stream(HttpServletResponse response) {
+        // Nginx 가 이벤트를 모아 두지 않고 바로 흘려보내게 한다.
+        response.setHeader("X-Accel-Buffering", "no");
+        response.setHeader("Cache-Control", "no-cache");
+        return notificationStreamService.connect(currentUserFacade.requireCurrentUserDbId());
+    }
 
     // 알림 목록 조회
     @GetMapping

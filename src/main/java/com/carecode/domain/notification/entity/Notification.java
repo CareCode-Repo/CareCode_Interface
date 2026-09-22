@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 /** 알림 엔티티 사용자에게 전송되는 알림을 관리합니다. 단순한 구조로 필수 기능만 포함합니다. */
 @Entity
 @Table(name = "TBL_NOTIFICATION")
+@EntityListeners(com.carecode.domain.notification.realtime.NotificationPersistListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
