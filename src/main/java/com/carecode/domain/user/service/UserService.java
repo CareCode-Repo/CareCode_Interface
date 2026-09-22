@@ -6,6 +6,7 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
 import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.domain.user.dto.request.PasswordChangeRequestDto;
+import com.carecode.domain.user.dto.request.SignUpRequest;
 import com.carecode.domain.user.dto.response.UserDto;
 import com.carecode.domain.user.dto.response.UserStatsResponse;
 import com.carecode.domain.user.entity.User;
@@ -245,46 +246,38 @@ public class UserService {
         return convertToDto(updatedUser);
     }
 
-    // 사용자 생성
+    /**
+     * 이메일 회원가입.
+     *
+     * <p>요청은 {@link SignUpRequest} 다. 예전에는 응답 DTO 인 UserDto 를 그대로 받아서
+     * role/provider/emailVerified 같은 서버 결정 값이 요청 계약에 노출돼 있었고, 실제로 role 을
+     * 그대로 저장해 누구나 관리자가 될 수 있었다(#82). 이제 요청 타입에 그 필드가 아예 없다.
+     * 그래도 아래에서 값을 명시적으로 고정해, 요청 타입이 다시 넓어져도 결과가 바뀌지 않게 한다.
+     */
     @Transactional
-    public UserDto createUser(UserDto userDto) {
-        log.info("사용자 생성: 이메일={}, provider={}", userDto.getEmail(), userDto.getProvider());
+    public UserDto createUser(SignUpRequest request) {
+        log.info("사용자 생성: 이메일={}", request.getEmail());
 
         // 이메일 중복 확인
-        if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다: " + userDto.getEmail());
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("이미 존재하는 이메일입니다: " + request.getEmail());
         }
 
-        // 이메일 회원가입이므로 비밀번호는 항상 필수다.
-        if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty()) {
+        // 컨트롤러의 @Valid 가 먼저 막지만, 서비스를 직접 부르는 경로에서도 비밀번호 없는 계정이 생기면 안 된다.
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
             throw new IllegalArgumentException("비밀번호는 필수입니다.");
         }
-        String encodedPassword = passwordEncoder.encode(userDto.getPassword());
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
 
-        // 클라이언트가 보낸 role 은 신뢰하지 않는다.
-        //
-        // 예전에는 요청 본문의 role 을 그대로 썼다. 이 엔드포인트(POST /auth/register)는
-        // permitAll 이므로, 로그인조차 없이 {"role":"ADMIN"} 으로 가입하면 그 자리에서
-        // 관리자가 됐다. 가입은 언제나 일반 사용자로 끝나야 하고, 승격은 관리자만 할 수 있는
-        // 별도 경로(PUT /api/admin/users/{id}/role)로만 가능해야 한다.
-        if (userDto.getRole() != null && !SELF_SIGNUP_ROLE.name().equals(userDto.getRole())) {
-            log.warn("회원가입 요청의 role 을 무시합니다 - 요청값={}, 적용값={}",
-                    userDto.getRole(), SELF_SIGNUP_ROLE);
-        }
-
-        // provider/providerId 도 마찬가지다. 소셜 가입은 AuthServiceImpl 의 별도 경로가 처리하며
-        // 그쪽에서 provider 를 직접 지정한다. 여기서 클라이언트가 provider 를 붙일 수 있게 두면
-        // 비밀번호 없이(로그인 불가하지만) 임의 이메일·임의 providerId 로 계정을 미리 만들어 둘 수 있고,
-        // 이메일 인증도 건너뛴 것으로 표시됐다.
         User user = User.builder()
-                .email(userDto.getEmail())
+                .email(request.getEmail())
                 .password(encodedPassword)
-                .name(userDto.getName())
-                .phoneNumber(userDto.getPhoneNumber())
-                .birthDate(userDto.getBirthDate())
-                .gender(userDto.getGender() != null ? Gender.valueOf(userDto.getGender()) : null)
-                .address(userDto.getAddress())
-                .profileImageUrl(userDto.getProfileImageUrl())
+                .name(request.getName())
+                .phoneNumber(request.getPhoneNumber())
+                .birthDate(request.getBirthDate())
+                .gender(request.getGender() != null ? Gender.valueOf(request.getGender()) : null)
+                .address(request.getAddress())
+                // 서버가 정하는 값. 요청으로는 바꿀 수 없다.
                 .role(SELF_SIGNUP_ROLE)
                 .provider(null)
                 .providerId(null)

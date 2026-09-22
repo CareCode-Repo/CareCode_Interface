@@ -264,6 +264,72 @@ public class CustomizedResponseEntityExceptionHandler {
                 .body(errorResponse);
     }
 
+    /**
+     * 클라이언트가 잘못 보낸 요청.
+     *
+     * <p>이 클래스는 ResponseEntityExceptionHandler 를 상속하지 않고 아래에 Exception 최후 핸들러를
+     * 두고 있다. 그래서 스프링이 원래 4xx 로 바꿔주던 예외가 전부 최후 핸들러에 잡혀
+     * <b>500 + Slack 운영 알림</b>이 됐다. 실측으로 확인했다(ClientErrorStatusTest, 수정 전 5건 전부 500).
+     * 깨진 JSON 하나, 파라미터 하나 빠진 요청마다 알림이 울리면 진짜 장애가 그 소음에 묻힌다.
+     * 없는 URL(404)·권한 거부(403)를 걸러낸 것과 같은 이유다.
+     *
+     * <p>메시지에 예외 원문을 넣지 않는다. 역직렬화 오류 메시지에는 내부 클래스명과
+     * 필드 구조가 그대로 들어 있다.
+     */
+    @ExceptionHandler({
+            org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.multipart.support.MissingServletRequestPartException.class,
+            org.springframework.web.bind.MissingPathVariableException.class
+    })
+    public ResponseEntity<ErrorResponse> handleBadRequest(Exception ex, WebRequest request) {
+        log.warn("잘못된 요청: {} - {}", ex.getClass().getSimpleName(), request.getDescription(false));
+
+        // Java 17 이라 타입 패턴 switch 대신 instanceof 로 가른다.
+        String message = "잘못된 요청입니다";
+        if (ex instanceof org.springframework.http.converter.HttpMessageNotReadableException) {
+            message = "요청 본문을 읽을 수 없습니다";
+        } else if (ex instanceof org.springframework.web.bind.MissingServletRequestParameterException e) {
+            message = "필수 파라미터가 없습니다: " + e.getParameterName();
+        } else if (ex instanceof org.springframework.web.method.annotation.MethodArgumentTypeMismatchException e) {
+            message = "파라미터 형식이 올바르지 않습니다: " + e.getName();
+        } else if (ex instanceof org.springframework.web.multipart.support.MissingServletRequestPartException e) {
+            message = "필수 파일이 없습니다: " + e.getRequestPartName();
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT, message, request.getDescription(false)));
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex, WebRequest request) {
+        log.warn("지원하지 않는 메서드: {} {}", ex.getMethod(), request.getDescription(false));
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT,
+                        "지원하지 않는 메서드입니다: " + ex.getMethod(), request.getDescription(false)));
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMediaTypeNotSupported(
+            org.springframework.web.HttpMediaTypeNotSupportedException ex, WebRequest request) {
+        log.warn("지원하지 않는 Content-Type: {} {}", ex.getContentType(), request.getDescription(false));
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT,
+                        "지원하지 않는 Content-Type 입니다", request.getDescription(false)));
+    }
+
+    /** 업로드 크기 초과. spring.servlet.multipart.max-file-size(10MB) 를 넘으면 여기로 온다. */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSize(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex, WebRequest request) {
+        log.warn("업로드 크기 초과: {}", request.getDescription(false));
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT,
+                        "파일이 너무 큽니다", request.getDescription(false)));
+    }
+
     // 모든 예외 처리 (최후의 수단)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex, WebRequest request) {

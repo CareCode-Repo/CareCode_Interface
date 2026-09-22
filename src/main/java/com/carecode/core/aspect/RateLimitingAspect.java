@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -43,9 +42,14 @@ public class RateLimitingAspect {
             if (count == 1L) {
                 redisTemplate.expire(key, Duration.ofSeconds(rateLimit.windowSeconds()));
             }
-        } catch (DataAccessException e) {
+        } catch (RuntimeException e) {
             // Redis 장애로 전체 API 가 막히지 않도록 fail-open 한다.
-            log.error("Rate limit 카운터 조회 실패 - Redis 장애로 제한을 건너뜁니다. key={}", key, e);
+            //
+            // 예전에는 DataAccessException 만 잡았다. 그 밖의 실패(연결 팩토리 상태에 따라
+            // opsForValue() 가 null 이거나, 풀·직렬화 단계에서 나는 오류)는 그대로 500 이 됐고,
+            // 이 어노테이션이 붙은 로그인·가입·인증코드·챗봇이 한꺼번에 멈췄다.
+            // RateLimitInterceptor 에서 같은 결함을 고쳤는데(#87) 여기는 남아 있었다.
+            log.error("Rate limit 카운터 조회 실패 - 제한을 건너뜁니다. key={}", key, e);
             return joinPoint.proceed();
         }
 

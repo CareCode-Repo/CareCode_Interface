@@ -8,6 +8,7 @@ import com.carecode.core.security.RefreshTokenCookieFactory;
 import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.domain.user.dto.request.LoginRequestDto;
 import com.carecode.domain.user.dto.request.RefreshTokenRequest;
+import com.carecode.domain.user.dto.request.SignUpRequest;
 import com.carecode.domain.user.dto.response.TokenDto;
 import com.carecode.domain.user.dto.response.UserDto;
 import com.carecode.domain.user.entity.User;
@@ -84,7 +85,7 @@ public class AuthController extends BaseController {
     @LogExecutionTime
     @RateLimit(requests = 5, windowSeconds = 3600, message = "가입 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
     @Operation(summary = "회원가입", description = "새로운 사용자 등록")
-    public ResponseEntity<TokenDto> register(@Parameter(description = "회원가입 정보", required = true) @Valid @RequestBody UserDto request) {
+    public ResponseEntity<TokenDto> register(@Parameter(description = "회원가입 정보", required = true) @Valid @RequestBody SignUpRequest request) {
         UserDto createdUser = userService.createUser(request);
         User user = userService.getUserEntityByEmail(createdUser.getEmail());
         TokenDto tokenDto = authService.issueTokenForUser(user, "회원가입 성공!");
