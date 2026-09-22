@@ -82,7 +82,8 @@ public class AuthServiceImpl implements AuthService {
                 user.setUpdatedAt(LocalDateTime.now());
                 userRepository.save(user);
 
-                if ("kakao".equals(user.getProvider()) && !user.getRegistrationCompleted()) {
+                // registrationCompleted 는 Boolean 이다. null 이면 !언박싱에서 NPE 로 로그인 전체가 500 이 된다.
+                if ("kakao".equals(user.getProvider()) && !Boolean.TRUE.equals(user.getRegistrationCompleted())) {
                     isNewUser = true;
                 }
             } else {

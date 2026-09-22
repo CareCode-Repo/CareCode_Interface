@@ -43,6 +43,13 @@ public class UserService {
     /** 자가 가입으로 만들어질 수 있는 유일한 역할. 그 이상은 관리자만 부여한다. */
     private static final UserRole SELF_SIGNUP_ROLE = UserRole.PARENT;
 
+    /**
+     * 가입 과정에서 본인이 고를 수 있는 역할. 프런트 가입 화면은 PARENT 로 고정해 보낸다.
+     * ADMIN 은 관리자만 부여할 수 있다(PUT /api/admin/users/{id}/role).
+     */
+    private static final java.util.Set<UserRole> SELF_SELECTABLE_ROLES =
+            java.util.EnumSet.of(UserRole.PARENT, UserRole.CAREGIVER);
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
@@ -203,17 +210,28 @@ public class UserService {
             throw new IllegalArgumentException("카카오 사용자가 아닙니다: " + email);
         }
         
-        // 이미 가입 완료된 사용자인지 확인
-        if (user.getRegistrationCompleted()) {
+        // 이미 가입 완료된 사용자인지 확인 (Boolean 이라 null 이면 언박싱에서 터진다)
+        if (Boolean.TRUE.equals(user.getRegistrationCompleted())) {
             throw new IllegalArgumentException("이미 가입 완료된 사용자입니다: " + email);
         }
-        
-        // 역할 유효성 검증
+
+        // 역할은 스스로 고를 수 있는 것만 받는다.
+        //
+        // 예전에는 요청 본문의 role 을 UserRole.valueOf 로 그대로 받았고, 오류 메시지가
+        // "가능한 역할: PARENT, CAREGIVER, ADMIN, GUEST" 라고 친절히 알려주기까지 했다.
+        // 즉 {"role":"ADMIN"} 으로 가입을 끝내면 그 자리에서 관리자가 됐다(이메일 가입의 #82 와 같다).
+        // 한동안 드러나지 않은 건 JWT 필터가 이 경로를 건너뛰어 흐름 자체가 401 로 막혀 있었기 때문이다.
+        //
+        // 금지 목록이 아니라 허용 목록이다. 나중에 특권 역할이 추가돼도 기본으로 막힌다.
         UserRole userRole;
         try {
-            userRole = UserRole.valueOf(role);
+            userRole = UserRole.valueOf(role.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 역할입니다: " + role + ". 가능한 역할: PARENT, CAREGIVER, ADMIN, GUEST");
+            throw new IllegalArgumentException("유효하지 않은 역할입니다: " + role);
+        }
+        if (!SELF_SELECTABLE_ROLES.contains(userRole)) {
+            log.warn("카카오 가입 완료에서 스스로 고를 수 없는 역할 요청 - email={}, role={}", email, userRole);
+            throw new IllegalArgumentException("선택할 수 없는 역할입니다: " + role);
         }
         
         // 이름 및 역할 업데이트 및 가입 프로세스 완료 처리
@@ -566,7 +584,7 @@ public class UserService {
         }
         
         // 이미 활성화된 계정인지 확인
-        if (user.getIsActive() && user.getDeletedAt() == null) {
+        if (Boolean.TRUE.equals(user.getIsActive()) && user.getDeletedAt() == null) {
             throw new IllegalArgumentException("이미 활성화된 계정입니다.");
         }
         
