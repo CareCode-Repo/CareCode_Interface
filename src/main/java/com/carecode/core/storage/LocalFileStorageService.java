@@ -12,7 +12,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -37,11 +36,14 @@ public class LocalFileStorageService implements FileStorageService {
     private final Path rootLocation;
     private final String publicBaseUrl;
     private final long maxFileSize;
+    private final FileScanner fileScanner;
 
     public LocalFileStorageService(
             @Value("${app.storage.local.root:./uploads}") String root,
             @Value("${app.storage.public-base-url:/files}") String publicBaseUrl,
-            @Value("${app.storage.max-file-size-bytes:10485760}") long maxFileSize) {
+            @Value("${app.storage.max-file-size-bytes:10485760}") long maxFileSize,
+            FileScanner fileScanner) {
+        this.fileScanner = fileScanner;
         this.rootLocation = Paths.get(root).toAbsolutePath().normalize();
         this.publicBaseUrl = publicBaseUrl.endsWith("/")
                 ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1)
@@ -59,6 +61,9 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public StoredFile store(MultipartFile file, String directory) {
         validate(file);
+        byte[] content = readContent(file);
+        verifySignature(file.getOriginalFilename(), content);
+        scan(content);
 
         String extension = extractExtension(file.getOriginalFilename());
         // 원본 파일명을 그대로 쓰면 경로 조작(../)과 파일명 충돌 위험이 있으므로 UUID 로 대체한다.
@@ -73,9 +78,8 @@ public class LocalFileStorageService implements FileStorageService {
 
         try {
             Files.createDirectories(targetDir);
-            try (InputStream in = file.getInputStream()) {
-                Files.copy(in, targetDir.resolve(storedName), StandardCopyOption.REPLACE_EXISTING);
-            }
+            // 검사한 바이트를 그대로 쓴다. 스트림을 다시 열면 검사한 것과 다른 내용이 저장될 여지가 생긴다.
+            Files.write(targetDir.resolve(storedName), content);
         } catch (IOException e) {
             log.error("파일 저장 실패 - key={}", key, e);
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다.");
@@ -155,6 +159,43 @@ public class LocalFileStorageService implements FileStorageService {
         if (contentType != null && !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
             throw new BusinessException(ErrorCode.INVALID_INPUT,
                     "허용되지 않는 파일 형식입니다: " + contentType);
+        }
+    }
+
+    /** 최대 크기(기본 10MB)를 이미 확인했으므로 메모리에 올려도 된다. */
+    private byte[] readContent(MultipartFile file) {
+        try {
+            return file.getBytes();
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "업로드한 파일을 읽을 수 없습니다.");
+        }
+    }
+
+    /**
+     * 확장자와 Content-Type 은 클라이언트가 정하는 값이다. 실제 바이트가 그 형식인지 본다.
+     * (HTML·SVG 를 .png 로 올려도 앞의 두 검사는 통과한다.)
+     */
+    private void verifySignature(String filename, byte[] content) {
+        String extension = extractExtension(filename);
+        byte[] header = java.util.Arrays.copyOf(content, Math.min(content.length, FileSignatureValidator.HEADER_LENGTH));
+        if (!FileSignatureValidator.matches(extension, header)) {
+            log.warn("확장자와 내용이 다른 업로드를 거부했습니다 - extension={}", extension);
+            throw new BusinessException(ErrorCode.FILE_CONTENT_MISMATCH,
+                    "파일 내용이 ." + extension + " 형식이 아닙니다.");
+        }
+    }
+
+    /** 검사기에 닿지 못하면 받지 않는다. 검사를 켠 환경에서 조용히 통과시키면 켠 의미가 없다. */
+    private void scan(byte[] content) {
+        FileScanner.ScanResult result;
+        try {
+            result = fileScanner.scan(content);
+        } catch (FileScanner.ScannerUnavailableException e) {
+            log.error("파일 검사 실패로 업로드를 거부했습니다", e);
+            throw new BusinessException(ErrorCode.FILE_SCAN_UNAVAILABLE, ErrorCode.FILE_SCAN_UNAVAILABLE.getMessage());
+        }
+        if (!result.clean()) {
+            throw new BusinessException(ErrorCode.FILE_REJECTED_BY_SCAN, ErrorCode.FILE_REJECTED_BY_SCAN.getMessage());
         }
     }
 

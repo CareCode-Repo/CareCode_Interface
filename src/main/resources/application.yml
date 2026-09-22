@@ -175,6 +175,13 @@ app:
       root: ${STORAGE_ROOT:./uploads}
     public-base-url: ${STORAGE_PUBLIC_BASE_URL:/files}
     max-file-size-bytes: ${STORAGE_MAX_FILE_SIZE:10485760}
+    # 업로드 악성코드 검사 (ClamAV clamd). 켜면 검사기에 닿지 못할 때 업로드를 받지 않는다(503).
+    scan:
+      enabled: ${STORAGE_SCAN_ENABLED:false}
+      clamd:
+        host: ${CLAMD_HOST:localhost}
+        port: ${CLAMD_PORT:3310}
+        timeout-millis: ${CLAMD_TIMEOUT_MILLIS:10000}
   notification:
     # 알림에서 앱 화면으로 이동하는 스킴. 클릭 집계 후 이 주소로 리다이렉트한다
     deep-link-base: ${NOTIFICATION_DEEP_LINK_BASE:carecode://}
