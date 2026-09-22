@@ -24,6 +24,12 @@ public class GrowthPointResponse {
     private final String interpretation;
     private final Boolean needsAttention;
 
+    /** Lombok 의 getZScore() 를 Jackson 은 "zscore" 로 읽는다. 프런트가 읽는 이름으로 고정한다. */
+    @com.fasterxml.jackson.annotation.JsonProperty("zScore")
+    public Double getZScore() {
+        return zScore;
+    }
+
     public static GrowthPointResponse of(LocalDate recordDate,
                                          int ageMonths,
                                          double value,

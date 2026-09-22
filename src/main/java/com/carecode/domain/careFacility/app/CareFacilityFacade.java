@@ -17,7 +17,6 @@ import com.carecode.domain.careFacility.service.CareFacilityBookingService;
 import com.carecode.domain.careFacility.service.FacilityPopularityService;
 import com.carecode.domain.careFacility.service.CareFacilityService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,18 +97,18 @@ public class CareFacilityFacade {
     }
 
     @Transactional
-    public BookingResponse createBooking(Long facilityId, CreateBookingRequest request, UserDetails userDetails) {
-        return bookingService.createBooking(facilityId, request, userDetails);
+    public BookingResponse createBooking(Long facilityId, CreateBookingRequest request, String userId) {
+        return bookingService.createBooking(facilityId, request, userId);
     }
 
     @Transactional(readOnly = true)
-    public BookingResponse getBookingById(Long bookingId, UserDetails userDetails) {
-        return bookingService.getBookingById(bookingId, userDetails);
+    public BookingResponse getBookingById(Long bookingId, String userId) {
+        return bookingService.getBookingById(bookingId, userId);
     }
 
     @Transactional(readOnly = true)
-    public List<BookingResponse> getUserBookings(UserDetails userDetails) {
-        return bookingService.getUserBookings(userDetails);
+    public List<BookingResponse> getUserBookings(String userId) {
+        return bookingService.getUserBookings(userId);
     }
 
     @Transactional(readOnly = true)
@@ -118,18 +117,18 @@ public class CareFacilityFacade {
     }
 
     @Transactional
-    public BookingResponse updateBookingStatus(Long bookingId, String status, UserDetails userDetails) {
-        return bookingService.updateBookingStatus(bookingId, status, userDetails);
+    public BookingResponse updateBookingStatus(Long bookingId, String status) {
+        return bookingService.updateBookingStatus(bookingId, status);
     }
 
     @Transactional
-    public void cancelBooking(Long bookingId, UserDetails userDetails) {
-        bookingService.cancelBooking(bookingId, userDetails);
+    public void cancelBooking(Long bookingId, String userId) {
+        bookingService.cancelBooking(bookingId, userId);
     }
 
     @Transactional
-    public BookingResponse updateBooking(Long bookingId, UpdateBookingRequest request, UserDetails userDetails) {
-        return bookingService.updateBooking(bookingId, request, userDetails);
+    public BookingResponse updateBooking(Long bookingId, UpdateBookingRequest request, String userId) {
+        return bookingService.updateBooking(bookingId, request, userId);
     }
 
     @Transactional(readOnly = true)

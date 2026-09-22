@@ -70,7 +70,7 @@ public class SiblingOverviewService {
                 .birthDate(child.getBirthDate())
                 .ageMonths(months)
                 .classLabel(classLabel(months))
-                .nextVaccination(next == null ? null : next.getVaccineType().name())
+                .nextVaccination(next == null ? null : next.getVaccineType().getDisplayName()) // 화면에 그대로 찍힌다. 코드(HEP_B)가 아니라 이름
                 .nextVaccinationDate(next == null ? null : next.getDueDate())
                 .waitlistCount(countWaitlists(child))
                 .build();

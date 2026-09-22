@@ -1,7 +1,10 @@
 package com.carecode.domain.careFacility.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.exception.BusinessException;
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ErrorCode;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.careFacility.dto.response.BookingResponse;
 import com.carecode.domain.careFacility.dto.request.CreateBookingRequest;
 import com.carecode.domain.careFacility.dto.request.UpdateBookingRequest;
@@ -16,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,14 +43,14 @@ public class CareFacilityBookingService {
     // 예약 생성
     @LogExecutionTime
     @Transactional
-    public BookingResponse createBooking(Long facilityId, CreateBookingRequest request, UserDetails userDetails) {
+    public BookingResponse createBooking(Long facilityId, CreateBookingRequest request, String userId) {
         // 시설 조회
         CareFacility careFacility = careFacilityRepository.findById(facilityId)
-                .orElseThrow(() -> new CareServiceException("시설을 찾을 수 없습니다: " + facilityId));
+                .orElseThrow(() -> new ResourceNotFoundException("시설을 찾을 수 없습니다: " + facilityId));
 
         // 사용자 조회
-        User user = userRepository.findByUserId(userDetails.getUsername())
-                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userDetails.getUsername()));
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
         // 예약 시간 중복 확인
         validateBookingTime(careFacility, request.getStartTime(), request.getEndTime(), null);
@@ -82,23 +84,21 @@ public class CareFacilityBookingService {
 
     // 예약 조회
     @LogExecutionTime
-    public BookingResponse getBookingById(Long bookingId, UserDetails userDetails) {
+    public BookingResponse getBookingById(Long bookingId, String userId) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
+                .orElseThrow(() -> new ResourceNotFoundException("예약을 찾을 수 없습니다: " + bookingId));
 
         // 사용자 권한 확인 (예약자 본인 또는 관리자만 조회 가능)
-        if (!booking.getUserId().equals(userDetails.getUsername())) {
-            throw new CareServiceException("예약을 조회할 권한이 없습니다.");
-        }
+        requireOwner(booking, userId, "예약을 조회할 권한이 없습니다.");
 
         return convertToDto(booking);
     }
 
     // 사용자별 예약 목록 조회
     @LogExecutionTime
-    public List<BookingResponse> getUserBookings(UserDetails userDetails) {
-        User user = userRepository.findByUserId(userDetails.getUsername())
-                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userDetails.getUsername()));
+    public List<BookingResponse> getUserBookings(String userId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
         List<CareFacilityBooking> bookings = bookingRepository.findByUserIdOrderByStartTimeDesc(user.getUserId());
 
@@ -120,21 +120,22 @@ public class CareFacilityBookingService {
     // 예약 상태 업데이트
     @LogExecutionTime
     @Transactional
-    public BookingResponse updateBookingStatus(Long bookingId, String status, UserDetails userDetails) {
+    public BookingResponse updateBookingStatus(Long bookingId, String status) {
             CareFacilityBooking booking = bookingRepository.findById(bookingId)
-                    .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
-            
-            // 사용자 권한 확인 (예약자 본인 또는 관리자만 상태 변경 가능)
-            if (!booking.getUserId().equals(userDetails.getUsername())) {
-                throw new CareServiceException("예약 상태를 변경할 권한이 없습니다.");
+                    .orElseThrow(() -> new ResourceNotFoundException("예약을 찾을 수 없습니다: " + bookingId));
+            // 상태 전이(확정·완료)는 시설 측 업무라 관리자 전용이다. 권한은 컨트롤러의 @PreAuthorize 가 건다.
+            CareFacilityBooking.BookingStatus newStatus;
+            try {
+                newStatus = CareFacilityBooking.BookingStatus.valueOf(status);
+            } catch (IllegalArgumentException | NullPointerException e) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT, "알 수 없는 예약 상태입니다: " + status);
             }
-            
-            CareFacilityBooking.BookingStatus newStatus = CareFacilityBooking.BookingStatus.valueOf(status);
             
             switch (newStatus) {
                 case CONFIRMED -> booking.confirm();
                 case COMPLETED -> booking.complete();
-                case CANCELLED -> booking.cancel("사용자에 의해 취소됨");
+                case CANCELLED -> booking.cancel("관리자에 의해 취소됨");
+                case REJECTED -> booking.reject("관리자에 의해 반려됨");
                 default -> booking.setStatus(newStatus);
             }
             
@@ -145,17 +146,16 @@ public class CareFacilityBookingService {
     // 예약 취소
     @LogExecutionTime
     @Transactional
-    public void cancelBooking(Long bookingId, UserDetails userDetails) {
+    public void cancelBooking(Long bookingId, String userId) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
+                .orElseThrow(() -> new ResourceNotFoundException("예약을 찾을 수 없습니다: " + bookingId));
 
         // 사용자 권한 확인 (예약자 본인 또는 관리자만 취소 가능)
-        if (!booking.getUserId().equals(userDetails.getUsername())) {
-            throw new CareServiceException("예약을 취소할 권한이 없습니다.");
-        }
+        requireOwner(booking, userId, "예약을 취소할 권한이 없습니다.");
 
-        if (booking.getStatus() == CareFacilityBooking.BookingStatus.CANCELLED) {
-            throw new CareServiceException("이미 취소된 예약입니다.");
+        if (booking.getStatus() == CareFacilityBooking.BookingStatus.CANCELLED
+                || booking.getStatus() == CareFacilityBooking.BookingStatus.REJECTED) {
+            throw new CareServiceException("이미 취소되었거나 반려된 예약입니다.");
         }
 
         if (booking.getStatus() == CareFacilityBooking.BookingStatus.COMPLETED) {
@@ -169,17 +169,16 @@ public class CareFacilityBookingService {
     // 예약 수정
     @LogExecutionTime
     @Transactional
-    public BookingResponse updateBooking(Long bookingId, UpdateBookingRequest request, UserDetails userDetails) {
+    public BookingResponse updateBooking(Long bookingId, UpdateBookingRequest request, String userId) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
+                .orElseThrow(() -> new ResourceNotFoundException("예약을 찾을 수 없습니다: " + bookingId));
 
         // 사용자 권한 확인 (예약자 본인만 수정 가능)
-        if (!booking.getUserId().equals(userDetails.getUsername())) {
-            throw new CareServiceException("예약을 수정할 권한이 없습니다.");
-        }
+        requireOwner(booking, userId, "예약을 수정할 권한이 없습니다.");
 
-        if (booking.getStatus() == CareFacilityBooking.BookingStatus.CANCELLED) {
-            throw new CareServiceException("취소된 예약은 수정할 수 없습니다.");
+        if (booking.getStatus() == CareFacilityBooking.BookingStatus.CANCELLED
+                || booking.getStatus() == CareFacilityBooking.BookingStatus.REJECTED) {
+            throw new CareServiceException("취소되었거나 반려된 예약은 수정할 수 없습니다.");
         }
 
         if (booking.getStatus() == CareFacilityBooking.BookingStatus.COMPLETED) {
@@ -254,6 +253,13 @@ public class CareFacilityBookingService {
 
         if (overlapping >= capacity) {
             throw new CareServiceException("해당 시간에 예약 가능한 자리가 없습니다. 다른 시간을 선택해주세요.");
+        }
+    }
+
+    /** 예약은 User.userId 로 저장된다. 본인 예약이 아니면 403. */
+    private void requireOwner(CareFacilityBooking booking, String userId, String message) {
+        if (userId == null || !userId.equals(booking.getUserId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, message);
         }
     }
 

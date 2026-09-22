@@ -142,12 +142,20 @@ public class CareFacilityBookingAdminService {
             CareFacilityBooking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
             
-            CareFacilityBooking.BookingStatus newStatus = CareFacilityBooking.BookingStatus.valueOf(request.getStatus());
+            // 없는 상태면 valueOf 가 IllegalArgumentException 을 던져 500 이 됐다. 400 으로 돌려준다.
+            CareFacilityBooking.BookingStatus newStatus;
+            try {
+                newStatus = CareFacilityBooking.BookingStatus.valueOf(request.getStatus());
+            } catch (IllegalArgumentException | NullPointerException e) {
+                throw new com.carecode.core.exception.BusinessException(
+                        com.carecode.core.exception.ErrorCode.INVALID_INPUT, "알 수 없는 예약 상태입니다: " + request.getStatus());
+            }
             
             switch (newStatus) {
                 case CONFIRMED -> booking.confirm();
                 case COMPLETED -> booking.complete();
                 case CANCELLED -> booking.cancel(request.getReason() != null ? request.getReason() : "관리자에 의해 취소됨");
+                case REJECTED -> booking.reject(request.getReason() != null ? request.getReason() : "관리자에 의해 반려됨");
                 default -> booking.setStatus(newStatus);
             }
             
@@ -222,7 +230,8 @@ public class CareFacilityBookingAdminService {
                 createStatusDistribution("PENDING", "대기중", bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.PENDING), total),
                 createStatusDistribution("CONFIRMED", "확정", bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.CONFIRMED), total),
                 createStatusDistribution("COMPLETED", "완료", bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.COMPLETED), total),
-                createStatusDistribution("CANCELLED", "취소됨", bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.CANCELLED), total)
+                createStatusDistribution("CANCELLED", "취소됨", bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.CANCELLED), total),
+                createStatusDistribution("REJECTED", "반려", bookingRepository.countByStatus(CareFacilityBooking.BookingStatus.REJECTED), total)
         );
     }
 

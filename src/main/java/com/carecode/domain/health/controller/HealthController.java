@@ -395,7 +395,7 @@ public class HealthController extends BaseController {
     @Operation(summary = "타입별 건강 기록 조회")
     public ResponseEntity<List<HealthRecordResponse>> getHealthRecordsByType(@Parameter(description = "아동 ID", required = true) @RequestParam Long childId,
                                                                              @Parameter(description = "기록 타입 (VACCINATION, CHECKUP, MEDICATION, SYMPTOM, OTHER)", required = true) @RequestParam String recordType) {
-        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByType(childId, HealthRecord.RecordType.valueOf(recordType), getAuthenticatedUserPk());
+        List<HealthRecordResponse> records = healthFacade.getHealthRecordsByType(childId, HealthRecord.RecordType.parse(recordType), getAuthenticatedUserPk());
 
         return ResponseEntity.ok(records);
     }

@@ -103,7 +103,7 @@ public class ChildController {
             @Parameter(description = "실제 접종일 (미지정 시 오늘)")
             @RequestParam(required = false) LocalDate completedDate) {
         childService.getChild(childId);
-        return ResponseEntity.ok(vaccinationScheduleService.markCompleted(scheduleId, completedDate));
+        return ResponseEntity.ok(vaccinationScheduleService.markCompleted(childId, scheduleId, completedDate));
     }
 
     // ====================

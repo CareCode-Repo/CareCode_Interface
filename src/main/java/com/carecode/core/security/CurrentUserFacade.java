@@ -11,6 +11,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 /** Resolves the authenticated user from SecurityContextHolder and the persistence layer */
 @Slf4j
 @Component
@@ -35,6 +37,25 @@ public class CurrentUserFacade {
             return s;
         }
         return authentication.getName();
+    }
+
+    /**
+     * 로그인했으면 사용자, 아니면 빈 값. 공개 API 가 "로그인한 사람에게만 덧붙일 정보"
+     * (좋아요 여부 등)를 계산할 때 쓴다. 비로그인을 예외로 다루지 않는다.
+     */
+    public Optional<User> findCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            return Optional.empty();
+        }
+        Object principal = authentication.getPrincipal();
+        String email = principal instanceof UserDetails userDetails ? userDetails.getUsername() : authentication.getName();
+        if (email == null || "anonymousUser".equals(email)) {
+            return Optional.empty();
+        }
+        return userRepository.findByEmailAndDeletedAtIsNull(email);
     }
 
     public User requireCurrentUser() {

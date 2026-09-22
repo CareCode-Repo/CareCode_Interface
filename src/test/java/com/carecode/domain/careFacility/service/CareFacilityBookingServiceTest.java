@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -39,12 +38,12 @@ import static org.mockito.Mockito.when;
 @DisplayName("시설 예약 - 겹침 검증")
 class CareFacilityBookingServiceTest {
 
+    private static final String USER_ID = "u-1";
     private static final Long FACILITY_ID = 10L;
 
     @Mock private CareFacilityBookingRepository bookingRepository;
     @Mock private CareFacilityRepository careFacilityRepository;
     @Mock private UserRepository userRepository;
-    @Mock private UserDetails userDetails;
 
     @InjectMocks private CareFacilityBookingService bookingService;
 
@@ -63,8 +62,7 @@ class CareFacilityBookingServiceTest {
                 .name("보호자").role(UserRole.PARENT)
                 .build();
 
-        when(userDetails.getUsername()).thenReturn("u-1");
-        when(userRepository.findByUserId("u-1")).thenReturn(Optional.of(user));
+        when(userRepository.findByUserId(USER_ID)).thenReturn(Optional.of(user));
         when(careFacilityRepository.findById(FACILITY_ID)).thenReturn(Optional.of(facility));
         when(bookingRepository.save(any(CareFacilityBooking.class))).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -75,7 +73,7 @@ class CareFacilityBookingServiceTest {
         when(bookingRepository.countOverlappingBookings(eq(FACILITY_ID), any(), any(), isNull()))
                 .thenReturn(1L); // 정원 2 중 1건 사용
 
-        assertThatCode(() -> bookingService.createBooking(FACILITY_ID, futureRequest(), userDetails))
+        assertThatCode(() -> bookingService.createBooking(FACILITY_ID, futureRequest(), USER_ID))
                 .doesNotThrowAnyException();
     }
 
@@ -85,7 +83,7 @@ class CareFacilityBookingServiceTest {
         when(bookingRepository.countOverlappingBookings(eq(FACILITY_ID), any(), any(), isNull()))
                 .thenReturn(2L); // 정원 2 모두 사용
 
-        assertThatThrownBy(() -> bookingService.createBooking(FACILITY_ID, futureRequest(), userDetails))
+        assertThatThrownBy(() -> bookingService.createBooking(FACILITY_ID, futureRequest(), USER_ID))
                 .isInstanceOf(CareServiceException.class)
                 .hasMessageContaining("예약 가능한 자리가 없습니다");
 
@@ -99,7 +97,7 @@ class CareFacilityBookingServiceTest {
                 .thenReturn(0L);
 
         CreateBookingRequest request = futureRequest();
-        bookingService.createBooking(FACILITY_ID, request, userDetails);
+        bookingService.createBooking(FACILITY_ID, request, USER_ID);
 
         ArgumentCaptor<LocalDateTime> start = ArgumentCaptor.forClass(LocalDateTime.class);
         ArgumentCaptor<LocalDateTime> end = ArgumentCaptor.forClass(LocalDateTime.class);
@@ -117,7 +115,7 @@ class CareFacilityBookingServiceTest {
         CreateBookingRequest request = futureRequest();
         request.setEndTime(request.getStartTime().minusHours(1));
 
-        assertThatThrownBy(() -> bookingService.createBooking(FACILITY_ID, request, userDetails))
+        assertThatThrownBy(() -> bookingService.createBooking(FACILITY_ID, request, USER_ID))
                 .isInstanceOf(CareServiceException.class)
                 .hasMessageContaining("종료 시간은 시작 시간보다");
     }
@@ -129,7 +127,7 @@ class CareFacilityBookingServiceTest {
         request.setStartTime(LocalDateTime.now().minusDays(1));
         request.setEndTime(LocalDateTime.now().minusDays(1).plusHours(2));
 
-        assertThatThrownBy(() -> bookingService.createBooking(FACILITY_ID, request, userDetails))
+        assertThatThrownBy(() -> bookingService.createBooking(FACILITY_ID, request, USER_ID))
                 .isInstanceOf(CareServiceException.class)
                 .hasMessageContaining("과거 시간");
     }

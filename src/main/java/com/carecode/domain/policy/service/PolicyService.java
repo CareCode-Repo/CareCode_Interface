@@ -9,7 +9,6 @@ import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.policy.mapper.PolicyMapper;
 import com.carecode.domain.policy.dto.response.PolicyListResponse;
-import com.carecode.domain.policy.dto.response.PolicyInfoResponse;
 import com.carecode.domain.policy.dto.response.PolicyStatsSimpleResponse;
 import com.carecode.domain.policy.dto.response.PolicyCategoryStatsResponse;
 import com.carecode.domain.policy.dto.response.PolicyDto;
@@ -79,12 +78,21 @@ public class PolicyService {
                 "createdAt", 
                 Sort.Direction.DESC
         );
-        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
+        // size 는 primitive 라 빠지면 0 이 되고 PageRequest.of 가 예외를 낸다.
+        int page = com.carecode.core.util.PageRequestUtil.normalizePage(request.getPage());
+        int size = com.carecode.core.util.PageRequestUtil.normalizeSize(request.getSize() > 0 ? request.getSize() : null);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        // 프런트는 지역을 location 으로 보낸다. city 만 보던 탓에 지역 조건이 무시됐다.
+        String region = request.getLocation() != null && !request.getLocation().isBlank()
+                ? request.getLocation().trim()
+                : (request.getCity() != null && !request.getCity().isBlank() ? request.getCity().trim() : null);
+        String keyword = request.getKeyword() != null && !request.getKeyword().isBlank() ? request.getKeyword().trim() : null;
+        String category = request.getCategory() != null && !request.getCategory().isBlank() ? request.getCategory().trim() : null;
         
         Page<Policy> policyPage = policyRepository.findBySearchCriteria(
-                request.getKeyword(),
-                request.getCategory(),
-                request.getCity(),
+                keyword,
+                category,
+                region,
                 null,
                 null,
                 pageable
@@ -94,39 +102,18 @@ public class PolicyService {
                 .map(policyMapper::toResponse)
                 .collect(Collectors.toList());
 
-        List<PolicyInfoResponse> policiesResponse = policies.stream()
-                .map(dto -> PolicyInfoResponse.builder()
-                        .id(dto.getId() != null ? dto.getId().toString() : null)
-                        .title(dto.getTitle())
-                        .description(dto.getDescription())
-                        .category(dto.getCategory())
-                        .subCategory(null)
-                        .city(null)
-                        .district(dto.getLocation())
-                        .targetAge(null)
-                        .incomeLevel(null)
-                        .benefitAmount(dto.getSupportAmount() != null ? dto.getSupportAmount().toString() : null)
-                        .applicationMethod(dto.getApplicationMethod())
-                        .requiredDocuments(dto.getRequiredDocuments())
-                        .contactInfo(dto.getContactInfo())
-                        .startDate(null)
-                        .endDate(null)
-                        .status(Boolean.TRUE.equals(dto.getIsActive()) ? "ACTIVE" : "INACTIVE")
-                        .viewCount(dto.getViewCount() != null ? dto.getViewCount() : 0)
-                        .createdAt(dto.getCreatedAt())
-                        .updatedAt(dto.getUpdatedAt())
-                        .build())
-                .collect(Collectors.toList());
         
         return PolicyListResponse.builder()
-                .policies(policiesResponse)
+                .policies(policies)
+                .totalElements(policyPage.getTotalElements())
                 .totalCount(policyPage.getTotalElements())
                 .currentPage(policyPage.getNumber())
+                .pageSize(policyPage.getSize())
                 .totalPages(policyPage.getTotalPages())
                 .hasNext(policyPage.hasNext())
                 .hasPrevious(policyPage.hasPrevious())
                 .category(request.getCategory())
-                .city(request.getCity())
+                .city(region)
                 .district(request.getDistrict())
                 .build();
     }

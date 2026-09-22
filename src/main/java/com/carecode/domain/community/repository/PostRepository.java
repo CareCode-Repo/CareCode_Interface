@@ -60,6 +60,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     long countByAuthorId(Long authorId);
 
+    /**
+     * 좋아요 수를 실제 좋아요 행 수로 맞춘다. 증감(+1/-1) 대신 다시 세는 이유는
+     * 동시 토글이나 예전 데이터로 어긋난 값도 다음 토글에 스스로 복구되게 하기 위해서다.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Post p SET p.likeCount = (SELECT COUNT(pl) FROM PostLike pl WHERE pl.post.id = :postId) WHERE p.id = :postId")
+    int syncLikeCount(@Param("postId") Long postId);
+
     /** 조회수를 DB 에서 원자적으로 증가시킨다 (lost update 방지). 숨김 글은 세지 않는다. */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Post p SET p.viewCount = COALESCE(p.viewCount, 0) + 1 WHERE p.id = :postId AND p.isActive = true")

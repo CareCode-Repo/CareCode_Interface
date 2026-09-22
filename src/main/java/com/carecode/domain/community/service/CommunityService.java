@@ -4,6 +4,7 @@ import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.CommentAccessDeniedException;
 import com.carecode.core.exception.PostAccessDeniedException;
 import com.carecode.core.exception.ResourceNotFoundException;
+import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityCreateCommentRequest;
@@ -33,7 +34,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -56,6 +60,9 @@ public class CommunityService {
     private final PostLikeRepository postLikeRepository;
     private final BookmarkRepository bookmarkRepository;
     private final CommunityMapper communityMapper;
+    private final CurrentUserFacade currentUserFacade;
+
+    static final String ANONYMOUS_AUTHOR_NAME = "익명";
 
     /**
      * 게시글 목록 조회 (페이징).
@@ -74,7 +81,7 @@ public class CommunityService {
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Post> postPage = postRepository.findAllActive(pageable);
 
-        List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+        List<CommunityPostResponse> postResponses = present(postPage.getContent());
 
         return CommunityPageResponse.<CommunityPostResponse>builder()
                 .content(postResponses)
@@ -110,7 +117,11 @@ public class CommunityService {
         Post post = postRepository.findActiveById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. ID: " + postId));
 
-        return communityMapper.toPostDetailResponse(post);
+        CommunityPostDetailResponse response = communityMapper.toPostDetailResponse(post);
+        if (response != null) {
+            applyViewerState(List.of(post), List.of(response));
+        }
+        return response;
     }
 
     // 게시글 작성
@@ -137,7 +148,7 @@ public class CommunityService {
                 addTagsToPost(savedPost, request.getTags());
             }
             
-            return communityMapper.toPostResponse(savedPost);
+            return present(List.of(savedPost)).get(0);
     }
 
     // 게시글 수정
@@ -153,7 +164,7 @@ public class CommunityService {
         post.setCategory(mapCategory(request.getCategory()));
 
         Post updatedPost = postRepository.save(post);
-        return communityMapper.toPostResponse(updatedPost);
+        return present(List.of(updatedPost)).get(0);
     }
 
     // 게시글 삭제
@@ -287,6 +298,59 @@ public class CommunityService {
     }
 
     // 현재 인증된 사용자 가져오기
+    /**
+     * 게시글 응답에 "보는 사람" 기준 상태를 입힌다.
+     *
+     * <ul>
+     *   <li>좋아요·북마크 여부 — 매퍼는 사용자를 모르므로 늘 false 였다. 목록 전체를 쿼리 두 번으로 채운다.</li>
+     *   <li>익명 글 작성자 가리기 — 전에는 익명 글에도 실명과 작성자 ID 가 그대로 나갔다.
+     *       화면만 "익명" 으로 바꿔 보여 줬을 뿐 응답을 보면 누구 글인지 알 수 있었다.</li>
+     * </ul>
+     */
+    private List<CommunityPostResponse> present(List<Post> posts) {
+        List<CommunityPostResponse> responses = communityMapper.toPostResponseList(posts);
+        applyViewerState(posts, responses);
+        return responses;
+    }
+
+    private void applyViewerState(List<Post> posts, List<? extends CommunityPostResponse> responses) {
+        User viewer = currentUserFacade.findCurrentUser().orElse(null);
+        Set<Long> liked = Set.of();
+        Set<Long> bookmarked = Set.of();
+        if (viewer != null && !posts.isEmpty()) {
+            List<Long> ids = posts.stream().map(Post::getId).toList();
+            liked = new HashSet<>(postLikeRepository.findLikedPostIdsByUserAndPostIds(viewer, ids));
+            bookmarked = new HashSet<>(bookmarkRepository.findBookmarkedPostIdsByUserAndPostIds(viewer, ids));
+        }
+        for (int i = 0; i < Math.min(posts.size(), responses.size()); i++) {
+            Post post = posts.get(i);
+            CommunityPostResponse response = responses.get(i);
+            if (response == null) {
+                continue;
+            }
+            response.setIsLiked(liked.contains(post.getId()));
+            response.setIsBookmarked(bookmarked.contains(post.getId()));
+            maskAnonymousAuthor(post, response, viewer);
+        }
+    }
+
+    /**
+     * 익명 글이면 이름을 가린다. 작성자 ID 는 본인에게만 준다(수정·삭제 버튼 판단용).
+     * 남에게 ID 를 주면 같은 사용자의 실명 글과 이어 붙여 누구인지 알아낼 수 있다.
+     * 프런트 스키마가 authorId 를 필수 문자열로 받으므로 null 대신 빈 문자열을 준다.
+     */
+    static void maskAnonymousAuthor(Post post, CommunityPostResponse response, User viewer) {
+        if (!Boolean.TRUE.equals(post.getIsAnonymous())) {
+            return;
+        }
+        response.setAuthorName(ANONYMOUS_AUTHOR_NAME);
+        boolean viewerIsAuthor = viewer != null && post.getAuthor() != null
+                && Objects.equals(viewer.getId(), post.getAuthor().getId());
+        if (!viewerIsAuthor) {
+            response.setAuthorId("");
+        }
+    }
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -381,7 +445,7 @@ public class CommunityService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Post> postPage = postRepository.findByKeyword(keyword, pageable);
 
-        List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+        List<CommunityPostResponse> postResponses = present(postPage.getContent());
 
         return CommunityPageResponse.<CommunityPostResponse>builder()
                 .content(postResponses)
@@ -403,7 +467,7 @@ public class CommunityService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Post> postPage = postRepository.findPopularPosts(pageable);
 
-        List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+        List<CommunityPostResponse> postResponses = present(postPage.getContent());
 
         return CommunityPageResponse.<CommunityPostResponse>builder()
                 .content(postResponses)
@@ -425,7 +489,7 @@ public class CommunityService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Post> postPage = postRepository.findLatestPosts(pageable);
 
-        List<CommunityPostResponse> postResponses = communityMapper.toPostResponseList(postPage.getContent());
+        List<CommunityPostResponse> postResponses = present(postPage.getContent());
 
         return CommunityPageResponse.<CommunityPostResponse>builder()
                 .content(postResponses)
@@ -455,6 +519,7 @@ public class CommunityService {
             // 좋아요 취소
             postLikeRepository.deleteByPostAndUser(post, user);
             log.info("좋아요 취소됨 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+            postRepository.syncLikeCount(postId);
             return false;
         } else {
             // 좋아요 추가
@@ -464,6 +529,7 @@ public class CommunityService {
                     .build();
             postLikeRepository.save(postLike);
             log.info("좋아요 추가됨 - 게시글 ID: {}, 사용자 ID: {}", postId, userId);
+            postRepository.syncLikeCount(postId);
             return true;
         }
     }
@@ -527,7 +593,7 @@ public class CommunityService {
                 .map(PostLike::getPost)
                 .collect(Collectors.toList());
         
-        return communityMapper.toPostResponseList(posts);
+        return present(posts);
     }
 
     // 사용자가 북마크한 게시글 목록 조회
@@ -541,7 +607,7 @@ public class CommunityService {
                 .map(Bookmark::getPost)
                 .collect(Collectors.toList());
         
-        return communityMapper.toPostResponseList(posts);
+        return present(posts);
     }
 
     @Transactional(readOnly = true)

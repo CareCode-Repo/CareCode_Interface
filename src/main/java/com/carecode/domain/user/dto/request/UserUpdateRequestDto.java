@@ -25,8 +25,29 @@ public class UserUpdateRequestDto {
     @Size(min = 2, max = 10, message = "이름은 2-10자 사이여야 합니다")
     private String name;
 
-    @Pattern(regexp = "^01[0-9]-[0-9]{3,4}-[0-9]{4}$", message = "올바른 휴대폰 번호 형식이 아닙니다 (예: 010-1234-5678)")
+    /**
+     * 빈 문자열은 "번호 지우기" 로 받는다. 하이픈 없이 숫자만 넣어도 받아서 하이픈을 붙여 저장한다.
+     * 전에는 둘 다 400 이었다. 프런트는 번호를 비워 두면 '' 를 보내므로, 번호 없는 사용자는
+     * 이름이나 주소만 고치려 해도 프로필을 저장할 수 없었다.
+     */
+    @Pattern(regexp = "^$|^01[0-9]-[0-9]{3,4}-[0-9]{4}$", message = "올바른 휴대폰 번호 형식이 아닙니다 (예: 010-1234-5678)")
     private String phoneNumber;
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = normalizePhoneNumber(phoneNumber);
+    }
+
+    static String normalizePhoneNumber(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String trimmed = raw.trim();
+        if (trimmed.matches("^01[0-9]{8,9}$")) {
+            int middleEnd = trimmed.length() - 4;
+            return trimmed.substring(0, 3) + "-" + trimmed.substring(3, middleEnd) + "-" + trimmed.substring(middleEnd);
+        }
+        return trimmed;
+    }
 
     private LocalDate birthDate;
 

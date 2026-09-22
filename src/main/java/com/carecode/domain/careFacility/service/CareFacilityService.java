@@ -251,18 +251,26 @@ public class CareFacilityService {
                 "name",
                 Sort.Direction.ASC
         );
-        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
+        // size 는 primitive 라 빠지면 0 이 되고 PageRequest.of 가 예외를 낸다.
+        int page = com.carecode.core.util.PageRequestUtil.normalizePage(request.getPage());
+        int size = com.carecode.core.util.PageRequestUtil.normalizeSize(request.getSize() > 0 ? request.getSize() : null);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // 전에는 facilityType 을 받기만 하고 쿼리에 null 을 넘겨, 유형 필터를 골라도 전체가 나왔다.
+        FacilityType facilityType = parseFacilityType(request.getFacilityType());
+        String address = firstNonBlank(request.getCity(), request.getDistrict());
 
         // 키워드만 있는 검색은 전문 검색으로 처리한다. LIKE '%키워드%' 는 인덱스를 못 탄다.
-        boolean keywordOnly = request.getCity() == null || request.getCity().isBlank();
+        boolean keywordOnly = address == null && facilityType == null;
         Page<CareFacility> facilityPage;
         if (keywordOnly && fullTextSearchSupport.canUseFullText(request.getKeyword())) {
             String normalized = fullTextSearchSupport.normalize(request.getKeyword());
-            facilityPage = careFacilityRepository.searchByFullText(normalized,
-                    PageRequest.of(request.getPage(), request.getSize()));
+            facilityPage = careFacilityRepository.searchByFullText(normalized, PageRequest.of(page, size));
         } else {
+            String keyword = request.getKeyword() == null || request.getKeyword().isBlank()
+                    ? null : request.getKeyword().trim();
             facilityPage = careFacilityRepository.findBySearchCriteria(
-                    request.getKeyword(), null, request.getCity(), pageable);
+                    keyword, facilityType, address, pageable);
         }
 
         List<CareFacilityInfo> facilities = facilityPage.getContent().stream()
@@ -277,6 +285,27 @@ public class CareFacilityService {
                 .hasNext(facilityPage.hasNext())
                 .hasPrevious(facilityPage.hasPrevious())
                 .build();
+    }
+
+    private static FacilityType parseFacilityType(String raw) {
+        if (raw == null || raw.isBlank() || "ALL".equalsIgnoreCase(raw.trim())) {
+            return null;
+        }
+        try {
+            return FacilityType.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new com.carecode.core.exception.BusinessException(
+                    com.carecode.core.exception.ErrorCode.INVALID_INPUT, "알 수 없는 시설 유형입니다: " + raw);
+        }
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String v : values) {
+            if (v != null && !v.isBlank()) {
+                return v.trim();
+            }
+        }
+        return null;
     }
 
     // 시설 유형별 조회
