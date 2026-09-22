@@ -14,6 +14,9 @@ public enum ErrorCode {
     FORBIDDEN("C003", "접근 권한이 없습니다", HttpStatus.FORBIDDEN),
     RESOURCE_NOT_FOUND("C004", "요청한 리소스를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
     RATE_LIMIT_EXCEEDED("C005", "요청이 너무 많습니다. 잠시 후 다시 시도해주세요", HttpStatus.TOO_MANY_REQUESTS),
+    FILE_CONTENT_MISMATCH("C006", "파일 내용이 확장자와 맞지 않습니다", HttpStatus.BAD_REQUEST),
+    FILE_REJECTED_BY_SCAN("C007", "보안 검사에서 차단된 파일입니다", HttpStatus.BAD_REQUEST),
+    FILE_SCAN_UNAVAILABLE("C008", "파일 보안 검사를 할 수 없어 업로드를 받지 않았습니다. 잠시 후 다시 시도해주세요", HttpStatus.SERVICE_UNAVAILABLE),
     
     // ===== 사용자 관련 에러 (U000) =====
     USER_NOT_FOUND("U001", "사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND),

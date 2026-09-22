@@ -90,8 +90,19 @@ services:
 
       # `SEED_SAMPLE_DATA=true docker compose up` 처럼 셸에서 넘긴 값이 컨테이너까지 가도록 명시한다.
       SEED_SAMPLE_DATA: ${SEED_SAMPLE_DATA:-false}
+
+      # 업로드 악성코드 검사. `STORAGE_SCAN_ENABLED=true docker compose --profile scan up` 으로 clamav 와 함께 켠다.
+      STORAGE_SCAN_ENABLED: ${STORAGE_SCAN_ENABLED:-false}
+      CLAMD_HOST: ${CLAMD_HOST:-clamav}
     volumes:
       - uploads:/app/uploads
+
+  # 선택: 업로드 악성코드 검사기. 시그니처 DB 를 받느라 첫 기동에 몇 분 걸리고 메모리를 1GB 넘게 쓴다.
+  clamav:
+    image: clamav/clamav:1.4
+    profiles: ["scan"]
+    ports:
+      - "${CLAMD_PORT:-3310}:3310"
 
 volumes:
   mariadb-data:
