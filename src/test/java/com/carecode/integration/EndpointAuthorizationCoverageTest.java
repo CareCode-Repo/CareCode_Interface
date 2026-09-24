@@ -56,10 +56,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         properties = {
                 "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,"
                         + "org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration",
+                        + "org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration",
                 "spring.cache.type=none",
-                "spring.batch.job.enabled=false",
                 "spring.datasource.url=jdbc:h2:mem:carecode_authcov;MODE=MySQL;DB_CLOSE_DELAY=-1",
                 "spring.datasource.driver-class-name=org.h2.Driver",
                 "spring.datasource.username=sa",
