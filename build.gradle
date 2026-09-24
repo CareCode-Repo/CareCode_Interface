@@ -105,6 +105,10 @@ tasks.withType(Test).configureEach {
     // 동시에 살아 있는 컨텍스트 수를 제한한다. 기본값(32)이면 한 번 뜬 컨텍스트가 끝까지 캐시에 남아
     // 테스트 클래스를 추가할 때마다 메모리가 계단식으로 늘어난다. 넘치면 오래된 컨텍스트를 닫는다.
     systemProperty 'spring.test.context.cache.maxSize', '6'
+
+    // API 스펙 파일 갱신 스위치. Gradle 속성으로 받아 테스트 JVM 까지 넘긴다
+    // (-D 로 주면 Gradle JVM 에만 붙고 테스트 워커에는 전달되지 않는다).
+    systemProperty 'openapi.lock.update', project.findProperty('openapi.lock.update') ?: 'false'
 }
 
 tasks.named('test') {
