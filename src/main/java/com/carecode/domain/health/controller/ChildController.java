@@ -36,6 +36,7 @@ public class ChildController {
     private final SiblingOverviewService siblingOverviewService;
     private final VaccinationScheduleService vaccinationScheduleService;
     private final GrowthChartService growthChartService;
+    private final com.carecode.domain.health.timeline.ChildTimelineService timelineService;
 
     @PostMapping
     @LogExecutionTime
@@ -50,6 +51,17 @@ public class ChildController {
     @Operation(summary = "내 아이 목록 조회")
     public ResponseEntity<List<ChildInfoResponse>> getMyChildren() {
         return ResponseEntity.ok(childService.getMyChildren());
+    }
+
+    @GetMapping("/{childId}/timeline")
+    @LogExecutionTime
+    @Operation(summary = "아이 할 일 타임라인",
+            description = "접종·검진 권장 시기·지원금 신청 마감·신학기를 한 축에 모아 날짜순으로 준다. "
+                    + "놓친 항목(OVERDUE)은 구간 앞이라도 포함한다. 기본 12개월, 최대 36개월.")
+    public ResponseEntity<com.carecode.domain.health.dto.response.ChildTimelineResponse> getTimeline(
+            @PathVariable Long childId,
+            @Parameter(description = "조회 기간(개월). 기본 12, 최대 36") @RequestParam(required = false) Integer months) {
+        return ResponseEntity.ok(timelineService.timeline(childId, months));
     }
 
     @GetMapping("/{childId}")
