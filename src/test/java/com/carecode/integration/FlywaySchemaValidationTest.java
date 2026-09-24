@@ -36,10 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         properties = {
                 "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,"
                         + "org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration",
+                        + "org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration",
                 "spring.cache.type=none",
-                "spring.batch.job.enabled=false",
                 "jwt.secret=testJwtSecretKeyForIntegrationTestsMustBe256BitsLong012345678901234567890",
                 // 운영과 동일하게: 스키마는 Flyway 가 만들고 Hibernate 는 검증만 한다.
                 "spring.flyway.enabled=true",

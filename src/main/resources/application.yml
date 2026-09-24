@@ -11,13 +11,6 @@ spring:
     baseline-version: 0
     locations: classpath:db/migration
 
-  # Spring Batch: 기동 시 잡 자동 실행 비활성화
-  batch:
-    job:
-      enabled: false
-    jdbc:
-      initialize-schema: never
-
   # Redis (Boot 3 정식 키는 spring.data.redis.*)
   data:
     redis:
