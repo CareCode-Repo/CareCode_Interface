@@ -40,6 +40,7 @@ public class HealthFacade {
 
     private final HealthService healthService;
     private final HospitalRepository hospitalRepository;
+    private final com.carecode.core.ops.sync.SyncFreshnessService syncFreshnessService;
     private final HospitalLikeRepository hospitalLikeRepository;
     private final HospitalReviewRepository hospitalReviewRepository;
     private final HospitalMapper hospitalMapper;
@@ -253,6 +254,8 @@ public class HealthFacade {
         return com.carecode.domain.health.dto.response.HospitalStatsResponse.builder()
                 .totalHospitals(total)
                 .byType(sorted)
+                .dataUpdatedAt(syncFreshnessService.lastFreshAt(
+                        com.carecode.core.ops.sync.SyncJob.PEDIATRIC_HOSPITALS).orElse(null))
                 .build();
     }
 

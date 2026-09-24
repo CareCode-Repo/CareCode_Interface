@@ -6,6 +6,8 @@ import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
 import com.carecode.core.client.sync.PediatricHospitalSyncService;
 import com.carecode.core.client.sync.SyncResult;
 import com.carecode.core.geocoding.FacilityGeocodingService;
+import com.carecode.core.ops.sync.SyncJob;
+import com.carecode.core.ops.sync.SyncRunTracker;
 import com.carecode.domain.careFacility.service.FacilityVacancyNotifier;
 import com.carecode.domain.policy.service.PolicyDeadlineNotifier;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,35 +35,53 @@ public class AdminPublicDataController {
     private final FacilityGeocodingService geocodingService;
     private final FacilityVacancyNotifier vacancyNotifier;
     private final PolicyDeadlineNotifier policyDeadlineNotifier;
+    // 수동 실행도 데이터를 갱신하므로 신선도 이력에 남긴다. 남기지 않으면 방금 돌린 동기화를
+    // 신선도 지표가 모르고 "낡음" 으로 알린다.
+    private final SyncRunTracker tracker;
 
     @PostMapping("/facilities/sync")
     @Operation(summary = "전국 어린이집 동기화", description = "시설 코드 기준으로 갱신")
     public ResponseEntity<Map<String, Object>> syncFacilities() {
-        return ResponseEntity.ok(toResponse(facilitySyncService.sync()));
+        java.time.LocalDateTime startedAt = java.time.LocalDateTime.now();
+        SyncResult result = facilitySyncService.sync();
+        tracker.recordSyncResult(SyncJob.CHILDCARE_FACILITIES, startedAt, result);
+        return ResponseEntity.ok(toResponse(result));
     }
 
     @PostMapping("/kindergartens/sync")
     @Operation(summary = "전국 유치원 동기화", description = "유치원명·주소 기준으로 갱신")
     public ResponseEntity<Map<String, Object>> syncKindergartens() {
-        return ResponseEntity.ok(toResponse(kindergartenSyncService.sync()));
+        java.time.LocalDateTime startedAt = java.time.LocalDateTime.now();
+        SyncResult result = kindergartenSyncService.sync();
+        tracker.recordSyncResult(SyncJob.KINDERGARTENS, startedAt, result);
+        return ResponseEntity.ok(toResponse(result));
     }
 
     @PostMapping("/benefits/sync")
     @Operation(summary = "정부 지원 서비스 동기화", description = "육아 관련 서비스만 정책으로 갱신")
     public ResponseEntity<Map<String, Object>> syncBenefits() {
-        return ResponseEntity.ok(toResponse(benefitSyncService.sync()));
+        java.time.LocalDateTime startedAt = java.time.LocalDateTime.now();
+        SyncResult result = benefitSyncService.sync();
+        tracker.recordSyncResult(SyncJob.GOVERNMENT_BENEFITS, startedAt, result);
+        return ResponseEntity.ok(toResponse(result));
     }
 
     @PostMapping("/hospitals/sync")
     @Operation(summary = "소아청소년과 병원 동기화", description = "요양기호 기준으로 갱신")
     public ResponseEntity<Map<String, Object>> syncHospitals() {
-        return ResponseEntity.ok(toResponse(hospitalSyncService.sync()));
+        java.time.LocalDateTime startedAt = java.time.LocalDateTime.now();
+        SyncResult result = hospitalSyncService.sync();
+        tracker.recordSyncResult(SyncJob.PEDIATRIC_HOSPITALS, startedAt, result);
+        return ResponseEntity.ok(toResponse(result));
     }
 
     @PostMapping("/facilities/geocode")
     @Operation(summary = "시설 좌표 보정", description = "좌표 없는 시설의 주소를 좌표로 변환")
     public ResponseEntity<Map<String, Object>> geocode() {
+        java.time.LocalDateTime startedAt = java.time.LocalDateTime.now();
         var result = geocodingService.fillMissingCoordinates();
+        tracker.recordSuccess(SyncJob.FACILITY_GEOCODING, startedAt,
+                result.getResolved(), result.getFailed(), result.getSkippedReason());
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("resolved", result.getResolved());
         body.put("failed", result.getFailed());
