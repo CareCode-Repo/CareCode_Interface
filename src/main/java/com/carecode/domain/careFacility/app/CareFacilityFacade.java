@@ -30,6 +30,7 @@ public class CareFacilityFacade {
     private final CareFacilityBookingService bookingService;
     private final AdmissionForecastService admissionForecastService;
     private final FacilityPopularityService facilityPopularityService;
+    private final com.carecode.domain.careFacility.service.ForecastAccuracyService forecastAccuracyService;
 
     @Transactional(readOnly = true)
     public List<CareFacilityInfo> getAllCareFacilities(int page, int size) {
@@ -89,6 +90,12 @@ public class CareFacilityFacade {
     @Transactional
     public void updateRating(Long id, Double rating) {
         careFacilityService.updateRating(id, rating);
+    }
+
+    /** 입소 예측 정확도(측정된 기간별 최신 결과). 공개 API. */
+    @Transactional(readOnly = true)
+    public java.util.List<com.carecode.domain.careFacility.dto.response.ForecastAccuracyResponse> getForecastAccuracy() {
+        return forecastAccuracyService.latestByHorizon(com.carecode.domain.careFacility.service.ForecastBacktestService.MEASURED_HORIZONS);
     }
 
     @Transactional(readOnly = true)

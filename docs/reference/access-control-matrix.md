@@ -77,6 +77,7 @@ flowchart TD
 | `/facilities/{id}/view` | 조회수 증가 |
 | `/facilities/{id}/rating` (GET) | 평점 조회 |
 | `GET /facilities/{id}`, `/facilities/{id}/with-reviews`, `/facilities/{id}/reviews` | 시설 상세·공개 리뷰. 프런트가 로그인 전에도 보여 준다 |
+| `GET /facilities/forecast-accuracy` | 예측 정확도 측정값(백테스트 결과) |
 | `GET /facilities/{id}/admission-forecast`, `/facilities/{id}/popularity`, `/facilities/{id}/waitlist/stats` | 공공데이터 기반 예측·집계 |
 | `POST /facilities/search`, `POST /facilities/advanced-search` | 조건을 본문으로 받는 조회 |
 | `/api/public/care-facilities/**` | 공공데이터 조회 |

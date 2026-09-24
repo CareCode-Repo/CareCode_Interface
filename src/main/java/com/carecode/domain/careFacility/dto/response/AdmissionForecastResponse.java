@@ -38,4 +38,10 @@ public class AdmissionForecastResponse {
 
     /** 사용자에게 보여줄 근거 문장. */
     private List<String> reasons;
+
+    /**
+     * 이 확률이 과거에 얼마나 맞았는지. 표본이 부족하면 null 이다.
+     * 확률만 보여주면 사용자는 믿을지 판단할 근거가 없다.
+     */
+    private ForecastAccuracyResponse accuracy;
 }
