@@ -18,4 +18,7 @@ public class HospitalStatsResponse {
 
     /** 진료과목(종별) → 병원 수. 값이 비어 있는 병원은 "기타" 로 묶는다. 많은 순. */
     private final Map<String, Long> byType;
+
+    /** 병원 데이터가 마지막으로 갱신된 시각. 동기화 이력이 없으면 null. */
+    private final java.time.LocalDateTime dataUpdatedAt;
 }

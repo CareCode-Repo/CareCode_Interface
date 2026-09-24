@@ -170,6 +170,7 @@ flowchart TD
 | `/api/admin/analytics/**` | 퍼널·리텐션 |
 | `/api/admin/policy-verification/**` | 금액 수기 검증 |
 | `/api/admin/reports/**` | 신고 처리 |
+| `/api/admin/sync/status` | 주기 작업 상태·데이터 신선도 |
 | `GET /facilities/{id}/bookings`, `/facilities/{id}/bookings/today`, `/facilities/bookings/today` | 다른 사용자의 예약(보호자 이름·연락처)이 담긴다. 메서드 `@PreAuthorize` |
 | `PUT /facilities/bookings/{bookingId}/status` | 확정·완료·반려는 시설 측 업무. 본인 취소는 `DELETE` 로 한다 |
 

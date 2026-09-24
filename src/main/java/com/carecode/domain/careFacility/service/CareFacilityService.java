@@ -46,6 +46,7 @@ public class CareFacilityService {
 
     private final CareFacilityRepository careFacilityRepository;
     private final com.carecode.domain.careFacility.repository.CareFacilityBookingRepository bookingRepository;
+    private final com.carecode.core.ops.sync.SyncFreshnessService syncFreshnessService;
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final CareFacilityMapper careFacilityMapper;
@@ -428,6 +429,10 @@ public class CareFacilityService {
                 .todayBookings(bookingRepository.countTodayBookings())
                 .thisWeekBookings(bookingRepository.countThisWeekBookings())
                 .thisMonthBookings(bookingRepository.countThisMonthBookings())
+                // 시설 목록은 어린이집·유치원 두 동기화가 채운다. 둘 중 오래된 쪽이 이 화면의 기준이다.
+                .dataUpdatedAt(syncFreshnessService.lastFreshAt(
+                        com.carecode.core.ops.sync.SyncJob.CHILDCARE_FACILITIES,
+                        com.carecode.core.ops.sync.SyncJob.KINDERGARTENS).orElse(null))
                 .build();
     }
 
