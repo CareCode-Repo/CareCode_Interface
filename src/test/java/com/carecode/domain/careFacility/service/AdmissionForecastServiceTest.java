@@ -34,8 +34,12 @@ class AdmissionForecastServiceTest {
         snapshotRepository = mock(FacilityCapacitySnapshotRepository.class);
         when(facilityRepository.findById(anyLong()))
                 .thenReturn(Optional.of(CareFacility.builder().name("행복어린이집").build()));
+        // 정확도 측정 결과가 없으면 응답의 accuracy 는 비어 있다. 예측 자체 검증에는 영향이 없다.
+        ForecastAccuracyService accuracyService = mock(ForecastAccuracyService.class);
+        when(accuracyService.describeFor(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(Optional.empty());
         service = new AdmissionForecastService(facilityRepository, snapshotRepository,
-                mock(EventLogger.class));
+                new AdmissionForecastCalculator(), accuracyService, mock(EventLogger.class));
     }
 
     @Test

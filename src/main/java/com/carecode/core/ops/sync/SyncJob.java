@@ -20,7 +20,8 @@ public enum SyncJob {
     POLICY_CHANGE_NOTICE("policy-change-notice", "정책 변경 알림", 36, false),
     FACILITY_VACANCY_NOTICE("facility-vacancy-notice", "빈자리 알림", 36, false),
     POLICY_DEADLINE_NOTICE("policy-deadline-notice", "마감 임박 알림", 36, false),
-    BENEFIT_REPORT_SOLICIT("benefit-report-solicit", "실수령액 제보 요청", 192, false);
+    BENEFIT_REPORT_SOLICIT("benefit-report-solicit", "실수령액 제보 요청", 192, false),
+    FORECAST_BACKTEST("forecast-backtest", "입소 예측 정확도 측정", 192, false);
 
     private final String code;
     private final String label;

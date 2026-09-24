@@ -429,6 +429,17 @@ public class CareFacilityController extends BaseController {
         return ResponseEntity.ok(careFacilityFacade.forecastAdmission(facilityId, childAgeMonths, horizonMonths));
     }
 
+    // 예측 정확도 (공개)
+    @GetMapping("/forecast-accuracy")
+    @LogExecutionTime
+    @Operation(summary = "입소 예측 정확도",
+            description = "과거 관측으로 같은 예측을 다시 계산해 실제 결과와 비교한 측정값. "
+                    + "확률대별 실제 적중률과, 항상 평균으로 답했을 때(기준선)와의 비교를 함께 준다. "
+                    + "표본이 부족한 기간은 목록에 없다.")
+    public ResponseEntity<List<com.carecode.domain.careFacility.dto.response.ForecastAccuracyResponse>> getForecastAccuracy() {
+        return ResponseEntity.ok(careFacilityFacade.getForecastAccuracy());
+    }
+
     // 충원율 기반 인기도
     @GetMapping("/{facilityId}/popularity")
     @LogExecutionTime

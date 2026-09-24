@@ -27,4 +27,9 @@ public interface FacilityCapacitySnapshotRepository extends JpaRepository<Facili
     Optional<LocalDate> findEarliestObservedDate(@Param("facilityId") Long facilityId);
 
     long countByFacilityId(Long facilityId);
+
+    /** 백테스트 대상. 관측이 몇 번 이상 쌓인 시설만 검증할 수 있다. */
+    @Query("SELECT s.facilityId FROM FacilityCapacitySnapshot s "
+            + "GROUP BY s.facilityId HAVING COUNT(s) >= :minSnapshots")
+    List<Long> findFacilityIdsWithAtLeast(@Param("minSnapshots") long minSnapshots);
 }
