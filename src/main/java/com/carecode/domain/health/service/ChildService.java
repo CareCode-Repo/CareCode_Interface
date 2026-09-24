@@ -84,6 +84,14 @@ public class ChildService {
         childRepository.delete(requireOwnedChild(childId));
     }
 
+    /**
+     * 소유권을 확인한 아이 엔티티. 다른 서비스(타임라인 등)가 같은 검증을 다시 구현하지 않도록 공개한다.
+     * 검증을 복사하면 한쪽만 고쳐져 남의 아이가 열리는 일이 생긴다.
+     */
+    public Child requireOwned(Long childId) {
+        return requireOwnedChild(childId);
+    }
+
     /** 아이 조회 + 소유권 검증. 남의 아이 정보에 접근하지 못하도록 보호자 본인 것만 반환한다. */
     private Child requireOwnedChild(Long childId) {
         User parent = currentUserFacade.requireCurrentUser();

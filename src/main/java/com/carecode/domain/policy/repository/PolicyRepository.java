@@ -52,6 +52,16 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
            "p.applicationStartDate <= :today AND p.applicationEndDate >= :today")
     List<Policy> findActivePoliciesByDate(@Param("today") LocalDate today);
 
+    /** 신청 마감이 구간 안이고 아이 나이에 해당하는 정책. 타임라인이 쓴다. */
+    @Query("SELECT p FROM Policy p WHERE p.isActive = true "
+            + "AND p.applicationEndDate IS NOT NULL AND p.applicationEndDate BETWEEN :from AND :to "
+            + "AND (p.targetAgeMin IS NULL OR p.targetAgeMin <= :childAge) "
+            + "AND (p.targetAgeMax IS NULL OR p.targetAgeMax >= :childAge) "
+            + "ORDER BY p.applicationEndDate ASC")
+    List<Policy> findDeadlinesForChildAge(@Param("from") LocalDate from,
+                                         @Param("to") LocalDate to,
+                                         @Param("childAge") Integer childAge);
+
     // 키워드로 정책 검색
     @Query("SELECT p FROM Policy p WHERE p.isActive = true AND " +
            "(p.title LIKE %:keyword% OR p.description LIKE %:keyword%)")

@@ -1269,6 +1269,44 @@
         },
         "type" : "object"
       },
+      "ChildTimelineResponse" : {
+        "properties" : {
+          "birthDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "childId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "childName" : {
+            "type" : "string"
+          },
+          "from" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TimelineItem"
+            },
+            "type" : "array"
+          },
+          "overdueCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "to" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "upcomingCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "Cohort" : {
         "properties" : {
           "day1" : {
@@ -3842,6 +3880,34 @@
           "users" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "TimelineItem" : {
+        "properties" : {
+          "ageMonths" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "date" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "referenceId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -8481,6 +8547,53 @@
           }
         },
         "summary" : "최근 측정 백분위 조회",
+        "tags" : [ "아이 관리" ]
+      }
+    },
+    "/children/{childId}/timeline" : {
+      "get" : {
+        "description" : "접종·검진 권장 시기·지원금 신청 마감·신학기를 한 축에 모아 날짜순으로 준다. 놓친 항목(OVERDUE)은 구간 앞이라도 포함한다. 기본 12개월, 최대 36개월.",
+        "operationId" : "getTimeline",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "childId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "조회 기간(개월). 기본 12, 최대 36",
+          "in" : "query",
+          "name" : "months",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "API 버전. 생략하면 현재 버전(1). 지원하지 않는 값이면 400",
+          "in" : "header",
+          "name" : "X-API-Version",
+          "required" : false,
+          "schema" : {
+            "default" : "1",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ChildTimelineResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "아이 할 일 타임라인",
         "tags" : [ "아이 관리" ]
       }
     },

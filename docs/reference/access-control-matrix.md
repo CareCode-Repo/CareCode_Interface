@@ -138,7 +138,7 @@ flowchart TD
 | `/auth/user/**`, `/auth/logout` | — |
 | `/users/**` | **본인 계정 전용.** 경로 변수가 있는 구 경로는 서비스 진입 전에 본인인지 확인한다 |
 | `/users/privacy/**` | 열람·동의·탈퇴 |
-| `/children/**` | 자녀 정보 |
+| `/children/**` | 자녀 정보. 서비스에서 보호자 본인 것만 반환하고, 남의 아이는 404 (존재 여부를 숨긴다) |
 | `/notifications/**` | — |
 | `POST /facilities/{id}/bookings`, `/facilities/bookings/user`, `/facilities/bookings/{bookingId}` | 본인 예약. 남의 예약은 403 |
 | `/facilities/{id}/reviews` (POST), `/facilities/reviews/{reviewId}` | 리뷰 작성·수정·삭제 (본인 것만) |
