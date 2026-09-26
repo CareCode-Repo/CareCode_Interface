@@ -254,27 +254,25 @@ Blue/Green 이라는 사실이 알림 설계에 직접 영향을 줍니다.
 
 ### Blue/Green 을 뺀 이유
 
-전환 마지막 단계가 라우터 HTTP API 두 개(`PRODUCTION_ROUTER_STATUS_URL`, `_SWITCH_URL`)를
-호출했는데, **그 API 를 제공하는 구현이 어디에도 없습니다.**
+예전 워크플로는 두 색을 번갈아 띄우고 마지막에 라우터 HTTP API 를 호출해 전환했습니다.
+그 API 를 제공하는 구현이 **어디에도 없습니다.** 호출은 항상 실패했고, 배포는 초록불이었지만
+실제로는 트래픽이 새 컨테이너로 옮겨가지 않았습니다.
 
-별도 저장소의 블루/그린 도구(`CareCode_Nohub_Deploy`)는 `paramiko` 로 서버에 붙어
-nginx conf 를 고치는 CLI 입니다. 의존성이 `requests` / `python-dotenv` / `paramiko` 뿐이고
-웹 프레임워크가 없습니다. 즉 시크릿을 다 채워도 전환 단계에서 반드시 멈췄고,
-그 시점에는 이미 서버의 컨테이너가 갈아치워진 뒤라 **어중간한 상태**로 끝났습니다.
-
-진짜 무중단은 nginx 를 제어할 수 있어야 성립합니다. 그때까지는 이렇게 갑니다.
+### 지금 방식 — 교체하고, 안 뜨면 되돌린다
 
 ```
-새 이미지 pull
-  → 예비 포트(127.0.0.1:18082)에서 먼저 기동            운영 컨테이너는 그대로
-  → /actuator/health 가 UP 이 될 때까지 대기 (최대 200초)
-     └ 실패하면 컨테이너 로그를 남기고 중단              운영은 건드리지 않음
-  → 통과하면 교체 (여기서 짧은 순단)
-  → 다시 헬스체크 → 외부 URL 로 재확인
+docker pull
+  → 현재 컨테이너가 쓰는 이미지 ID 를 기억 (태그가 아니라 ID: 같은 태그가 덮여도 예전 것을 가리킨다)
+  → 기존 컨테이너 제거 → 새 이미지로 기동 → 헬스체크
+      성공 → 끝 (오래된 이미지 정리)
+      실패 → 기억해 둔 이전 이미지로 다시 기동 → 헬스체크 → 실패로 종료(서비스는 살아 있음)
 ```
 
-**깨진 이미지가 운영에 올라가지 않는다**는 성질은 유지하면서, 순단만 감수합니다.
-검증 포트를 18082 로 잡은 건 예전 blue/green 이 쓰던 8083 과 겹치지 않게 하기 위해서입니다.
+교체 구간에 **20~40초 순단**이 있습니다. 무중단 검증(새 컨테이너를 먼저 띄워 확인)을 쓰지 않는 이유는
+메모리입니다 — JVM 두 개가 동시에 뜨면 1GB 인스턴스에서는 그 순간 둘 다 죽습니다(측정: 제한 없을 때 858MB).
+인스턴스를 2GB 이상으로 올리면 예비 포트 검증 방식으로 되돌릴 수 있습니다.
+
+첫 배포에서 실패하면 되돌릴 이미지가 없으므로 서비스가 내려간 상태로 끝납니다. 로그와 함께 그 사실을 명시합니다.
 
 ### 필요한 GitHub 시크릿
 
@@ -310,6 +308,81 @@ ssh 인자로 넘기면 서버의 프로세스 목록에 그대로 보입니다.
   기동 단계에서 실패합니다(의도된 fail-fast). 검증 단계에서 걸리므로 **운영은 무사합니다**. 이슈 #90
 - 컨테이너 이름은 `carecode` 로 통일합니다. 예전 워크플로가 만들던
   `carecode-blue` / `carecode-green` 은 교체 단계에서 함께 정리합니다
+- **MariaDB 와 Redis 는 서버에 미리 있어야 합니다.** 배포는 앱 컨테이너만 교체합니다.
+  Redis 는 운영에서 선택이 아닙니다 — 리프레시 토큰 폐기, 레이트 리밋, 이메일 인증코드가 여기에 있습니다.
+  준비 명령은 [1GB 인스턴스(프리티어)에 올리기](#1gb-인스턴스프리티어에-올리기) 에 있습니다
+
+## 1GB 인스턴스(프리티어)에 올리기
+
+t2.micro·t3.micro 는 **메모리 1GB** 입니다. 여기서 앱·MariaDB·Redis 를 함께 돌릴 수 있는지
+실제로 재봤습니다(같은 이미지, 같은 DB).
+
+| 조건 | 결과 |
+|------|------|
+| 컨테이너 메모리 제한 없음 | **858MB 사용** — 제한이 없으면 JVM 이 호스트 전체(15.5GB)의 75%를 기준으로 잡는다 |
+| `--memory=512m`, 예전 기본값(75%·G1) | **OOM 으로 죽음** (exit 137) |
+| `--memory=512m`, 현재 기본값(55%·Serial) | 기동 성공, 464MB (91%) |
+| `--memory=640m`, 현재 기본값 | 기동 성공, 520MB → 부하 후 575MB (90%) |
+
+### 메모리 배분 (측정값)
+
+| 구성 | 사용량 | 한도 |
+|------|--------|------|
+| 앱 | 520~575MB | `--memory=640m` |
+| MariaDB (`innodb-buffer-pool-size=96M`) | 96~99MB | 320m |
+| Redis | 9MB | 64m |
+| OS + Docker | 150~200MB | — |
+| **합계** | **약 800MB** | 1GB |
+
+여유가 200MB 뿐이라 **스왑 2GB 는 필수**입니다. 배포 중 이미지 압축 해제와 주간 동기화가 겹치면
+이 여유를 넘길 수 있습니다.
+
+```bash
+# 스왑 2GB (t2/t3.micro 에서 관례적으로 하는 설정)
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+### DB·Redis 준비
+
+배포는 앱만 교체하므로 이 둘은 미리 띄워 둡니다. 앱은 같은 호스트의 `127.0.0.1` 로 붙습니다.
+
+```bash
+docker run -d --name carecode-mariadb --restart unless-stopped   --memory=320m -p 127.0.0.1:3306:3306   -e MARIADB_DATABASE=carecode -e MARIADB_USER=carecode   -e MARIADB_PASSWORD=... -e MARIADB_ROOT_PASSWORD=... -e TZ=Asia/Seoul   -v carecode-db:/var/lib/mysql mariadb:10.11   --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci   --lower-case-table-names=0 --innodb-buffer-pool-size=96M   --performance-schema=OFF --max-connections=30
+
+docker run -d --name carecode-redis --restart unless-stopped   --memory=64m -p 127.0.0.1:6379:6379 redis:7-alpine   redis-server --maxmemory 48mb --maxmemory-policy noeviction
+```
+
+`--lower-case-table-names=0` 은 로컬·CI 와 같은 조건을 만들기 위한 것입니다. 이게 다르면
+대문자 테이블명 마이그레이션과 매핑이 어긋나 기동이 실패합니다.
+
+### 1GB 를 전제로 바꿔 둔 기본값
+
+| 설정 | 값 | 이유 |
+|------|-----|------|
+| `JAVA_OPTS` | `-XX:MaxRAMPercentage=55 -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC` | 힙 밖(메타스페이스·스레드·코드캐시)이 150MB 가까이 된다. 70%로 두면 한도를 넘겨 죽는다. vCPU 1~2개에서는 G1 의 백그라운드 스레드가 부담이다 |
+| 배포 `--memory` | 640m (서버 `.env` 의 `APP_MEMORY` 로 변경) | 제한이 없으면 JVM 이 DB 몫까지 가져간다 |
+| `DB_POOL_MAX_SIZE` | 8 (기존 20) | 커넥션마다 DB 가 버퍼를 잡는다. vCPU 수보다 조금 많은 정도가 처리량이 가장 좋다 |
+| 이미지 | JRE + 레이어 분리 (1.25GB → 686MB) | 재배포 때 바뀐 애플리케이션 레이어(수 MB)만 받는다 |
+
+### 진단 도구 (JRE 로 바꾼 뒤)
+
+이미지에 `jcmd`·`jstack` 이 없습니다. 필요할 때 JDK 컨테이너를 같은 PID 공간에 붙여 씁니다.
+
+```bash
+docker run --rm --pid=container:carecode eclipse-temurin:17-jdk-jammy jcmd 1 VM.native_memory
+docker run --rm --pid=container:carecode eclipse-temurin:17-jdk-jammy jstack 1
+```
+
+### 프리티어에서 더 볼 것
+
+| 항목 | 내용 |
+|------|------|
+| CPU | 주 1회 전국 동기화가 202개 지역을 순회합니다(새벽 3시). t2.micro 는 CPU 크레딧이 고갈될 수 있습니다 — 서비스 지역만 남기면 크게 줄어듭니다 |
+| 디스크 | 30GB EBS 로 충분합니다. 이미지가 쌓이지 않도록 배포가 `docker image prune` 을 돌립니다 |
+| 업로드 파일 | 로컬 디스크입니다. 인스턴스를 늘리면 공유되지 않습니다 (이슈 #49) |
+| 실시간 알림 | 연결이 인스턴스 메모리에 있습니다. 한 대 전제입니다 ([실시간 알림](realtime-notifications.md)) |
 
 ## 미해결
 

@@ -252,7 +252,7 @@ jobs:
         IMAGE: ${{ needs.build-docker.outputs.image-tag }}
       run: |
         ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
-          "docker pull $IMAGE && (docker stop carecode-staging || true) && (docker rm carecode-staging || true) && docker run -d --name carecode-staging -p 8082:8082 --env-file /opt/carecode/.env $IMAGE"
+          "docker pull $IMAGE && (docker stop carecode-staging || true) && (docker rm carecode-staging || true) && docker run -d --name carecode-staging --memory=640m --memory-swap=640m -p 8082:8082 --env-file /opt/carecode/.env $IMAGE"
 
     - name: Run health check
       env:
@@ -369,66 +369,79 @@ jobs:
         set -euo pipefail
 
         APP=carecode
-        PROBE=carecode-probe
         PORT=8082
-        # 예전 blue/green 이 8083 을 쓰므로 검증 포트는 겹치지 않는 곳으로 잡는다.
-        PROBE_PORT=18082
         ENV_FILE=/opt/carecode/.env
+
+        # 컨테이너 메모리 한도. 없으면 JVM 이 호스트 전체를 기준으로 힙을 잡아(측정: 858MB)
+        # 같은 머신의 MariaDB·Redis 가 쓸 메모리를 먹는다. 1GB 인스턴스 기준 기본값이며,
+        # 서버 .env 에 APP_MEMORY 를 두면 그 값을 쓴다(여유 있는 인스턴스에서 올리면 된다).
+        APP_MEMORY="$(grep -E '^APP_MEMORY=' "$ENV_FILE" 2>/dev/null | tail -1 | cut -d= -f2)"
+        APP_MEMORY="${APP_MEMORY:-640m}"
 
         if [ ! -f "$ENV_FILE" ]; then
           echo "$ENV_FILE 이 없습니다."
           exit 1
         fi
 
+        # 되돌릴 대상. 지금 돌고 있는 컨테이너가 쓰는 이미지 ID 를 먼저 붙잡아 둔다.
+        # 태그가 아니라 ID 를 쓰는 이유: 같은 태그가 새 이미지로 덮여도 예전 것을 가리키게 하기 위해서다.
+        PREV_IMAGE="$(docker inspect -f '{{.Image}}' "$APP" 2>/dev/null || true)"
+
         echo "===== pull $IMAGE ====="
         docker pull "$IMAGE"
 
-        # 이전 실행이 남긴 검증 컨테이너 정리
-        docker rm -f "$PROBE" >/dev/null 2>&1 || true
+        run_app() {
+          docker run -d --name "$APP" --restart unless-stopped             --memory="$APP_MEMORY" --memory-swap="$APP_MEMORY"             -p "$PORT:8082" --env-file "$ENV_FILE" "$1" >/dev/null
+        }
 
-        # 1) 예비 포트에서 먼저 띄워 본다. 살아 있는 컨테이너는 아직 그대로다.
-        echo "===== 새 이미지 검증 (:$PROBE_PORT) ====="
-        docker run -d --name "$PROBE" -p "127.0.0.1:$PROBE_PORT:8082" --env-file "$ENV_FILE" "$IMAGE"
+        wait_healthy() {
+          for _ in $(seq 1 48); do
+            if curl -fsS "http://127.0.0.1:$PORT/actuator/health" 2>/dev/null | grep -q '"status":"UP"'; then
+              return 0
+            fi
+            # 컨테이너가 이미 죽었으면 더 기다릴 이유가 없다 (OOM 이면 여기서 잡힌다).
+            if [ -z "$(docker ps -q -f name="^${APP}$")" ]; then
+              return 1
+            fi
+            sleep 5
+          done
+          return 1
+        }
 
-        ok=0
-        for _ in $(seq 1 40); do
-          if curl -fsS "http://127.0.0.1:$PROBE_PORT/actuator/health" 2>/dev/null | grep -q '"status":"UP"'; then
-            ok=1; break
-          fi
-          sleep 5
-        done
-
-        if [ "$ok" -ne 1 ]; then
-          echo "새 이미지가 기동하지 못했습니다. 운영 컨테이너는 건드리지 않습니다."
-          echo "----- 컨테이너 로그 (마지막 100줄) -----"
-          docker logs --tail 100 "$PROBE" 2>&1 || true
-          docker rm -f "$PROBE" >/dev/null 2>&1 || true
-          exit 1
-        fi
-
-        echo "검증 통과. 교체합니다."
-        docker rm -f "$PROBE" >/dev/null 2>&1 || true
-
-        # 2) 교체. 여기서부터 짧은 순단이 있다.
-        #    예전 워크플로가 만들던 blue/green 이름도 함께 정리한다. 남아 있으면 포트를 잡고 있다.
-        for name in "$APP" carecode-blue carecode-green; do
+        # 교체. 1GB 인스턴스에서는 새 컨테이너를 미리 띄워 검증할 메모리가 없다
+        # (JVM 두 개 = 측정 기준 1.3GB). 그래서 짧은 순단을 받아들이고, 실패하면 되돌린다.
+        echo "===== 교체 ($APP_MEMORY) ====="
+        for name in "$APP" carecode-probe carecode-blue carecode-green; do
           docker rm -f "$name" >/dev/null 2>&1 || true
         done
 
-        docker run -d --name "$APP" --restart unless-stopped \
-          -p "$PORT:8082" --env-file "$ENV_FILE" "$IMAGE"
+        run_app "$IMAGE"
 
-        for _ in $(seq 1 40); do
-          if curl -fsS "http://127.0.0.1:$PORT/actuator/health" 2>/dev/null | grep -q '"status":"UP"'; then
-            echo "===== 교체 완료 ====="
-            docker image prune -f >/dev/null 2>&1 || true
-            exit 0
-          fi
-          sleep 5
-        done
+        if wait_healthy; then
+          echo "===== 교체 완료 ====="
+          docker image prune -f >/dev/null 2>&1 || true
+          exit 0
+        fi
 
-        echo "교체 후 기동에 실패했습니다."
+        echo "새 이미지가 기동하지 못했습니다."
         echo "----- 컨테이너 로그 (마지막 100줄) -----"
+        docker logs --tail 100 "$APP" 2>&1 || true
+
+        if [ -z "$PREV_IMAGE" ]; then
+          echo "::error::되돌릴 이전 이미지가 없습니다(첫 배포로 보입니다). 서비스가 내려간 상태입니다."
+          exit 1
+        fi
+
+        echo "===== 이전 이미지로 되돌립니다 ($PREV_IMAGE) ====="
+        docker rm -f "$APP" >/dev/null 2>&1 || true
+        run_app "$PREV_IMAGE"
+
+        if wait_healthy; then
+          echo "::error::새 이미지 기동 실패. 이전 이미지로 되돌렸고 서비스는 살아 있습니다."
+          exit 1
+        fi
+
+        echo "::error::되돌린 이미지도 기동하지 못했습니다. 서비스가 내려간 상태입니다 — 서버를 직접 확인하세요."
         docker logs --tail 100 "$APP" 2>&1 || true
         exit 1
         REMOTE
