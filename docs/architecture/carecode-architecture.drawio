@@ -48,7 +48,7 @@
         <mxCell id="dPolicy" value="policy — 지원금" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
           <mxGeometry x="685" y="385" width="250" height="32" as="geometry" />
         </mxCell>
-        <mxCell id="dFacility" value="careFacility — 어린이집·유치원" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+        <mxCell id="dFacility" value="facility — 어린이집·유치원" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
           <mxGeometry x="685" y="425" width="250" height="32" as="geometry" />
         </mxCell>
         <mxCell id="dHealth" value="health — 건강기록·병원" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">

@@ -5,7 +5,7 @@ import com.carecode.external.publicdata.sync.KindergartenSyncService;
 import com.carecode.external.publicdata.sync.NationwideChildcareFacilitySyncService;
 import com.carecode.external.publicdata.sync.PediatricHospitalSyncService;
 import com.carecode.external.geocoding.FacilityGeocodingService;
-import com.carecode.domain.careFacility.service.FacilityVacancyNotifier;
+import com.carecode.domain.facility.service.FacilityVacancyNotifier;
 import com.carecode.domain.policy.service.BenefitReportSolicitor;
 import com.carecode.domain.policy.service.PolicyChangeNotifier;
 import com.carecode.domain.policy.service.PolicyDeadlineNotifier;

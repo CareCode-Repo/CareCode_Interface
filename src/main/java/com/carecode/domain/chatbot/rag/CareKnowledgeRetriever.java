@@ -1,7 +1,7 @@
 package com.carecode.domain.chatbot.rag;
 
-import com.carecode.domain.careFacility.entity.CareFacility;
-import com.carecode.domain.careFacility.repository.CareFacilityRepository;
+import com.carecode.domain.facility.entity.CareFacility;
+import com.carecode.domain.facility.repository.CareFacilityRepository;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,8 +1,8 @@
 package com.carecode.external.publicdata.sync;
 
-import com.carecode.domain.careFacility.entity.CareFacility;
-import com.carecode.domain.careFacility.entity.FacilityType;
-import com.carecode.domain.careFacility.repository.CareFacilityRepository;
+import com.carecode.domain.facility.entity.CareFacility;
+import com.carecode.domain.facility.entity.FacilityType;
+import com.carecode.domain.facility.repository.CareFacilityRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

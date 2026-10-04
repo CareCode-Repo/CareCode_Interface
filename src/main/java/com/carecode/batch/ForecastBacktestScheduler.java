@@ -2,7 +2,7 @@ package com.carecode.batch;
 
 import com.carecode.core.ops.sync.SyncJob;
 import com.carecode.core.ops.sync.SyncRunTracker;
-import com.carecode.domain.careFacility.service.ForecastBacktestService;
+import com.carecode.domain.facility.service.ForecastBacktestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

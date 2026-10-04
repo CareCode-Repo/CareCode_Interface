@@ -6,9 +6,9 @@ import com.carecode.external.publicdata.sync.NationwideChildcareFacilitySyncServ
 import com.carecode.external.publicdata.sync.KindergartenSyncService;
 import com.carecode.external.publicdata.sync.PediatricHospitalSyncService;
 import com.carecode.external.publicdata.sync.SyncResult;
-import com.carecode.domain.careFacility.entity.CareFacility;
-import com.carecode.domain.careFacility.repository.CareFacilityRepository;
-import com.carecode.domain.careFacility.repository.FacilityCapacitySnapshotRepository;
+import com.carecode.domain.facility.entity.CareFacility;
+import com.carecode.domain.facility.repository.CareFacilityRepository;
+import com.carecode.domain.facility.repository.FacilityCapacitySnapshotRepository;
 import com.carecode.domain.health.repository.HospitalRepository;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import org.junit.jupiter.api.DisplayName;

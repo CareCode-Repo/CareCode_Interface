@@ -1,9 +1,9 @@
 package com.carecode.devtools;
 
-import com.carecode.domain.careFacility.entity.CareFacility;
-import com.carecode.domain.careFacility.entity.FacilityCapacitySnapshot;
-import com.carecode.domain.careFacility.repository.CareFacilityRepository;
-import com.carecode.domain.careFacility.repository.FacilityCapacitySnapshotRepository;
+import com.carecode.domain.facility.entity.CareFacility;
+import com.carecode.domain.facility.entity.FacilityCapacitySnapshot;
+import com.carecode.domain.facility.repository.CareFacilityRepository;
+import com.carecode.domain.facility.repository.FacilityCapacitySnapshotRepository;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import lombok.RequiredArgsConstructor;

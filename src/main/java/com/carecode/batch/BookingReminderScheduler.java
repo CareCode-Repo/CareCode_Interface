@@ -1,7 +1,7 @@
 package com.carecode.batch;
 
-import com.carecode.domain.careFacility.entity.CareFacilityBooking;
-import com.carecode.domain.careFacility.repository.CareFacilityBookingRepository;
+import com.carecode.domain.facility.entity.CareFacilityBooking;
+import com.carecode.domain.facility.repository.CareFacilityBookingRepository;
 import com.carecode.domain.notification.entity.Notification;
 import com.carecode.domain.notification.service.NotificationCreationService;
 import com.carecode.domain.user.entity.User;

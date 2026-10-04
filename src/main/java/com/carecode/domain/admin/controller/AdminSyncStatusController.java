@@ -1,7 +1,7 @@
 package com.carecode.domain.admin.controller;
 
 import com.carecode.core.ops.sync.SyncFreshnessService;
-import com.carecode.domain.careFacility.service.ForecastBacktestService;
+import com.carecode.domain.facility.service.ForecastBacktestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
