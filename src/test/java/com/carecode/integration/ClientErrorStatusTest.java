@@ -71,6 +71,28 @@ class ClientErrorStatusTest {
 
     @Autowired MockMvc mockMvc;
 
+    /**
+     * 없는 자원은 404 다.
+     *
+     * <p>서비스들이 "찾을 수 없습니다" 를 {@code CareServiceException} 으로 던지는 곳이 34군데였다.
+     * 그 예외의 기본 매핑은 **500** 이라, 없는 시설 ID 로 조회하면 서버 오류가 나가고
+     * 운영 알림까지 울렸다. 클라이언트는 "내가 잘못 보냈다" 와 "서버가 고장났다" 를 구분할 수 없다.
+     */
+    @Test
+    @DisplayName("없는 자원 조회는 404 이고 운영 알림을 울리지 않는다")
+    void unknownResourceIsNotFound() throws Exception {
+        long missing = 99_999_999L;
+
+        assertThat(status(get("/facilities/{id}/admission-forecast", missing)))
+                .as("없는 시설의 입소 예측").isEqualTo(404);
+        assertThat(status(get("/facilities/{id}/popularity", missing)))
+                .as("없는 시설의 인기도").isEqualTo(404);
+        assertThat(status(get("/facilities/{id}/waitlist/stats", missing)))
+                .as("없는 시설의 대기 통계").isEqualTo(404);
+
+        verify(alerter, never()).alert(anyString(), anyString(), anyString());
+    }
+
     private int status(RequestBuilder request) throws Exception {
         MvcResult result = mockMvc.perform(request).andReturn();
         return result.getResponse().getStatus();

@@ -1,6 +1,6 @@
 package com.carecode.domain.admin.controller;
 
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
@@ -39,7 +39,7 @@ public class AdminPolicyVerificationController {
             @Parameter(description = "금액 근거 출처 URL") @RequestParam(required = false) String sourceUrl) {
 
         Policy policy = policyRepository.findById(policyId)
-                .orElseThrow(() -> new CareServiceException("정책을 찾을 수 없습니다: " + policyId));
+                .orElseThrow(() -> new ResourceNotFoundException("정책을 찾을 수 없습니다: " + policyId));
 
         policy.setVerifiedAt(LocalDateTime.now());
         policy.setVerifiedBy(currentUserFacade.requireCurrentUserEmail());
@@ -59,7 +59,7 @@ public class AdminPolicyVerificationController {
     @Operation(summary = "검증 표시 해제", description = "추정치로 되돌림")
     public ResponseEntity<Void> unverify(@PathVariable Long policyId) {
         Policy policy = policyRepository.findById(policyId)
-                .orElseThrow(() -> new CareServiceException("정책을 찾을 수 없습니다: " + policyId));
+                .orElseThrow(() -> new ResourceNotFoundException("정책을 찾을 수 없습니다: " + policyId));
         policy.setVerifiedAt(null);
         policy.setVerifiedBy(null);
         policyRepository.save(policy);

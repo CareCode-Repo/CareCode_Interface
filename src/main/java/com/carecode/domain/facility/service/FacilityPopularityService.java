@@ -2,7 +2,7 @@ package com.carecode.domain.facility.service;
 
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.facility.dto.response.FacilityPopularityResponse;
 import com.carecode.domain.facility.entity.CareFacility;
 import com.carecode.domain.facility.entity.FacilityCapacitySnapshot;
@@ -45,7 +45,7 @@ public class FacilityPopularityService {
 
     public FacilityPopularityResponse analyze(Long facilityId) {
         CareFacility facility = careFacilityRepository.findById(facilityId)
-                .orElseThrow(() -> new CareServiceException("시설을 찾을 수 없습니다: " + facilityId));
+                .orElseThrow(() -> new ResourceNotFoundException("시설을 찾을 수 없습니다: " + facilityId));
 
         eventLogger.log(EventType.FACILITY_POPULARITY_VIEWED, null, String.valueOf(facilityId));
 

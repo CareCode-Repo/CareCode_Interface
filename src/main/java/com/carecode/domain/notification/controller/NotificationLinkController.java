@@ -2,7 +2,7 @@ package com.carecode.domain.notification.controller;
 
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.notification.entity.Notification;
 import com.carecode.domain.notification.repository.NotificationRepository;
@@ -54,7 +54,7 @@ public class NotificationLinkController {
             @Parameter(description = "대상 식별자") @RequestParam(required = false) String targetId) {
 
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new CareServiceException("알림을 찾을 수 없습니다: " + notificationId));
+                .orElseThrow(() -> new ResourceNotFoundException("알림을 찾을 수 없습니다: " + notificationId));
 
         Long userId = currentUserIdOrNull();
         // 본인 알림만 열람 표시를 남긴다. 남의 알림 ID 로 읽음 처리되면 안 된다.
