@@ -1,0 +1,1 @@
+Method <com.carecode.domain.community.service.CommunityService.getCurrentUser()> calls method <org.springframework.security.core.context.SecurityContextHolder.getContext()> in (CommunityService.java:355)
