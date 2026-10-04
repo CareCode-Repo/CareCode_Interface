@@ -11,7 +11,7 @@ import com.carecode.domain.notification.dto.response.NotificationSettingsRespons
 import com.carecode.domain.notification.dto.response.NotificationStatsResponse;
 import com.carecode.domain.notification.dto.response.NotificationTemplateResponse;
 import com.carecode.domain.notification.dto.response.NotificationDeliveryStatusResponse;
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.notification.entity.Notification;
 import com.carecode.domain.notification.repository.NotificationPreferenceRepository;
 import com.carecode.domain.notification.sender.NotificationChannelType;
@@ -49,7 +49,7 @@ public class NotificationFacade {
     @Transactional(readOnly = true)
     public List<NotificationChannelStatusResponse> getChannelStatuses(String userId) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
         return Arrays.stream(NotificationChannelType.values())
                 .map(channel -> toChannelStatus(channel, user))

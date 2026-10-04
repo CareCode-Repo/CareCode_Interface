@@ -3,6 +3,7 @@ package com.carecode.domain.notification.service;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.BusinessException;
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.exception.ErrorCode;
 import com.carecode.domain.notification.dto.request.NotificationCreateRequest;
 import com.carecode.domain.notification.dto.request.NotificationMarkAsReadRequest;
@@ -323,7 +324,7 @@ public class NotificationService {
     @Transactional
     public void sendTestNotification(String userId, NotificationSendTestRequest request) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
         Notification notification = Notification.builder()
                 .user(user)
@@ -380,7 +381,7 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public NotificationStatsResponse getNotificationStats(String userId) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
         long totalCount = notificationRepository.countByUserId(user.getId());
         long unreadCount = notificationRepository.countByUserIdAndIsRead(user.getId(), false);
@@ -439,7 +440,7 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public NotificationDeliveryStatusResponse getDeliveryStatus(Long notificationId, String actorUserId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new CareServiceException("알림을 찾을 수 없습니다: " + notificationId));
+                .orElseThrow(() -> new ResourceNotFoundException("알림을 찾을 수 없습니다: " + notificationId));
         assertNotificationOwnedByUser(notification, actorUserId);
 
         return NotificationDeliveryStatusResponse.builder()

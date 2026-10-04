@@ -2,6 +2,7 @@ package com.carecode.domain.notification.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.notification.dto.request.NotificationRegisterPushTokenRequest;
 import com.carecode.domain.notification.dto.request.NotificationUpdateSettingsRequest;
 import com.carecode.domain.notification.dto.response.NotificationSettingsResponse;
@@ -41,7 +42,7 @@ public class NotificationPreferenceService {
         
         try {
             User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
             
             List<NotificationPreference> preferences = preferenceRepository.findByUserOrderByNotificationType(user);
             
@@ -61,7 +62,7 @@ public class NotificationPreferenceService {
         
         try {
             User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
             
             Optional<NotificationPreference> preference = preferenceRepository.findByUserAndNotificationType(user, notificationType);
             
@@ -81,7 +82,7 @@ public class NotificationPreferenceService {
         
         try {
             User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
             
             NotificationPreference preference = preferenceRepository
                     .findByUserAndNotificationType(user, Notification.NotificationType.valueOf(preferenceDto.getNotificationType()))
@@ -106,7 +107,7 @@ public class NotificationPreferenceService {
         
         try {
             User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
             
             NotificationPreference preference = preferenceRepository
                     .findByUserAndNotificationType(user, Notification.NotificationType.valueOf(notificationType))
@@ -136,7 +137,7 @@ public class NotificationPreferenceService {
         
         try {
             User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
             
             Map<Notification.NotificationType, NotificationPreference> stored =
                     preferenceRepository.findByUserOrderByNotificationType(user).stream()
@@ -167,7 +168,7 @@ public class NotificationPreferenceService {
         
         try {
             User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
             
             // 기존 설정 삭제
             List<NotificationPreference> existingPreferences = preferenceRepository.findByUserOrderByNotificationType(user);
@@ -281,7 +282,7 @@ public class NotificationPreferenceService {
     @Transactional
     public void registerPushToken(String userId, NotificationRegisterPushTokenRequest request) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
         // 기존 설정이 있는지 확인
         Optional<NotificationPreference> existingPreference = preferenceRepository
@@ -342,7 +343,7 @@ public class NotificationPreferenceService {
     @Transactional
     public void updateSettings(String userId, NotificationUpdateSettingsRequest request) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
         // 각 알림 타입별로 설정 업데이트
         for (Notification.NotificationType type : Notification.NotificationType.values()) {

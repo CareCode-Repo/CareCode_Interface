@@ -357,7 +357,7 @@ public class CommunityService {
         if (authentication == null || !authentication.isAuthenticated() || 
             "anonymousUser".equals(authentication.getName())) {
             log.warn("getCurrentUser() - 인증되지 않은 사용자");
-            throw new CareServiceException("인증된 사용자 정보를 찾을 수 없습니다.");
+            throw new ResourceNotFoundException("인증된 사용자 정보를 찾을 수 없습니다.");
         }
         
         String userEmail = authentication.getName();

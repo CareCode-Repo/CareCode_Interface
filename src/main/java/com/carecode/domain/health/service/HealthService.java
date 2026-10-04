@@ -5,6 +5,7 @@ import com.carecode.domain.user.service.ConsentGuard;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.core.exception.HealthRecordNotFoundException;
 import com.carecode.core.exception.ChildNotFoundException;
@@ -173,7 +174,7 @@ public class HealthService {
         validateUpdateRequest(request);
         
         HealthRecord record = healthRecordRepository.findById(recordId)
-                .orElseThrow(() -> new CareServiceException("건강 기록을 찾을 수 없습니다: " + recordId));
+                .orElseThrow(() -> new ResourceNotFoundException("건강 기록을 찾을 수 없습니다: " + recordId));
         assertHealthRecordOwnedByUser(record, actorUserId);
         
         // 기록 업데이트
@@ -301,7 +302,7 @@ public class HealthService {
         
         Long childId = Long.valueOf(request.getChildId());
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new CareServiceException("아동을 찾을 수 없습니다: " + request.getChildId()));
+                .orElseThrow(() -> new ResourceNotFoundException("아동을 찾을 수 없습니다: " + request.getChildId()));
         assertChildOwnedByUser(child, actorUserId);
         
         List<HealthRecord> records = healthRecordRepository.findByChildOrderByRecordDateDesc(child);
@@ -324,7 +325,7 @@ public class HealthService {
         
         Long childId = Long.valueOf(request.getChildId());
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new CareServiceException("아동을 찾을 수 없습니다: " + request.getChildId()));
+                .orElseThrow(() -> new ResourceNotFoundException("아동을 찾을 수 없습니다: " + request.getChildId()));
         assertChildOwnedByUser(child, actorUserId);
 
         List<HealthRecord> records = healthRecordRepository.findByChildOrderByRecordDateDesc(child);
@@ -481,7 +482,7 @@ public class HealthService {
     @Transactional
     public void deleteAttachment(Long attachmentId, Long actorUserId) {
         HealthRecordAttachment attachment = healthRecordAttachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new CareServiceException("첨부파일을 찾을 수 없습니다: " + attachmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("첨부파일을 찾을 수 없습니다: " + attachmentId));
         assertHealthRecordOwnedByUser(attachment.getHealthRecord(), actorUserId);
         attachment.deactivate();
         healthRecordAttachmentRepository.save(attachment);

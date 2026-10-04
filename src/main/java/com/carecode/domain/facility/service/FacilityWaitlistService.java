@@ -3,6 +3,7 @@ package com.carecode.domain.facility.service;
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.facility.dto.request.WaitlistRequest;
 import com.carecode.domain.facility.dto.response.WaitlistStatsResponse;
@@ -45,7 +46,7 @@ public class FacilityWaitlistService {
     public Long register(Long facilityId, WaitlistRequest request) {
         User user = currentUserFacade.requireCurrentUser();
         CareFacility facility = facilityRepository.findById(facilityId)
-                .orElseThrow(() -> new CareServiceException("시설을 찾을 수 없습니다: " + facilityId));
+                .orElseThrow(() -> new ResourceNotFoundException("시설을 찾을 수 없습니다: " + facilityId));
         Child child = resolveOwnChild(user, request.getChildId());
 
         // 같은 아이·같은 시설의 중복 등록은 통계를 왜곡하므로 기존 기록을 그대로 돌려준다.
@@ -73,7 +74,7 @@ public class FacilityWaitlistService {
     public void resolve(Long waitlistId, String status, LocalDate resolvedAt, String note) {
         User user = currentUserFacade.requireCurrentUser();
         FacilityWaitlist entry = waitlistRepository.findById(waitlistId)
-                .orElseThrow(() -> new CareServiceException("대기 기록을 찾을 수 없습니다: " + waitlistId));
+                .orElseThrow(() -> new ResourceNotFoundException("대기 기록을 찾을 수 없습니다: " + waitlistId));
 
         if (!entry.getUser().getId().equals(user.getId())) {
             throw new CareServiceException("본인의 대기 기록만 수정할 수 있습니다.");
@@ -90,7 +91,7 @@ public class FacilityWaitlistService {
     @Transactional(readOnly = true)
     public WaitlistStatsResponse getStats(Long facilityId) {
         CareFacility facility = facilityRepository.findById(facilityId)
-                .orElseThrow(() -> new CareServiceException("시설을 찾을 수 없습니다: " + facilityId));
+                .orElseThrow(() -> new ResourceNotFoundException("시설을 찾을 수 없습니다: " + facilityId));
 
         List<FacilityWaitlist> admitted = waitlistRepository.findAdmitted(facilityId);
         long waiting = waitlistRepository.countWaiting(facilityId);

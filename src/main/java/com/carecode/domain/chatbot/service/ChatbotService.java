@@ -2,6 +2,7 @@ package com.carecode.domain.chatbot.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.chatbot.dto.request.ChatbotMessageRequest;
 import com.carecode.domain.chatbot.dto.response.ChatbotMessageResponse;
 import com.carecode.domain.chatbot.dto.response.ChatbotChatHistoryDtoResponse;
@@ -205,7 +206,7 @@ public class ChatbotService {
         
         try {
             ChatMessage message = chatMessageRepository.findById(messageId)
-                    .orElseThrow(() -> new CareServiceException("메시지를 찾을 수 없습니다."));
+                    .orElseThrow(() -> new ResourceNotFoundException("메시지를 찾을 수 없습니다."));
             
             message.setIsHelpful(isHelpful);
             chatMessageRepository.save(message);
@@ -379,7 +380,7 @@ public class ChatbotService {
     private User resolveUser(String userIdOrEmail) {
         return userRepository.findByUserId(userIdOrEmail)
                 .or(() -> userRepository.findByEmail(userIdOrEmail))
-                .orElseThrow(() -> new CareServiceException("사용자를 찾을 수 없습니다: " + userIdOrEmail));
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userIdOrEmail));
     }
 
     // 의도 분석

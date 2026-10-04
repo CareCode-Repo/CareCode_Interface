@@ -2,7 +2,7 @@ package com.carecode.domain.facility.service;
 
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.facility.dto.response.AdmissionForecastResponse;
 import com.carecode.domain.facility.entity.CareFacility;
 import com.carecode.domain.facility.entity.FacilityCapacitySnapshot;
@@ -41,7 +41,7 @@ public class AdmissionForecastService {
     /** 아이 월령 기준으로 목표 시점까지 자리가 날 확률을 추정한다. */
     public AdmissionForecastResponse forecast(Long facilityId, Integer childAgeMonths, Integer horizonMonths) {
         CareFacility facility = careFacilityRepository.findById(facilityId)
-                .orElseThrow(() -> new CareServiceException("시설을 찾을 수 없습니다: " + facilityId));
+                .orElseThrow(() -> new ResourceNotFoundException("시설을 찾을 수 없습니다: " + facilityId));
 
         LocalDate today = LocalDate.now();
         int horizon = horizonMonths != null && horizonMonths > 0 ? horizonMonths : DEFAULT_HORIZON_MONTHS;

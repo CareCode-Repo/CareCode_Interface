@@ -1,7 +1,7 @@
 package com.carecode.domain.admin.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.admin.dto.AdminBookingDetailResponse;
 import com.carecode.domain.admin.dto.AdminBookingListResponse;
 import com.carecode.domain.facility.dto.response.StatusDistribution;
@@ -129,7 +129,7 @@ public class CareFacilityBookingAdminService {
     @LogExecutionTime
     public AdminBookingDetailResponse getBookingDetail(Long bookingId) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
+                .orElseThrow(() -> new ResourceNotFoundException("예약을 찾을 수 없습니다: " + bookingId));
 
         return convertToAdminDetailResponse(booking);
     }
@@ -140,7 +140,7 @@ public class CareFacilityBookingAdminService {
     public AdminBookingDetailResponse updateBookingStatus(Long bookingId,
                                                                                  AdminStatusUpdateRequest request) {
             CareFacilityBooking booking = bookingRepository.findById(bookingId)
-                    .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
+                    .orElseThrow(() -> new ResourceNotFoundException("예약을 찾을 수 없습니다: " + bookingId));
             
             // 없는 상태면 valueOf 가 IllegalArgumentException 을 던져 500 이 됐다. 400 으로 돌려준다.
             CareFacilityBooking.BookingStatus newStatus;
@@ -168,7 +168,7 @@ public class CareFacilityBookingAdminService {
     @Transactional
     public void deleteBooking(Long bookingId) {
         CareFacilityBooking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new CareServiceException("예약을 찾을 수 없습니다: " + bookingId));
+                .orElseThrow(() -> new ResourceNotFoundException("예약을 찾을 수 없습니다: " + bookingId));
 
         bookingRepository.delete(booking);
     }

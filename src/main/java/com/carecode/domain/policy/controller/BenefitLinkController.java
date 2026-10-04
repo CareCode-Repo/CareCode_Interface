@@ -3,6 +3,7 @@ package com.carecode.domain.policy.controller;
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
@@ -41,7 +42,7 @@ public class BenefitLinkController {
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
 
         Policy policy = policyRepository.findById(policyId)
-                .orElseThrow(() -> new CareServiceException("정책을 찾을 수 없습니다: " + policyId));
+                .orElseThrow(() -> new ResourceNotFoundException("정책을 찾을 수 없습니다: " + policyId));
 
         String url = policy.getApplicationUrl();
         if (url == null || url.isBlank()) {

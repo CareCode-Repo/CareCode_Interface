@@ -3,6 +3,7 @@ package com.carecode.domain.policy.service;
 import com.carecode.domain.policy.benefit.BenefitPaymentType;
 import com.carecode.domain.policy.benefit.BenefitProjectionCalculator;
 import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
 import com.carecode.core.security.CurrentUserFacade;
@@ -228,7 +229,7 @@ public class RegionalBenefitComparisonService {
         }
         Child child = childId == null ? children.get(0)
                 : children.stream().filter(c -> c.getId().equals(childId)).findFirst()
-                .orElseThrow(() -> new CareServiceException("자녀를 찾을 수 없습니다: " + childId));
+                .orElseThrow(() -> new ResourceNotFoundException("자녀를 찾을 수 없습니다: " + childId));
 
         if (child.getBirthDate() == null) {
             throw new CareServiceException("자녀의 생년월일이 없어 지원금을 계산할 수 없습니다.");

@@ -2,7 +2,7 @@ package com.carecode.domain.policy.service;
 
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.policy.dto.request.BenefitAmountReportRequest;
 import com.carecode.domain.policy.dto.response.BenefitAmountConsensusResponse;
@@ -41,7 +41,7 @@ public class BenefitAmountReportService {
     @Transactional
     public BenefitAmountConsensusResponse report(Long policyId, BenefitAmountReportRequest request) {
         Policy policy = policyRepository.findById(policyId)
-                .orElseThrow(() -> new CareServiceException("정책을 찾을 수 없습니다: " + policyId));
+                .orElseThrow(() -> new ResourceNotFoundException("정책을 찾을 수 없습니다: " + policyId));
         User user = currentUserFacade.requireCurrentUser();
 
         BenefitAmountReport.PaymentType type =
@@ -69,7 +69,7 @@ public class BenefitAmountReportService {
     @Transactional(readOnly = true)
     public BenefitAmountConsensusResponse getConsensus(Long policyId) {
         Policy policy = policyRepository.findById(policyId)
-                .orElseThrow(() -> new CareServiceException("정책을 찾을 수 없습니다: " + policyId));
+                .orElseThrow(() -> new ResourceNotFoundException("정책을 찾을 수 없습니다: " + policyId));
         return buildResponse(policy, findTopReport(policyId));
     }
 
