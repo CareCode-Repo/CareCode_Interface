@@ -196,21 +196,16 @@ class AccessControlContractTest {
     /**
      * 공공데이터 동기화는 외부 API 한도를 태우고 DB 에 쓴다. 공개로 두면 누구나 실행할 수 있다.
      *
-     * <p>{@code /api/public/care-facilities/**} 가 통째로 permitAll 이라, 그 아래 있는
-     * 동기화 트리거까지 열려 있었다. {@code swagger/sync} 는 GET 이라 브라우저 접속이나
-     * 크롤러만으로도 실행된다.
+     * <p>한때 같은 동기화가 {@code /api/public/care-facilities/**}(통째로 permitAll) 아래에도
+     * 있었고, 그중 하나는 GET 이라 브라우저 접속이나 크롤러만으로 실행됐다. 그 중복 경로는
+     * 삭제했고(아래 {@code duplicateMappingsRemoved}), 남은 입구는 어드민 경로 하나뿐이다.
      */
     @Test
     @DisplayName("공공데이터 동기화는 비로그인으로 실행할 수 없다")
     void publicDataSyncIsNotOpen() throws Exception {
-        assertThat(mockMvc.perform(post("/api/public/care-facilities/sync-all")).andReturn()
+        assertThat(mockMvc.perform(post("/api/admin/public-data/facilities/sync")).andReturn()
                 .getResponse().getStatus())
                 .as("POST 동기화가 열려 있으면 안 된다")
-                .isIn(401, 403);
-
-        assertThat(mockMvc.perform(get("/api/public/care-facilities/swagger/sync")).andReturn()
-                .getResponse().getStatus())
-                .as("GET 동기화는 브라우저 접속만으로도 실행된다")
                 .isIn(401, 403);
     }
 
@@ -218,19 +213,47 @@ class AccessControlContractTest {
     @DisplayName("일반 회원도 공공데이터 동기화를 실행할 수 없다")
     @WithMockUser(username = "member@example.com", roles = "PARENT")
     void publicDataSyncRequiresAdmin() throws Exception {
-        assertThat(mockMvc.perform(post("/api/public/care-facilities/sync-all")).andReturn()
+        assertThat(mockMvc.perform(post("/api/admin/public-data/facilities/sync")).andReturn()
                 .getResponse().getStatus()).isEqualTo(403);
     }
 
-    /** 시설·정책 조회는 계속 공개여야 한다. 위 제한이 조회까지 막으면 안 된다. */
+    /** 시설 조회는 계속 공개여야 한다. 위 제한이 조회까지 막으면 안 된다. */
     @ParameterizedTest(name = "{0} 은 여전히 공개다")
     @ValueSource(strings = {
-            "/api/public/care-facilities/swagger/stats",
-            "/api/public/care-facilities/swagger/db-facilities"
+            "/facilities",
+            "/facilities/statistics"
     })
     void publicDataReadStaysOpen(String path) throws Exception {
         assertThat(mockMvc.perform(get(path)).andReturn().getResponse().getStatus())
                 .isNotIn(401, 403);
+    }
+
+    /**
+     * 같은 일을 하는 입구가 여러 개면 보안 설정도 그만큼 중복된다. 실제로 동기화 입구가 둘이어서
+     * 한쪽만 ADMIN 으로 잠겨 있었다.
+     *
+     * <p>삭제한 중복 경로가 다시 생기면(복사·붙여넣기로 되살아나기 쉽다) 여기서 걸린다.
+     * 괄호 안은 같은 일을 하는, 남겨 둔 경로다.
+     */
+    @ParameterizedTest(name = "{0} 매핑은 더 이상 존재하지 않는다")
+    @ValueSource(strings = {
+            // → POST /api/admin/public-data/facilities/sync
+            "/api/public/care-facilities/sync-all",
+            "/api/public/care-facilities/swagger/sync",
+            // → GET /facilities, GET /facilities/statistics
+            "/api/public/care-facilities/swagger/db-facilities",
+            "/api/public/care-facilities/swagger/stats",
+            // → GET /notifications/preferences, GET /notifications/stats
+            "/notifications/settings/user-1",
+            "/notifications/statistics/user-1"
+    })
+    @WithMockUser(username = "admin@example.com", roles = "ADMIN")
+    void duplicateMappingsRemoved(String path) throws Exception {
+        MvcResult result = mockMvc.perform(get(path)).andReturn();
+
+        assertThat(result.getResponse().getStatus())
+                .as("%s 는 매핑이 없어야 한다 (404/405)", path)
+                .isIn(404, 405);
     }
 
     /** 버전 필터가 실제 필터 체인에 걸려 있는지. 단위 테스트만으로는 등록 누락을 모른다. */

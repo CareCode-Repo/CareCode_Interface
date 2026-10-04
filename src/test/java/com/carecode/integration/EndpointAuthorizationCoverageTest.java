@@ -113,10 +113,6 @@ class EndpointAuthorizationCoverageTest {
             "GET /community/latest", "GET /community/tags", "GET /community/search/all",
             "GET /community/popular/limit", "GET /community/latest/limit",
 
-            // 공공데이터 조회 (동기화 트리거는 ADMIN 이다)
-            "GET /api/public/care-facilities/swagger/stats",
-            "GET /api/public/care-facilities/swagger/db-facilities",
-
             // 조회수 증가. 쓰기지만 비로그인 방문자의 조회도 세야 하므로 공개다.
             // 다만 이 값이 /facilities/popular 순위에 쓰이므로 부풀릴 수 있다.
             // 인기 순위를 조작에 민감하게 다뤄야 한다면 여기부터 손봐야 한다.

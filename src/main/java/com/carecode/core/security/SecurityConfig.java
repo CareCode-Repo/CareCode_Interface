@@ -166,16 +166,12 @@ public class SecurityConfig {
                 
                 // 돌봄시설 공공데이터 API — 조회만 공개다.
                 //
-                // 동기화는 외부 공공데이터 API 를 페이지 단위로 호출하고 DB 에 쓴다.
-                // 공개로 두면 누구나 공공데이터 일일 한도를 태우고 DB 를 두드릴 수 있다.
-                // (이 프로젝트는 "공공데이터 한도 초과" 를 운영 알림으로 잡고 있는데,
-                //  그 상황을 외부에서 마음대로 만들 수 있는 셈이다.)
-                // swagger/sync 는 GET 이라 브라우저 접속이나 크롤러만으로도 실행된다.
-                //
-                // 같은 기능이 POST /api/admin/public-data/facilities/sync 로 이미 있다.
-                .requestMatchers("/api/public/care-facilities/sync-all").hasRole("ADMIN")
-                .requestMatchers("/api/public/care-facilities/swagger/sync").hasRole("ADMIN")
-                .requestMatchers("/api/public/care-facilities/**").permitAll()
+                // 동기화 트리거가 이 아래에도 있었다. /api/public/care-facilities/** 가 통째로
+                // permitAll 이라 누구나 공공데이터 일일 한도를 태우고 DB 에 쓸 수 있었고,
+                // 경로마다 hasRole("ADMIN") 을 덧붙여 막아 두었다. 그 경로들은 어드민 동기화
+                // (POST /api/admin/public-data/facilities/sync) 와 시설 조회(/facilities)의
+                // 중복이어서 삭제했고, 덧붙였던 예외도 함께 지웠다.
+                // 입구가 하나면 보안 설정도 한 군데서 끝난다.
                 
                 // 병원 조회는 로그인 전에도 보여야 한다. 실제 경로가 /health/hospitals/** 라
                 // 아래 /health/** 규칙보다 먼저 선언해야 한다.

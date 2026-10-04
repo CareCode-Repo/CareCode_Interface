@@ -31,17 +31,20 @@ ArchUnit 의 `FreezingArchRule` 을 씁니다.
 
 ## 규칙과 현재 위반
 
-진척: **489건(0단계) → 391건(1b 단계)**. 남은 것은 도메인 경계(271)와 컨트롤러의 리포지토리
-직접 사용(66), core 기반의 도메인 참조(50)입니다.
+진척: **489건(0단계) → 391건(1b 단계) → 383건(3a 단계)**. 남은 것은 도메인 경계(268)와
+컨트롤러의 리포지토리 직접 사용(61), core 기반의 도메인 참조(50)입니다.
+
+> 세는 법: `archunit-baseline/` 에는 규칙별 위반 파일 외에 색인 파일 `stored.rules` 도 있습니다.
+> `cat archunit-baseline/* | wc -l` 은 색인 11줄을 함께 세므로 실제 위반보다 11 크게 나옵니다.
 
 | 규칙 | 위반 | 뜻 |
 |------|------|-----|
-| 다른 도메인의 리포지토리를 직접 쓰지 않는다 | 271 | 남의 테이블을 직접 읽으면 그 도메인의 규칙(소유권 검증 등)을 건너뛴다 |
+| 다른 도메인의 리포지토리를 직접 쓰지 않는다 | 268 | 남의 테이블을 직접 읽으면 그 도메인의 규칙(소유권 검증 등)을 건너뛴다 |
 | 도메인 패키지 이름은 소문자다 | **0** | `careFacility`→`facility` 로 해소 (1b 단계) |
-| 컨트롤러는 리포지토리를 직접 쓰지 않는다 | 66 | 검증·트랜잭션 경계가 컨트롤러로 샌다 |
+| 컨트롤러는 리포지토리를 직접 쓰지 않는다 | 61 | 검증·트랜잭션 경계가 컨트롤러로 샌다 |
 | core 기반 패키지는 domain 을 의존하지 않는다 | 50 | 기반 코드가 도메인을 알면 공통이 아니다 |
 | 매퍼는 리포지토리를 쓰지 않는다 | 3 | 변환 한 번에 숨은 쿼리가 생기면 N+1 을 추적할 수 없다 |
-| core 에는 컨트롤러가 없다 | 2 | `core/controller/CareFacilityApiController` 373줄 |
+| core 에는 컨트롤러가 없다 | **0** | 1a 에서 도메인으로 옮기고, 3a 에서 중복이라 삭제 |
 | 도메인은 SecurityContextHolder 를 직접 쓰지 않는다 | 1 | principal 모양이 바뀌면 고칠 곳이 흩어진다(시설 API 500 의 원인) |
 | 서비스·리포지토리는 컨트롤러를 의존하지 않는다 | **0** | 층 방향은 이미 지켜지고 있다 |
 | 엔티티는 DTO·컨트롤러를 의존하지 않는다 | **0** | 매핑 경계는 지켜지고 있다 |
@@ -90,13 +93,40 @@ ArchUnit 의 `FreezingArchRule` 을 씁니다.
 이동 PR 에서는 `freeze.refreeze=true` 로 한 번 다시 뜨고, 규칙별 숫자가 늘지 않았는지 확인한 뒤
 다시 `false` 로 돌려놓습니다(그래야 CI 가 진짜 새 위반을 잡습니다).
 
+## 같은 일을 하는 입구를 지웠다 (3a 단계)
+
+`Map<String, Object>` 응답 24곳을 타입으로 바꾸려고 하나씩 읽다가, 그중 7곳은 **타입을 붙일 값이
+아니라는 것**을 알았습니다. 이미 같은 일을 하는 다른 엔드포인트가 있었습니다.
+
+| 지운 것 | 같은 일을 하는, 남겨 둔 것 | 왜 지웠나 |
+|---------|---------------------------|-----------|
+| `POST /api/public/care-facilities/sync-all` | `POST /api/admin/public-data/facilities/sync` | 컨트롤러가 리포지토리에 직접 쓰고 페이지 루프를 돌렸다. 남긴 쪽은 `SyncResult` 와 신선도 이력을 남긴다 |
+| `GET /api/public/care-facilities/swagger/sync` | 같음 | 위를 GET 으로 한 번 더 노출한 것. **GET 이라 브라우저 접속만으로 DB 쓰기가 실행됐다** |
+| `GET /api/public/care-facilities/swagger/db-facilities` | `GET /facilities` | 응답을 `success`/`message` 로 한 겹 더 싸기만 했다 |
+| `GET /api/public/care-facilities/swagger/stats` | `GET /facilities/statistics` | 같음 |
+| `GET /notifications/settings/{userId}` | `GET /notifications/preferences` | 고정값을 돌려줬다 (이메일 켬, 조용한 시간 22:00–08:00) |
+| `PUT /notifications/settings/{userId}` | `PUT /notifications/preferences/...` | **받은 값을 그대로 돌려주고 저장하지 않았다** |
+| `GET /notifications/statistics/{userId}` | `GET /notifications/stats` | 우선순위 분포 `HIGH=5, NORMAL=15, LOW=5`, 일별 건수 `2024-01-15: 3` 이 코드에 박혀 있었다 |
+
+마지막 세 개가 이 단계의 핵심입니다. 응답이 그럴듯하면 프런트는 **설정이 저장된다고 읽습니다.**
+타입을 붙이면 그 거짓이 스펙에 정식으로 올라가므로, 타입화가 아니라 삭제가 맞습니다.
+
+입구가 둘이면 보안 설정도 둘입니다. 실제로 `/api/public/care-facilities/**` 가 통째로 `permitAll`
+이어서, 그 아래 동기화 트리거까지 열려 있었고 경로별로 `hasRole("ADMIN")` 을 덧붙여 막아 둔
+상태였습니다. 중복을 지우면서 그 예외 설정도 함께 사라졌습니다.
+
+되살아나는 것을 막으려고 `AccessControlContractTest.duplicateMappingsRemoved` 가 일곱 경로를
+모두 두드려 404/405 를 확인합니다(복사·붙여넣기로 돌아오기 쉬운 종류입니다).
+OpenAPI 스펙은 237 → 231 경로가 됐습니다.
+
 ## 다음 단계
 
 | 단계 | 내용 | 효과 |
 |------|------|------|
 | ~~1a. core 정리~~ | ~~조합 계층 분리, core 의 도메인 코드 이동~~ | **완료** — core 에 컨트롤러 0 |
 | ~~1b. 이름 통일~~ | ~~`careFacility`→`facility`, 문서의 `facade`↔코드 `app`~~ | **완료** — 489 → 391 |
-| 2. 예외 한 체계 | `catch(Exception)` 덮어쓰기 제거, ErrorCode 기반 통합 | 상태 코드 정확해짐 |
-| 3. `Map` 응답 → DTO | 24곳. 스펙에 타입이 생겨 프런트 계약 대조가 이 경로까지 본다 | 계약 품질 |
+| ~~2. 예외 한 체계~~ | ~~"찾을 수 없습니다" 34곳을 `ResourceNotFoundException` 으로~~ | **완료** — 500 → 404 |
+| ~~3a. 중복 입구 제거~~ | ~~같은 일을 하는 엔드포인트 7개 삭제~~ | **완료** — 391 → 383 |
+| 3b. `Map` 응답 → DTO | 남은 17곳. 스펙에 타입이 생겨 프런트 계약 대조가 이 경로까지 본다 | 계약 품질 |
 | 4. Child 를 제 자리로 | 엔티티는 `user`, 서비스는 `health` 에 쪼개져 있다 | 결합 1위 해소 |
 | 5. 거대 서비스 분해 | HealthService 977줄 | 2·3 과 함께 진행 |

@@ -151,39 +151,14 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(notifications);
     }
 
-    // 알림 설정 조회
-    @GetMapping("/settings/{userId}")
-    @LogExecutionTime
-    @Operation(summary = "알림 설정 조회")
-    public ResponseEntity<Map<String, Object>> getNotificationSettings(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
-        requireNotificationUserIdMatchesCurrent(userId);
-        Map<String, Object> settings = notificationFacade.getNotificationSettings(getAuthenticatedUserCode());
-
-        return ResponseEntity.ok(settings);
-    }
-
-    // 알림 설정 업데이트
-    @PutMapping("/settings/{userId}")
-    @LogExecutionTime
-    @Operation(summary = "알림 설정 업데이트", description = "사용자의 알림 설정을 업데이트")
-    public ResponseEntity<Map<String, Object>> updateNotificationSettings(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId,
-                                                                          @Parameter(description = "알림 설정", required = true) @RequestBody Map<String, Object> settings) {
-        requireNotificationUserIdMatchesCurrent(userId);
-        Map<String, Object> updatedSettings = notificationFacade.updateNotificationSettings(getAuthenticatedUserCode(), settings);
-
-        return ResponseEntity.ok(updatedSettings);
-    }
-
-    // 알림 통계 조회
-    @GetMapping("/statistics/{userId}")
-    @LogExecutionTime
-    @Operation(summary = "알림 통계 조회", description = "사용자의 알림 관련 통계 조회")
-    public ResponseEntity<Map<String, Object>> getNotificationStatistics(@Parameter(description = "사용자 ID", required = true) @PathVariable String userId) {
-        requireNotificationUserIdMatchesCurrent(userId);
-        Map<String, Object> statistics = notificationFacade.getNotificationStatistics(getAuthenticatedUserCode());
-
-        return ResponseEntity.ok(statistics);
-    }
+    /*
+     * 알림 설정 조회·수정과 통계는 아래 /preferences 와 /stats 로만 받는다.
+     *
+     * 한때 같은 일을 하는 /settings/{userId}(GET·PUT) 와 /statistics/{userId} 가 있었다.
+     * 둘은 설정을 저장하지 않고 받은 값을 그대로 돌려주거나 고정값(이메일 켬, 조용한 시간 22:00,
+     * 우선순위 분포 HIGH=5 …)을 돌려줬다. 응답이 그럴듯해서 "설정이 저장된다" 고 읽히는 쪽이
+     * 설정이 없는 것보다 위험하므로 삭제했다. 실제 저장·조회는 /preferences 가 한다.
+     */
 
     // 알림 설정 목록 조회
     @GetMapping("/preferences")

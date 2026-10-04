@@ -135,15 +135,6 @@ public class NotificationFacade {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getNotificationSettings(String userId) { return notificationService.getNotificationSettings(userId); }
-
-    @Transactional
-    public Map<String, Object> updateNotificationSettings(String userId, Map<String, Object> settings) { return notificationService.updateNotificationSettings(userId, settings); }
-
-    @Transactional(readOnly = true)
-    public Map<String, Object> getNotificationStatistics(String userId) { return notificationService.getNotificationStatistics(userId); }
-
-    @Transactional(readOnly = true)
     public List<NotificationSettingsResponse> getUserPreferences(String userId) { return preferenceService.getUserPreferences(userId); }
 
     @Transactional(readOnly = true)
