@@ -1,7 +1,7 @@
 package com.carecode.domain.community.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.controller.BaseController;
+import com.carecode.core.web.BaseController;
 import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityCreateCommentRequest;

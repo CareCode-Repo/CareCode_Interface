@@ -1,11 +1,11 @@
 package com.carecode.integration;
 
 import com.carecode.CareCodeApplication;
-import com.carecode.core.client.sync.GovernmentBenefitSyncService;
-import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
-import com.carecode.core.client.sync.KindergartenSyncService;
-import com.carecode.core.client.sync.PediatricHospitalSyncService;
-import com.carecode.core.client.sync.SyncResult;
+import com.carecode.external.publicdata.sync.GovernmentBenefitSyncService;
+import com.carecode.external.publicdata.sync.NationwideChildcareFacilitySyncService;
+import com.carecode.external.publicdata.sync.KindergartenSyncService;
+import com.carecode.external.publicdata.sync.PediatricHospitalSyncService;
+import com.carecode.external.publicdata.sync.SyncResult;
 import com.carecode.domain.careFacility.entity.CareFacility;
 import com.carecode.domain.careFacility.repository.CareFacilityRepository;
 import com.carecode.domain.careFacility.repository.FacilityCapacitySnapshotRepository;

@@ -1,7 +1,7 @@
 package com.carecode.domain.policy.service;
 
-import com.carecode.core.benefit.BenefitPaymentType;
-import com.carecode.core.benefit.BenefitProjectionCalculator;
+import com.carecode.domain.policy.benefit.BenefitPaymentType;
+import com.carecode.domain.policy.benefit.BenefitProjectionCalculator;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;

@@ -45,20 +45,54 @@ ArchUnit 의 `FreezingArchRule` 을 씁니다.
 
 마지막 두 줄이 0 인 것이 중요합니다 — **층 구조 자체는 맞습니다.** 문제는 같은 층 안에서 경계를 지키지 않는 쪽입니다.
 
-## 규칙 대상이 아닌 것
+## core 를 이름이 뜻을 말하는 자리로 쪼갰다 (1단계)
 
-`core/scheduler` · `core/client` · `core/devtools` · `core/geocoding` · `core/benefit` 은
-공공데이터 동기화와 배치처럼 **여러 도메인을 조합하는 코드** 입니다. 도메인을 아는 게 본질이라
-"기반은 도메인을 모른다" 규칙의 대상이 아닙니다.
+`core` 라는 한 패키지에 성격이 다른 셋이 섞여 있었습니다.
 
-다만 그 코드가 "공통 기반" 자리에 있는 것이 혼란의 원인입니다. 조합 계층으로 따로 옮기는 것은
-다음 단계에서 다룹니다.
+| 성격 | 내용 | 도메인을 아는가 |
+|------|------|-----------------|
+| 기반 | 보안·웹·설정·저장소·유틸·예외·모니터링 | 몰라야 한다 |
+| 조합 | 공공데이터 연동·배치·지오코딩 | **아는 게 본질이다** (도메인 참조 47건) |
+| 도메인 | 시설 공개 API 컨트롤러 2개, 지원금 계산기 | 도메인이다 |
+
+조합 코드가 "공통 기반" 자리에 있으면, 규칙을 세울 수도 없고(도메인 참조가 정상이므로)
+새로 온 사람은 "core 는 뭐든 넣는 곳" 으로 읽습니다. 그래서 이름이 뜻을 말하도록 옮겼습니다.
+
+| 전 | 후 | 무엇인가 |
+|----|----|----------|
+| `core/client` | `external/publicdata` | 외부 공공데이터 연동·동기화 |
+| `core/geocoding` | `external/geocoding` | 외부 좌표 변환 |
+| `core/scheduler` | `batch` | 주기 작업 |
+| `core/devtools` | `devtools` | 개발용 샘플 데이터 |
+| `core/benefit` | `domain/policy/benefit` | policy 만 쓰는 도메인 로직이었다 |
+| `core/controller/CareFacilityApiController` | `domain/careFacility/controller` | 373줄짜리 시설 공개 API |
+| `core/client/controller/PublicDataController` | `domain/careFacility/controller` | 같은 성격 |
+| `core/controller/BaseController` | `core/web` | 패키지 해체 |
+
+`integration` 이라는 이름은 쓰지 않았습니다. 테스트 쪽에서 이미 "통합 테스트" 뜻으로 쓰고 있어
+같은 이름이 두 뜻으로 읽힙니다.
+
+### 총 위반은 줄지 않았다 (489 → 489)
+
+솔직하게 적어 둡니다. "core 에 컨트롤러" 2건이 **`careFacility` 네이밍 위반 2건으로 옮겨 간 것**입니다.
+옮긴 코드가 이제 도메인 규칙의 대상이 되기 때문입니다. 숫자가 줄어드는 것은 다음 단계
+(`careFacility`→`facility`, 98건 일괄)에서 나옵니다.
+
+이 단계의 값은 숫자가 아니라 **규칙을 세울 수 있는 구조가 된 것** 입니다. 조합 코드가 기반에서 빠졌으니
+"기반은 도메인을 모른다" 를 예외 없이 적용할 수 있습니다.
+
+### 파일을 옮기면 baseline 을 다시 떠야 한다
+
+위반 설명에 클래스 경로가 들어가므로, 같은 문제라도 파일을 옮기면 **새 위반으로 잡힙니다.**
+이동 PR 에서는 `freeze.refreeze=true` 로 한 번 다시 뜨고, 규칙별 숫자가 늘지 않았는지 확인한 뒤
+다시 `false` 로 돌려놓습니다(그래야 CI 가 진짜 새 위반을 잡습니다).
 
 ## 다음 단계
 
 | 단계 | 내용 | 효과 |
 |------|------|------|
-| 1. 자리 정리 | `core` 의 도메인 컨트롤러 이동, 조합 계층 분리, `careFacility`→`facility`, 문서의 `facade`↔코드 `app` 통일 | 위반 96+50+2 감소 |
+| ~~1a. core 정리~~ | ~~조합 계층 분리, core 의 도메인 코드 이동~~ | **완료** — core 에 컨트롤러 0 |
+| 1b. 이름 통일 | `careFacility`→`facility`, 문서의 `facade`↔코드 `app` | 위반 98 감소 |
 | 2. 예외 한 체계 | `catch(Exception)` 덮어쓰기 제거, ErrorCode 기반 통합 | 상태 코드 정확해짐 |
 | 3. `Map` 응답 → DTO | 24곳. 스펙에 타입이 생겨 프런트 계약 대조가 이 경로까지 본다 | 계약 품질 |
 | 4. Child 를 제 자리로 | 엔티티는 `user`, 서비스는 `health` 에 쪼개져 있다 | 결합 1위 해소 |

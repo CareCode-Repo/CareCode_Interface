@@ -1,6 +1,6 @@
 package com.carecode.domain.policy.service;
 
-import com.carecode.core.benefit.BenefitProjectionCalculator;
+import com.carecode.domain.policy.benefit.BenefitProjectionCalculator;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.policy.dto.response.RegionalBenefitComparisonResponse;

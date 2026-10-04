@@ -81,7 +81,7 @@ graph TB
 |------|--------|------|
 | 진입 | `core.security`, `core.RateLimitInterceptor`, `core.handler` | 인증·인가, 호출 제한, 예외의 상태코드 변환 |
 | 표현 | `domain.*.controller` | HTTP 계약. 비즈니스 판단은 하지 않음 |
-| 조합 | `domain.*.facade` | 여러 서비스를 묶어 화면 단위 응답을 만듦 |
+| 조합 | `domain.*.app` | 여러 서비스를 묶어 화면 단위 응답을 만듦 (클래스 이름은 `*Facade`) |
 | 도메인 | `domain.*.service` | 판단과 계산. 대부분의 설계 결정이 여기 있음 |
 | 수집 | `core.client` | 공공데이터 공급자 추상화와 동기화 |
 | 지표 | `core.analytics` | 행동 이벤트 적재와 퍼널·리텐션 집계 |

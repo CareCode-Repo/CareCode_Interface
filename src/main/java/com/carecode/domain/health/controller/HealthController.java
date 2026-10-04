@@ -1,7 +1,7 @@
 package com.carecode.domain.health.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.controller.BaseController;
+import com.carecode.core.web.BaseController;
 import com.carecode.core.web.ConditionalResponse;
 import com.carecode.core.util.PageRequestUtil;
 import com.carecode.core.security.CurrentUserFacade;

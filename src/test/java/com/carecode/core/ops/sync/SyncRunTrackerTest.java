@@ -1,6 +1,6 @@
 package com.carecode.core.ops.sync;
 
-import com.carecode.core.client.sync.SyncResult;
+import com.carecode.external.publicdata.sync.SyncResult;
 import com.carecode.core.ops.OperationalAlerter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,7 +1,7 @@
 package com.carecode.domain.admin.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.controller.BaseController;
+import com.carecode.core.web.BaseController;
 import com.carecode.domain.admin.dto.AdminBookingDetailResponse;
 import com.carecode.domain.admin.dto.AdminBookingSearchRequest;
 import com.carecode.domain.admin.dto.AdminBookingSearchResponse;

@@ -1,6 +1,8 @@
 도메인 패키지 이름이 소문자가 아니다: careFacility (com.carecode.domain.careFacility.app.CareFacilityFacade)
+도메인 패키지 이름이 소문자가 아니다: careFacility (com.carecode.domain.careFacility.controller.CareFacilityApiController)
 도메인 패키지 이름이 소문자가 아니다: careFacility (com.carecode.domain.careFacility.controller.CareFacilityController)
 도메인 패키지 이름이 소문자가 아니다: careFacility (com.carecode.domain.careFacility.controller.FacilityWaitlistController)
+도메인 패키지 이름이 소문자가 아니다: careFacility (com.carecode.domain.careFacility.controller.PublicDataController)
 도메인 패키지 이름이 소문자가 아니다: careFacility (com.carecode.domain.careFacility.dto.request.CareFacilityAdminBookingSearchRequest$CareFacilityAdminBookingSearchRequestBuilder)
 도메인 패키지 이름이 소문자가 아니다: careFacility (com.carecode.domain.careFacility.dto.request.CareFacilityAdminBookingSearchRequest)
 도메인 패키지 이름이 소문자가 아니다: careFacility (com.carecode.domain.careFacility.dto.request.CareFacilityAdminStatusUpdateRequest$CareFacilityAdminStatusUpdateRequestBuilder)
