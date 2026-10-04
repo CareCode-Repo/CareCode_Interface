@@ -14,6 +14,7 @@ import com.carecode.core.exception.ErrorCode;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthRecordAttachmentRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
+import com.carecode.domain.health.dto.response.HealthRecommendationResponse;
 import com.carecode.domain.health.dto.response.HealthRecordAttachmentResponse;
 import com.carecode.domain.health.dto.response.HealthRecordResponse;
 import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
@@ -508,7 +509,7 @@ public class HealthService {
     }
 
     @LogExecutionTime
-    public Map<String, Object> getIntegratedRecommendations(String userId, Long actorUserId) {
+    public HealthRecommendationResponse getIntegratedRecommendations(String userId, Long actorUserId) {
         assertUserIdBelongsToActor(userId, actorUserId);
         User user = findUserByIdOrUserId(userId);
         Integer childAge = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).stream()
@@ -527,13 +528,12 @@ public class HealthService {
                 .map(CareFacility::getName)
                 .collect(Collectors.toList());
 
-        Map<String, Object> recommendations = new HashMap<>();
-        recommendations.put("userId", user.getUserId());
-        recommendations.put("childAge", childAge);
-        recommendations.put("recommendedPolicies", recommendedPolicies);
-        recommendations.put("recommendedFacilities", recommendedFacilities);
-        recommendations.put("nudgeMessage", "아이 연령에 맞는 정책/시설을 확인해보세요.");
-        return recommendations;
+        return new HealthRecommendationResponse(
+                user.getUserId(),
+                childAge,
+                recommendedPolicies,
+                recommendedFacilities,
+                "아이 연령에 맞는 정책/시설을 확인해보세요.");
     }
 
     // 건강 목표 조회

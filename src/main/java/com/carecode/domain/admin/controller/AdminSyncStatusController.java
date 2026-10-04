@@ -1,6 +1,8 @@
 package com.carecode.domain.admin.controller;
 
 import com.carecode.core.ops.sync.SyncFreshnessService;
+import com.carecode.domain.admin.dto.response.ForecastAccuracyMeasureResponse;
+import com.carecode.domain.admin.dto.response.SyncStatusResponse;
 import com.carecode.domain.facility.service.ForecastBacktestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -10,9 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 주기 작업 상태 조회.
@@ -32,13 +32,9 @@ public class AdminSyncStatusController {
 
     @GetMapping("/status")
     @Operation(summary = "주기 작업 상태", description = "작업별 마지막 성공 시각, 경과 시간, 신선도 기준 초과 여부")
-    public ResponseEntity<Map<String, Object>> status() {
+    public ResponseEntity<SyncStatusResponse> status() {
         List<SyncFreshnessService.JobFreshness> jobs = freshnessService.describeAll();
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("jobs", jobs);
-        body.put("staleCount", jobs.stream().filter(SyncFreshnessService.JobFreshness::isStale).count());
-        return ResponseEntity.ok(body);
+        return ResponseEntity.ok(SyncStatusResponse.of(jobs));
     }
 
     /**
@@ -49,22 +45,7 @@ public class AdminSyncStatusController {
      */
     @org.springframework.web.bind.annotation.PostMapping("/forecast-accuracy/measure")
     @Operation(summary = "예측 정확도 측정 실행", description = "과거 관측으로 백테스트를 돌려 기간별 정확도를 다시 계산")
-    public ResponseEntity<Map<String, Object>> measureForecastAccuracy() {
-        var results = backtestService.runAll();
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("measured", results.size());
-        body.put("results", results.stream().map(r -> {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("horizonMonths", r.getHorizonMonths());
-            row.put("samples", r.getSamples());
-            row.put("facilities", r.getFacilities());
-            row.put("actualRate", r.getActualRate());
-            row.put("brierScore", r.getBrierScore());
-            row.put("baselineBrierScore", r.getBaselineBrierScore());
-            row.put("betterThanBaseline", r.betterThanBaseline());
-            return row;
-        }).toList());
-        return ResponseEntity.ok(body);
+    public ResponseEntity<ForecastAccuracyMeasureResponse> measureForecastAccuracy() {
+        return ResponseEntity.ok(ForecastAccuracyMeasureResponse.of(backtestService.runAll()));
     }
 }

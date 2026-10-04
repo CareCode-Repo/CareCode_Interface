@@ -7,6 +7,7 @@ import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.security.RefreshTokenCookieFactory;
 import com.carecode.core.util.KakaoUtil;
 import com.carecode.domain.user.dto.request.KakaoRegistrationRequest;
+import com.carecode.domain.user.dto.response.KakaoLoginUrlResponse;
 import com.carecode.domain.user.dto.response.TokenDto;
 import com.carecode.domain.user.dto.response.UserDto;
 import com.carecode.domain.user.service.AuthService;
@@ -21,7 +22,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 
 /** 카카오 로그인 관련 통합 컨트롤러 */
 @RestController
@@ -70,13 +70,8 @@ public class KakaoAuthController extends BaseController {
     @GetMapping("/login-url")
     @LogExecutionTime
     @Operation(summary = "카카오 로그인 URL 생성", description = "카카오 OAuth 로그인을 위한 URL 생성")
-    public ResponseEntity<Map<String, Object>> getKakaoLoginUrl() {
+    public ResponseEntity<KakaoLoginUrlResponse> getKakaoLoginUrl() {
         log.debug("카카오 로그인 URL 생성 요청");
-        String kakaoLoginUrl = kakaoUtil.buildAuthorizationUrl();
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "loginUrl", kakaoLoginUrl,
-                "message", "카카오 로그인 URL이 생성되었습니다."
-        ));
+        return ResponseEntity.ok(KakaoLoginUrlResponse.of(kakaoUtil.buildAuthorizationUrl()));
     }
 }
