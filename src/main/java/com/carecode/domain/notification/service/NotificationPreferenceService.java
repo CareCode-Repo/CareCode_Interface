@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.carecode.domain.notification.entity.PushDevice;
+import com.carecode.domain.notification.repository.PushDeviceRepository;
 
 /** 알림 설정 서비스 클래스 사용자별 알림 설정을 관리 */
 @Slf4j
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 public class NotificationPreferenceService {
 
     private final NotificationPreferenceRepository preferenceRepository;
+    private final PushDeviceRepository pushDeviceRepository;
     private final UserRepository userRepository;
 
     // 사용자별 알림 설정 목록 조회
@@ -304,6 +307,35 @@ public class NotificationPreferenceService {
                     .build();
             preferenceRepository.save(newPreference);
         }
+
+        registerDevice(user, request);
+    }
+
+    /**
+     * 이 기기를 사용자의 푸시 대상으로 올린다.
+     *
+     * <p>위에서 알림 설정 행에도 토큰을 쓰지만, 그 칸은 사용자당 하나뿐이라 휴대폰에서 켜면
+     * 웹에서 켜 둔 것을 덮어썼다. 기기는 여러 대일 수 있으므로 행을 따로 남긴다.
+     * (설정 행 쪽은 건드리지 않는다 — 알림 켜짐/꺼짐이 그 행에 달려 있고, 예전에 등록해 둔
+     * 사용자가 아직 그 값으로 알림을 받고 있다.)
+     */
+    private void registerDevice(User user, NotificationRegisterPushTokenRequest request) {
+        LocalDateTime now = LocalDateTime.now();
+
+        PushDevice device = pushDeviceRepository.findByToken(request.getPushToken())
+                .orElseGet(() -> PushDevice.builder()
+                        .token(request.getPushToken())
+                        .createdAt(now)
+                        .build());
+
+        // 같은 기기를 다른 사람이 쓰기 시작했을 수 있다(기기를 넘겨주거나 계정을 바꿔 로그인).
+        // 토큰은 전역 유일하므로 주인만 옮긴다 — 그러지 않으면 이전 사용자에게 알림이 계속 간다.
+        device.setUser(user);
+        device.setDeviceType(request.getDeviceType());
+        device.setAppVersion(request.getAppVersion());
+        device.setUpdatedAt(now);
+
+        pushDeviceRepository.save(device);
     }
 
     // 알림 설정 수정

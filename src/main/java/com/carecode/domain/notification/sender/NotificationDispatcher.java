@@ -12,6 +12,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.LinkedHashSet;
+import com.carecode.domain.notification.repository.PushDeviceRepository;
 
 /** 알림을 사용자 설정에 맞는 채널로 실제 발송한다. */
 @Slf4j
@@ -21,10 +23,13 @@ public class NotificationDispatcher {
     private final Map<NotificationChannelType, NotificationSender> senders =
             new EnumMap<>(NotificationChannelType.class);
     private final NotificationPreferenceRepository preferenceRepository;
+    private final PushDeviceRepository pushDeviceRepository;
 
     public NotificationDispatcher(List<NotificationSender> senderBeans,
-                                  NotificationPreferenceRepository preferenceRepository) {
+                                  NotificationPreferenceRepository preferenceRepository,
+                                  PushDeviceRepository pushDeviceRepository) {
         this.preferenceRepository = preferenceRepository;
+        this.pushDeviceRepository = pushDeviceRepository;
         for (NotificationSender sender : senderBeans) {
             senders.put(sender.channel(), sender);
         }
@@ -53,7 +58,7 @@ public class NotificationDispatcher {
                 .title(notification.getTitle())
                 .message(notification.getMessage())
                 .emailAddress(preference != null ? preference.getEmailAddress() : null)
-                .deviceToken(resolveDeviceToken(recipient, preference))
+                .deviceTokens(resolveDeviceTokens(recipient, preference))
                 .phoneNumber(preference != null ? preference.getPhoneNumber() : null)
                 .build();
 
@@ -83,21 +88,26 @@ public class NotificationDispatcher {
     }
 
     /**
-     * 푸시 대상 디바이스 토큰.
+     * 푸시를 보낼 기기 토큰 전부.
      *
-     * 토큰 등록은 SYSTEM 설정 행에만 쓰는데 발송은 알림 유형별 행을 읽는다. 그래서 해당 유형의
-     * 행만 보면 SYSTEM 알림 외에는 토큰이 없어 푸시가 조용히 실패한다. 토큰은 기기의 성질이므로
-     * 유형과 무관하게 찾는다.
+     * <p>한 사람이 휴대폰과 웹을 함께 쓴다. 토큰을 하나만 고르면 나머지 기기는 아무 말 없이
+     * 알림을 받지 못한다.
+     *
+     * <p>두 곳에서 모은다. {@code TBL_PUSH_DEVICE} 가 지금의 저장소이고, 알림 설정 행의
+     * {@code deviceToken} 은 그 전에 쓰던 자리다. 예전에 등록해 둔 사용자가 앱을 다시 열어
+     * 토큰을 새로 올리기 전까지는 옛 자리의 값으로 계속 받아야 하므로 함께 본다.
+     * 같은 토큰이 양쪽에 있을 수 있어 중복은 걸러낸다.
      */
-    private String resolveDeviceToken(User recipient, NotificationPreference preference) {
+    private List<String> resolveDeviceTokens(User recipient, NotificationPreference preference) {
+        LinkedHashSet<String> tokens = new LinkedHashSet<>(pushDeviceRepository.findTokensByUser(recipient));
+
         if (preference != null && preference.getDeviceToken() != null
                 && !preference.getDeviceToken().isBlank()) {
-            return preference.getDeviceToken();
+            tokens.add(preference.getDeviceToken());
         }
+        tokens.addAll(preferenceRepository.findDeviceTokensByUser(recipient));
 
-        return preferenceRepository.findDeviceTokensByUser(recipient).stream()
-                .findFirst()
-                .orElse(null);
+        return List.copyOf(tokens);
     }
 
     /** 채널 사용 여부. 사용자 설정이 없으면 인앱과 푸시를 기본으로 켠다. */

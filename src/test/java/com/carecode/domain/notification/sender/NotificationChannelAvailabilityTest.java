@@ -15,6 +15,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import com.carecode.domain.notification.repository.PushDeviceRepository;
 
 /**
  * 채널 가용 여부 검증.
@@ -27,6 +28,9 @@ class NotificationChannelAvailabilityTest {
 
     @Mock
     private NotificationPreferenceRepository preferenceRepository;
+
+    @Mock
+    private PushDeviceRepository pushDeviceRepository;
 
     /** 테스트용 발송기. 실제 발송은 하지 않는다. */
     private record StubSender(NotificationChannelType channel, boolean available, String reason)
@@ -54,7 +58,7 @@ class NotificationChannelAvailabilityTest {
     }
 
     private NotificationDispatcher dispatcherWith(NotificationSender... senders) {
-        return new NotificationDispatcher(List.of(senders), preferenceRepository);
+        return new NotificationDispatcher(List.of(senders), preferenceRepository, pushDeviceRepository);
     }
 
     @Test
@@ -128,7 +132,8 @@ class NotificationChannelAvailabilityTest {
         dispatcher.dispatch(notification);
 
         assertThat(push.lastPayload).isNotNull();
-        assertThat(push.lastPayload.getDeviceToken()).isEqualTo("token-1");
+        // 토큰은 이제 기기마다 하나씩 모아 담긴다. 한 대만 보내면 나머지 기기가 조용히 빠진다.
+        assertThat(push.lastPayload.getDeviceTokens()).contains("token-1");
     }
 
     /** 전달받은 발송 요청을 기록만 하는 발송기. */
