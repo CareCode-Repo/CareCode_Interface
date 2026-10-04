@@ -91,8 +91,13 @@ services:
       PUBLIC_DATA_API_KEY: ${PUBLIC_DATA_API_KEY:-local-public-data-key}
       EMAIL_VERIFICATION_BASE_URL: ${EMAIL_VERIFICATION_BASE_URL:-http://localhost:8082}
 
-      # 프런트(CareCode_FE, 3000번)에서 붙을 수 있게. 로컬에서는 쿠키를 http 로도 주고받아야 한다.
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      # 프런트에서 붙을 수 있게. 로컬에서는 쿠키를 http 로도 주고받아야 한다.
+      #
+      # 웹(3000번)에 더해 **앱의 WebView 출처**도 넣는다. 앱은 번들된 파일을 여는데 그때
+      # 페이지 출처가 안드로이드는 https://localhost, iOS 는 capacitor://localhost 가 된다.
+      # 이 값을 여기서 명시하면 CorsPolicy 의 기본값을 덮어쓰므로, 빠뜨리면 앱에서 나가는
+      # 모든 요청이 CORS 에서 막힌다 — 앱은 켜지는데 데이터만 안 나오는 상태가 된다.
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,https://localhost,capacitor://localhost}
       REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-false}
       REFRESH_COOKIE_SAME_SITE: ${REFRESH_COOKIE_SAME_SITE:-Lax}
 
