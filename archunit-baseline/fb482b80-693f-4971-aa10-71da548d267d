@@ -1,0 +1,3 @@
+Constructor <com.carecode.domain.community.mapper.CommunityMapper.<init>(com.carecode.domain.community.repository.CommentRepository)> has parameter of type <com.carecode.domain.community.repository.CommentRepository> in (CommunityMapper.java:0)
+Field <com.carecode.domain.community.mapper.CommunityMapper.commentRepository> has type <com.carecode.domain.community.repository.CommentRepository> in (CommunityMapper.java:0)
+Method <com.carecode.domain.community.mapper.CommunityMapper.toPostDetailResponse(com.carecode.domain.community.entity.Post)> calls method <com.carecode.domain.community.repository.CommentRepository.findActiveTreeByPostId(java.lang.Long)> in (CommunityMapper.java:58)
