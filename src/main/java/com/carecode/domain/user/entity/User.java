@@ -1,6 +1,6 @@
 package com.carecode.domain.user.entity;
 
-import com.carecode.domain.careFacility.entity.Review;
+import com.carecode.domain.facility.entity.Review;
 import com.carecode.domain.community.entity.Post;
 import com.carecode.domain.health.entity.HealthRecord;
 import com.carecode.domain.notification.entity.Notification;

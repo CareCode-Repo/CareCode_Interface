@@ -22,7 +22,7 @@ graph TB
 
     subgraph domains["도메인"]
         POLICY["policy<br/>지원금"]
-        FACILITY["careFacility<br/>어린이집·유치원"]
+        FACILITY["facility<br/>어린이집·유치원"]
         HEALTHD["health<br/>건강기록·병원"]
         USERD["user<br/>계정·자녀·동의"]
         NOTI["notification"]

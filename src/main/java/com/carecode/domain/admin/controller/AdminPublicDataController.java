@@ -8,7 +8,7 @@ import com.carecode.external.publicdata.sync.SyncResult;
 import com.carecode.external.geocoding.FacilityGeocodingService;
 import com.carecode.core.ops.sync.SyncJob;
 import com.carecode.core.ops.sync.SyncRunTracker;
-import com.carecode.domain.careFacility.service.FacilityVacancyNotifier;
+import com.carecode.domain.facility.service.FacilityVacancyNotifier;
 import com.carecode.domain.policy.service.PolicyDeadlineNotifier;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -1,7 +1,7 @@
 package com.carecode.external.geocoding;
 
-import com.carecode.domain.careFacility.entity.CareFacility;
-import com.carecode.domain.careFacility.repository.CareFacilityRepository;
+import com.carecode.domain.facility.entity.CareFacility;
+import com.carecode.domain.facility.repository.CareFacilityRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

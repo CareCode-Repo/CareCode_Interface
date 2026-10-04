@@ -1,9 +1,9 @@
 package com.carecode.domain.admin.dto;
 
-import com.carecode.domain.careFacility.dto.response.StatusDistribution;
-import com.carecode.domain.careFacility.dto.response.TypeDistribution;
-import com.carecode.domain.careFacility.dto.response.FacilityDistribution;
-import com.carecode.domain.careFacility.dto.response.DailyBookingCount;
+import com.carecode.domain.facility.dto.response.StatusDistribution;
+import com.carecode.domain.facility.dto.response.TypeDistribution;
+import com.carecode.domain.facility.dto.response.FacilityDistribution;
+import com.carecode.domain.facility.dto.response.DailyBookingCount;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

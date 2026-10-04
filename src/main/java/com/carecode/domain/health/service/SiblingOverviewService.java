@@ -1,7 +1,7 @@
 package com.carecode.domain.health.service;
 
 import com.carecode.core.security.CurrentUserFacade;
-import com.carecode.domain.careFacility.repository.FacilityWaitlistRepository;
+import com.carecode.domain.facility.repository.FacilityWaitlistRepository;
 import com.carecode.domain.health.dto.response.SiblingOverviewResponse;
 import com.carecode.domain.health.entity.VaccinationSchedule;
 import com.carecode.domain.health.repository.VaccinationScheduleRepository;

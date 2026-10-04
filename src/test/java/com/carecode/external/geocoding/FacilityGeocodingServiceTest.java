@@ -1,7 +1,7 @@
 package com.carecode.external.geocoding;
 
-import com.carecode.domain.careFacility.entity.CareFacility;
-import com.carecode.domain.careFacility.repository.CareFacilityRepository;
+import com.carecode.domain.facility.entity.CareFacility;
+import com.carecode.domain.facility.repository.CareFacilityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

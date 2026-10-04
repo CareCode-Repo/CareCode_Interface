@@ -13,7 +13,7 @@ import com.carecode.domain.chatbot.repository.ChatSessionRepository;
 import com.carecode.domain.chatbot.llm.ChatCompletionClient;
 import com.carecode.domain.chatbot.rag.CareKnowledgeRetriever;
 import com.carecode.domain.chatbot.rag.RetrievedContext;
-import com.carecode.domain.careFacility.repository.CareFacilityRepository;
+import com.carecode.domain.facility.repository.CareFacilityRepository;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.UserRepository;

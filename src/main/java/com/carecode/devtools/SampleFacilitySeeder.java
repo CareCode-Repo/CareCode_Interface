@@ -1,10 +1,10 @@
 package com.carecode.devtools;
 
-import com.carecode.domain.careFacility.entity.CareFacility;
-import com.carecode.domain.careFacility.entity.FacilityCapacitySnapshot;
-import com.carecode.domain.careFacility.entity.FacilityType;
-import com.carecode.domain.careFacility.repository.CareFacilityRepository;
-import com.carecode.domain.careFacility.repository.FacilityCapacitySnapshotRepository;
+import com.carecode.domain.facility.entity.CareFacility;
+import com.carecode.domain.facility.entity.FacilityCapacitySnapshot;
+import com.carecode.domain.facility.entity.FacilityType;
+import com.carecode.domain.facility.repository.CareFacilityRepository;
+import com.carecode.domain.facility.repository.FacilityCapacitySnapshotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

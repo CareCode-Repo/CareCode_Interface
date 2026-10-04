@@ -1,9 +1,9 @@
 package com.carecode.integration;
 
 import com.carecode.CareCodeApplication;
-import com.carecode.domain.careFacility.entity.CareFacility;
-import com.carecode.domain.careFacility.entity.FacilityType;
-import com.carecode.domain.careFacility.repository.CareFacilityRepository;
+import com.carecode.domain.facility.entity.CareFacility;
+import com.carecode.domain.facility.entity.FacilityType;
+import com.carecode.domain.facility.repository.CareFacilityRepository;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.entity.UserRole;
 import com.carecode.domain.user.repository.UserRepository;
