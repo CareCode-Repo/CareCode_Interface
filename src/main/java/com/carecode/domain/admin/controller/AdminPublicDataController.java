@@ -1,11 +1,11 @@
 package com.carecode.domain.admin.controller;
 
-import com.carecode.core.client.sync.GovernmentBenefitSyncService;
-import com.carecode.core.client.sync.KindergartenSyncService;
-import com.carecode.core.client.sync.NationwideChildcareFacilitySyncService;
-import com.carecode.core.client.sync.PediatricHospitalSyncService;
-import com.carecode.core.client.sync.SyncResult;
-import com.carecode.core.geocoding.FacilityGeocodingService;
+import com.carecode.external.publicdata.sync.GovernmentBenefitSyncService;
+import com.carecode.external.publicdata.sync.KindergartenSyncService;
+import com.carecode.external.publicdata.sync.NationwideChildcareFacilitySyncService;
+import com.carecode.external.publicdata.sync.PediatricHospitalSyncService;
+import com.carecode.external.publicdata.sync.SyncResult;
+import com.carecode.external.geocoding.FacilityGeocodingService;
 import com.carecode.core.ops.sync.SyncJob;
 import com.carecode.core.ops.sync.SyncRunTracker;
 import com.carecode.domain.careFacility.service.FacilityVacancyNotifier;

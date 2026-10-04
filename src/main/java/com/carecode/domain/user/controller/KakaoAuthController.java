@@ -1,7 +1,7 @@
 package com.carecode.domain.user.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
-import com.carecode.core.controller.BaseController;
+import com.carecode.core.web.BaseController;
 import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.security.RefreshTokenCookieFactory;

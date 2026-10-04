@@ -2,7 +2,7 @@ package com.carecode.domain.policy.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.ValidateLocation;
-import com.carecode.core.controller.BaseController;
+import com.carecode.core.web.BaseController;
 import com.carecode.core.util.PageRequestUtil;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.core.exception.CareServiceException;

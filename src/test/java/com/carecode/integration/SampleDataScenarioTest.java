@@ -1,8 +1,8 @@
 package com.carecode.integration;
 
 import com.carecode.CareCodeApplication;
-import com.carecode.core.devtools.SampleFacilitySeeder;
-import com.carecode.core.devtools.SamplePolicySeeder;
+import com.carecode.devtools.SampleFacilitySeeder;
+import com.carecode.devtools.SamplePolicySeeder;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.careFacility.dto.response.AdmissionForecastResponse;
 import com.carecode.domain.careFacility.dto.response.FacilityPopularityResponse;

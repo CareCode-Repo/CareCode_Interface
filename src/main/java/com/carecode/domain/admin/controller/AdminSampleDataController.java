@@ -1,8 +1,8 @@
 package com.carecode.domain.admin.controller;
 
-import com.carecode.core.devtools.SampleDataCleaner;
-import com.carecode.core.devtools.SampleFacilitySeeder;
-import com.carecode.core.devtools.SamplePolicySeeder;
+import com.carecode.devtools.SampleDataCleaner;
+import com.carecode.devtools.SampleFacilitySeeder;
+import com.carecode.devtools.SamplePolicySeeder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
