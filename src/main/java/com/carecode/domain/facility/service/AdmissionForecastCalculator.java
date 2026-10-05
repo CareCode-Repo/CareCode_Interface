@@ -29,6 +29,20 @@ public class AdmissionForecastCalculator {
     private static final Month NEW_TERM_MONTH = Month.MARCH;
 
     /**
+     * 어린이집 반 편성 이름. 만 나이 기준이다.
+     *
+     * <p>시설 한 곳을 보는 화면과 지역 전체를 훑는 화면이 각자 들고 있으면 언젠가 갈라진다.
+     * 날짜도 DB 도 보지 않는 순수 계산이라 여기에 둔다.
+     */
+    public static String resolveClassName(Integer ageMonths) {
+        if (ageMonths == null) {
+            return null;
+        }
+        int years = ageMonths / 12;
+        return years >= 5 ? "5세반 이상" : years + "세반";
+    }
+
+    /**
      * 기준일 이전 관측으로 목표 시점까지 자리가 날 확률을 추정한다.
      *
      * @param history 관측일 오름차순. {@code asOf} 이후 관측이 섞이면 미래를 보고 예측하는 셈이 되므로 호출부가 잘라서 넘긴다.

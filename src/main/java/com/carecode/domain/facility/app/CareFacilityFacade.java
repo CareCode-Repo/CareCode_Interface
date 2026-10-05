@@ -31,6 +31,7 @@ public class CareFacilityFacade {
     private final AdmissionForecastService admissionForecastService;
     private final FacilityPopularityService facilityPopularityService;
     private final com.carecode.domain.facility.service.ForecastAccuracyService forecastAccuracyService;
+    private final com.carecode.domain.facility.service.AdmissionCandidateService admissionCandidateService;
 
     @Transactional(readOnly = true)
     public List<CareFacilityInfo> getAllCareFacilities(int page, int size) {
@@ -218,6 +219,13 @@ public class CareFacilityFacade {
     @Transactional(readOnly = true)
     public AdmissionForecastResponse forecastAdmission(Long facilityId, Integer childAgeMonths, Integer horizonMonths) {
         return admissionForecastService.forecast(facilityId, childAgeMonths, horizonMonths);
+    }
+
+    /** 지역 안에서 아이가 들어갈 수 있는 곳을 확률 순으로. 시설을 먼저 고르지 않아도 되게 한다. */
+    @Transactional(readOnly = true)
+    public com.carecode.domain.facility.dto.response.AdmissionCandidateResponse recommendAdmissionCandidates(
+            String region, Integer childAgeMonths, Integer horizonMonths, Integer limit) {
+        return admissionCandidateService.recommend(region, childAgeMonths, horizonMonths, limit);
     }
 
     @Transactional(readOnly = true)

@@ -72,12 +72,7 @@ public class AdmissionForecastService {
         return response.build();
     }
 
-    /** 어린이집 반 편성은 만 나이 기준이다. */
     private String resolveClassName(Integer ageMonths) {
-        if (ageMonths == null) {
-            return null;
-        }
-        int years = ageMonths / 12;
-        return years >= 5 ? "5세반 이상" : years + "세반";
+        return AdmissionForecastCalculator.resolveClassName(ageMonths);
     }
 }

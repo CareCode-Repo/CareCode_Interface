@@ -571,6 +571,46 @@
         },
         "type" : "object"
       },
+      "AdmissionCandidateResponse" : {
+        "properties" : {
+          "accuracy" : {
+            "$ref" : "#/components/schemas/ForecastAccuracyResponse"
+          },
+          "candidates" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Candidate"
+            },
+            "type" : "array"
+          },
+          "childAgeMonths" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "evaluatedFacilities" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "horizonMonths" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "notEnoughDataCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "region" : {
+            "type" : "string"
+          },
+          "targetClass" : {
+            "type" : "string"
+          },
+          "targetDate" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AdmissionForecastResponse" : {
         "properties" : {
           "accuracy" : {
@@ -837,6 +877,46 @@
           "to" : {
             "format" : "int32",
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "Candidate" : {
+        "properties" : {
+          "address" : {
+            "type" : "string"
+          },
+          "availableSpots" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "confidence" : {
+            "type" : "string"
+          },
+          "facilityId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "facilityName" : {
+            "type" : "string"
+          },
+          "observationCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "observationDays" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "probability" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "reasons" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -10019,6 +10099,75 @@
           }
         },
         "summary" : "전체 시설 목록 조회",
+        "tags" : [ "육아 시설" ]
+      }
+    },
+    "/facilities/admission-candidates" : {
+      "get" : {
+        "description" : "지역 안에서 아이가 목표 시점까지 들어갈 수 있는 시설을 확률 순으로 준다. 시설 상세의 예측과 같은 계산을 쓴다. 관측이 모자라 확률을 내지 못한 시설 수도 함께 센다.",
+        "operationId" : "recommendAdmissionCandidates",
+        "parameters" : [ {
+          "description" : "지역(주소에 포함되는 문자열)",
+          "example" : "성동구",
+          "in" : "query",
+          "name" : "region",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "아이 월령",
+          "example" : 18,
+          "in" : "query",
+          "name" : "childAgeMonths",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "예측 기간(개월)",
+          "example" : 6,
+          "in" : "query",
+          "name" : "horizonMonths",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "최대 결과 수",
+          "example" : 10,
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "API 버전. 생략하면 현재 버전(1). 지원하지 않는 값이면 400",
+          "in" : "header",
+          "name" : "X-API-Version",
+          "required" : false,
+          "schema" : {
+            "default" : "1",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdmissionCandidateResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "아이 기준 입소 후보 추천",
         "tags" : [ "육아 시설" ]
       }
     },
