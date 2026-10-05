@@ -37,9 +37,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // 사용자별 알림 개수 조회
     long countByUserId(Long userId);
 
-    // 읽지 않은 알림 개수 조회
-    long countByUserIdAndIsReadFalse(Long userId);
-
     // 알림 타입별 개수 조회
     long countByUserIdAndNotificationType(Long userId, Notification.NotificationType notificationType);
 
