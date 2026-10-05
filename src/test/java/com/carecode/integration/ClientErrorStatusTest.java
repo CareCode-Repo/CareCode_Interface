@@ -93,6 +93,24 @@ class ClientErrorStatusTest {
         verify(alerter, never()).alert(anyString(), anyString(), anyString());
     }
 
+    /**
+     * 값이 잘못된 파라미터도 400 이다.
+     *
+     * <p>빠진 파라미터는 Spring 이 알아서 400 을 낸다. 하지만 **값이 범위를 벗어난** 경우는
+     * 서비스까지 들어와서 던지는데, 그 예외가 {@code CareServiceException} 이면 다시 500 이 된다.
+     * 위의 404 와 같은 뿌리의 문제라서, 새 API 를 넣을 때마다 다시 생긴다.
+     */
+    @Test
+    @DisplayName("값이 범위를 벗어난 파라미터는 400 이고 운영 알림을 울리지 않는다")
+    void invalidParameterValueIsBadRequest() throws Exception {
+        assertThat(status(get("/facilities/admission-candidates")
+                .param("region", "성동구")
+                .param("childAgeMonths", "-1")))
+                .as("음수 월령으로 입소 후보 추천").isEqualTo(400);
+
+        verify(alerter, never()).alert(anyString(), anyString(), anyString());
+    }
+
     private int status(RequestBuilder request) throws Exception {
         MvcResult result = mockMvc.perform(request).andReturn();
         return result.getResponse().getStatus();

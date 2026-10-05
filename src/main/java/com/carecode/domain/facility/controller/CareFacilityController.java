@@ -429,6 +429,21 @@ public class CareFacilityController extends BaseController {
         return ResponseEntity.ok(careFacilityFacade.forecastAdmission(facilityId, childAgeMonths, horizonMonths));
     }
 
+    // 아이 기준 입소 후보 (검색을 뒤집는다)
+    @GetMapping("/admission-candidates")
+    @LogExecutionTime
+    @Operation(summary = "아이 기준 입소 후보 추천",
+            description = "지역 안에서 아이가 목표 시점까지 들어갈 수 있는 시설을 확률 순으로 준다. "
+                    + "시설 상세의 예측과 같은 계산을 쓴다. 관측이 모자라 확률을 내지 못한 시설 수도 함께 센다.")
+    public ResponseEntity<com.carecode.domain.facility.dto.response.AdmissionCandidateResponse> recommendAdmissionCandidates(
+            @Parameter(description = "지역(주소에 포함되는 문자열)", example = "성동구", required = true) @RequestParam String region,
+            @Parameter(description = "아이 월령", example = "18", required = true) @RequestParam Integer childAgeMonths,
+            @Parameter(description = "예측 기간(개월)", example = "6") @RequestParam(required = false) Integer horizonMonths,
+            @Parameter(description = "최대 결과 수", example = "10") @RequestParam(required = false) Integer limit) {
+        return ResponseEntity.ok(
+                careFacilityFacade.recommendAdmissionCandidates(region, childAgeMonths, horizonMonths, limit));
+    }
+
     // 예측 정확도 (공개)
     @GetMapping("/forecast-accuracy")
     @LogExecutionTime
