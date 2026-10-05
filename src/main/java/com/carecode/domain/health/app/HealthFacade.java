@@ -3,6 +3,7 @@ package com.carecode.domain.health.app;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthRecordAttachmentRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
+import com.carecode.domain.health.dto.response.HealthRecommendationResponse;
 import com.carecode.domain.health.dto.response.HealthRecordResponse;
 import com.carecode.domain.health.dto.response.HealthRecordAttachmentResponse;
 import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
@@ -135,7 +136,7 @@ public class HealthFacade {
         return healthService.getHealthGoals(userId, actorUserId);
     }
 
-    public Map<String, Object> getIntegratedRecommendations(String userId, Long actorUserId) {
+    public HealthRecommendationResponse getIntegratedRecommendations(String userId, Long actorUserId) {
         return healthService.getIntegratedRecommendations(userId, actorUserId);
     }
 

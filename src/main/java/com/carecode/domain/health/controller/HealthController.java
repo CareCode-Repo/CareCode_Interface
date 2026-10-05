@@ -10,6 +10,7 @@ import com.carecode.domain.health.dto.request.HealthRecordAttachmentRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthCreateHospitalReviewRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHospitalReviewRequest;
+import com.carecode.domain.health.dto.response.HealthRecommendationResponse;
 import com.carecode.domain.health.dto.response.*;
 import com.carecode.domain.health.app.HealthFacade;
 import com.carecode.domain.health.entity.HealthRecord;
@@ -185,7 +186,7 @@ public class HealthController extends BaseController {
     @GetMapping("/recommendations")
     @LogExecutionTime
     @Operation(summary = "연계 추천 조회", description = "아동 연령 기반 정책/시설 연계 추천 제공")
-    public ResponseEntity<java.util.Map<String, Object>> getIntegratedRecommendations() {
+    public ResponseEntity<HealthRecommendationResponse> getIntegratedRecommendations() {
         return ResponseEntity.ok(healthFacade.getIntegratedRecommendations(getAuthenticatedUserCode(), getAuthenticatedUserPk()));
     }
 

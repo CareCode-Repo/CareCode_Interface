@@ -4,6 +4,7 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.util.ClientIpResolver;
 import com.carecode.domain.user.dto.request.ConsentUpdateRequest;
 import com.carecode.domain.user.dto.response.ConsentStatusResponse;
+import com.carecode.domain.user.dto.response.MyDataExportResponse;
 import com.carecode.domain.user.service.PrivacyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /** 개인정보 관련 API: 동의 관리, 내 데이터 열람, 회원 탈퇴. */
 @RestController
@@ -55,7 +55,7 @@ public class PrivacyController {
     @LogExecutionTime
     @Operation(summary = "내 데이터 내려받기",
             description = "개인정보 열람권 행사를 위한 데이터 export")
-    public ResponseEntity<Map<String, Object>> exportMyData() {
+    public ResponseEntity<MyDataExportResponse> exportMyData() {
         return ResponseEntity.ok(privacyService.exportMyData());
     }
 

@@ -2,8 +2,9 @@ package com.carecode.domain.facility.controller;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.domain.facility.dto.request.WaitlistRequest;
+import com.carecode.domain.facility.dto.response.WaitlistEntryResponse;
+import com.carecode.domain.facility.dto.response.WaitlistRegisterResponse;
 import com.carecode.domain.facility.dto.response.WaitlistStatsResponse;
-import com.carecode.domain.facility.entity.FacilityWaitlist;
 import com.carecode.domain.facility.service.FacilityWaitlistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,9 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /** 어린이집 대기 기록. 실제 대기 기간은 공공데이터에 없어 사용자에게서만 얻는다. */
 @RestController
@@ -31,14 +30,12 @@ public class FacilityWaitlistController {
     @PostMapping("/{facilityId}/waitlist")
     @LogExecutionTime
     @Operation(summary = "대기 신청 기록", description = "대기 순번과 신청일을 남깁니다")
-    public ResponseEntity<Map<String, Object>> register(
+    public ResponseEntity<WaitlistRegisterResponse> register(
             @Parameter(description = "시설 ID", required = true) @PathVariable Long facilityId,
             @Valid @RequestBody WaitlistRequest request) {
 
         Long id = waitlistService.register(facilityId, request);
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("waitlistId", id);
-        return ResponseEntity.ok(body);
+        return ResponseEntity.ok(new WaitlistRegisterResponse(id));
     }
 
     @PatchMapping("/waitlist/{waitlistId}")
@@ -57,9 +54,9 @@ public class FacilityWaitlistController {
     @GetMapping("/waitlist/me")
     @LogExecutionTime
     @Operation(summary = "내 대기 목록", description = "등록한 대기 기록 조회")
-    public ResponseEntity<List<Map<String, Object>>> myWaitlists() {
-        List<Map<String, Object>> rows = waitlistService.getMyWaitlists().stream()
-                .map(this::toSummary)
+    public ResponseEntity<List<WaitlistEntryResponse>> myWaitlists() {
+        List<WaitlistEntryResponse> rows = waitlistService.getMyWaitlists().stream()
+                .map(WaitlistEntryResponse::from)
                 .toList();
         return ResponseEntity.ok(rows);
     }
@@ -69,17 +66,5 @@ public class FacilityWaitlistController {
     @Operation(summary = "실제 대기 기간 통계", description = "입소한 사람들의 기록 기반")
     public ResponseEntity<WaitlistStatsResponse> stats(@PathVariable Long facilityId) {
         return ResponseEntity.ok(waitlistService.getStats(facilityId));
-    }
-
-    private Map<String, Object> toSummary(FacilityWaitlist entry) {
-        Map<String, Object> row = new LinkedHashMap<>();
-        row.put("waitlistId", entry.getId());
-        row.put("facilityId", entry.getFacilityId());
-        row.put("waitNumber", entry.getWaitNumber());
-        row.put("appliedAt", entry.getAppliedAt());
-        row.put("status", entry.getStatus().name());
-        row.put("statusName", entry.getStatus().getDisplayName());
-        row.put("waitedDays", entry.waitedDays());
-        return row;
     }
 }

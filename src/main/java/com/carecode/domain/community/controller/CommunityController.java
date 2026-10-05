@@ -11,6 +11,10 @@ import com.carecode.domain.community.dto.response.CommunityPostDetailResponse;
 import com.carecode.domain.community.dto.response.CommunityCommentResponse;
 import com.carecode.domain.community.dto.response.CommunityTagResponse;
 import com.carecode.domain.community.dto.response.CommunityPageResponse;
+import com.carecode.domain.community.dto.response.PostBookmarkCountResponse;
+import com.carecode.domain.community.dto.response.PostBookmarkToggleResponse;
+import com.carecode.domain.community.dto.response.PostLikeCountResponse;
+import com.carecode.domain.community.dto.response.PostLikeToggleResponse;
 import com.carecode.domain.community.app.CommunityFacade;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,9 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import com.carecode.core.handler.ApiSuccess;
 import java.util.Date;
 
@@ -183,32 +185,26 @@ public class CommunityController extends BaseController {
     @PostMapping("/posts/{postId}/like")
     @LogExecutionTime
     @Operation(summary = "게시글 좋아요", description = "게시글에 좋아요를 추가하거나 제거")
-    public ResponseEntity<Map<String, Object>> toggleLike(
+    public ResponseEntity<PostLikeToggleResponse> toggleLike(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
         Long userId = communityFacade.getCurrentAuthenticatedUserId();
         boolean isLiked = communityFacade.toggleLike(postId, userId);
         long likeCount = communityFacade.getLikeCount(postId);
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("isLiked", isLiked);
-        response.put("likeCount", likeCount);
-        return ResponseEntity.ok(response);
+
+        return ResponseEntity.ok(new PostLikeToggleResponse(isLiked, likeCount));
     }
 
     // 게시글 북마크 토글
     @PostMapping("/posts/{postId}/bookmark")
     @LogExecutionTime
     @Operation(summary = "게시글 북마크", description = "게시글을 북마크에 추가하거나 제거")
-    public ResponseEntity<Map<String, Object>> toggleBookmark(
+    public ResponseEntity<PostBookmarkToggleResponse> toggleBookmark(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
         Long userId = communityFacade.getCurrentAuthenticatedUserId();
         boolean isBookmarked = communityFacade.toggleBookmark(postId, userId);
         long bookmarkCount = communityFacade.getBookmarkCount(postId);
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("isBookmarked", isBookmarked);
-        response.put("bookmarkCount", bookmarkCount);
-        return ResponseEntity.ok(response);
+
+        return ResponseEntity.ok(new PostBookmarkToggleResponse(isBookmarked, bookmarkCount));
     }
 
     // 사용자가 좋아요한 게시글 목록 조회
@@ -237,24 +233,18 @@ public class CommunityController extends BaseController {
     @GetMapping("/posts/{postId}/like-count")
     @LogExecutionTime
     @Operation(summary = "게시글 좋아요 수", description = "특정 게시글의 좋아요 수 조회")
-    public ResponseEntity<Map<String, Long>> getLikeCount(
+    public ResponseEntity<PostLikeCountResponse> getLikeCount(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
-        long count = communityFacade.getLikeCount(postId);
-        Map<String, Long> response = new HashMap<>();
-        response.put("likeCount", count);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new PostLikeCountResponse(communityFacade.getLikeCount(postId)));
     }
 
     // 게시글 북마크 수 조회
     @GetMapping("/posts/{postId}/bookmark-count")
     @LogExecutionTime
     @Operation(summary = "게시글 북마크 수", description = "특정 게시글의 북마크 수 조회")
-    public ResponseEntity<Map<String, Long>> getBookmarkCount(
+    public ResponseEntity<PostBookmarkCountResponse> getBookmarkCount(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long postId) {
-        long count = communityFacade.getBookmarkCount(postId);
-        Map<String, Long> response = new HashMap<>();
-        response.put("bookmarkCount", count);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new PostBookmarkCountResponse(communityFacade.getBookmarkCount(postId)));
     }
 
 } 

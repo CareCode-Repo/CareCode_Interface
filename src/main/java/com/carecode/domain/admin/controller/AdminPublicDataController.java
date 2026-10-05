@@ -10,6 +10,10 @@ import com.carecode.core.ops.sync.SyncJob;
 import com.carecode.core.ops.sync.SyncRunTracker;
 import com.carecode.domain.facility.service.FacilityVacancyNotifier;
 import com.carecode.domain.policy.service.PolicyDeadlineNotifier;
+import com.carecode.domain.admin.dto.response.DeadlineNotifyResponse;
+import com.carecode.domain.admin.dto.response.GeocodingResultResponse;
+import com.carecode.domain.admin.dto.response.SyncResultResponse;
+import com.carecode.domain.admin.dto.response.VacancyNotifyResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +22,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /** 공공데이터 수동 동기화 API. */
 @RestController
@@ -41,53 +43,48 @@ public class AdminPublicDataController {
 
     @PostMapping("/facilities/sync")
     @Operation(summary = "전국 어린이집 동기화", description = "시설 코드 기준으로 갱신")
-    public ResponseEntity<Map<String, Object>> syncFacilities() {
+    public ResponseEntity<SyncResultResponse> syncFacilities() {
         java.time.LocalDateTime startedAt = java.time.LocalDateTime.now();
         SyncResult result = facilitySyncService.sync();
         tracker.recordSyncResult(SyncJob.CHILDCARE_FACILITIES, startedAt, result);
-        return ResponseEntity.ok(toResponse(result));
+        return ResponseEntity.ok(SyncResultResponse.from(result));
     }
 
     @PostMapping("/kindergartens/sync")
     @Operation(summary = "전국 유치원 동기화", description = "유치원명·주소 기준으로 갱신")
-    public ResponseEntity<Map<String, Object>> syncKindergartens() {
+    public ResponseEntity<SyncResultResponse> syncKindergartens() {
         java.time.LocalDateTime startedAt = java.time.LocalDateTime.now();
         SyncResult result = kindergartenSyncService.sync();
         tracker.recordSyncResult(SyncJob.KINDERGARTENS, startedAt, result);
-        return ResponseEntity.ok(toResponse(result));
+        return ResponseEntity.ok(SyncResultResponse.from(result));
     }
 
     @PostMapping("/benefits/sync")
     @Operation(summary = "정부 지원 서비스 동기화", description = "육아 관련 서비스만 정책으로 갱신")
-    public ResponseEntity<Map<String, Object>> syncBenefits() {
+    public ResponseEntity<SyncResultResponse> syncBenefits() {
         java.time.LocalDateTime startedAt = java.time.LocalDateTime.now();
         SyncResult result = benefitSyncService.sync();
         tracker.recordSyncResult(SyncJob.GOVERNMENT_BENEFITS, startedAt, result);
-        return ResponseEntity.ok(toResponse(result));
+        return ResponseEntity.ok(SyncResultResponse.from(result));
     }
 
     @PostMapping("/hospitals/sync")
     @Operation(summary = "소아청소년과 병원 동기화", description = "요양기호 기준으로 갱신")
-    public ResponseEntity<Map<String, Object>> syncHospitals() {
+    public ResponseEntity<SyncResultResponse> syncHospitals() {
         java.time.LocalDateTime startedAt = java.time.LocalDateTime.now();
         SyncResult result = hospitalSyncService.sync();
         tracker.recordSyncResult(SyncJob.PEDIATRIC_HOSPITALS, startedAt, result);
-        return ResponseEntity.ok(toResponse(result));
+        return ResponseEntity.ok(SyncResultResponse.from(result));
     }
 
     @PostMapping("/facilities/geocode")
     @Operation(summary = "시설 좌표 보정", description = "좌표 없는 시설의 주소를 좌표로 변환")
-    public ResponseEntity<Map<String, Object>> geocode() {
+    public ResponseEntity<GeocodingResultResponse> geocode() {
         java.time.LocalDateTime startedAt = java.time.LocalDateTime.now();
         var result = geocodingService.fillMissingCoordinates();
         tracker.recordSuccess(SyncJob.FACILITY_GEOCODING, startedAt,
                 result.getResolved(), result.getFailed(), result.getSkippedReason());
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("resolved", result.getResolved());
-        body.put("failed", result.getFailed());
-        body.put("remaining", result.getRemaining());
-        body.put("skippedReason", result.getSkippedReason());
-        return ResponseEntity.ok(body);
+        return ResponseEntity.ok(GeocodingResultResponse.from(result));
     }
 
     /**
@@ -99,36 +96,13 @@ public class AdminPublicDataController {
      */
     @PostMapping("/facilities/notify-vacancy")
     @Operation(summary = "빈자리 알림 실행", description = "대기자가 있는 시설에 새로 난 자리를 알린다")
-    public ResponseEntity<Map<String, Object>> notifyVacancies() {
-        var result = vacancyNotifier.notifyNewVacancies();
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("facilitiesChecked", result.getFacilitiesChecked());
-        body.put("facilitiesWithVacancy", result.getFacilitiesWithVacancy());
-        body.put("notificationsSent", result.getNotificationsSent());
-        return ResponseEntity.ok(body);
+    public ResponseEntity<VacancyNotifyResponse> notifyVacancies() {
+        return ResponseEntity.ok(VacancyNotifyResponse.from(vacancyNotifier.notifyNewVacancies()));
     }
 
     @PostMapping("/policies/notify-deadline")
     @Operation(summary = "마감 임박 알림 실행", description = "신청 마감이 임박한 지원금을 대상자에게 알린다")
-    public ResponseEntity<Map<String, Object>> notifyDeadlines() {
-        var result = policyDeadlineNotifier.notifyUpcomingDeadlines();
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("policiesDueSoon", result.getPoliciesDueSoon());
-        body.put("notificationsSent", result.getNotificationsSent());
-        return ResponseEntity.ok(body);
-    }
-
-    private Map<String, Object> toResponse(SyncResult result) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("provider", result.getProvider());
-        body.put("resource", result.getResource());
-        body.put("completed", result.isCompleted());
-        body.put("created", result.getCreated());
-        body.put("updated", result.getUpdated());
-        body.put("failed", result.getFailed());
-        body.put("skipped", result.getSkipped());
-        body.put("pagesProcessed", result.getPagesProcessed());
-        body.put("stoppedReason", result.getStoppedReason());
-        return body;
+    public ResponseEntity<DeadlineNotifyResponse> notifyDeadlines() {
+        return ResponseEntity.ok(DeadlineNotifyResponse.from(policyDeadlineNotifier.notifyUpcomingDeadlines()));
     }
 }

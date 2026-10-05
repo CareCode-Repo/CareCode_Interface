@@ -119,6 +119,50 @@ ArchUnit 의 `FreezingArchRule` 을 씁니다.
 모두 두드려 404/405 를 확인합니다(복사·붙여넣기로 돌아오기 쉬운 종류입니다).
 OpenAPI 스펙은 237 → 231 경로가 됐습니다.
 
+## `Map` 응답을 타입으로 바꿨다 (3b 단계)
+
+컨트롤러가 `Map<String, Object>` 를 돌려주면 OpenAPI 에는 `type: object` 만 남습니다. 키도 타입도
+스펙에 없으니, 공들여 만든 프런트 계약 대조(`openapi-contract.test.ts`)가 그 경로에서는 **경로가
+있는지만** 확인하고 응답은 아무것도 확인하지 못합니다.
+
+3a 에서 7곳을 지우고 남은 17곳을 레코드로 바꿨습니다.
+
+| 어디 | DTO |
+|------|-----|
+| 대기 등록·내 대기 목록 | `WaitlistRegisterResponse`, `WaitlistEntryResponse` |
+| 좋아요·북마크 토글·개수 | `PostLikeToggleResponse`, `PostBookmarkToggleResponse`, `PostLikeCountResponse`, `PostBookmarkCountResponse` |
+| 카카오 로그인 URL | `KakaoLoginUrlResponse` |
+| 연계 추천 | `HealthRecommendationResponse` |
+| 공공데이터 동기화 4종·좌표 보정·빈자리/마감 알림 | `SyncResultResponse`, `GeocodingResultResponse`, `VacancyNotifyResponse`, `DeadlineNotifyResponse` |
+| 주기 작업 상태·예측 정확도 측정 | `SyncStatusResponse`, `ForecastAccuracyMeasureResponse` |
+| 정책 검증·지역별 검증 현황 | `PolicyVerificationResponse`, `RegionVerificationStatusResponse` |
+| 어드민 대시보드·예약 대시보드 | `AdminDashboardResponse`, `AdminBookingDashboardResponse` |
+| 내 데이터 내려받기 | `MyDataExportResponse` |
+
+### 바꾸면서 깨질 수 있는 지점은 키 이름이다
+
+`Map.put("isLiked", ...)` 는 키를 그대로 쓰지만, 같은 값을 Lombok `@Getter` 클래스의
+`boolean isLiked` 로 담으면 Jackson 이 `is` 를 떼어 **키가 `liked` 로 나갑니다.** 프런트는
+`isLiked` 를 `z.boolean()` 으로 필수로 읽으므로 그 순간 토글이 파싱 단계에서 깨집니다.
+이 프로젝트는 같은 사고를 `isRead`·`isAnonymous`·`zScore` 로 이미 겪었습니다.
+
+레코드는 컴포넌트 이름을 그대로 키로 쓰므로 지금은 문제가 없습니다(실제로 확인했습니다 —
+`{"isLiked":true,"likeCount":7}`). 다만 나중에 클래스로 바꾸면 되살아나므로 `@JsonProperty` 를
+명시해 두었고, `JsonFieldNameContractTest` 가 **바꾼 응답 전부의 키 집합**을 고정합니다.
+키가 빠지는 것뿐 아니라 **늘어나는 것도** 계약 변경이므로 `containsExactlyInAnyOrder` 로 봅니다.
+
+### 한 군데는 값도 고쳤다
+
+내 데이터 내려받기의 자녀 생일·성별이 `String.valueOf()` 를 거쳐, 값이 없으면 `"null"` 이라는
+**문자열**로 내려갔습니다. 열람권 행사로 받은 파일에 `"null"` 이 적혀 있는 셈입니다.
+이제 없는 값은 `null` 로 보냅니다(프런트는 받은 JSON 을 그대로 파일로 저장합니다).
+
+### 숫자
+
+- OpenAPI 스키마: 134 → **158** 개 (경로 수는 그대로 231)
+- 프런트가 `z.record(z.unknown())` 으로 받던 내려받기 응답에 처음으로 모양이 생겼다
+- 전체 테스트 **616개, 실패 0**
+
 ## 다음 단계
 
 | 단계 | 내용 | 효과 |
@@ -127,6 +171,6 @@ OpenAPI 스펙은 237 → 231 경로가 됐습니다.
 | ~~1b. 이름 통일~~ | ~~`careFacility`→`facility`, 문서의 `facade`↔코드 `app`~~ | **완료** — 489 → 391 |
 | ~~2. 예외 한 체계~~ | ~~"찾을 수 없습니다" 34곳을 `ResourceNotFoundException` 으로~~ | **완료** — 500 → 404 |
 | ~~3a. 중복 입구 제거~~ | ~~같은 일을 하는 엔드포인트 7개 삭제~~ | **완료** — 391 → 383 |
-| 3b. `Map` 응답 → DTO | 남은 17곳. 스펙에 타입이 생겨 프런트 계약 대조가 이 경로까지 본다 | 계약 품질 |
+| ~~3b. `Map` 응답 → DTO~~ | ~~남은 17곳~~ | **완료** — 스펙 스키마 134 → 158 |
 | 4. Child 를 제 자리로 | 엔티티는 `user`, 서비스는 `health` 에 쪼개져 있다 | 결합 1위 해소 |
 | 5. 거대 서비스 분해 | HealthService 977줄 | 2·3 과 함께 진행 |

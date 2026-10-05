@@ -2,6 +2,8 @@ package com.carecode.domain.admin.controller;
 
 import com.carecode.domain.health.entity.Hospital;
 import com.carecode.domain.health.repository.HospitalRepository;
+import com.carecode.domain.admin.dto.response.AdminDashboardResponse;
+import com.carecode.domain.admin.dto.response.AdminDashboardResponse.RecentActivity;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.user.entity.User;
@@ -36,48 +38,33 @@ public class AdminDashboardController {
 
     @GetMapping("/dashboard")
     @Operation(summary = "대시보드 요약 조회", description = "전체 건수, 최근 활동, 가입자 추이 반환")
-    public ResponseEntity<Map<String, Object>> dashboard() {
-        Map<String, Object> dashboard = new LinkedHashMap<>();
-
-        dashboard.put("userCount", userRepository.count());
-        dashboard.put("hospitalCount", hospitalRepository.count());
-        dashboard.put("policyCount", policyRepository.count());
-        dashboard.put("recentActivities", recentActivities());
-
+    public ResponseEntity<AdminDashboardResponse> dashboard() {
         Map<String, Long> userTrend = userTrend();
-        dashboard.put("userTrendLabels", new ArrayList<>(userTrend.keySet()));
-        dashboard.put("userTrendData", new ArrayList<>(userTrend.values()));
 
-        return ResponseEntity.ok(dashboard);
+        return ResponseEntity.ok(new AdminDashboardResponse(
+                userRepository.count(),
+                hospitalRepository.count(),
+                policyRepository.count(),
+                recentActivities(),
+                new ArrayList<>(userTrend.keySet()),
+                new ArrayList<>(userTrend.values())));
     }
 
-    private List<Map<String, String>> recentActivities() {
-        List<Map<String, String>> activities = new ArrayList<>();
+    private List<RecentActivity> recentActivities() {
+        List<RecentActivity> activities = new ArrayList<>();
 
         for (User user : userRepository.findTop2ByDeletedAtIsNullOrderByCreatedAtDesc()) {
-            activities.add(Map.of(
-                    "type", "user",
-                    "desc", "신규 사용자 가입: " + user.getName(),
-                    "time", format(user.getCreatedAt())
-            ));
+            activities.add(new RecentActivity("user", "신규 사용자 가입: " + user.getName(), format(user.getCreatedAt())));
         }
         for (Hospital hospital : hospitalRepository.findTop2ByOrderByCreatedAtDesc()) {
-            activities.add(Map.of(
-                    "type", "hospital",
-                    "desc", "병원 등록: " + hospital.getName(),
-                    "time", format(hospital.getCreatedAt())
-            ));
+            activities.add(new RecentActivity("hospital", "병원 등록: " + hospital.getName(), format(hospital.getCreatedAt())));
         }
         for (Policy policy : policyRepository.findTop1ByOrderByCreatedAtDesc()) {
-            activities.add(Map.of(
-                    "type", "policy",
-                    "desc", "정책 등록: " + policy.getTitle(),
-                    "time", format(policy.getCreatedAt())
-            ));
+            activities.add(new RecentActivity("policy", "정책 등록: " + policy.getTitle(), format(policy.getCreatedAt())));
         }
 
         return activities.stream()
-                .sorted(Comparator.comparing((Map<String, String> m) -> m.get("time")).reversed())
+                .sorted(Comparator.comparing(RecentActivity::time).reversed())
                 .limit(5)
                 .collect(Collectors.toList());
     }

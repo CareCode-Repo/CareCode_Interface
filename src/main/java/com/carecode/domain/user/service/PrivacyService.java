@@ -5,6 +5,7 @@ import com.carecode.domain.community.repository.PostRepository;
 import com.carecode.domain.health.repository.HealthRecordRepository;
 import com.carecode.domain.user.dto.request.ConsentUpdateRequest;
 import com.carecode.domain.user.dto.response.ConsentStatusResponse;
+import com.carecode.domain.user.dto.response.MyDataExportResponse;
 import com.carecode.domain.user.entity.ConsentType;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.entity.UserConsent;
@@ -18,9 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /** 개인정보 관련 기능: 동의 이력 관리, 내 데이터 열람, 파기. 개인정보보호법상 정보주체는 자신의 정보를 열람하고 처리 정지·삭제를 요구할 수 있다. */
 @Slf4j
@@ -97,34 +96,18 @@ public class PrivacyService {
     // 데이터 열람 ====================
 
     /** 내 데이터 전체 내려받기. 정보주체의 열람권 행사에 대응한다. 비밀번호 등 인증 정보는 포함하지 않는다. */
-    public Map<String, Object> exportMyData() {
+    public MyDataExportResponse exportMyData() {
         User user = currentUserFacade.requireCurrentUser();
 
-        Map<String, Object> profile = new LinkedHashMap<>();
-        profile.put("userId", user.getUserId());
-        profile.put("email", user.getEmail());
-        profile.put("name", user.getName());
-        profile.put("phoneNumber", user.getPhoneNumber());
-        profile.put("birthDate", user.getBirthDate());
-        profile.put("address", user.getAddress());
-        profile.put("role", user.getRole() != null ? user.getRole().name() : null);
-        profile.put("createdAt", user.getCreatedAt());
-        profile.put("lastLoginAt", user.getLastLoginAt());
-
-        Map<String, Object> export = new LinkedHashMap<>();
-        export.put("exportedAt", LocalDateTime.now());
-        export.put("profile", profile);
-        export.put("children", childRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).stream()
-                .map(child -> Map.of(
-                        "name", child.getName(),
-                        "birthDate", String.valueOf(child.getBirthDate()),
-                        "gender", String.valueOf(child.getGender())))
-                .toList());
-        export.put("healthRecordCount", healthRecordRepository.findByUserOrderByRecordDateDesc(user).size());
-        export.put("postCount", postRepository.countByAuthorId(user.getId()));
-        export.put("consentHistory", getConsentHistory());
-
-        return export;
+        return new MyDataExportResponse(
+                LocalDateTime.now(),
+                MyDataExportResponse.Profile.from(user),
+                childRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).stream()
+                        .map(MyDataExportResponse.ChildData::from)
+                        .toList(),
+                healthRecordRepository.findByUserOrderByRecordDateDesc(user).size(),
+                postRepository.countByAuthorId(user.getId()),
+                getConsentHistory());
     }
 
     // ====================

@@ -4,6 +4,7 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.web.BaseController;
 import com.carecode.domain.admin.dto.AdminBookingDetailResponse;
 import com.carecode.domain.admin.dto.AdminBookingSearchRequest;
+import com.carecode.domain.admin.dto.response.AdminBookingDashboardResponse;
 import com.carecode.domain.admin.dto.AdminBookingSearchResponse;
 import com.carecode.domain.admin.dto.AdminBookingStatsResponse;
 import com.carecode.domain.admin.dto.AdminStatusUpdateRequest;
@@ -17,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.Map;
 
 /** 관리자용 육아 시설 예약 관리 API. 접근 제어는 SecurityConfig 의 /api/admin/** → hasRole("ADMIN") 규칙이 담당한다. */
 @Slf4j
@@ -129,17 +129,16 @@ public class AdminCareFacilityBookingController extends BaseController {
     @GetMapping("/dashboard")
     @LogExecutionTime
     @Operation(summary = "예약 대시보드 요약", description = "통계, 최근 예약, 오늘의 예약을 함께 반환")
-    public ResponseEntity<Map<String, Object>> bookingDashboard() {
+    public ResponseEntity<AdminBookingDashboardResponse> bookingDashboard() {
         AdminBookingSearchRequest recentRequest = AdminBookingSearchRequest.builder()
                 .page(0)
                 .size(10)
                 .build();
 
-        return ResponseEntity.ok(Map.of(
-                "stats", adminBookingService.getBookingStats(),
-                "recentBookings", adminBookingService.searchBookings(recentRequest).getBookings(),
-                "todayBookings", adminBookingService.searchBookings(todayRequest(0, 5)).getBookings()
-        ));
+        return ResponseEntity.ok(new AdminBookingDashboardResponse(
+                adminBookingService.getBookingStats(),
+                adminBookingService.searchBookings(recentRequest).getBookings(),
+                adminBookingService.searchBookings(todayRequest(0, 5)).getBookings()));
     }
 
     private AdminBookingSearchRequest todayRequest(Integer page, Integer size) {
