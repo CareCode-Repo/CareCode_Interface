@@ -7,6 +7,7 @@ import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.health.dto.request.ChildCreateRequest;
 import com.carecode.domain.health.dto.response.ChildInfoResponse;
 import com.carecode.domain.health.mapper.ChildMapper;
+import com.carecode.domain.user.app.ChildDirectory;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.ChildRepository;
@@ -27,6 +28,7 @@ import java.util.List;
 public class ChildService {
 
     private final ChildRepository childRepository;
+    private final ChildDirectory childDirectory;
     private final ChildMapper childMapper;
     private final CurrentUserFacade currentUserFacade;
     private final VaccinationScheduleService vaccinationScheduleService;
@@ -92,17 +94,17 @@ public class ChildService {
         return requireOwnedChild(childId);
     }
 
-    /** 아이 조회 + 소유권 검증. 남의 아이 정보에 접근하지 못하도록 보호자 본인 것만 반환한다. */
+    /**
+     * 아이 조회 + 소유권 검증. 판단은 {@link ChildDirectory} 한 곳에서만 한다.
+     *
+     * <p>여기서 엔티티가 필요한 이유: 자녀 수정·삭제가 이 서비스에 있다. 검증 자체는 입구에
+     * 맡기고, 통과한 뒤 같은 트랜잭션의 1차 캐시에서 엔티티를 꺼낸다(추가 쿼리가 나가지 않는다).
+     */
     private Child requireOwnedChild(Long childId) {
         User parent = currentUserFacade.requireCurrentUser();
-        Child child = childRepository.findById(childId)
+        childDirectory.requireOwnedChild(childId, parent.getId());
+        return childRepository.findById(childId)
                 .orElseThrow(() -> new ChildNotFoundException("아이를 찾을 수 없습니다: " + childId));
-
-        if (child.getUser() == null || !child.getUser().getId().equals(parent.getId())) {
-            // 존재 여부 자체를 숨기기 위해 404 로 응답한다.
-            throw new ChildNotFoundException("아이를 찾을 수 없습니다: " + childId);
-        }
-        return child;
     }
 
     private Integer calculateAge(LocalDate birthDate) {

@@ -10,7 +10,8 @@ import com.carecode.domain.policy.repository.PolicyDeadlineNoticeRepository;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.ChildRepository;
+import com.carecode.domain.user.app.ChildDirectory;
+import com.carecode.domain.user.app.ChildView;
 import com.carecode.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,7 +36,7 @@ class PolicyDeadlineNotifierTest {
 
     private PolicyRepository policyRepository;
     private UserRepository userRepository;
-    private ChildRepository childRepository;
+    private ChildDirectory childDirectory;
     private PolicyDeadlineNoticeRepository noticeRepository;
     private PolicyDeadlineNotifier notifier;
 
@@ -43,7 +44,7 @@ class PolicyDeadlineNotifierTest {
     void setUp() {
         policyRepository = mock(PolicyRepository.class);
         userRepository = mock(UserRepository.class);
-        childRepository = mock(ChildRepository.class);
+        childDirectory = mock(ChildDirectory.class);
         noticeRepository = mock(PolicyDeadlineNoticeRepository.class);
         when(noticeRepository.findNotifiedUserIds(anyLong(), any(LocalDate.class)))
                 .thenReturn(List.of());
@@ -52,7 +53,7 @@ class PolicyDeadlineNotifierTest {
         when(notificationRepository.save(any(Notification.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        notifier = new PolicyDeadlineNotifier(policyRepository, noticeRepository, userRepository, childRepository,
+        notifier = new PolicyDeadlineNotifier(policyRepository, noticeRepository, userRepository, childDirectory,
                 notificationRepository, mock(NotificationDispatcher.class), mock(EventLogger.class));
         ReflectionTestUtils.setField(notifier, "leadDaysRaw", "7,1");
 
@@ -193,8 +194,8 @@ class PolicyDeadlineNotifierTest {
         when(userRepository.findByIsActiveTrue()).thenReturn(List.of(user));
     }
 
-    private void givenChildren(Child... children) {
-        when(childRepository.findByUserIdOrderByCreatedAtDesc(anyLong())).thenReturn(List.of(children));
+    private void givenChildren(ChildView... children) {
+        when(childDirectory.childrenOf(anyLong())).thenReturn(List.of(children));
     }
 
     private Policy policyDueIn(int days) {
@@ -208,11 +209,7 @@ class PolicyDeadlineNotifierTest {
         return policy;
     }
 
-    private Child child(int months) {
-        return Child.builder()
-                .id(1L)
-                .name("아이")
-                .birthDate(LocalDate.now().minusMonths(months))
-                .build();
+    private ChildView child(int months) {
+        return new ChildView(1L, "아이", LocalDate.now().minusMonths(months), "FEMALE", null);
     }
 }

@@ -9,6 +9,7 @@ import com.carecode.domain.health.mapper.HealthRecordMapper;
 import com.carecode.domain.health.repository.HealthRecordRepository;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
+import com.carecode.domain.user.app.ChildDirectory;
 import com.carecode.domain.user.repository.ChildRepository;
 import com.carecode.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,10 @@ class HealthServiceTest {
 
     @Mock
     private ChildRepository childRepository;
+
+    /** 소유권 판단은 이 입구가 한다. 목이 없으면 null 이 되어 NPE 가 CareServiceException 으로 덮인다. */
+    @Mock
+    private ChildDirectory childDirectory;
 
     @Mock
     private UserRepository userRepository;

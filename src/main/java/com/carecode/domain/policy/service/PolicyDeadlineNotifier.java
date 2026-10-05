@@ -9,9 +9,9 @@ import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.entity.PolicyDeadlineNotice;
 import com.carecode.domain.policy.repository.PolicyDeadlineNoticeRepository;
 import com.carecode.domain.policy.repository.PolicyRepository;
-import com.carecode.domain.user.entity.Child;
+import com.carecode.domain.user.app.ChildDirectory;
+import com.carecode.domain.user.app.ChildView;
 import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.ChildRepository;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +59,7 @@ public class PolicyDeadlineNotifier {
     private final PolicyRepository policyRepository;
     private final PolicyDeadlineNoticeRepository noticeRepository;
     private final UserRepository userRepository;
-    private final ChildRepository childRepository;
+    private final ChildDirectory childDirectory;
     private final NotificationRepository notificationRepository;
     private final NotificationDispatcher dispatcher;
     private final EventLogger eventLogger;
@@ -161,7 +161,7 @@ public class PolicyDeadlineNotifier {
      * 다만 자녀가 없거나 지역·연령이 명확히 어긋나면 보내지 않는다.
      */
     private boolean isTarget(Policy policy, User user, LocalDate today) {
-        List<Child> children = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        List<ChildView> children = childDirectory.childrenOf(user.getId());
         if (children.isEmpty()) {
             return false;
         }
@@ -198,12 +198,13 @@ public class PolicyDeadlineNotifier {
         return address.contains(region) || region.contains(address);
     }
 
-    private boolean matchesAge(Policy policy, Child child, LocalDate today) {
-        if (child.getBirthDate() == null) {
-            // 생일을 모르면 연령으로 배제하지 않는다.
+    private boolean matchesAge(Policy policy, ChildView child, LocalDate today) {
+        Integer months = child.ageMonths(today);
+        if (months == null) {
+            // 생일을 모르면 연령으로 배제하지 않는다. 다른 화면(추천·놓친 지원금)은 반대로
+            // 제외하는데, 마감 알림은 놓친 손해가 성가심보다 크다는 판단이 달라서다.
             return true;
         }
-        int months = (int) ChronoUnit.MONTHS.between(child.getBirthDate(), today);
 
         Integer min = policy.getTargetAgeMin();
         if (min != null && months < min) {
