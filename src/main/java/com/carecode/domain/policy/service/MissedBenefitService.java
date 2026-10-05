@@ -7,9 +7,9 @@ import com.carecode.domain.policy.dto.response.MissedBenefitResponse;
 import com.carecode.domain.policy.dto.response.MissedBenefitSummaryResponse;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
-import com.carecode.domain.user.entity.Child;
+import com.carecode.domain.user.app.ChildDirectory;
+import com.carecode.domain.user.app.ChildView;
 import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.ChildRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -32,13 +31,13 @@ public class MissedBenefitService {
     private static final int CANDIDATE_SIZE = 300;
 
     private final PolicyRepository policyRepository;
-    private final ChildRepository childRepository;
+    private final ChildDirectory childDirectory;
     private final CurrentUserFacade currentUserFacade;
     private final EventLogger eventLogger;
 
     public MissedBenefitSummaryResponse findMissedBenefits() {
         User user = currentUserFacade.requireCurrentUser();
-        List<Child> children = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        List<ChildView> children = childDirectory.childrenOf(user.getId());
         LocalDate today = LocalDate.now();
 
         List<MissedBenefitResponse> claimable = new ArrayList<>();
@@ -53,11 +52,12 @@ public class MissedBenefitService {
                 .findByIsActiveTrueOrderByPriorityDescViewCountDesc(PageRequest.of(0, CANDIDATE_SIZE))
                 .getContent();
 
-        for (Child child : children) {
-            if (child.getBirthDate() == null) {
+        for (ChildView child : children) {
+            Integer currentMonths = child.ageMonths(today);
+            // 생일을 모르면 월령을 알 수 없고, 월령 없이는 "놓친 시기" 를 판단할 수 없다.
+            if (currentMonths == null) {
                 continue;
             }
-            int currentMonths = (int) ChronoUnit.MONTHS.between(child.getBirthDate(), today);
 
             for (Policy policy : candidates) {
                 if (!hasPassedAgeWindow(policy, currentMonths)) {
@@ -124,11 +124,11 @@ public class MissedBenefitService {
         return income <= threshold ? Eligibility.ELIGIBLE : Eligibility.NOT_ELIGIBLE;
     }
 
-    private MissedBenefitResponse toResponse(Policy policy, Child child, int currentMonths,
+    private MissedBenefitResponse toResponse(Policy policy, ChildView child, int currentMonths,
                                              Eligibility eligibility, LocalDate today) {
         List<String> reasons = new ArrayList<>();
         reasons.add(String.format("%s 님이 %d~%d개월이던 시기에 대상이었습니다.",
-                child.getName(),
+                child.name(),
                 policy.getTargetAgeMin() != null ? policy.getTargetAgeMin() : 0,
                 policy.getTargetAgeMax()));
 
@@ -161,7 +161,7 @@ public class MissedBenefitService {
         return MissedBenefitResponse.builder()
                 .policyId(policy.getId())
                 .title(policy.getTitle())
-                .childName(child.getName())
+                .childName(child.name())
                 .eligibleFromMonth(policy.getTargetAgeMin())
                 .eligibleToMonth(policy.getTargetAgeMax())
                 .claimable(claimable)

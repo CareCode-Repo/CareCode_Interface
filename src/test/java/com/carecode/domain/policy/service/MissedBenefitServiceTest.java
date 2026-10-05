@@ -6,7 +6,8 @@ import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.ChildRepository;
+import com.carecode.domain.user.app.ChildDirectory;
+import com.carecode.domain.user.app.ChildView;
 import com.carecode.core.analytics.EventLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +28,7 @@ import static org.mockito.Mockito.when;
 class MissedBenefitServiceTest {
 
     private PolicyRepository policyRepository;
-    private ChildRepository childRepository;
+    private ChildDirectory childDirectory;
     private CurrentUserFacade currentUserFacade;
     private MissedBenefitService service;
 
@@ -36,13 +37,13 @@ class MissedBenefitServiceTest {
     @BeforeEach
     void setUp() {
         policyRepository = mock(PolicyRepository.class);
-        childRepository = mock(ChildRepository.class);
+        childDirectory = mock(ChildDirectory.class);
         currentUserFacade = mock(CurrentUserFacade.class);
 
         user = User.builder().id(1L).name("부모").build();
         when(currentUserFacade.requireCurrentUser()).thenReturn(user);
 
-        service = new MissedBenefitService(policyRepository, childRepository, currentUserFacade,
+        service = new MissedBenefitService(policyRepository, childDirectory, currentUserFacade,
                 mock(EventLogger.class));
     }
 
@@ -174,7 +175,7 @@ class MissedBenefitServiceTest {
     @Test
     @DisplayName("아이가 없으면 조회하지 않는다")
     void returnsEmptyWithoutChildren() {
-        when(childRepository.findByUserIdOrderByCreatedAtDesc(anyLong())).thenReturn(List.of());
+        when(childDirectory.childrenOf(anyLong())).thenReturn(List.of());
 
         MissedBenefitSummaryResponse result = service.findMissedBenefits();
 
@@ -183,11 +184,8 @@ class MissedBenefitServiceTest {
     }
 
     private void givenChildAgedMonths(int months) {
-        Child child = Child.builder()
-                .name("아이")
-                .birthDate(LocalDate.now().minusMonths(months))
-                .build();
-        when(childRepository.findByUserIdOrderByCreatedAtDesc(anyLong())).thenReturn(List.of(child));
+        ChildView child = new ChildView(1L, "아이", LocalDate.now().minusMonths(months), "FEMALE", null);
+        when(childDirectory.childrenOf(anyLong())).thenReturn(List.of(child));
     }
 
     private void givenPolicies(Policy... policies) {

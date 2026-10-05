@@ -2,7 +2,7 @@ package com.carecode.domain.policy.service;
 
 import com.carecode.domain.policy.benefit.BenefitPaymentType;
 import com.carecode.domain.policy.benefit.BenefitProjectionCalculator;
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.BusinessException;
 import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
@@ -11,16 +11,15 @@ import com.carecode.domain.policy.dto.response.RegionalBenefitComparisonResponse
 import com.carecode.domain.policy.dto.response.RegionalBenefitResponse;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
-import com.carecode.domain.user.entity.Child;
+import com.carecode.domain.user.app.ChildDirectory;
+import com.carecode.domain.user.app.ChildView;
 import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.ChildRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -41,18 +40,18 @@ public class RegionalBenefitComparisonService {
     private static final int TOP_CONTRIBUTORS = 3;
 
     private final PolicyRepository policyRepository;
-    private final ChildRepository childRepository;
+    private final ChildDirectory childDirectory;
     private final CurrentUserFacade currentUserFacade;
     private final EventLogger eventLogger;
     private final BenefitProjectionCalculator calculator;
 
     public RegionalBenefitComparisonResponse compare(Long childId, Integer years, Integer limit) {
         User user = currentUserFacade.requireCurrentUser();
-        List<Child> children = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
-        Child child = resolveChild(children, childId);
+        List<ChildView> children = childDirectory.childrenOf(user.getId());
+        ChildView child = resolveChild(children, childId);
 
         int horizon = resolveHorizon(years);
-        int currentAgeMonths = (int) ChronoUnit.MONTHS.between(child.getBirthDate(), LocalDate.now());
+        int currentAgeMonths = child.ageMonths(LocalDate.now());
 
         // 자격이 안 되는 정책을 총액에 넣으면 "이사하면 얼마 더" 가 통째로 틀어진다.
         List<Policy> activePolicies = policyRepository.findByIsActiveTrue().stream()
@@ -89,7 +88,7 @@ public class RegionalBenefitComparisonService {
         eventLogger.log(EventType.REGIONAL_COMPARISON_VIEWED, user.getId(), baseRegion);
 
         return RegionalBenefitComparisonResponse.builder()
-                .childName(child.getName())
+                .childName(child.name())
                 .childAgeMonths(currentAgeMonths)
                 .horizonMonths(horizon)
                 .baseRegion(baseRegion)
@@ -223,16 +222,22 @@ public class RegionalBenefitComparisonService {
         return new RegionSummary(total, cash, nonCash, verified, unknownAmount, contributions);
     }
 
-    private Child resolveChild(List<Child> children, Long childId) {
+    /**
+     * 비교 기준이 될 자녀를 고른다. 지정하지 않으면 가장 최근에 등록한 자녀다.
+     *
+     * <p>세 경우 모두 사용자가 고칠 수 있는 상태이므로 400 이어야 한다. 전에는
+     * {@code CareServiceException} 이라 500 이 나가고 운영 알림까지 울렸다.
+     */
+    private ChildView resolveChild(List<ChildView> children, Long childId) {
         if (children.isEmpty()) {
-            throw new CareServiceException("등록된 자녀가 없습니다. 자녀를 먼저 등록해 주세요.");
+            throw new BusinessException("등록된 자녀가 없습니다. 자녀를 먼저 등록해 주세요.");
         }
-        Child child = childId == null ? children.get(0)
-                : children.stream().filter(c -> c.getId().equals(childId)).findFirst()
+        ChildView child = childId == null ? children.get(0)
+                : children.stream().filter(c -> c.childId().equals(childId)).findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("자녀를 찾을 수 없습니다: " + childId));
 
-        if (child.getBirthDate() == null) {
-            throw new CareServiceException("자녀의 생년월일이 없어 지원금을 계산할 수 없습니다.");
+        if (child.birthDate() == null) {
+            throw new BusinessException("자녀의 생년월일이 없어 지원금을 계산할 수 없습니다.");
         }
         return child;
     }

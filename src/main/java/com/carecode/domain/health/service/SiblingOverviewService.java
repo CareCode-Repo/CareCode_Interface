@@ -89,7 +89,7 @@ public class SiblingOverviewService {
     private long countWaitlists(Child child) {
         try {
             return waitlistRepository.findByUserIdOrderByAppliedAtDesc(child.getUser().getId()).stream()
-                    .filter(w -> w.getChild() != null && w.getChild().getId().equals(child.getId()))
+                    .filter(w -> child.getId().equals(w.getChildId()))
                     .count();
         } catch (Exception e) {
             return 0;

@@ -7,9 +7,9 @@ import com.carecode.domain.policy.dto.response.PersonalizedPolicyResponse;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.mapper.PolicyMapper;
 import com.carecode.domain.policy.repository.PolicyRepository;
-import com.carecode.domain.user.entity.Child;
+import com.carecode.domain.user.app.ChildDirectory;
+import com.carecode.domain.user.app.ChildView;
 import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.ChildRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -36,7 +36,7 @@ public class PolicyRecommendationService {
     private static final int DEADLINE_SOON_DAYS = 30;
 
     private final PolicyRepository policyRepository;
-    private final ChildRepository childRepository;
+    private final ChildDirectory childDirectory;
     private final PolicyMapper policyMapper;
     private final CurrentUserFacade currentUserFacade;
     private final EventLogger eventLogger;
@@ -44,7 +44,7 @@ public class PolicyRecommendationService {
     /** 로그인 사용자에게 맞는 정책을 점수 순으로 반환한다. */
     public List<PersonalizedPolicyResponse> recommendForCurrentUser(int limit) {
         User user = currentUserFacade.requireCurrentUser();
-        List<Child> children = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        List<ChildView> children = childDirectory.childrenOf(user.getId());
         LocalDate today = LocalDate.now();
 
         List<Policy> candidates = policyRepository
@@ -75,7 +75,7 @@ public class PolicyRecommendationService {
     }
 
     /** 연령·소득·자녀수 조건에 맞지 않으면 0점으로 제외한다. */
-    private int score(Policy policy, User user, List<Child> children, LocalDate today, List<String> reasons) {
+    private int score(Policy policy, User user, List<ChildView> children, LocalDate today, List<String> reasons) {
         if (!meetsHouseholdConditions(policy, user, children.size(), reasons)) {
             return 0;
         }
@@ -84,12 +84,12 @@ public class PolicyRecommendationService {
 
         boolean hasAgeCondition = policy.getTargetAgeMin() != null || policy.getTargetAgeMax() != null;
         if (hasAgeCondition) {
-            Child matched = children.stream().filter(c -> matchesAge(policy, c, today)).findFirst().orElse(null);
+            ChildView matched = children.stream().filter(c -> matchesAge(policy, c, today)).findFirst().orElse(null);
             if (matched == null) {
                 return 0;
             }
             score += SCORE_AGE_MATCH;
-            reasons.add(matched.getName() + " 연령 조건에 해당합니다.");
+            reasons.add(matched.name() + " 연령 조건에 해당합니다.");
         }
 
         if (matchesRegion(policy, user, reasons)) {
@@ -135,11 +135,12 @@ public class PolicyRecommendationService {
     }
 
     /** 정책 대상 월령과 아이의 월령을 비교한다. 시드 데이터 기준 targetAge 단위는 개월이다. */
-    private boolean matchesAge(Policy policy, Child child, LocalDate today) {
-        if (child.getBirthDate() == null) {
+    private boolean matchesAge(Policy policy, ChildView child, LocalDate today) {
+        Integer months = child.ageMonths(today);
+        // 월령을 모르면 조건에 맞는다고 볼 수 없다. 모르는 것을 "해당" 으로 치면 추천 이유가 거짓이 된다.
+        if (months == null) {
             return false;
         }
-        long months = ChronoUnit.MONTHS.between(child.getBirthDate(), today);
         Integer min = policy.getTargetAgeMin();
         Integer max = policy.getTargetAgeMax();
         return (min == null || months >= min) && (max == null || months <= max);

@@ -8,9 +8,9 @@ import com.carecode.domain.notification.sender.NotificationDispatcher;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.BenefitAmountReportRepository;
 import com.carecode.domain.policy.repository.PolicyRepository;
-import com.carecode.domain.user.entity.Child;
+import com.carecode.domain.user.app.ChildDirectory;
+import com.carecode.domain.user.app.ChildView;
 import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.ChildRepository;
 import com.carecode.domain.user.repository.UserRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +44,7 @@ public class BenefitReportSolicitor {
     private final PolicyRepository policyRepository;
     private final BenefitAmountReportRepository reportRepository;
     private final UserRepository userRepository;
-    private final ChildRepository childRepository;
+    private final ChildDirectory childDirectory;
     private final NotificationRepository notificationRepository;
     private final NotificationDispatcher dispatcher;
     private final EventLogger eventLogger;
@@ -105,7 +104,7 @@ public class BenefitReportSolicitor {
 
     /** 아이가 대상 연령을 최근에 지난 정책. 방금 받아봤을 가능성이 높은 구간이다. */
     private List<Policy> findRecentlyPassed(User user, List<Policy> policies) {
-        List<Child> children = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        List<ChildView> children = childDirectory.childrenOf(user.getId());
         if (children.isEmpty()) {
             return List.of();
         }
@@ -118,10 +117,12 @@ public class BenefitReportSolicitor {
                 continue;
             }
             boolean recentlyPassed = children.stream().anyMatch(child -> {
-                if (child.getBirthDate() == null) {
+                Integer months = child.ageMonths(today);
+                // 월령을 모르면 "최근에 지났다" 를 판단할 수 없다. 모르는 채로 제보를 요청하면
+                // 받아본 적 없는 지원금의 금액을 묻게 된다.
+                if (months == null) {
                     return false;
                 }
-                long months = ChronoUnit.MONTHS.between(child.getBirthDate(), today);
                 long sincePassed = months - policy.getTargetAgeMax();
                 return sincePassed > 0 && sincePassed <= askWithinMonths;
             });

@@ -2,7 +2,8 @@ package com.carecode.domain.facility.service;
 
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.BusinessException;
+import com.carecode.core.exception.ErrorCode;
 import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.facility.dto.request.WaitlistRequest;
@@ -11,9 +12,9 @@ import com.carecode.domain.facility.entity.CareFacility;
 import com.carecode.domain.facility.entity.FacilityWaitlist;
 import com.carecode.domain.facility.repository.CareFacilityRepository;
 import com.carecode.domain.facility.repository.FacilityWaitlistRepository;
-import com.carecode.domain.user.entity.Child;
+import com.carecode.domain.user.app.ChildDirectory;
+import com.carecode.domain.user.app.ChildView;
 import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.ChildRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,7 @@ public class FacilityWaitlistService {
 
     private final FacilityWaitlistRepository waitlistRepository;
     private final CareFacilityRepository facilityRepository;
-    private final ChildRepository childRepository;
+    private final ChildDirectory childDirectory;
     private final CurrentUserFacade currentUserFacade;
     private final EventLogger eventLogger;
 
@@ -47,10 +48,10 @@ public class FacilityWaitlistService {
         User user = currentUserFacade.requireCurrentUser();
         CareFacility facility = facilityRepository.findById(facilityId)
                 .orElseThrow(() -> new ResourceNotFoundException("시설을 찾을 수 없습니다: " + facilityId));
-        Child child = resolveOwnChild(user, request.getChildId());
+        ChildView child = resolveOwnChild(user, request.getChildId());
 
         // 같은 아이·같은 시설의 중복 등록은 통계를 왜곡하므로 기존 기록을 그대로 돌려준다.
-        var existing = waitlistRepository.findByFacilityIdAndChildId(facilityId, child.getId());
+        var existing = waitlistRepository.findByFacilityIdAndChildId(facilityId, child.childId());
         if (existing.isPresent()) {
             return existing.get().getId();
         }
@@ -58,7 +59,7 @@ public class FacilityWaitlistService {
         FacilityWaitlist saved = waitlistRepository.save(FacilityWaitlist.builder()
                 .facilityId(facility.getId())
                 .user(user)
-                .child(child)
+                .childId(child.childId())
                 .waitNumber(request.getWaitNumber())
                 .appliedAt(request.getAppliedAt() != null ? request.getAppliedAt() : LocalDate.now())
                 .status(FacilityWaitlist.WaitStatus.WAITING)
@@ -77,7 +78,9 @@ public class FacilityWaitlistService {
                 .orElseThrow(() -> new ResourceNotFoundException("대기 기록을 찾을 수 없습니다: " + waitlistId));
 
         if (!entry.getUser().getId().equals(user.getId())) {
-            throw new CareServiceException("본인의 대기 기록만 수정할 수 있습니다.");
+            // 403 이어야 한다. CareServiceException 은 기본 매핑이 500 이라, 남의 기록을
+            // 수정하려는 요청에 서버 오류가 나가고 운영 알림까지 울렸다.
+            throw new BusinessException(ErrorCode.FORBIDDEN, "본인의 대기 기록만 수정할 수 있습니다.");
         }
         entry.resolve(FacilityWaitlist.WaitStatus.valueOf(status), resolvedAt, note);
     }
@@ -136,23 +139,24 @@ public class FacilityWaitlistService {
         return reasons;
     }
 
-    /** 남의 아이로 등록하지 못하게 소유권을 확인한다. */
-    private Child resolveOwnChild(User user, Long childId) {
-        List<Child> children = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+    /**
+     * 남의 아이로 등록하지 못하게 소유권을 확인한다. 지정하지 않으면 최근에 등록한 자녀다.
+     *
+     * <p>두 경우 모두 사용자가 고칠 수 있는 상태라 400 이어야 한다. 전에는
+     * {@code CareServiceException} 이어서 500 이 나가고 운영 알림까지 울렸다.
+     */
+    private ChildView resolveOwnChild(User user, Long childId) {
+        if (childId != null) {
+            return childDirectory.requireOwnedChild(childId, user.getId());
+        }
+        List<ChildView> children = childDirectory.childrenOf(user.getId());
         if (children.isEmpty()) {
-            throw new CareServiceException("등록된 자녀가 없습니다.");
+            throw new BusinessException("등록된 자녀가 없습니다.");
         }
-        if (childId == null) {
-            return children.get(0);
-        }
-        return children.stream()
-                .filter(c -> c.getId().equals(childId))
-                .findFirst()
-                .orElseThrow(() -> new CareServiceException("본인의 자녀만 등록할 수 있습니다."));
+        return children.get(0);
     }
 
-    private Integer monthsOld(Child child) {
-        return child.getBirthDate() == null ? null
-                : (int) ChronoUnit.MONTHS.between(child.getBirthDate(), LocalDate.now());
+    private Integer monthsOld(ChildView child) {
+        return child.ageMonths(LocalDate.now());
     }
 }

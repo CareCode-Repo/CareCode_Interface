@@ -1,6 +1,5 @@
 package com.carecode.domain.facility.entity;
 
-import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -36,9 +35,17 @@ public class FacilityWaitlist {
     @JoinColumn(name = "USER_ID", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CHILD_ID", nullable = false)
-    private Child child;
+    /**
+     * 자녀 ID. 연관({@code @ManyToOne Child})이 아니라 ID 로 둔다.
+     *
+     * <p>이 값을 읽는 곳이 없었다. 저장할 때 CHILD_ID 를 채우는 용도뿐인데 연관으로 두면
+     * facility 도메인이 user 도메인의 엔티티를 알게 되고, 자녀 정보를 타고 사용자 정보까지
+     * 들어갈 수 있다. 바로 위 {@code facilityId} 와 같은 방식으로 맞췄다.
+     *
+     * <p>DB 의 외래키(FK_WAITLIST_CHILD)와 중복 등록 제약(FACILITY_ID, CHILD_ID)은 그대로다.
+     */
+    @Column(name = "CHILD_ID", nullable = false)
+    private Long childId;
 
     @Column(name = "WAIT_NUMBER")
     private Integer waitNumber;

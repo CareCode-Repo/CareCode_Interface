@@ -9,6 +9,7 @@ import com.carecode.domain.health.growth.GrowthPercentileCalculator;
 import com.carecode.domain.health.growth.GrowthPercentileResult;
 import com.carecode.domain.health.growth.Sex;
 import com.carecode.domain.health.repository.HealthRecordRepository;
+import com.carecode.domain.user.app.ChildDirectory;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.ChildRepository;
@@ -33,6 +34,7 @@ import java.util.function.Function;
 public class GrowthChartService {
 
     private final ChildRepository childRepository;
+    private final ChildDirectory childDirectory;
     private final HealthRecordRepository healthRecordRepository;
     private final CurrentUserFacade currentUserFacade;
 
@@ -76,15 +78,12 @@ public class GrowthChartService {
         return points.isEmpty() ? Optional.empty() : Optional.of(points.get(points.size() - 1));
     }
 
+    /** 소유권 판단은 {@link ChildDirectory} 한 곳에서만 한다. 여기 있던 복제본을 지웠다. */
     private Child requireOwnedChild(Long childId) {
         User parent = currentUserFacade.requireCurrentUser();
-        Child child = childRepository.findById(childId)
+        childDirectory.requireOwnedChild(childId, parent.getId());
+        return childRepository.findById(childId)
                 .orElseThrow(() -> new ChildNotFoundException("아이를 찾을 수 없습니다: " + childId));
-
-        if (child.getUser() == null || !child.getUser().getId().equals(parent.getId())) {
-            throw new ChildNotFoundException("아이를 찾을 수 없습니다: " + childId);
-        }
-        return child;
     }
 
     /** 오늘 기준 개월 수. */

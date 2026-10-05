@@ -1,7 +1,7 @@
 package com.carecode.domain.policy.service;
 
 import com.carecode.domain.policy.benefit.BenefitProjectionCalculator;
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.BusinessException;
 import com.carecode.core.security.CurrentUserFacade;
 import com.carecode.domain.policy.dto.response.RegionalBenefitComparisonResponse;
 import com.carecode.domain.policy.dto.response.RegionalBenefitResponse;
@@ -9,7 +9,8 @@ import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.ChildRepository;
+import com.carecode.domain.user.app.ChildDirectory;
+import com.carecode.domain.user.app.ChildView;
 import com.carecode.core.analytics.EventLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,21 +29,21 @@ import static org.mockito.Mockito.when;
 class RegionalBenefitComparisonServiceTest {
 
     private PolicyRepository policyRepository;
-    private ChildRepository childRepository;
+    private ChildDirectory childDirectory;
     private RegionalBenefitComparisonService service;
     private User user;
 
     @BeforeEach
     void setUp() {
         policyRepository = mock(PolicyRepository.class);
-        childRepository = mock(ChildRepository.class);
+        childDirectory = mock(ChildDirectory.class);
         CurrentUserFacade currentUserFacade = mock(CurrentUserFacade.class);
 
         user = User.builder().id(1L).name("부모").address("경기도 성남시 분당구").build();
         when(currentUserFacade.requireCurrentUser()).thenReturn(user);
 
         service = new RegionalBenefitComparisonService(
-                policyRepository, childRepository, currentUserFacade, mock(EventLogger.class),
+                policyRepository, childDirectory, currentUserFacade, mock(EventLogger.class),
                 new BenefitProjectionCalculator());
     }
 
@@ -231,33 +232,34 @@ class RegionalBenefitComparisonServiceTest {
         assertThat(result.getDisclaimers()).anyMatch(d -> d.contains("추정치"));
     }
 
+    /**
+     * 사용자가 고칠 수 있는 상태이므로 400 이어야 한다({@link BusinessException} =
+     * {@code ErrorCode.INVALID_INPUT}). 전에는 {@code CareServiceException} 이라 500 이 나갔다.
+     */
     @Test
-    @DisplayName("자녀가 없으면 계산할 수 없다고 알린다")
+    @DisplayName("자녀가 없으면 400 으로 알린다")
     void failsWithoutChild() {
-        when(childRepository.findByUserIdOrderByCreatedAtDesc(anyLong())).thenReturn(List.of());
+        when(childDirectory.childrenOf(anyLong())).thenReturn(List.of());
 
         assertThatThrownBy(() -> service.compare(null, 5, 10))
-                .isInstanceOf(CareServiceException.class)
+                .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("등록된 자녀가 없습니다");
     }
 
     @Test
-    @DisplayName("생년월일이 없으면 계산할 수 없다고 알린다")
+    @DisplayName("생년월일이 없으면 400 으로 알린다")
     void failsWithoutBirthDate() {
-        Child child = Child.builder().name("아이").birthDate(null).build();
-        when(childRepository.findByUserIdOrderByCreatedAtDesc(anyLong())).thenReturn(List.of(child));
+        ChildView child = new ChildView(1L, "아이", null, "FEMALE", null);
+        when(childDirectory.childrenOf(anyLong())).thenReturn(List.of(child));
 
         assertThatThrownBy(() -> service.compare(null, 5, 10))
-                .isInstanceOf(CareServiceException.class)
+                .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("생년월일");
     }
 
     private void givenChildAgedMonths(int months) {
-        Child child = Child.builder()
-                .id(1L).name("아이")
-                .birthDate(LocalDate.now().minusMonths(months))
-                .build();
-        when(childRepository.findByUserIdOrderByCreatedAtDesc(anyLong())).thenReturn(List.of(child));
+        ChildView child = new ChildView(1L, "아이", LocalDate.now().minusMonths(months), "FEMALE", null);
+        when(childDirectory.childrenOf(anyLong())).thenReturn(List.of(child));
     }
 
     private void givenPolicies(Policy... policies) {

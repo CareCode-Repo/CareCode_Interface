@@ -31,6 +31,7 @@ import com.carecode.domain.health.repository.HealthRecordRepository;
 import com.carecode.domain.health.repository.VaccinationScheduleRepository;
 import com.carecode.domain.policy.repository.PolicyRepository;
 import com.carecode.domain.facility.repository.CareFacilityRepository;
+import com.carecode.domain.user.app.ChildDirectory;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.ChildRepository;
@@ -74,6 +75,7 @@ public class HealthService {
     private final ConsentGuard consentGuard;
     private final HealthRecordAttachmentRepository healthRecordAttachmentRepository;
     private final ChildRepository childRepository;
+    private final ChildDirectory childDirectory;
     private final UserRepository userRepository;
     private final PolicyRepository policyRepository;
     private final CareFacilityRepository careFacilityRepository;
@@ -150,6 +152,10 @@ public class HealthService {
             return records.stream()
                     .map(healthRecordMapper::toResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException e) {
+            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
+            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
+            throw e;
         } catch (Exception e) {
             log.error("사용자별 건강 기록 조회 실패: {}", e.getMessage());
             throw new CareServiceException("사용자별 건강 기록 조회 중 오류가 발생했습니다.", e);
@@ -360,6 +366,10 @@ public class HealthService {
                     .recordTypeDistribution(calculateRecordTypeDistribution(records))
                     .upcomingEvents(generateUpcomingEvents(records))
                     .build();
+        } catch (CareCodeException e) {
+            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
+            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
+            throw e;
         } catch (Exception e) {
             log.error("건강 통계 조회 실패: {}", e.getMessage());
             throw new CareServiceException("건강 통계 조회 중 오류가 발생했습니다.", e);
@@ -382,6 +392,10 @@ public class HealthService {
             return vaccineRecords.stream()
                     .map(this::convertToVaccineScheduleResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException e) {
+            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
+            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
+            throw e;
         } catch (Exception e) {
             log.error("예방접종 스케줄 조회 실패: {}", e.getMessage());
             throw new CareServiceException("예방접종 스케줄 조회 중 오류가 발생했습니다.", e);
@@ -402,6 +416,10 @@ public class HealthService {
             return checkupRecords.stream()
                     .map(this::convertToCheckupScheduleResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException e) {
+            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
+            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
+            throw e;
         } catch (Exception e) {
             log.error("건강 검진 스케줄 조회 실패: {}", e.getMessage());
             throw new CareServiceException("건강 검진 스케줄 조회 중 오류가 발생했습니다.", e);
@@ -425,6 +443,10 @@ public class HealthService {
             return records.stream()
                     .map(healthRecordMapper::toResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException e) {
+            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
+            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
+            throw e;
         } catch (Exception e) {
             log.error("기간별 건강 기록 조회 실패: {}", e.getMessage(), e);
             throw new CareServiceException("기간별 건강 기록 조회 중 오류가 발생했습니다.", e);
@@ -445,6 +467,10 @@ public class HealthService {
             return records.stream()
                     .map(healthRecordMapper::toResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException e) {
+            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
+            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
+            throw e;
         } catch (Exception e) {
             log.error("타입별 건강 기록 조회 실패: {}", e.getMessage(), e);
             throw new CareServiceException("타입별 건강 기록 조회 중 오류가 발생했습니다.", e);
@@ -502,6 +528,10 @@ public class HealthService {
                     .filter(r -> r.getNextDate() != null && r.getNextDate().isAfter(java.time.LocalDate.now()))
                     .map(this::convertToHealthAlertResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException e) {
+            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
+            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
+            throw e;
         } catch (Exception e) {
             log.error("건강 알림 조회 실패: {}", e.getMessage());
             throw new CareServiceException("건강 알림 조회 중 오류가 발생했습니다.", e);
@@ -609,20 +639,23 @@ public class HealthService {
         }
     }
 
+    /**
+     * 자녀 소유권 확인. 판단은 {@link ChildDirectory} 한 곳에서만 한다.
+     *
+     * <p>전에는 여기서 직접 비교하고 403 을 던졌다. 같은 질문에 {@code /children/…} 은 404 를
+     * 주고 있었는데, 403 은 <b>그 자녀가 존재한다는 사실을 알려준다</b> — ID 를 훑으면 "이 번호는
+     * 누군가의 자녀" 목록을 만들 수 있다. 게다가 그 403 이 아래 {@code catch (Exception e)} 에
+     * 걸려 500 으로 덮이는 경로도 있었다(접종·검진 일정 조회).
+     *
+     * <p>이미 읽어 둔 엔티티를 넘겨도 같은 트랜잭션 안에서는 1차 캐시에 올라와 있어 추가 쿼리가
+     * 나가지 않는다.
+     */
     private void assertChildOwnedByUser(Child child, Long actorUserId) {
-        if (actorUserId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "인증이 필요합니다.");
-        }
-        User parent = child.getUser();
-        if (parent == null || parent.getId() == null || !parent.getId().equals(actorUserId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 자녀 정보에 접근할 권한이 없습니다.");
-        }
+        assertChildOwnedByUserId(child.getId(), actorUserId);
     }
 
     private void assertChildOwnedByUserId(Long childId, Long actorUserId) {
-        Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new ChildNotFoundException(childId));
-        assertChildOwnedByUser(child, actorUserId);
+        childDirectory.requireOwnedChild(childId, actorUserId);
     }
 
     private void assertUserIdBelongsToActor(String userId, Long actorUserId) {
