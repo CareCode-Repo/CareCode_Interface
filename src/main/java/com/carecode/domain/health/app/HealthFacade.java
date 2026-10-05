@@ -106,22 +106,6 @@ public class HealthFacade {
         healthService.deleteAttachment(attachmentId, actorUserId);
     }
 
-    public List<com.carecode.domain.health.dto.response.ChildInfoResponse> getChildrenByAgeRange(Long userId, Integer minAge, Integer maxAge) {
-        return healthService.getChildrenByAgeRange(userId, minAge, maxAge);
-    }
-
-    public List<com.carecode.domain.health.dto.response.ChildInfoResponse> getChildrenByGender(Long userId, String gender) {
-        return healthService.getChildrenByGender(userId, gender);
-    }
-
-    public List<com.carecode.domain.health.dto.response.ChildInfoResponse> getChildrenWithSpecialNeeds(Long userId) {
-        return healthService.getChildrenWithSpecialNeeds(userId);
-    }
-
-    public List<com.carecode.domain.health.dto.response.ChildInfoResponse> searchChildrenByName(Long userId, String name) {
-        return healthService.searchChildrenByName(userId, name);
-    }
-
     public HealthRecommendationResponse getIntegratedRecommendations(String userId, Long actorUserId) {
         return healthService.getIntegratedRecommendations(userId, actorUserId);
     }

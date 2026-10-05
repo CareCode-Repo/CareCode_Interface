@@ -415,47 +415,6 @@ public class HealthController extends BaseController {
     // ====================
     // 자녀 관리 기능 ====================
 
-    // 연령 범위별 자녀 조회
-    @GetMapping("/children/age-range")
-    @LogExecutionTime
-    @Operation(summary = "연령 범위별 자녀 조회", description = "특정 연령 범위에 해당하는 자녀 조회")
-    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenByAgeRange(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId, @Parameter(description = "최소 연령", required = true) @RequestParam Integer minAge, @Parameter(description = "최대 연령", required = true) @RequestParam Integer maxAge) {
-        List<ChildInfoResponse> children = healthFacade.getChildrenByAgeRange(getAuthenticatedUserPk(), minAge, maxAge);
-
-        return ResponseEntity.ok(children);
-    }
-
-    // 성별 자녀 조회
-    @GetMapping("/children/gender")
-    @LogExecutionTime
-    @Operation(summary = "성별 자녀 조회", description = "특정 성별의 자녀 조회")
-    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenByGender(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
-                                                                                                               @Parameter(description = "성별 (MALE, FEMALE)", required = true) @RequestParam String gender) {
-        List<ChildInfoResponse> children = healthFacade.getChildrenByGender(getAuthenticatedUserPk(), gender);
-        return ResponseEntity.ok(children);
-    }
-
-    // 특별한 요구사항이 있는 자녀 조회
-    @GetMapping("/children/special-needs")
-    @LogExecutionTime
-    @Operation(summary = "특별한 요구사항이 있는 자녀 조회")
-    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> getChildrenWithSpecialNeeds(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId) {
-        List<ChildInfoResponse> children = healthFacade.getChildrenWithSpecialNeeds(getAuthenticatedUserPk());
-
-        return ResponseEntity.ok(children);
-    }
-
-    // 이름으로 자녀 검색
-    @GetMapping("/children/search")
-    @LogExecutionTime
-    @Operation(summary = "이름으로 자녀 검색")
-    public ResponseEntity<List<com.carecode.domain.health.dto.response.ChildInfoResponse>> searchChildrenByName(@Parameter(description = "사용자 ID", required = true) @RequestParam Long userId,
-                                                                                                                @Parameter(description = "검색할 이름", required = true) @RequestParam String name) {
-        List<ChildInfoResponse> children = healthFacade.searchChildrenByName(getAuthenticatedUserPk(), name);
-
-        return ResponseEntity.ok(children);
-    }
-
     private Long getAuthenticatedUserPk() {
         return currentUserFacade.requireCurrentUserDbId();
     }
