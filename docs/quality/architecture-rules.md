@@ -328,6 +328,64 @@ expected: 36 but was: 3
 - ArchUnit baseline 362 → **357** (도메인 경계 247 → 242)
 - 전체 테스트 **639개, 실패 0**
 
+## HealthService 를 셋으로 나눴다 (5c 단계)
+
+688줄을 읽으며 책임을 세어 보니 네 가지였습니다 — 기록 CRUD·첨부, 통계·알림·추천,
+"일정" 조회, 그리고 그 셋이 공유하는 신원 확인. 그중 **"일정" 은 일정이 아니었습니다.**
+
+### `/health/*/schedule` 두 개는 일정이 아니었다
+
+```java
+.recommendedAge(null)   // 나이 정보는 별도 계산 필요
+.status(isCompleted ? "COMPLETED" : "UPCOMING")   // OVERDUE 는 나올 수 없다
+.notes(record.getDescription())                   // description 과 같은 값
+```
+
+`HealthRecord` 중 타입이 VACCINATION/CHECKUP 인 것을 읽어 필드 이름만 바꿔 담았습니다.
+권장 시기는 항상 `null`, 상태는 "기한 경과" 가 나올 수 없고, 메모는 설명의 복사본입니다.
+**같은 데이터를 주는 `GET /health/records/type` 이 이미 있고 프런트는 그것을 씁니다.**
+
+진짜 일정은 다른 곳에 있습니다 — `VaccinationScheduleService`(생년월일 + 표준 접종
+일정에서 예정일을 계산, `/children/{id}/vaccinations`)와 `ChildTimelineService`
+(`CheckupStandard` 의 권장 시기 구간과 기록을 맞춰 봄, `/children/{id}/timeline`).
+이름이 "schedule" 이라서 그쪽이 이미 있는지 확인하지 않고 쓰게 되는 종류의 중복입니다.
+
+함께 지운 것: `ConditionalResponse`(ETag/304 유틸). 유일한 사용처가 이 엔드포인트였고
+테스트도 문서도 없었습니다. 조건부 응답이 필요해지면 **측정한 자리에** 다시 넣는 것이 맞습니다.
+
+### 나눈 모양
+
+| 클래스 | 줄 | 하는 일 |
+|--------|-----|---------|
+| `HealthService` | 367 | 기록 생성·조회·수정·삭제, 첨부 |
+| `HealthInsightService` | 168 | 통계·알림·연계 추천 (**아무것도 쓰지 않는다** — 클래스 전체 `readOnly`) |
+| `HealthActorResolver` | 76 | 받은 `userId` 가 요청자 본인인지 확인하고 사용자를 꺼낸다 |
+
+기록을 **쓰는** 일과 기록을 읽어 **해석하는** 일은 바뀌는 이유가 다릅니다. 앞쪽은 입력 검증과
+트랜잭션이, 뒤쪽은 "무엇을 보여줄지" 가 바뀝니다. 한 클래스에 있으면 어느 쪽을 고쳐도
+다른 쪽 테스트를 함께 봐야 합니다.
+
+`HealthActorResolver` 를 따로 둔 이유: 신원 확인이 검증·조회·본인 확인 세 조각으로 흩어져
+있었고, 둘로 나누면 양쪽이 그 세 조각을 각자 들고 갑니다. 소유권 검증을 복제하면 한쪽이
+조용히 뒤처진다는 것은 자녀 쪽에서 이미 겪었습니다(4a). 합치면서 **쿼리도 하나 줄었습니다** —
+전에는 본인 확인에서 한 번, 사용자 조회에서 또 한 번 읽었습니다.
+
+### 위반은 줄지 않았다 (357 → 357)
+
+1a 와 같습니다. `HealthService` 가 들고 있던 policy·facility 리포지토리 참조가
+`HealthInsightService` 로 **옮겨 간 것**이고, 사라진 것은 아닙니다. 숫자가 줄려면 그 참조
+자체를 포트로 바꿔야 합니다(정책·시설 추천을 각 도메인에 묻는 식).
+
+이 단계의 값은 숫자가 아니라 **거짓 API 두 개가 사라진 것**과, 1000줄짜리 파일이 셋으로
+나뉘어 각자 한 가지만 하게 된 것입니다.
+
+### 숫자
+
+- `HealthService` 688 → **367줄** (+ 168 + 76 로 분리)
+- OpenAPI: 228 → **226** 경로, 160 → **158** 스키마
+- ArchUnit baseline **357 → 357** (위반이 새 클래스로 이동)
+- 전체 테스트 **639개, 실패 0**
+
 ## 다음 단계
 
 | 단계 | 내용 | 효과 |
@@ -341,4 +399,5 @@ expected: 36 but was: 3
 | 4b. Child 를 제 자리로 | `ChildService` 가 `health` 에 있다. health 는 아직 엔티티가 필요해 `ChildRepository` 를 쓴다 | 결합 추가 해소 |
 | ~~5a. 도달 불가 코드 제거~~ | ~~HealthService 1011줄, CareFacilityService 580줄~~ | **완료** — 715줄·411줄 |
 | ~~5b. 아이 조회를 health 에서 뺀다~~ | ~~`/health/children/*` 4개가 `/children` 과 중복~~ | **완료** — 362 → 357, 단위 버그 발견 |
-| 5c. 남은 책임 분리 | HealthService 688줄은 아직 기록·일정·알림·통계를 함께 들고 있다 | 읽기 쉬움 |
+| ~~5c. 남은 책임 분리~~ | ~~HealthService 688줄~~ | **완료** — 367줄 + 168줄 + 76줄 |
+| 5d. 식별 로직을 user 로 | `HealthActorResolver` 가 health 의 마지막 `UserRepository` 사용처다 | 결합 추가 해소 |

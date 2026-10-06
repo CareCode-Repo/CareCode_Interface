@@ -1288,33 +1288,6 @@
         },
         "type" : "object"
       },
-      "CheckupScheduleResponse" : {
-        "properties" : {
-          "checkupName" : {
-            "type" : "string"
-          },
-          "completedDate" : {
-            "type" : "string"
-          },
-          "description" : {
-            "type" : "string"
-          },
-          "notes" : {
-            "type" : "string"
-          },
-          "recommendedAge" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "scheduledDate" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
       "ChildCreateRequest" : {
         "properties" : {
           "birthDate" : {
@@ -4824,33 +4797,6 @@
             "type" : "string"
           },
           "vaccineType" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "VaccineScheduleResponse" : {
-        "properties" : {
-          "completedDate" : {
-            "type" : "string"
-          },
-          "description" : {
-            "type" : "string"
-          },
-          "notes" : {
-            "type" : "string"
-          },
-          "recommendedAge" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "scheduledDate" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "vaccineName" : {
             "type" : "string"
           }
         },
@@ -11887,46 +11833,6 @@
         "tags" : [ "건강 관리" ]
       }
     },
-    "/health/checkups/schedule" : {
-      "get" : {
-        "operationId" : "getCheckupSchedule",
-        "parameters" : [ {
-          "description" : "아동 ID",
-          "in" : "query",
-          "name" : "childId",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "description" : "API 버전. 생략하면 현재 버전(1). 지원하지 않는 값이면 400",
-          "in" : "header",
-          "name" : "X-API-Version",
-          "required" : false,
-          "schema" : {
-            "default" : "1",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/CheckupScheduleResponse"
-                  },
-                  "type" : "array"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "summary" : "건강 검진 스케줄 조회",
-        "tags" : [ "건강 관리" ]
-      }
-    },
     "/health/hospitals" : {
       "get" : {
         "description" : "등록된 모든 병원 정보 조회",
@@ -13190,46 +13096,6 @@
           }
         },
         "summary" : "건강 통계 조회",
-        "tags" : [ "건강 관리" ]
-      }
-    },
-    "/health/vaccines/schedule" : {
-      "get" : {
-        "operationId" : "getVaccineSchedule",
-        "parameters" : [ {
-          "description" : "아동 ID",
-          "in" : "query",
-          "name" : "childId",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "description" : "API 버전. 생략하면 현재 버전(1). 지원하지 않는 값이면 400",
-          "in" : "header",
-          "name" : "X-API-Version",
-          "required" : false,
-          "schema" : {
-            "default" : "1",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/VaccineScheduleResponse"
-                  },
-                  "type" : "array"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "summary" : "예방접종 스케줄 조회",
         "tags" : [ "건강 관리" ]
       }
     },

@@ -251,7 +251,12 @@ class AccessControlContractTest {
             "/health/children/age-range?userId=1&minAge=0&maxAge=5",
             "/health/children/gender?userId=1&gender=FEMALE",
             "/health/children/special-needs?userId=1",
-            "/health/children/search?userId=1&name=아"
+            "/health/children/search?userId=1&name=아",
+            // → GET /health/records/type (같은 데이터), GET /children/{id}/vaccinations 와
+            //   GET /children/{id}/timeline (진짜 일정). "스케줄" 이라는 이름과 달리 기록
+            //   목록을 돌려주고 있었다.
+            "/health/vaccines/schedule?childId=1",
+            "/health/checkups/schedule?childId=1"
     })
     @WithMockUser(username = "admin@example.com", roles = "ADMIN")
     void duplicateMappingsRemoved(String path) throws Exception {
