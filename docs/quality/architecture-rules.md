@@ -31,7 +31,7 @@ ArchUnit 의 `FreezingArchRule` 을 씁니다.
 
 ## 규칙과 현재 위반
 
-진척: **489건(0단계) → 391건(1b) → 383건(3a) → 364건(4a)**. 남은 것은 도메인 경계(249)와
+진척: **489건(0단계) → 391건(1b) → 383건(3a) → 364건(4a) → 362건(5a)**. 남은 것은 도메인 경계(247)와
 컨트롤러의 리포지토리 직접 사용(61), core 기반의 도메인 참조(50)입니다.
 
 > 세는 법: `archunit-baseline/` 에는 규칙별 위반 파일 외에 색인 파일 `stored.rules` 도 있습니다.
@@ -39,7 +39,7 @@ ArchUnit 의 `FreezingArchRule` 을 씁니다.
 
 | 규칙 | 위반 | 뜻 |
 |------|------|-----|
-| 다른 도메인의 리포지토리를 직접 쓰지 않는다 | 249 | 남의 테이블을 직접 읽으면 그 도메인의 규칙(소유권 검증 등)을 건너뛴다 |
+| 다른 도메인의 리포지토리를 직접 쓰지 않는다 | 247 | 남의 테이블을 직접 읽으면 그 도메인의 규칙(소유권 검증 등)을 건너뛴다 |
 | 도메인 패키지 이름은 소문자다 | **0** | `careFacility`→`facility` 로 해소 (1b 단계) |
 | 컨트롤러는 리포지토리를 직접 쓰지 않는다 | 61 | 검증·트랜잭션 경계가 컨트롤러로 샌다 |
 | core 기반 패키지는 domain 을 의존하지 않는다 | 50 | 기반 코드가 도메인을 알면 공통이 아니다 |
@@ -228,6 +228,47 @@ public interface ChildDirectory {
   남아 있습니다(4b)
 - 전체 테스트 **624개, 실패 0**. OpenAPI 스펙은 변화 없음 — 응답 모양을 바꾸지 않았습니다
 
+## 분해 전에 지울 것이 먼저였다 (5a 단계)
+
+거대 서비스를 쪼개려고 `HealthService` 1011줄을 책임별로 나누기 시작했는데, 나누다 보니
+**상당 부분이 아무도 부르지 않는 코드**였습니다. 부르는 곳이 없는 코드를 옮기는 건 옮긴 만큼만
+일이 늘어납니다.
+
+컨트롤러에서 거꾸로 따라가 도달 가능한지 확인했습니다.
+
+| 지운 것 | 왜 |
+|---------|-----|
+| `analyzeHealthStatus`, `generateHealthReport` | 파사드에는 있는데 컨트롤러가 부르지 않는다. `healthScore`·`riskLevel` 같은 값을 만들어 내는데 공개된 적이 없다 |
+| `getHealthGoals` | 고정 문자열("모든 예방접종 완료")을 돌려준다. 도달 불가 |
+| `getHealthChart` | 도달 불가. 성장 곡선은 `GrowthChartService` 가 따로 한다 |
+| `checkSystemHealth` | `{status: UP, version: 1.0.0}` 을 하드코딩. **Actuator 의 `/actuator/health` 와 중복**이고 도달 불가 |
+| `getHealthRecords`, `getHealthRecordsByDateRange` | 파사드에도 없다 |
+| 위 메서드들만 쓰던 private 헬퍼 11개 | `calculateHealthScore`, `determineRiskLevel`, `generateRecommendations`, `calculateVaccineStatus`, `calculateCheckupStatus`, `calculateProgress`, `generateHealthSummary`, `extractChartValue`, `validateChartType`, `validateMonths`, `validatePaginationParams` |
+| 상수 3개 | `HEALTH_SCORE_HIGH_THRESHOLD` 등. 점수 계산이 사라지며 함께 쓸 곳이 없어졌다 |
+
+`CareFacilityService` 에서도 같은 것이 나왔습니다. `saveCareFacilitiesFromPublicData`,
+`countCareFacilities` 와 그 헬퍼 5개는 **3a 에서 지운 `CareFacilityApiController` 가 쓰던 잔재**였습니다.
+입구를 지우면 그 뒤에 남는 코드가 생기는데, 그때 같이 지우지 않으면 "쓰이는 코드" 처럼 보입니다.
+
+### 숫자
+
+| 파일 | 전 | 후 |
+|------|-----|-----|
+| `HealthService` | 1011줄 | **715줄** |
+| `CareFacilityService` | 580줄 | **411줄** |
+| `HealthFacade` | 338줄 | **309줄** |
+
+- ArchUnit baseline 364 → **362**
+- 전체 테스트 **632개, 실패 0**
+- **OpenAPI 스펙 변화 없음** — 공개 API 를 하나도 건드리지 않았습니다. 지운 것은 전부 밖에서
+  부를 수 없던 코드입니다
+
+### 남은 분해 (5b)
+
+`HealthService` 715줄은 아직 다섯 가지를 함께 들고 있습니다 — 건강 기록 CRUD, 아이 조회
+(연령·성별·특별 요구·이름 검색), 접종·검진 일정, 알림, 통계·추천. 이 중 **아이 조회 4개는
+`user` 도메인 일**이라 4a 의 입구로 옮기는 것이 다음 자리입니다.
+
 ## 다음 단계
 
 | 단계 | 내용 | 효과 |
@@ -239,4 +280,5 @@ public interface ChildDirectory {
 | ~~3b. `Map` 응답 → DTO~~ | ~~남은 17곳~~ | **완료** — 스펙 스키마 134 → 158 |
 | ~~4a. 자녀 조회 입구~~ | ~~policy·facility 가 `ChildRepository` 를 직접 쓰고 소유권 검증이 3중~~ | **완료** — 383 → 364, 404 로 통일 |
 | 4b. Child 를 제 자리로 | `ChildService` 가 `health` 에 있다. health 는 아직 엔티티가 필요해 `ChildRepository` 를 쓴다 | 결합 추가 해소 |
-| 5. 거대 서비스 분해 | HealthService 977줄 | 2·3 과 함께 진행 |
+| ~~5a. 도달 불가 코드 제거~~ | ~~HealthService 1011줄, CareFacilityService 580줄~~ | **완료** — 715줄·411줄 |
+| 5b. 남은 책임 분리 | HealthService 는 아직 기록·아이 조회·일정·알림·통계를 함께 들고 있다 | 읽기 쉬움 |

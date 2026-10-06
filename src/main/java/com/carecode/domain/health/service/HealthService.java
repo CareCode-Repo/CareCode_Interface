@@ -65,10 +65,7 @@ public class HealthService {
     
     // 상수 정의
     private static final String DEFAULT_ALERT_PRIORITY = "MEDIUM";
-    private static final int DEFAULT_MONTHS_FOR_NEXT_CHECKUP = 3;
     private static final int MAX_UPCOMING_EVENTS = 5;
-    private static final int HEALTH_SCORE_HIGH_THRESHOLD = 80;
-    private static final int HEALTH_SCORE_MEDIUM_THRESHOLD = 60;
     
     private final HealthRecordRepository healthRecordRepository;
     private final VaccinationScheduleRepository vaccinationScheduleRepository;
@@ -221,41 +218,6 @@ public class HealthService {
         log.info("건강 기록이 삭제되었습니다: 기록ID={}", recordId);
     }
 
-    // 건강 기록 목록 조회 (페이징)
-    @LogExecutionTime
-    public List<HealthRecordResponse> getHealthRecords(Long childId, int page, int size, Long actorUserId) {
-        validateChildId(childId);
-        validatePaginationParams(page, size);
-        assertChildOwnedByUserId(childId, actorUserId);
-        
-        log.info("건강 기록 목록 조회 - 아동 ID: {}, 페이지: {}, 크기: {}", childId, page, size);
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "recordDate"));
-        Page<HealthRecord> records = healthRecordRepository.findByChildIdOrderByRecordDateDesc(childId, pageable);
-        
-        return records.getContent().stream()
-                .map(healthRecordMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    // 기간별 건강 기록 조회 JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
-    @LogExecutionTime
-    public List<HealthRecordResponse> getHealthRecordsByDateRange(Long childId, LocalDate startDate, LocalDate endDate, Long actorUserId) {
-        validateChildId(childId);
-        validateDateRange(startDate, endDate);
-        assertChildOwnedByUserId(childId, actorUserId);
-        
-        log.info("기간별 건강 기록 조회 - 아동 ID: {}, 시작일: {}, 종료일: {}", childId, startDate, endDate);
-        
-        // JOIN FETCH를 사용하여 Child와 User를 한 번에 조회
-        List<HealthRecord> records = healthRecordRepository.findByChildIdAndRecordDateBetweenWithChildAndUser(
-                childId, startDate, endDate);
-        
-        return records.stream()
-                .map(healthRecordMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
     // ===== 아동 정보 관리 =====
 
     // 연령 범위별 자녀 조회
@@ -300,52 +262,6 @@ public class HealthService {
         return children.stream()
                 .map(childMapper::toResponse)
                 .collect(Collectors.toList());
-    }
-
-    // 건강 상태 분석
-    @LogExecutionTime
-    public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request, Long actorUserId) {
-        validateRequest(request);
-        
-        Long childId = Long.valueOf(request.getChildId());
-        Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new ResourceNotFoundException("아동을 찾을 수 없습니다: " + request.getChildId()));
-        assertChildOwnedByUser(child, actorUserId);
-        
-        List<HealthRecord> records = healthRecordRepository.findByChildOrderByRecordDateDesc(child);
-        
-        Map<String, Object> analysis = new HashMap<>();
-        analysis.put("childId", request.getChildId());
-        analysis.put("totalRecords", records.size());
-        analysis.put("healthScore", calculateHealthScore(records));
-        analysis.put("riskLevel", determineRiskLevel(records));
-        analysis.put("recommendations", generateRecommendations(records));
-        analysis.put("nextCheckup", LocalDateTime.now().plusMonths(DEFAULT_MONTHS_FOR_NEXT_CHECKUP).toString());
-        
-        return analysis;
-    }
-
-    // 건강 리포트 생성
-    @LogExecutionTime
-    public Map<String, Object> generateHealthReport(HealthCreateHealthRecordRequest request, Long actorUserId) {
-        validateRequest(request);
-        
-        Long childId = Long.valueOf(request.getChildId());
-        Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new ResourceNotFoundException("아동을 찾을 수 없습니다: " + request.getChildId()));
-        assertChildOwnedByUser(child, actorUserId);
-
-        List<HealthRecord> records = healthRecordRepository.findByChildOrderByRecordDateDesc(child);
-
-        Map<String, Object> report = new HashMap<>();
-        report.put("childId", request.getChildId());
-        report.put("reportDate", LocalDateTime.now().toString());
-        report.put("summary", generateHealthSummary(records));
-        report.put("vaccineStatus", calculateVaccineStatus(records));
-        report.put("checkupStatus", calculateCheckupStatus(records));
-        report.put("recommendations", generateRecommendations(records));
-
-        return report;
     }
 
     // 건강 통계 조회
@@ -566,68 +482,9 @@ public class HealthService {
                 "아이 연령에 맞는 정책/시설을 확인해보세요.");
     }
 
-    // 건강 목표 조회
-    @LogExecutionTime
-    public Map<String, Object> getHealthGoals(String userId, Long actorUserId) {
-        validateUserId(userId);
-        assertUserIdBelongsToActor(userId, actorUserId);
-        User user = findUserByIdOrUserId(userId);
-        
-        List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
-        
-        Map<String, Object> goals = new HashMap<>();
-        goals.put("userId", userId);
-        goals.put("vaccineGoal", "모든 예방접종 완료");
-        goals.put("checkupGoal", "정기 검진 100% 완료");
-        // 영양은 목표만 제시하고 달성률은 내지 않는다. 섭취를 기록하는 수단이 없다.
-        goals.put("nutritionGoal", "균형 잡힌 영양 섭취");
-        goals.put("progress", calculateProgress(records));
-        
-        return goals;
-    }
-
     // ===== 차트 및 시각화 =====
 
-    // 건강 차트 데이터 조회
-    @LogExecutionTime
-    public List<Map<String, Object>> getHealthChart(String userId, String type, LocalDate from, LocalDate to, Long actorUserId) {
-        validateUserId(userId);
-        validateChartType(type);
-        validateDateRange(from, to);
-        assertUserIdBelongsToActor(userId, actorUserId);
-        
-        User user = findUserByIdOrUserId(userId);
-        List<HealthRecord> records = healthRecordRepository.findByUserOrderByRecordDateDesc(user);
-        
-        return records.stream()
-                .filter(r -> r.getRecordDate() != null)
-                .filter(r -> {
-                    LocalDate localDate = r.getRecordDate();
-                    return (from == null || !localDate.isBefore(from)) && (to == null || !localDate.isAfter(to));
-                })
-                .map(r -> {
-                    Object value = extractChartValue(r, type);
-                    return Map.of(
-                        "date", r.getRecordDate().toString(),
-                        "value", value != null ? value : ""
-                    );
-                })
-                .collect(Collectors.toList());
-    }
-
     // ===== 시스템 관리 =====
-
-    // 시스템 상태 확인
-    public Map<String, Object> checkSystemHealth() {
-        log.info("시스템 상태 확인");
-        
-        Map<String, Object> healthStatus = new HashMap<>();
-        healthStatus.put("status", "UP");
-        healthStatus.put("timestamp", System.currentTimeMillis());
-        healthStatus.put("version", "1.0.0");
-        
-        return healthStatus;
-    }
 
     private void assertHealthRecordOwnedByUser(HealthRecord record, Long actorUserId) {
         if (actorUserId == null) {
@@ -713,51 +570,6 @@ public class HealthService {
                 .build();
     }
 
-    // ===== 계산 및 분석 Helper Methods =====
-    private int calculateHealthScore(List<HealthRecord> records) {
-        if (records.isEmpty()) return 0;
-        
-        int completedVaccines = countCompletedVaccines(records);
-        int totalVaccines = (int) records.stream()
-                .filter(r -> r.getRecordType() == HealthRecord.RecordType.VACCINATION)
-                .count();
-        
-        return totalVaccines > 0 ? (completedVaccines * 100) / totalVaccines : 0;
-    }
-
-    private String determineRiskLevel(List<HealthRecord> records) {
-        if (records.isEmpty()) return "UNKNOWN";
-        
-        int healthScore = calculateHealthScore(records);
-        if (healthScore >= HEALTH_SCORE_HIGH_THRESHOLD) return "LOW";
-        else if (healthScore >= HEALTH_SCORE_MEDIUM_THRESHOLD) return "MEDIUM";
-        else return "HIGH";
-    }
-
-    private List<String> generateRecommendations(List<HealthRecord> records) {
-        List<String> recommendations = new java.util.ArrayList<>();
-        
-        if (records.isEmpty()) {
-            recommendations.add("첫 건강 기록을 등록해주세요");
-            return recommendations;
-        }
-        
-        int completedVaccines = countCompletedVaccines(records);
-        int totalVaccines = (int) records.stream()
-                .filter(r -> r.getRecordType() == HealthRecord.RecordType.VACCINATION)
-                .count();
-        
-        if (completedVaccines < totalVaccines) {
-            recommendations.add("예방접종 완료를 권장합니다");
-        }
-        
-        if (records.stream().noneMatch(r -> r.getRecordType() == HealthRecord.RecordType.CHECKUP)) {
-            recommendations.add("정기 건강검진을 권장합니다");
-        }
-        
-        return recommendations;
-    }
-
     private int countCompletedVaccines(List<HealthRecord> records) {
         return (int) records.stream()
                 .filter(r -> r.getRecordType() == HealthRecord.RecordType.VACCINATION && Boolean.TRUE.equals(r.getIsCompleted()))
@@ -796,65 +608,6 @@ public class HealthService {
                 .map(r -> String.format("%s: %s", r.getTitle(), r.getNextDate()))
                 .limit(MAX_UPCOMING_EVENTS)
                 .collect(Collectors.toList());
-    }
-
-    private String generateHealthSummary(List<HealthRecord> records) {
-        if (records.isEmpty()) return "건강 기록이 없습니다.";
-        
-        int totalRecords = records.size();
-        int completedRecords = (int) records.stream()
-                .filter(r -> Boolean.TRUE.equals(r.getIsCompleted()))
-                .count();
-        
-        return String.format("총 %d개의 건강 기록 중 %d개 완료 (완료율: %d%%)", 
-                totalRecords, completedRecords, totalRecords > 0 ? (completedRecords * 100) / totalRecords : 0);
-    }
-
-    private String calculateVaccineStatus(List<HealthRecord> records) {
-        int completedVaccines = countCompletedVaccines(records);
-        int totalVaccines = (int) records.stream()
-                .filter(r -> r.getRecordType() == HealthRecord.RecordType.VACCINATION)
-                .count();
-        
-        return totalVaccines > 0 ? 
-                String.format("완료율 %d%%", (completedVaccines * 100) / totalVaccines) : 
-                "예방접종 기록 없음";
-    }
-
-    private String calculateCheckupStatus(List<HealthRecord> records) {
-        int completedCheckups = countCompletedCheckups(records);
-        int totalCheckups = (int) records.stream()
-                .filter(r -> r.getRecordType() == HealthRecord.RecordType.CHECKUP)
-                .count();
-        
-        return totalCheckups > 0 ? 
-                String.format("완료율 %d%%", (completedCheckups * 100) / totalCheckups) : 
-                "검진 기록 없음";
-    }
-
-    /**
-     * 목표별 달성률. 계산할 근거가 없는 항목은 넣지 않는다.
-     *
-     * <p>영양은 목표 문구만 있고 섭취를 기록하는 수단이 없다. 예전에는 여기서 85 를 돌려주어
-     * 모든 사용자가 자기 아이의 영양 상태를 85% 로 봤다. 근거 없는 숫자는 없는 것보다 나쁘다.
-     */
-    private Map<String, Integer> calculateProgress(List<HealthRecord> records) {
-        Map<String, Integer> progress = new HashMap<>();
-        
-        int completedVaccines = countCompletedVaccines(records);
-        int totalVaccines = (int) records.stream()
-                .filter(r -> r.getRecordType() == HealthRecord.RecordType.VACCINATION)
-                .count();
-        
-        int completedCheckups = countCompletedCheckups(records);
-        int totalCheckups = (int) records.stream()
-                .filter(r -> r.getRecordType() == HealthRecord.RecordType.CHECKUP)
-                .count();
-        
-        progress.put("vaccine", totalVaccines > 0 ? (completedVaccines * 100) / totalVaccines : 0);
-        progress.put("checkup", totalCheckups > 0 ? (completedCheckups * 100) / totalCheckups : 0);
-        
-        return progress;
     }
 
     // HealthRecord 엔티티를 HealthRecordResponse DTO로 변환
@@ -923,60 +676,11 @@ public class HealthService {
         }
     }
 
-    // 페이징 파라미터 검증
-    private void validatePaginationParams(int page, int size) {
-        if (page < 0) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, 
-                    "페이지 번호는 0 이상이어야 합니다: " + page);
-        }
-        if (size <= 0 || size > 100) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, 
-                    "페이지 크기는 1 이상 100 이하여야 합니다: " + size);
-        }
-    }
-
     // 날짜 범위 검증
     private void validateDateRange(LocalDate startDate, LocalDate endDate) {
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new BusinessException(ErrorCode.INVALID_DATE_RANGE.getMessage());
         }
-    }
-
-    // 개월 수 검증
-    private void validateMonths(int months) {
-        if (months <= 0 || months > 120) {
-            throw new BusinessException(ErrorCode.INVALID_MONTHS, 
-                    ErrorCode.INVALID_MONTHS.getMessage() + ": " + months);
-        }
-    }
-
-    // 차트 타입 검증
-    private void validateChartType(String type) {
-        if (!StringUtils.hasText(type)) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "차트 타입이 필요합니다.");
-        }
-        // 지원하는 타입: weight, height, temperature, pulseRate, bloodPressure
-        List<String> validTypes = List.of("weight", "height", "temperature", "pulseRate", "bloodPressure");
-        if (!validTypes.contains(type.toLowerCase())) {
-            throw new BusinessException(ErrorCode.INVALID_CHART_TYPE, 
-                    ErrorCode.INVALID_CHART_TYPE.getMessage() + ": " + type);
-        }
-    }
-
-    // 차트 값 추출
-    private Object extractChartValue(HealthRecord record, String type) {
-        if (record == null || type == null) {
-            return null;
-        }
-        
-        return switch (type.toLowerCase()) {
-            case "weight" -> record.getWeight();
-            case "height" -> record.getHeight();
-            case "temperature" -> record.getTemperature();
-            case "pulserate" -> record.getPulseRate();
-            case "bloodpressure" -> record.getBloodPressure();
-            default -> null;
-        };
     }
 
     private HealthRecordAttachmentResponse toAttachmentResponse(HealthRecordAttachment attachment) {

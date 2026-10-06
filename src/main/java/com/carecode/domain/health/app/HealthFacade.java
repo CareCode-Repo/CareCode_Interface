@@ -122,32 +122,8 @@ public class HealthFacade {
         return healthService.searchChildrenByName(userId, name);
     }
 
-    // ====================
-    // 건강 분석 및 리포트 ====================
-    public Map<String, Object> analyzeHealthStatus(HealthCreateHealthRecordRequest request, Long actorUserId) {
-        return healthService.analyzeHealthStatus(request, actorUserId);
-    }
-
-    public Map<String, Object> generateHealthReport(HealthCreateHealthRecordRequest request, Long actorUserId) {
-        return healthService.generateHealthReport(request, actorUserId);
-    }
-
-    public Map<String, Object> getHealthGoals(String userId, Long actorUserId) {
-        return healthService.getHealthGoals(userId, actorUserId);
-    }
-
     public HealthRecommendationResponse getIntegratedRecommendations(String userId, Long actorUserId) {
         return healthService.getIntegratedRecommendations(userId, actorUserId);
-    }
-
-    public List<Map<String, Object>> getHealthChart(String userId, String type, String from, String to, Long actorUserId) {
-        LocalDate fromDate = from != null ? LocalDate.parse(from) : null;
-        LocalDate toDate = to != null ? LocalDate.parse(to) : null;
-        return healthService.getHealthChart(userId, type, fromDate, toDate, actorUserId);
-    }
-
-    public Map<String, Object> checkSystemHealth() {
-        return healthService.checkSystemHealth();
     }
 
     // ==================== 병원 관리 ====================
