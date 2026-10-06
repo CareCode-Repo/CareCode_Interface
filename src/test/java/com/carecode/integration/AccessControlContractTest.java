@@ -245,7 +245,13 @@ class AccessControlContractTest {
             "/api/public/care-facilities/swagger/stats",
             // → GET /notifications/preferences, GET /notifications/stats
             "/notifications/settings/user-1",
-            "/notifications/statistics/user-1"
+            "/notifications/statistics/user-1",
+            // → GET /children (목록을 받아 화면에서 고른다). 서버가 1~3개짜리 목록을
+            //   걸러 주던 경로들이고, 필수 userId 파라미터를 받아서 무시하고 있었다.
+            "/health/children/age-range?userId=1&minAge=0&maxAge=5",
+            "/health/children/gender?userId=1&gender=FEMALE",
+            "/health/children/special-needs?userId=1",
+            "/health/children/search?userId=1&name=아"
     })
     @WithMockUser(username = "admin@example.com", roles = "ADMIN")
     void duplicateMappingsRemoved(String path) throws Exception {

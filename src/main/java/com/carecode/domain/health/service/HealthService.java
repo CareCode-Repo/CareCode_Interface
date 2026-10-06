@@ -21,7 +21,6 @@ import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
 import com.carecode.domain.health.dto.response.CheckupScheduleResponse;
 import com.carecode.domain.health.dto.response.HealthStatsResponse;
 import com.carecode.domain.health.dto.response.HealthAlertResponse;
-import com.carecode.domain.health.dto.response.ChildInfoResponse;
 import com.carecode.domain.health.entity.HealthRecord;
 import com.carecode.domain.health.entity.HealthRecordAttachment;
 import com.carecode.domain.policy.entity.Policy;
@@ -37,7 +36,6 @@ import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.ChildRepository;
 import com.carecode.domain.user.repository.UserRepository;
 import com.carecode.domain.health.mapper.HealthRecordMapper;
-import com.carecode.domain.health.mapper.ChildMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -71,13 +69,16 @@ public class HealthService {
     private final VaccinationScheduleRepository vaccinationScheduleRepository;
     private final ConsentGuard consentGuard;
     private final HealthRecordAttachmentRepository healthRecordAttachmentRepository;
+    /**
+     * 건강 기록을 자녀에 붙이려면 엔티티가 필요해 남겨 둔다. 조회·소유권 판단은
+     * {@link ChildDirectory} 가 하고, 여기서는 통과한 뒤 연관을 걸 때만 쓴다.
+     */
     private final ChildRepository childRepository;
     private final ChildDirectory childDirectory;
     private final UserRepository userRepository;
     private final PolicyRepository policyRepository;
     private final CareFacilityRepository careFacilityRepository;
     private final HealthRecordMapper healthRecordMapper;
-    private final ChildMapper childMapper;
     
     // ===== 건강 기록 관리 =====
 
@@ -219,50 +220,6 @@ public class HealthService {
     }
 
     // ===== 아동 정보 관리 =====
-
-    // 연령 범위별 자녀 조회
-    @LogExecutionTime
-    public List<ChildInfoResponse> getChildrenByAgeRange(Long userId, Integer minAge, Integer maxAge) {
-        log.info("연령 범위별 자녀 조회 - 사용자 ID: {}, 최소 연령: {}, 최대 연령: {}", userId, minAge, maxAge);
-        
-        List<Child> children = childRepository.findByUserIdAndAgeRange(userId, minAge, maxAge);
-        return children.stream()
-                .map(childMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    // 성별 자녀 조회
-    @LogExecutionTime
-    public List<ChildInfoResponse> getChildrenByGender(Long userId, String gender) {
-        log.info("성별 자녀 조회 - 사용자 ID: {}, 성별: {}", userId, gender);
-        
-        List<Child> children = childRepository.findByUserIdAndGender(userId, gender);
-        return children.stream()
-                .map(childMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    // 특별한 요구사항이 있는 자녀 조회
-    @LogExecutionTime
-    public List<ChildInfoResponse> getChildrenWithSpecialNeeds(Long userId) {
-        log.info("특별한 요구사항이 있는 자녀 조회 - 사용자 ID: {}", userId);
-        
-        List<Child> children = childRepository.findByUserIdAndHasSpecialNeeds(userId);
-        return children.stream()
-                .map(childMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    // 이름으로 자녀 검색
-    @LogExecutionTime
-    public List<ChildInfoResponse> searchChildrenByName(Long userId, String name) {
-        log.info("이름으로 자녀 검색 - 사용자 ID: {}, 이름: {}", userId, name);
-        
-        List<Child> children = childRepository.findByUserIdAndNameContaining(userId, name);
-        return children.stream()
-                .map(childMapper::toResponse)
-                .collect(Collectors.toList());
-    }
 
     // 건강 통계 조회
     @LogExecutionTime
@@ -454,29 +411,46 @@ public class HealthService {
         }
     }
 
+    /**
+     * 아이 연령 기준 연계 추천.
+     *
+     * <p>연령 단위는 <b>개월</b>이다. 정책의 {@code targetAgeMin/Max} 가 개월이기 때문이다
+     * (시드 데이터: "부모급여(0세)" 0~11, "아동수당" 0~95). 전에는 여기서만
+     * {@code Period.between(...).getYears()} 로 <b>연 나이</b>를 계산해 그 쿼리에 넘겼다.
+     * 세 살 아이가 "3" 으로 들어가 <b>0~11개월 대상 정책이 추천됐다.</b>
+     *
+     * <p>월령을 모르면({@code null}) 연령 기반 조회를 하지 않는다. 전에는 {@code .orElse(0)} 이
+     * 0개월로 바꿔, 자녀를 등록하지 않은 사용자에게 신생아 정책을 추천했다.
+     */
     @LogExecutionTime
     public HealthRecommendationResponse getIntegratedRecommendations(String userId, Long actorUserId) {
         assertUserIdBelongsToActor(userId, actorUserId);
         User user = findUserByIdOrUserId(userId);
-        Integer childAge = childRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).stream()
-                .map(Child::getBirthDate)
-                .filter(java.util.Objects::nonNull)
-                .map(b -> java.time.Period.between(b, LocalDate.now()).getYears())
-                .findFirst()
-                .orElse(0);
 
-        List<String> recommendedPolicies = policyRepository.findByChildAge(childAge).stream()
+        Integer childAgeMonths = childDirectory.childrenOf(user.getId()).stream()
+                .map(child -> child.ageMonths(LocalDate.now()))
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+
+        if (childAgeMonths == null) {
+            return new HealthRecommendationResponse(
+                    user.getUserId(), null, List.of(), List.of(),
+                    "아이를 등록하면 연령에 맞는 정책과 시설을 알려드립니다.");
+        }
+
+        List<String> recommendedPolicies = policyRepository.findByChildAge(childAgeMonths).stream()
                 .limit(3)
                 .map(Policy::getTitle)
                 .collect(Collectors.toList());
-        List<String> recommendedFacilities = careFacilityRepository.findByChildAge(childAge).stream()
+        List<String> recommendedFacilities = careFacilityRepository.findByChildAge(childAgeMonths).stream()
                 .limit(3)
                 .map(CareFacility::getName)
                 .collect(Collectors.toList());
 
         return new HealthRecommendationResponse(
                 user.getUserId(),
-                childAge,
+                childAgeMonths,
                 recommendedPolicies,
                 recommendedFacilities,
                 "아이 연령에 맞는 정책/시설을 확인해보세요.");
@@ -529,7 +503,6 @@ public class HealthService {
 
     // Child Entity를 DTO로 변환
 
-    // Child 매핑은 ChildMapper 사용
 
     // 예방접종 스케줄 응답 DTO 변환
     private VaccineScheduleResponse convertToVaccineScheduleResponse(HealthRecord record) {
