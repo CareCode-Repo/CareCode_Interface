@@ -18,27 +18,52 @@ public class NotificationCreationService {
     private final NotificationRepository notificationRepository;
     private final NotificationDispatcher notificationDispatcher;
 
-    /** 알림을 저장하고 사용자 설정 채널로 발송한다. */
+    /**
+     * 알림을 저장하고 사용자 설정 채널로 <b>동기</b> 발송한다. 배치에서 쓴다.
+     *
+     * <p>배치는 발송 결과를 즉시 알아야 한다(몇 건 나갔는지 집계해 돌려준다). 요청을 처리하는
+     * 중이라면 SMTP·FCM 왕복이 응답을 막으므로 {@link #createAndSendAsync} 를 쓴다.
+     */
     @Transactional
     public Notification createAndSend(User recipient,
                                       Notification.NotificationType type,
                                       String title,
                                       String message) {
-        Notification notification = Notification.builder()
-                .user(recipient)
-                .notificationType(type)
-                .title(title)
-                .message(message)
-                .isRead(false)
-                .build();
+        Notification saved = save(recipient, type, title, message);
 
-        Notification saved = notificationRepository.save(notification);
-
-        // 배치에서는 발송 결과를 즉시 알 수 있도록 동기 발송한다.
         boolean sent = notificationDispatcher.dispatch(saved);
         if (!sent) {
             log.debug("알림 외부 채널 발송 없음(인앱만) - notificationId={}", saved.getId());
         }
         return saved;
+    }
+
+    /**
+     * 알림을 저장하고 발송은 비동기로 넘긴다. 요청을 처리하는 중(어드민 발송 등)에 쓴다.
+     *
+     * <p>저장만 하고 끝내면 앱 알림함에만 쌓이고 푸시·메일이 나가지 않는다. 보낸 사람은
+     * 201 을 받으므로 나갔다고 믿는다 — 어드민 "알림 발송" 이 실제로 그 상태였다.
+     */
+    @Transactional
+    public Notification createAndSendAsync(User recipient,
+                                           Notification.NotificationType type,
+                                           String title,
+                                           String message) {
+        Notification saved = save(recipient, type, title, message);
+        notificationDispatcher.dispatchAsync(saved);
+        return saved;
+    }
+
+    private Notification save(User recipient,
+                              Notification.NotificationType type,
+                              String title,
+                              String message) {
+        return notificationRepository.save(Notification.builder()
+                .user(recipient)
+                .notificationType(type)
+                .title(title)
+                .message(message)
+                .isRead(false)
+                .build());
     }
 }

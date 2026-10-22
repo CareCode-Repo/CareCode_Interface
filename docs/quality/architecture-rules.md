@@ -31,17 +31,17 @@ ArchUnit 의 `FreezingArchRule` 을 씁니다.
 
 ## 규칙과 현재 위반
 
-진척: **489건(0단계) → 391건(1b) → 383건(3a) → 364건(4a) → 362건(5a) → 357건(5b)**. 남은 것은 도메인 경계(242)와
-컨트롤러의 리포지토리 직접 사용(61), core 기반의 도메인 참조(50)입니다.
+진척: **489건(0단계) → 391건(1b) → 383건(3a) → 364건(4a) → 357건(5b) → 331건(6단계)**. 남은 것은
+도메인 경계(240)와 컨트롤러의 리포지토리 직접 사용(37), core 기반의 도메인 참조(50)입니다.
 
 > 세는 법: `archunit-baseline/` 에는 규칙별 위반 파일 외에 색인 파일 `stored.rules` 도 있습니다.
 > `cat archunit-baseline/* | wc -l` 은 색인 11줄을 함께 세므로 실제 위반보다 11 크게 나옵니다.
 
 | 규칙 | 위반 | 뜻 |
 |------|------|-----|
-| 다른 도메인의 리포지토리를 직접 쓰지 않는다 | 242 | 남의 테이블을 직접 읽으면 그 도메인의 규칙(소유권 검증 등)을 건너뛴다 |
+| 다른 도메인의 리포지토리를 직접 쓰지 않는다 | 240 | 남의 테이블을 직접 읽으면 그 도메인의 규칙(소유권 검증 등)을 건너뛴다 |
 | 도메인 패키지 이름은 소문자다 | **0** | `careFacility`→`facility` 로 해소 (1b 단계) |
-| 컨트롤러는 리포지토리를 직접 쓰지 않는다 | 61 | 검증·트랜잭션 경계가 컨트롤러로 샌다 |
+| 컨트롤러는 리포지토리를 직접 쓰지 않는다 | 37 | 검증·트랜잭션 경계가 컨트롤러로 샌다 |
 | core 기반 패키지는 domain 을 의존하지 않는다 | 50 | 기반 코드가 도메인을 알면 공통이 아니다 |
 | 매퍼는 리포지토리를 쓰지 않는다 | 3 | 변환 한 번에 숨은 쿼리가 생기면 N+1 을 추적할 수 없다 |
 | core 에는 컨트롤러가 없다 | **0** | 1a 에서 도메인으로 옮기고, 3a 에서 중복이라 삭제 |
@@ -386,6 +386,74 @@ expected: 36 but was: 3
 - ArchUnit baseline **357 → 357** (위반이 새 클래스로 이동)
 - 전체 테스트 **639개, 실패 0**
 
+## 어드민 컨트롤러가 리포지토리를 직접 쓰던 자리 (6단계)
+
+"컨트롤러는 리포지토리를 직접 쓰지 않는다" 위반 **61건이 전부 어드민 컨트롤러**에 있었습니다.
+규칙을 맞추려고 코드를 옮기기 전에, 그 안에서 실제로 무엇이 깨지는지부터 봤습니다. 둘 나왔습니다.
+
+### 1. 어드민이 보낸 알림은 발송되지 않았다
+
+알림을 만드는 경로가 넷이었고, 셋은 저장 후 발송까지 합니다.
+
+| 경로 | 저장 | 푸시·메일 발송 |
+|------|------|----------------|
+| `NotificationCreationService.createAndSend` (예약·접종 리마인더) | O | O (동기) |
+| `FacilityVacancyNotifier`, `PolicyDeadlineNotifier` | O | O (`dispatchAsync`) |
+| `NotificationService.createNotification` (사용자 API) | O | O (`dispatchAsync`) |
+| **`POST /api/admin/notifications`** ("알림 발송") | O | **X** |
+
+컨트롤러가 `notificationRepository.save()` 를 부르고 끝냈습니다. 관리자가 보낸 알림은 **앱
+알림함에만 쌓이고 푸시·메일이 나가지 않습니다.** 설명은 "알림 발송" 이고 응답도 201 이라,
+보낸 사람은 나갔다고 믿습니다.
+
+테스트가 그대로 말해 줬습니다 — `Wanted but not invoked: dispatchAsync(...)`,
+**"Actually, there were zero interactions with this mock"**.
+
+### 2. 같은 조치가 두 결과를 냈다 — 숨김 vs 하드 삭제
+
+| 경로 | 결과 |
+|------|------|
+| 신고 수락 (`ModerationService.resolve` → `hideTarget`) | **숨김.** `isActive=false`, `status=HIDDEN`. 행이 남아 댓글·좋아요가 가리키는 대상이 유지되고 되돌릴 수 있다 |
+| `DELETE /api/admin/community/posts/{id}` | **하드 삭제.** FK 가 전부 `ON DELETE CASCADE` 라 **댓글·좋아요·북마크까지 함께 사라지고** 되돌릴 수 없다 |
+
+같은 의도("이 글은 부적절하다")인데 어느 화면을 썼는지에 따라 결과가 갈립니다. 게다가 이
+저장소는 **사용자 탈퇴에서는 반대 원칙을 적어 두었습니다** — "하드 삭제하면 게시글·건강기록 등
+참조 데이터가 함께 사라지므로 soft delete 로 처리한다"(`AdminUserController`). 게시글에도 같은
+원칙을 적용해 숨김으로 바꿨고, 구현은 `ModerationService.hidePost` 한 곳입니다.
+
+### 고치는 중에 또 하나 — 읽기 전용 트랜잭션이 UPDATE 를 삼켰다
+
+숨김으로 바꿨는데 테스트가 `isActive: expected false but was true` 로 실패했습니다.
+`AdminCommunityService` 가 클래스 레벨 `@Transactional(readOnly = true)` 이고 `hide()` 에
+표시가 없어서, 읽기 전용 트랜잭션이 먼저 열리고 `ModerationService.hidePost` 의
+`@Transactional`(기본 전파 `REQUIRED`)이 **그 트랜잭션에 참여**했습니다. 읽기 전용에서는
+Hibernate 가 flush 를 하지 않으므로 **UPDATE 가 조용히 사라집니다** — 응답은 204 인데 숨겨지지
+않습니다. 서비스로 옮기면서 새로 만들 수 있는 함정이라 주석으로 적어 두었습니다.
+
+### 옮긴 것
+
+| 컨트롤러 | 새 서비스 |
+|----------|-----------|
+| `AdminNotificationController` | `AdminNotificationService` (발송은 `NotificationCreationService` 경유) |
+| `AdminCommunityController` | `AdminCommunityService` (조치는 `ModerationService` 경유) |
+| `AdminHealthController` | `AdminHealthRecordService` |
+| `AdminHospitalController` | `AdminHospitalService` |
+
+### 도메인 경계는 거의 줄지 않았다 (242 → 240)
+
+솔직하게 적어 둡니다. 어드민이 health·notification·community 리포지토리를 쓰는 것은 그대로이고,
+위반이 컨트롤러에서 서비스로 **옮겨 간 것**입니다. 어드민은 본래 모든 도메인의 데이터를
+관리하므로, 이 숫자가 줄려면 각 도메인이 **어드민 조회 입구**를 내줘야 합니다(`ChildDirectory`
+처럼). 전체 목록 조회(`findAll`)를 내주는 입구가 네 개 더 생기는 셈이라, 그 값이 비용보다 큰지는
+따로 판단할 일입니다.
+
+### 숫자
+
+- ArchUnit baseline 357 → **331**. 컨트롤러→리포지토리 **61 → 37**, 도메인 경계 242 → 240
+- 전체 테스트 **643개, 실패 0**
+- OpenAPI 경로 수는 그대로(226). `DELETE /api/admin/community/posts/{id}` 의 설명이
+  "게시글 삭제" → "게시글 숨김" 으로 바뀌었습니다
+
 ## 다음 단계
 
 | 단계 | 내용 | 효과 |
@@ -400,4 +468,6 @@ expected: 36 but was: 3
 | ~~5a. 도달 불가 코드 제거~~ | ~~HealthService 1011줄, CareFacilityService 580줄~~ | **완료** — 715줄·411줄 |
 | ~~5b. 아이 조회를 health 에서 뺀다~~ | ~~`/health/children/*` 4개가 `/children` 과 중복~~ | **완료** — 362 → 357, 단위 버그 발견 |
 | ~~5c. 남은 책임 분리~~ | ~~HealthService 688줄~~ | **완료** — 367줄 + 168줄 + 76줄 |
-| 5d. 식별 로직을 user 로 | `HealthActorResolver` 가 health 의 마지막 `UserRepository` 사용처다 | 결합 추가 해소 |
+| ~~6. 어드민 컨트롤러의 리포지토리 사용~~ | ~~61건 전부가 어드민 컨트롤러에 있었다~~ | **완료** — 61 → 37, 버그 둘 |
+| 7. 식별 로직을 user 로 | `HealthActorResolver` 가 health 의 마지막 `UserRepository` 사용처다 | 결합 추가 해소 |
+| 8. 어드민 조회용 포트 | 남은 37건·도메인 경계 일부. 각 도메인이 어드민 조회 입구를 내주면 사라진다 | 경계 완성 |

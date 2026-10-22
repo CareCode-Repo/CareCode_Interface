@@ -5175,8 +5175,8 @@
     },
     "/api/admin/community/posts/{id}" : {
       "delete" : {
-        "description" : "부적절한 게시글을 관리자 권한으로 삭제",
-        "operationId" : "delete_5",
+        "description" : "부적절한 게시글을 목록에서 내립니다. 댓글·좋아요는 보존되고 되돌릴 수 있습니다",
+        "operationId" : "hide",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -5200,7 +5200,7 @@
             "description" : "OK"
           }
         },
-        "summary" : "게시글 삭제",
+        "summary" : "게시글 숨김",
         "tags" : [ "어드민 - 커뮤니티" ]
       },
       "get" : {
@@ -5969,7 +5969,7 @@
         "tags" : [ "어드민 - 알림" ]
       },
       "post" : {
-        "description" : "특정 사용자에게 알림 생성",
+        "description" : "특정 사용자에게 알림을 만들고 사용자 설정 채널로 발송",
         "operationId" : "create_1",
         "parameters" : [ {
           "description" : "API 버전. 생략하면 현재 버전(1). 지원하지 않는 값이면 400",
