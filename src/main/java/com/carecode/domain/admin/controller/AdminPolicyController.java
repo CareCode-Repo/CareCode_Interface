@@ -1,11 +1,8 @@
 package com.carecode.domain.admin.controller;
 
-import com.carecode.core.exception.PolicyNotFoundException;
 import com.carecode.domain.admin.dto.AdminPolicyDetailResponse;
 import com.carecode.domain.admin.dto.AdminPolicyRequest;
 import com.carecode.domain.admin.service.PolicyAdminService;
-import com.carecode.domain.policy.entity.Policy;
-import com.carecode.domain.policy.repository.PolicyRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "어드민 - 정책", description = "관리자 전용 정책 관리 API")
 public class AdminPolicyController {
 
-    private final PolicyRepository policyRepository;
     private final PolicyAdminService policyAdminService;
 
     @GetMapping
@@ -33,13 +29,13 @@ public class AdminPolicyController {
             description = "수정 요청과 1:1 로 대응하는 원본 값을 반환합니다 (사용자용 PolicyDto 는 가공된 값이라 수정에 쓸 수 없음)")
     public ResponseEntity<Page<AdminPolicyDetailResponse>> list(
             @PageableDefault(size = 50, sort = "createdAt") Pageable pageable) {
-        return ResponseEntity.ok(policyRepository.findAll(pageable).map(AdminPolicyDetailResponse::from));
+        return ResponseEntity.ok(policyAdminService.list(pageable));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "정책 상세 조회")
     public ResponseEntity<AdminPolicyDetailResponse> detail(@PathVariable Long id) {
-        return ResponseEntity.ok(AdminPolicyDetailResponse.from(findPolicy(id)));
+        return ResponseEntity.ok(policyAdminService.detail(id));
     }
 
     @PostMapping
@@ -71,10 +67,5 @@ public class AdminPolicyController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         policyAdminService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private Policy findPolicy(Long id) {
-        return policyRepository.findById(id)
-                .orElseThrow(() -> new PolicyNotFoundException("정책을 찾을 수 없습니다: " + id));
     }
 }

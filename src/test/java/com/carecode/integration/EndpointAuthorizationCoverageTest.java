@@ -113,6 +113,12 @@ class EndpointAuthorizationCoverageTest {
             "GET /community/latest", "GET /community/tags", "GET /community/search/all",
             "GET /community/popular/limit", "GET /community/latest/limit",
 
+            // 전환 집계 링크. 비로그인 클릭도 세야 하므로 공개다.
+            // /policies/{id}/apply 는 신청처로 302 만 하고, /notifications/{id}/open 은
+            // 쿼리 파라미터로 만든 딥링크로 302 한다(알림 내용은 돌려주지 않는다).
+            "GET /policies/1/apply",
+            "GET /notifications/1/open",
+
             // 조회수 증가. 쓰기지만 비로그인 방문자의 조회도 세야 하므로 공개다.
             // 다만 이 값이 /facilities/popular 순위에 쓰이므로 부풀릴 수 있다.
             // 인기 순위를 조작에 민감하게 다뤄야 한다면 여기부터 손봐야 한다.

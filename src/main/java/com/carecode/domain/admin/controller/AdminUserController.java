@@ -1,13 +1,11 @@
 package com.carecode.domain.admin.controller;
 
-import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.core.handler.ApiSuccess;
 import com.carecode.domain.admin.dto.AdminUserResponse;
 import com.carecode.domain.admin.dto.AdminUserUpdateRequest;
 import com.carecode.domain.user.dto.response.UserDto;
 import com.carecode.domain.user.dto.response.UserStatsResponse;
-import com.carecode.domain.user.entity.User;
-import com.carecode.domain.user.repository.UserRepository;
+import com.carecode.domain.admin.service.AdminUserService;
 import com.carecode.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,10 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +40,7 @@ import java.util.Map;
 @Tag(name = "어드민 - 사용자", description = "관리자 전용 사용자 관리 API")
 public class AdminUserController {
 
-    private final UserRepository userRepository;
+    private final AdminUserService adminUserService;
     private final UserService userService;
 
     // ==================== 조회 ====================
@@ -53,7 +49,7 @@ public class AdminUserController {
     @Operation(summary = "사용자 목록 조회")
     public ResponseEntity<Page<AdminUserResponse>> list(
             @PageableDefault(size = 50, sort = "createdAt") Pageable pageable) {
-        return ResponseEntity.ok(userRepository.findAll(pageable).map(AdminUserResponse::from));
+        return ResponseEntity.ok(adminUserService.list(pageable));
     }
 
     @GetMapping("/statistics")
@@ -105,33 +101,16 @@ public class AdminUserController {
     @GetMapping("/{id}")
     @Operation(summary = "사용자 상세 조회")
     public ResponseEntity<AdminUserResponse> detail(@PathVariable Long id) {
-        return ResponseEntity.ok(AdminUserResponse.from(findUser(id)));
+        return ResponseEntity.ok(adminUserService.detail(id));
     }
 
     // ==================== 변경 ====================
 
     @PatchMapping("/{id}")
     @Operation(summary = "사용자 정보 수정", description = "이름·연락처·역할·활성 상태만 변경할 수 있습니다")
-    @Transactional
     public ResponseEntity<AdminUserResponse> update(@PathVariable Long id,
                                                     @Valid @RequestBody AdminUserUpdateRequest request) {
-        User user = findUser(id);
-
-        if (request.getName() != null) {
-            user.setName(request.getName());
-        }
-        if (request.getPhoneNumber() != null) {
-            user.setPhoneNumber(request.getPhoneNumber());
-        }
-        if (request.getRole() != null) {
-            user.setRole(request.getRole());
-        }
-        if (request.getIsActive() != null) {
-            user.setIsActive(request.getIsActive());
-        }
-        user.setUpdatedAt(LocalDateTime.now());
-
-        return ResponseEntity.ok(AdminUserResponse.from(userRepository.save(user)));
+        return ResponseEntity.ok(adminUserService.update(id, request));
     }
 
     @PutMapping("/{id}/role")
@@ -162,19 +141,10 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "사용자 탈퇴 처리", description = "물리 삭제 대신 soft delete 로 비활성화")
-    @Transactional
+    @Operation(summary = "사용자 탈퇴 처리",
+            description = "물리 삭제하지 않고 개인 식별 정보를 파기한 뒤 비활성화합니다. 본인 탈퇴와 같은 처리입니다")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        User user = findUser(id);
-        // 하드 삭제하면 게시글·건강기록 등 참조 데이터가 함께 사라지므로 soft delete 로 처리한다.
-        user.setDeletedAt(LocalDateTime.now());
-        user.setIsActive(false);
-        userRepository.save(user);
+        adminUserService.withdraw(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private User findUser(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + id));
     }
 }

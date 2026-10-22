@@ -1,11 +1,7 @@
 package com.carecode.domain.notification.controller;
 
-import com.carecode.core.analytics.EventLogger;
-import com.carecode.core.analytics.EventType;
-import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
-import com.carecode.domain.notification.entity.Notification;
-import com.carecode.domain.notification.repository.NotificationRepository;
+import com.carecode.domain.notification.service.NotificationLinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,8 +35,7 @@ public class NotificationLinkController {
     private static final Set<String> ALLOWED_TARGETS = Set.of(
             "policies", "policy", "facilities", "facility", "children", "health", "notifications");
 
-    private final NotificationRepository notificationRepository;
-    private final EventLogger eventLogger;
+    private final NotificationLinkService notificationLinkService;
     private final CurrentUserFacade currentUserFacade;
 
     @Value("${app.notification.deep-link-base:carecode://}")
@@ -53,19 +48,7 @@ public class NotificationLinkController {
             @Parameter(description = "이동할 화면 (policies, facilities 등)") @RequestParam(required = false) String target,
             @Parameter(description = "대상 식별자") @RequestParam(required = false) String targetId) {
 
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("알림을 찾을 수 없습니다: " + notificationId));
-
-        Long userId = currentUserIdOrNull();
-        // 본인 알림만 열람 표시를 남긴다. 남의 알림 ID 로 읽음 처리되면 안 된다.
-        if (userId != null && notification.getUser() != null
-                && userId.equals(notification.getUser().getId())) {
-            notification.setIsRead(true);
-            notificationRepository.save(notification);
-        }
-
-        eventLogger.log(EventType.NOTIFICATION_CLICKED, userId,
-                String.valueOf(notificationId), notification.getNotificationType().name());
+        notificationLinkService.recordClick(notificationId, currentUserIdOrNull());
 
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(buildDeepLink(target, targetId)))
