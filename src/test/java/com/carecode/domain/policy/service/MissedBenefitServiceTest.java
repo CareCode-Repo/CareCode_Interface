@@ -1,6 +1,6 @@
 package com.carecode.domain.policy.service;
 
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.policy.dto.response.MissedBenefitSummaryResponse;
 import com.carecode.domain.policy.entity.Policy;
 import com.carecode.domain.policy.repository.PolicyRepository;

@@ -1,6 +1,5 @@
 package com.carecode.core.security;
 
-import com.carecode.domain.user.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +22,7 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final AccessTokenVerifier tokenVerifier;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -61,15 +60,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // Access Token 만 허용한다. Refresh Token 으로는 API 인증이 되지 않아야 한다.
-        if (!jwtService.validateAccessToken(token)) {
+        AccessTokenClaims claims = tokenVerifier.verifyAccessToken(token).orElse(null);
+        if (claims == null) {
             log.debug("JWT 토큰이 유효하지 않음");
             SecurityContextHolder.clearContext();
             return;
         }
 
-        String userId = jwtService.getUserIdFromToken(token);
-        String email = jwtService.getEmailFromToken(token);
-        String role = jwtService.getRoleFromToken(token);
+        String userId = claims.userId();
+        String email = claims.email();
+        String role = claims.role();
 
         if (!StringUtils.hasText(email) || !StringUtils.hasText(role)) {
             // role 이 없으면 "ROLE_null" 권한으로 인증되던 문제를 차단한다.

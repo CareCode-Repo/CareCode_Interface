@@ -4,7 +4,7 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.web.BaseController;
 import com.carecode.core.util.PageRequestUtil;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.PolicyNotFoundException;
 import com.carecode.domain.policy.dto.request.BenefitAmountReportRequest;

@@ -3,7 +3,7 @@ package com.carecode.domain.policy.service;
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.policy.dto.request.BenefitAmountReportRequest;
 import com.carecode.domain.policy.dto.response.BenefitAmountConsensusResponse;
 import com.carecode.domain.policy.entity.BenefitAmountReport;

@@ -1,5 +1,6 @@
 package com.carecode.domain.user.service;
 
+import com.carecode.core.exception.ConsentRequiredException;
 import com.carecode.domain.user.entity.ConsentType;
 import com.carecode.domain.user.entity.UserConsent;
 import com.carecode.domain.user.repository.UserConsentRepository;
@@ -34,7 +35,7 @@ class ConsentGuardTest {
         when(repository.findLatest(anyLong(), eq(ConsentType.HEALTH_DATA))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> guard.require(1L, ConsentType.HEALTH_DATA))
-                .isInstanceOf(ConsentGuard.ConsentRequiredException.class)
+                .isInstanceOf(ConsentRequiredException.class)
                 .hasMessageContaining("건강정보");
     }
 
@@ -48,7 +49,7 @@ class ConsentGuardTest {
 
         assertThat(guard.hasConsent(1L, ConsentType.HEALTH_DATA)).isFalse();
         assertThatThrownBy(() -> guard.require(1L, ConsentType.HEALTH_DATA))
-                .isInstanceOf(ConsentGuard.ConsentRequiredException.class);
+                .isInstanceOf(ConsentRequiredException.class);
     }
 
     @Test
@@ -68,8 +69,8 @@ class ConsentGuardTest {
         when(repository.findLatest(anyLong(), eq(ConsentType.HEALTH_DATA))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> guard.require(1L, ConsentType.HEALTH_DATA))
-                .isInstanceOfSatisfying(ConsentGuard.ConsentRequiredException.class,
-                        e -> assertThat(e.getConsentType()).isEqualTo(ConsentType.HEALTH_DATA));
+                .isInstanceOfSatisfying(ConsentRequiredException.class,
+                        e -> assertThat(e.getConsentType()).isEqualTo(ConsentType.HEALTH_DATA.name()));
     }
 
     @Test

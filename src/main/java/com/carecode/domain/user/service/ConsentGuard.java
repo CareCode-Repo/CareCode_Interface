@@ -1,6 +1,6 @@
 package com.carecode.domain.user.service;
 
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.ConsentRequiredException;
 import com.carecode.domain.user.entity.ConsentType;
 import com.carecode.domain.user.entity.UserConsent;
 import com.carecode.domain.user.repository.UserConsentRepository;
@@ -21,7 +21,7 @@ public class ConsentGuard {
     /** 동의가 없거나 철회됐으면 접근을 막는다. */
     public void require(Long userId, ConsentType type) {
         if (!hasConsent(userId, type)) {
-            throw new ConsentRequiredException(type);
+            throw new ConsentRequiredException(type.name(), type.getDisplayName(), type.isSensitive());
         }
     }
 
@@ -29,20 +29,5 @@ public class ConsentGuard {
         return consentRepository.findLatest(userId, type)
                 .map(UserConsent::isGranted)
                 .orElse(false);
-    }
-
-    /** 동의가 필요해서 막힌 것인지 클라이언트가 구분할 수 있게 별도 예외로 던진다. */
-    public static class ConsentRequiredException extends CareServiceException {
-
-        private final transient ConsentType consentType;
-
-        public ConsentRequiredException(ConsentType consentType) {
-            super(consentType.getDisplayName() + " 동의가 필요합니다.");
-            this.consentType = consentType;
-        }
-
-        public ConsentType getConsentType() {
-            return consentType;
-        }
     }
 }

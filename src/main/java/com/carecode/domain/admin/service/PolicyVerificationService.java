@@ -1,7 +1,7 @@
 package com.carecode.domain.admin.service;
 
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.admin.dto.response.PolicyVerificationResponse;
 import com.carecode.domain.admin.dto.response.RegionVerificationStatusResponse;
 import com.carecode.domain.policy.entity.Policy;

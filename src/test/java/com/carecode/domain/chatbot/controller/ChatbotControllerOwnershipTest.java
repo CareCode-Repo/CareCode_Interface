@@ -1,6 +1,6 @@
 package com.carecode.domain.chatbot.controller;
 
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.chatbot.app.ChatbotFacade;
 import com.carecode.domain.chatbot.entity.ChatMessage;
 import com.carecode.domain.chatbot.entity.ChatSession;

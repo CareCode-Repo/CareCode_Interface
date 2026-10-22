@@ -134,6 +134,10 @@ class ArchitectureRulesTest {
     void domainsUseCurrentUserFacade() {
         check(noClasses()
                 .that().resideInAPackage("com.carecode.domain..")
+                // 파사드 자신은 예외다. 이 규칙의 목적이 "모든 접근을 한 클래스로 모으는 것" 이고,
+                // 그 한 클래스가 바로 여기다. (한때 core/security 에 있어 이 규칙에 걸리지 않았는데,
+                // 그 자리에 있으면 기반 코드가 사용자 도메인을 알게 돼서 도메인으로 옮겼다.)
+                .and().doNotHaveFullyQualifiedName("com.carecode.domain.user.app.CurrentUserFacade")
                 .should().dependOnClassesThat()
                 .haveFullyQualifiedName("org.springframework.security.core.context.SecurityContextHolder")
                 .because("현재 사용자는 CurrentUserFacade 로만 얻는다"));

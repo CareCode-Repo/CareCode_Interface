@@ -2,7 +2,7 @@ package com.carecode.domain.health.service;
 
 import com.carecode.core.exception.HealthRecordNotFoundException;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.core.storage.FileStorageService;
 import com.carecode.domain.health.dto.response.AttachmentDownload;
 import com.carecode.domain.health.entity.HealthRecord;

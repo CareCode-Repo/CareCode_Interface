@@ -1,7 +1,7 @@
 package com.carecode.domain.health.service;
 
 import com.carecode.core.exception.ChildNotFoundException;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.health.dto.response.GrowthPointResponse;
 import com.carecode.domain.health.entity.HealthRecord;
 import com.carecode.domain.health.growth.GrowthMetric;

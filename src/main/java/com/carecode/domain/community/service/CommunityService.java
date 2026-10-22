@@ -4,7 +4,7 @@ import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.CommentAccessDeniedException;
 import com.carecode.core.exception.PostAccessDeniedException;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.community.dto.request.CommunityCreatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityUpdatePostRequest;
 import com.carecode.domain.community.dto.request.CommunityCreateCommentRequest;

@@ -31,8 +31,8 @@ ArchUnit 의 `FreezingArchRule` 을 씁니다.
 
 ## 규칙과 현재 위반
 
-진척: **489건(0단계) → 391건(1b) → 364건(4a) → 357건(5b) → 331건(6) → 291건(7단계)**. 남은 것은
-도메인 경계(237)와 core 기반의 도메인 참조(50)입니다. **컨트롤러의 리포지토리 직접 사용은 0 이 됐습니다.**
+진척: **489건(0단계) → 364건(4a) → 331건(6) → 291건(7) → 241건(8단계)**. 남은 것은 거의 전부
+도메인 경계(237)입니다. **컨트롤러의 리포지토리 직접 사용과 core 기반의 도메인 참조는 0 이 됐습니다.**
 
 > 세는 법: `archunit-baseline/` 에는 규칙별 위반 파일 외에 색인 파일 `stored.rules` 도 있습니다.
 > `cat archunit-baseline/* | wc -l` 은 색인 11줄을 함께 세므로 실제 위반보다 11 크게 나옵니다.
@@ -42,10 +42,10 @@ ArchUnit 의 `FreezingArchRule` 을 씁니다.
 | 다른 도메인의 리포지토리를 직접 쓰지 않는다 | 237 | 남의 테이블을 직접 읽으면 그 도메인의 규칙(소유권 검증 등)을 건너뛴다 |
 | 도메인 패키지 이름은 소문자다 | **0** | `careFacility`→`facility` 로 해소 (1b 단계) |
 | 컨트롤러는 리포지토리를 직접 쓰지 않는다 | **0** | 7단계에서 해소 | 검증·트랜잭션 경계가 컨트롤러로 샌다 |
-| core 기반 패키지는 domain 을 의존하지 않는다 | 50 | 기반 코드가 도메인을 알면 공통이 아니다 |
+| core 기반 패키지는 domain 을 의존하지 않는다 | **0** | 8단계에서 해소 |
 | 매퍼는 리포지토리를 쓰지 않는다 | 3 | 변환 한 번에 숨은 쿼리가 생기면 N+1 을 추적할 수 없다 |
 | core 에는 컨트롤러가 없다 | **0** | 1a 에서 도메인으로 옮기고, 3a 에서 중복이라 삭제 |
-| 도메인은 SecurityContextHolder 를 직접 쓰지 않는다 | 1 | principal 모양이 바뀌면 고칠 곳이 흩어진다(시설 API 500 의 원인) |
+| 도메인은 SecurityContextHolder 를 직접 쓰지 않는다 | 1 (파사드 제외) | principal 모양이 바뀌면 고칠 곳이 흩어진다(시설 API 500 의 원인) |
 | 서비스·리포지토리는 컨트롤러를 의존하지 않는다 | **0** | 층 방향은 이미 지켜지고 있다 |
 | 엔티티는 DTO·컨트롤러를 의존하지 않는다 | **0** | 매핑 경계는 지켜지고 있다 |
 
@@ -526,6 +526,53 @@ not to be equal to: "d14eb045@example.com"
 - 전체 테스트 **647개, 실패 0**
 - OpenAPI 경로·스키마 수 변화 없음(226 / 158)
 
+## 기반 코드가 사용자 도메인을 알던 자리 (8단계)
+
+"core 기반 패키지는 domain 을 의존하지 않는다" 위반 50건은 **전부 인증·인가 기반 코드**였습니다.
+다섯 덩어리였고, 각각 원인이 달랐습니다.
+
+| 어디 | 무엇을 알고 있었나 | 어떻게 끊었나 |
+|------|---------------------|---------------|
+| `CurrentUserFacade` (15) | `User`, `UserRepository` | **이 클래스가 곧 사용자 도메인의 입구**다. `domain/user/app` 으로 옮겼다 |
+| `KakaoUtil` (11) | `KakaoOAuthToken`, `KakaoProfile` … | 카카오 **응답 형식**이 우리 API 응답 패키지(`user/dto/response`)에 있었다. 클라이언트와 DTO 6개를 `external/kakao` 로 옮겼다 |
+| 전역 예외 핸들러 (10) | `ConsentGuard` | `ConsentRequiredException` 이 **서비스 안의 중첩 클래스**여서, 예외를 가리키려면 서비스를 import 해야 했다 |
+| `CustomUserDetailsService` (8) | `User`, `UserRepository` | `domain/user/security` 로 옮기고, `SecurityConfig` 는 스프링의 `UserDetailsService` **인터페이스**로 받는다 |
+| `JwtAuthenticationFilter` (6) | `JwtService` | 필터는 토큰 검증만 필요한데 그 서비스는 로그인 응답 DTO 까지 다룬다. `AccessTokenVerifier` 포트로 필요한 만큼만 끊었다 |
+
+### 옮기는 방향이 중요했다
+
+세 건은 **core 에서 도메인으로** 옮겼습니다(`CurrentUserFacade`, `CustomUserDetailsService`,
+카카오 DTO). 나머지 둘은 **반대로** 핸들러·필터가 도메인을 보지 않도록 경계를 세웠습니다
+(`core/exception` 의 예외, `core/security` 의 포트).
+
+기준은 "누가 그 규칙의 주인인가" 였습니다. 자격 증명으로 사용자를 찾는 일과 현재 사용자를
+꺼내는 일은 사용자 도메인의 규칙입니다. 반대로 토큰 서명 검증과 예외 → HTTP 상태 변환은
+기반 코드의 일이고, 그쪽이 도메인 타입을 알 필요가 없습니다.
+
+### 규칙도 한 줄 고쳤다
+
+`CurrentUserFacade` 가 도메인으로 들어오자 "도메인은 `SecurityContextHolder` 를 직접 쓰지
+않는다" 에 걸렸습니다 — 그 클래스의 존재 이유가 바로 그 접근을 혼자 하는 것인데도요.
+규칙의 `because` 가 이미 "현재 사용자는 CurrentUserFacade 로만 얻는다" 라고 적고 있으므로
+**파사드 자신만 예외**로 두었습니다. 남은 1건(`CommunityService` 가 직접 꺼내는 곳)은 그대로
+추적합니다.
+
+> 규칙 문구를 고치면 ArchUnit 이 새 키로 baseline 을 만들고 **옛 파일은 고아로 남습니다.**
+> 자동으로 지워지지 않아 손으로 정리했습니다(`stored.rules` 의 줄 + 해당 파일).
+
+### 카카오 DTO 가 잘못된 자리에 있었던 것이 실제 문제였다
+
+`KakaoProfile`·`KakaoAccount`·`KakaoProperties`·`KakaoProfileInfo`·`KakaoOAuthToken` 은
+**카카오가 주는 JSON 모양**입니다(필드명이 `connected_at`, `thumbnail_image_url` 처럼 snake_case
+인 것이 그 증거). 그것이 `domain/user/dto/response` — 우리가 **프런트에 주는** 응답을 모아 둔
+패키지 — 에 섞여 있었습니다. 카카오가 응답을 바꾸면 우리 API 응답 패키지가 바뀌는 셈입니다.
+
+### 숫자
+
+- **core 기반 → 도메인 참조 50 → 0**
+- ArchUnit baseline 291 → **241** (고아 baseline 1개 정리 포함)
+- 남은 241건 중 **237건이 도메인 경계** 한 규칙입니다
+
 ## 다음 단계
 
 | 단계 | 내용 | 효과 |
@@ -543,4 +590,5 @@ not to be equal to: "d14eb045@example.com"
 | ~~6. 어드민 컨트롤러의 리포지토리 사용~~ | ~~61건 전부가 어드민 컨트롤러에 있었다~~ | **완료** — 61 → 37, 버그 둘 |
 | 7. 식별 로직을 user 로 | `HealthActorResolver` 가 health 의 마지막 `UserRepository` 사용처다 | 결합 추가 해소 |
 | ~~7. 남은 컨트롤러 6개~~ | ~~대시보드·사용자·정책·검증·링크 2개~~ | **완료** — 37 → **0**, 버그 둘 |
-| 8. 어드민 조회용 포트 | 도메인 경계 237건 중 어드민 몫. 각 도메인이 어드민 조회 입구를 내주면 사라진다 | 경계 완성 |
+| ~~8. core 기반의 도메인 참조~~ | ~~인증·인가 기반 코드가 user 도메인을 알고 있었다~~ | **완료** — 50 → **0** |
+| 9. 어드민 조회용 포트 | 도메인 경계 237건 중 어드민 몫. 각 도메인이 어드민 조회 입구를 내주면 사라진다 | 경계 완성 |

@@ -1,4 +1,4 @@
-package com.carecode.core.security;
+package com.carecode.domain.user.security;
 
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.UserRepository;

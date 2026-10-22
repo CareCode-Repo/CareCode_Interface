@@ -1,6 +1,6 @@
 package com.carecode.domain.user.service;
 
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.community.repository.PostRepository;
 import com.carecode.domain.health.repository.HealthRecordRepository;
 import com.carecode.domain.user.dto.request.ConsentUpdateRequest;
