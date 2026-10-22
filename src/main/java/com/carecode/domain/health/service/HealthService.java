@@ -6,7 +6,6 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.core.exception.HealthRecordNotFoundException;
 import com.carecode.core.exception.ChildNotFoundException;
 import com.carecode.core.exception.BusinessException;
@@ -14,44 +13,25 @@ import com.carecode.core.exception.ErrorCode;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
 import com.carecode.domain.health.dto.request.HealthRecordAttachmentRequest;
 import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
-import com.carecode.domain.health.dto.response.HealthRecommendationResponse;
 import com.carecode.domain.health.dto.response.HealthRecordAttachmentResponse;
 import com.carecode.domain.health.dto.response.HealthRecordResponse;
-import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
-import com.carecode.domain.health.dto.response.CheckupScheduleResponse;
-import com.carecode.domain.health.dto.response.HealthStatsResponse;
-import com.carecode.domain.health.dto.response.HealthAlertResponse;
 import com.carecode.domain.health.entity.HealthRecord;
 import com.carecode.domain.health.entity.HealthRecordAttachment;
-import com.carecode.domain.policy.entity.Policy;
-import com.carecode.domain.facility.entity.CareFacility;
 import com.carecode.domain.health.repository.HealthRecordAttachmentRepository;
 import com.carecode.domain.health.repository.HealthRecordRepository;
-import com.carecode.domain.health.repository.VaccinationScheduleRepository;
-import com.carecode.domain.policy.repository.PolicyRepository;
-import com.carecode.domain.facility.repository.CareFacilityRepository;
 import com.carecode.domain.user.app.ChildDirectory;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.repository.ChildRepository;
-import com.carecode.domain.user.repository.UserRepository;
 import com.carecode.domain.health.mapper.HealthRecordMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /** 통합 건강 관리 서비스 */
@@ -62,22 +42,17 @@ import java.util.stream.Collectors;
 public class HealthService {
     
     // 상수 정의
-    private static final String DEFAULT_ALERT_PRIORITY = "MEDIUM";
-    private static final int MAX_UPCOMING_EVENTS = 5;
     
     private final HealthRecordRepository healthRecordRepository;
-    private final VaccinationScheduleRepository vaccinationScheduleRepository;
     private final ConsentGuard consentGuard;
     private final HealthRecordAttachmentRepository healthRecordAttachmentRepository;
     /**
      * 건강 기록을 자녀에 붙이려면 엔티티가 필요해 남겨 둔다. 조회·소유권 판단은
      * {@link ChildDirectory} 가 하고, 여기서는 통과한 뒤 연관을 걸 때만 쓴다.
      */
+    private final HealthActorResolver actorResolver;
     private final ChildRepository childRepository;
     private final ChildDirectory childDirectory;
-    private final UserRepository userRepository;
-    private final PolicyRepository policyRepository;
-    private final CareFacilityRepository careFacilityRepository;
     private final HealthRecordMapper healthRecordMapper;
     
     // ===== 건강 기록 관리 =====
@@ -140,35 +115,14 @@ public class HealthService {
         }
     }
 
-    // 사용자별 건강 기록 조회 (DTO 반환)
+    /** 사용자별 건강 기록. JOIN FETCH 로 Child·User 를 함께 읽어 N+1 을 피한다. */
     @LogExecutionTime
     public List<HealthRecordResponse> getHealthRecordsByUserId(String userId, Long actorUserId) {
-        log.info("사용자별 건강 기록 조회: 사용자ID={}", userId);
-        try {
-            assertUserIdBelongsToActor(userId, actorUserId);
-            List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
-            return records.stream()
-                    .map(healthRecordMapper::toResponse)
-                    .collect(Collectors.toList());
-        } catch (CareCodeException e) {
-            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
-            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
-            throw e;
-        } catch (Exception e) {
-            log.error("사용자별 건강 기록 조회 실패: {}", e.getMessage());
-            throw new CareServiceException("사용자별 건강 기록 조회 중 오류가 발생했습니다.", e);
-        }
-    }
+        User user = actorResolver.requireSelf(userId, actorUserId);
 
-    // HealthRecord -> DTO 변환은 healthRecordMapper 사용
-
-    // 사용자별 건강 기록 조회 (Entity 반환) JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
-    @LogExecutionTime
-    public List<HealthRecord> getHealthRecordsByUserIdAsEntity(String userId) {
-        validateUserId(userId);
-        User user = findUserByIdOrUserId(userId);
-        // JOIN FETCH를 사용하여 Child와 User를 한 번에 조회
-        return healthRecordRepository.findByUserIdWithChildAndUser(user.getId());
+        return healthRecordRepository.findByUserIdWithChildAndUser(user.getId()).stream()
+                .map(healthRecordMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     // 건강 기록 수정
@@ -221,83 +175,7 @@ public class HealthService {
 
     // ===== 아동 정보 관리 =====
 
-    // 건강 통계 조회
-    @LogExecutionTime
-    public HealthStatsResponse getHealthStatistics(String userId, Long actorUserId) {
-        log.info("건강 통계 조회: 사용자ID={}", userId);
-        
-        try {
-            assertUserIdBelongsToActor(userId, actorUserId);
-            List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
-            
-            return HealthStatsResponse.builder()
-                    .totalRecords(records.size())
-                    .completedVaccines(countCompletedVaccines(records))
-                    .pendingVaccines(countPendingVaccines(records))
-                    .completedCheckups(countCompletedCheckups(records))
-                    .pendingCheckups(countPendingCheckups(records))
-                    .recordTypeDistribution(calculateRecordTypeDistribution(records))
-                    .upcomingEvents(generateUpcomingEvents(records))
-                    .build();
-        } catch (CareCodeException e) {
-            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
-            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
-            throw e;
-        } catch (Exception e) {
-            log.error("건강 통계 조회 실패: {}", e.getMessage());
-            throw new CareServiceException("건강 통계 조회 중 오류가 발생했습니다.", e);
-        }
-    }
-
     // ===== 스케줄 및 알림 관리 =====
-
-    // 예방접종 스케줄 조회
-    @LogExecutionTime
-    public List<VaccineScheduleResponse> getVaccineSchedule(String childId, Long actorUserId) {
-        log.info("예방접종 스케줄 조회: 아동ID={}", childId);
-        
-        try {
-            Long cid = Long.valueOf(childId);
-            assertChildOwnedByUserId(cid, actorUserId);
-            List<HealthRecord> vaccineRecords = healthRecordRepository.findByChildIdAndRecordType(
-                    cid, HealthRecord.RecordType.VACCINATION);
-            
-            return vaccineRecords.stream()
-                    .map(this::convertToVaccineScheduleResponse)
-                    .collect(Collectors.toList());
-        } catch (CareCodeException e) {
-            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
-            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
-            throw e;
-        } catch (Exception e) {
-            log.error("예방접종 스케줄 조회 실패: {}", e.getMessage());
-            throw new CareServiceException("예방접종 스케줄 조회 중 오류가 발생했습니다.", e);
-        }
-    }
-
-    // 건강 검진 스케줄 조회
-    @LogExecutionTime
-    public List<CheckupScheduleResponse> getCheckupSchedule(String childId, Long actorUserId) {
-        log.info("건강 검진 스케줄 조회: 아동ID={}", childId);
-        
-        try {
-            Long cid = Long.valueOf(childId);
-            assertChildOwnedByUserId(cid, actorUserId);
-            List<HealthRecord> checkupRecords = healthRecordRepository.findByChildIdAndRecordType(
-                    cid, HealthRecord.RecordType.CHECKUP);
-            
-            return checkupRecords.stream()
-                    .map(this::convertToCheckupScheduleResponse)
-                    .collect(Collectors.toList());
-        } catch (CareCodeException e) {
-            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
-            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
-            throw e;
-        } catch (Exception e) {
-            log.error("건강 검진 스케줄 조회 실패: {}", e.getMessage());
-            throw new CareServiceException("건강 검진 스케줄 조회 중 오류가 발생했습니다.", e);
-        }
-    }
 
     // 기간별 건강 기록 조회 (오래된순) JOIN FETCH를 사용하여 N+1 쿼리 문제 해결
     @LogExecutionTime
@@ -388,74 +266,6 @@ public class HealthService {
         healthRecordAttachmentRepository.save(attachment);
     }
 
-    // 건강 알림 조회
-    @LogExecutionTime
-    public List<HealthAlertResponse> getHealthAlerts(String userId, Long actorUserId) {
-        log.info("건강 알림 조회: 사용자ID={}", userId);
-        
-        try {
-            assertUserIdBelongsToActor(userId, actorUserId);
-            List<HealthRecord> records = getHealthRecordsByUserIdAsEntity(userId);
-            
-            return records.stream()
-                    .filter(r -> r.getNextDate() != null && r.getNextDate().isAfter(java.time.LocalDate.now()))
-                    .map(this::convertToHealthAlertResponse)
-                    .collect(Collectors.toList());
-        } catch (CareCodeException e) {
-            // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
-            // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
-            throw e;
-        } catch (Exception e) {
-            log.error("건강 알림 조회 실패: {}", e.getMessage());
-            throw new CareServiceException("건강 알림 조회 중 오류가 발생했습니다.", e);
-        }
-    }
-
-    /**
-     * 아이 연령 기준 연계 추천.
-     *
-     * <p>연령 단위는 <b>개월</b>이다. 정책의 {@code targetAgeMin/Max} 가 개월이기 때문이다
-     * (시드 데이터: "부모급여(0세)" 0~11, "아동수당" 0~95). 전에는 여기서만
-     * {@code Period.between(...).getYears()} 로 <b>연 나이</b>를 계산해 그 쿼리에 넘겼다.
-     * 세 살 아이가 "3" 으로 들어가 <b>0~11개월 대상 정책이 추천됐다.</b>
-     *
-     * <p>월령을 모르면({@code null}) 연령 기반 조회를 하지 않는다. 전에는 {@code .orElse(0)} 이
-     * 0개월로 바꿔, 자녀를 등록하지 않은 사용자에게 신생아 정책을 추천했다.
-     */
-    @LogExecutionTime
-    public HealthRecommendationResponse getIntegratedRecommendations(String userId, Long actorUserId) {
-        assertUserIdBelongsToActor(userId, actorUserId);
-        User user = findUserByIdOrUserId(userId);
-
-        Integer childAgeMonths = childDirectory.childrenOf(user.getId()).stream()
-                .map(child -> child.ageMonths(LocalDate.now()))
-                .filter(java.util.Objects::nonNull)
-                .findFirst()
-                .orElse(null);
-
-        if (childAgeMonths == null) {
-            return new HealthRecommendationResponse(
-                    user.getUserId(), null, List.of(), List.of(),
-                    "아이를 등록하면 연령에 맞는 정책과 시설을 알려드립니다.");
-        }
-
-        List<String> recommendedPolicies = policyRepository.findByChildAge(childAgeMonths).stream()
-                .limit(3)
-                .map(Policy::getTitle)
-                .collect(Collectors.toList());
-        List<String> recommendedFacilities = careFacilityRepository.findByChildAge(childAgeMonths).stream()
-                .limit(3)
-                .map(CareFacility::getName)
-                .collect(Collectors.toList());
-
-        return new HealthRecommendationResponse(
-                user.getUserId(),
-                childAgeMonths,
-                recommendedPolicies,
-                recommendedFacilities,
-                "아이 연령에 맞는 정책/시설을 확인해보세요.");
-    }
-
     // ===== 차트 및 시각화 =====
 
     // ===== 시스템 관리 =====
@@ -489,125 +299,16 @@ public class HealthService {
         childDirectory.requireOwnedChild(childId, actorUserId);
     }
 
-    private void assertUserIdBelongsToActor(String userId, Long actorUserId) {
-        if (actorUserId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "인증이 필요합니다.");
-        }
-        User resolved = findUserByIdOrUserId(userId);
-        if (!resolved.getId().equals(actorUserId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 사용자 정보에 접근할 권한이 없습니다.");
-        }
-    }
-
     // ===== Helper Methods =====
 
     // Child Entity를 DTO로 변환
 
-
-    // 예방접종 스케줄 응답 DTO 변환
-    private VaccineScheduleResponse convertToVaccineScheduleResponse(HealthRecord record) {
-        return VaccineScheduleResponse.builder()
-                .vaccineName(record.getTitle())
-                .description(record.getDescription())
-                .recommendedAge(null) // 나이 정보는 별도 계산 필요
-                .status(Boolean.TRUE.equals(record.getIsCompleted()) ? "COMPLETED" : "UPCOMING")
-                .scheduledDate(record.getRecordDate() != null ? record.getRecordDate().toString() : null)
-                .completedDate(Boolean.TRUE.equals(record.getIsCompleted()) ? record.getUpdatedAt().toString() : null)
-                .notes(record.getDescription())
-                .build();
-    }
-
-    // 건강 검진 스케줄 응답 DTO 변환
-    private CheckupScheduleResponse convertToCheckupScheduleResponse(HealthRecord record) {
-        return CheckupScheduleResponse.builder()
-                .checkupName(record.getTitle())
-                .description(record.getDescription())
-                .recommendedAge(null) // 나이 정보는 별도 계산 필요
-                .status(Boolean.TRUE.equals(record.getIsCompleted()) ? "COMPLETED" : "UPCOMING")
-                .scheduledDate(record.getRecordDate() != null ? record.getRecordDate().toString() : null)
-                .completedDate(Boolean.TRUE.equals(record.getIsCompleted()) ? record.getUpdatedAt().toString() : null)
-                .notes(record.getDescription())
-                .build();
-    }
-
-    // 건강 알림 응답 DTO 변환
-    private HealthAlertResponse convertToHealthAlertResponse(HealthRecord record) {
-        return HealthAlertResponse.builder()
-                .alertId(record.getId().toString())
-                .alertType(record.getRecordType() != null ? record.getRecordType().name() : null)
-                .title(record.getTitle())
-                .message(record.getDescription())
-                .priority(DEFAULT_ALERT_PRIORITY)
-                .dueDate(record.getNextDate() != null ? record.getNextDate().toString() : null)
-                .isRead(false)
-                .build();
-    }
-
-    private int countCompletedVaccines(List<HealthRecord> records) {
-        return (int) records.stream()
-                .filter(r -> r.getRecordType() == HealthRecord.RecordType.VACCINATION && Boolean.TRUE.equals(r.getIsCompleted()))
-                .count();
-    }
-
-    private int countPendingVaccines(List<HealthRecord> records) {
-        return (int) records.stream()
-                .filter(r -> r.getRecordType() == HealthRecord.RecordType.VACCINATION && !Boolean.TRUE.equals(r.getIsCompleted()))
-                .count();
-    }
-
-    private int countCompletedCheckups(List<HealthRecord> records) {
-        return (int) records.stream()
-                .filter(r -> r.getRecordType() == HealthRecord.RecordType.CHECKUP && Boolean.TRUE.equals(r.getIsCompleted()))
-                .count();
-    }
-
-    private int countPendingCheckups(List<HealthRecord> records) {
-        return (int) records.stream()
-                .filter(r -> r.getRecordType() == HealthRecord.RecordType.CHECKUP && !Boolean.TRUE.equals(r.getIsCompleted()))
-                .count();
-    }
-
-    private Map<String, Integer> calculateRecordTypeDistribution(List<HealthRecord> records) {
-        return records.stream()
-                .collect(Collectors.groupingBy(
-                    r -> r.getRecordType().name(),
-                    Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
-                ));
-    }
-
-    private List<String> generateUpcomingEvents(List<HealthRecord> records) {
-        return records.stream()
-                .filter(r -> r.getNextDate() != null && r.getNextDate().isAfter(java.time.LocalDate.now()))
-                .map(r -> String.format("%s: %s", r.getTitle(), r.getNextDate()))
-                .limit(MAX_UPCOMING_EVENTS)
-                .collect(Collectors.toList());
-    }
 
     // HealthRecord 엔티티를 HealthRecordResponse DTO로 변환
 
     // HealthRecord 매핑은 HealthRecordMapper 사용
     
     // ===== Validation Helper Methods =====
-
-    // User ID 또는 Long ID로 사용자 조회 (중복 로직 제거)
-    private User findUserByIdOrUserId(String userId) {
-        validateUserId(userId);
-        
-        // userId(문자열)로 먼저 조회
-        Optional<User> userOpt = userRepository.findByUserId(userId);
-        if (userOpt.isPresent()) {
-            return userOpt.get();
-        }
-        
-        // userId가 숫자라면 PK(id)로도 조회 시도
-        try {
-            Long id = Long.parseLong(userId);
-            return userRepository.findById(id)
-                    .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-        } catch (NumberFormatException e) {
-            throw new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId);
-        }
-    }
 
     // 요청 객체 검증
     private void validateRequest(HealthCreateHealthRecordRequest request) {
@@ -642,13 +343,6 @@ public class HealthService {
         }
     }
 
-    // 사용자 ID 검증
-    private void validateUserId(String userId) {
-        if (!StringUtils.hasText(userId)) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "사용자 ID가 필요합니다.");
-        }
-    }
-
     // 날짜 범위 검증
     private void validateDateRange(LocalDate startDate, LocalDate endDate) {
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
@@ -670,19 +364,4 @@ public class HealthService {
                 .build();
     }
 
-    /** 아이의 접종 일정 중 가장 최근 갱신 시각. 없으면 "0" 을 돌려준다. */
-    @Transactional(readOnly = true)
-    public String getVaccineScheduleVersion(String childId) {
-        try {
-            return vaccinationScheduleRepository
-                    .findByChildIdOrderByDueDateAsc(Long.valueOf(childId)).stream()
-                    .map(v -> v.getUpdatedAt() != null ? v.getUpdatedAt() : v.getCreatedAt())
-                    .filter(java.util.Objects::nonNull)
-                    .max(java.time.LocalDateTime::compareTo)
-                    .map(String::valueOf)
-                    .orElse("0");
-        } catch (Exception e) {
-            return "0";
-        }
-    }
 }

@@ -6,8 +6,6 @@ import com.carecode.domain.health.dto.request.HealthUpdateHealthRecordRequest;
 import com.carecode.domain.health.dto.response.HealthRecommendationResponse;
 import com.carecode.domain.health.dto.response.HealthRecordResponse;
 import com.carecode.domain.health.dto.response.HealthRecordAttachmentResponse;
-import com.carecode.domain.health.dto.response.VaccineScheduleResponse;
-import com.carecode.domain.health.dto.response.CheckupScheduleResponse;
 import com.carecode.domain.health.dto.response.HealthStatsResponse;
 import com.carecode.domain.health.dto.response.HealthAlertResponse;
 import com.carecode.domain.health.dto.response.HospitalInfoResponse;
@@ -15,6 +13,7 @@ import com.carecode.domain.health.dto.response.HospitalReviewResponse;
 import com.carecode.core.exception.HospitalNotFoundException;
 import com.carecode.core.exception.HospitalReviewNotFoundException;
 import com.carecode.core.exception.HospitalReviewAccessDeniedException;
+import com.carecode.domain.health.service.HealthInsightService;
 import com.carecode.domain.health.service.HealthService;
 import com.carecode.domain.health.entity.Hospital;
 import com.carecode.domain.health.entity.HospitalLike;
@@ -40,6 +39,7 @@ import java.util.Map;
 public class HealthFacade {
 
     private final HealthService healthService;
+    private final HealthInsightService healthInsightService;
     private final HospitalRepository hospitalRepository;
     private final com.carecode.core.ops.sync.SyncFreshnessService syncFreshnessService;
     private final HospitalLikeRepository hospitalLikeRepository;
@@ -71,19 +71,11 @@ public class HealthFacade {
     }
 
     public HealthStatsResponse getHealthStatistics(String userId, Long actorUserId) {
-        return healthService.getHealthStatistics(userId, actorUserId);
-    }
-
-    public List<VaccineScheduleResponse> getVaccineSchedule(String childId, Long actorUserId) {
-        return healthService.getVaccineSchedule(childId, actorUserId);
-    }
-
-    public List<CheckupScheduleResponse> getCheckupSchedule(String childId, Long actorUserId) {
-        return healthService.getCheckupSchedule(childId, actorUserId);
+        return healthInsightService.getHealthStatistics(userId, actorUserId);
     }
 
     public List<HealthAlertResponse> getHealthAlerts(String userId, Long actorUserId) {
-        return healthService.getHealthAlerts(userId, actorUserId);
+        return healthInsightService.getHealthAlerts(userId, actorUserId);
     }
 
     public List<HealthRecordResponse> getHealthRecordsByDateRangeAsc(Long childId, LocalDate startDate, LocalDate endDate, Long actorUserId) {
@@ -107,7 +99,7 @@ public class HealthFacade {
     }
 
     public HealthRecommendationResponse getIntegratedRecommendations(String userId, Long actorUserId) {
-        return healthService.getIntegratedRecommendations(userId, actorUserId);
+        return healthInsightService.getIntegratedRecommendations(userId, actorUserId);
     }
 
     // ==================== 병원 관리 ====================
@@ -286,8 +278,4 @@ public class HealthFacade {
 
     // 매핑은 HospitalMapper/HospitalReviewMapper에 위임
 
-    /** 조건부 응답용 지문. 일정이 수정되면 값이 바뀌어 캐시가 무효화된다. */
-    public String getVaccineScheduleVersion(String childId) {
-        return healthService.getVaccineScheduleVersion(childId);
-    }
 }
