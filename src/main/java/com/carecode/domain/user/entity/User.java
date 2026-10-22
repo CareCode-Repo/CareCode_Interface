@@ -143,4 +143,33 @@ public class User {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    /**
+     * 탈퇴 처리. 개인 식별 정보를 지우고 계정을 비활성화한다.
+     *
+     * <p>물리 삭제하지 않는 이유: 게시글·댓글·건강기록 등 참조 데이터가 함께 사라지면 다른
+     * 이용자의 대화 맥락이 깨진다. 그래서 행은 남기고 <b>식별 정보만</b> 파기한다.
+     *
+     * <p>엔티티에 두는 이유: "무엇을 지우는가" 는 이 테이블의 규칙이다. 한때 본인 탈퇴
+     * ({@code PrivacyService})와 관리자 탈퇴 처리({@code AdminUserController})가 각자
+     * 구현했고, 관리자 쪽은 {@code deletedAt}·{@code isActive} 만 바꿔 <b>이름과 이메일이
+     * 그대로 남았다.</b> 이용자가 고객센터로 탈퇴를 요청하면 운영자가 그 경로를 누른다.
+     *
+     * <p>{@code userId}(가입 시 발급한 코드)는 남긴다. 게시글·알림이 그 값으로 작성자를
+     * 가리키므로 지우면 참조가 끊긴다.
+     */
+    public void withdraw() {
+        String anonymized = "deleted_" + id;
+        this.name = "탈퇴한 사용자";
+        this.email = anonymized + "@deleted.local";
+        this.password = null;
+        this.phoneNumber = null;
+        this.address = null;
+        this.profileImageUrl = null;
+        this.providerId = null;
+        this.latitude = null;
+        this.longitude = null;
+        this.isActive = false;
+        this.deletedAt = LocalDateTime.now();
+    }
 } 

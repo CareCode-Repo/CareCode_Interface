@@ -267,6 +267,28 @@ class AccessControlContractTest {
                 .isIn(404, 405);
     }
 
+    /**
+     * 전환 집계 링크는 비로그인에도 열려 있어야 한다.
+     *
+     * <p>{@code /policies/*} 는 한 세그먼트만 잡아 {@code /policies/{id}/apply} 가
+     * {@code anyRequest().authenticated()} 에 걸려 있었다. 컨트롤러는 비로그인 클릭을
+     * 집계하도록 써 있었는데 필터가 먼저 401 을 돌려줬고, 정책 상세가 공개라 <b>로그인하지 않은
+     * 방문자는 "신청하기" 에서 401 을 만났다.</b> 전환율이 핵심 지표인데 비로그인 클릭은 한 건도
+     * 집계되지 않았다.
+     *
+     * <p>404(없는 id)는 괜찮다. 여기서 보는 것은 "인증 때문에 막히지 않는가" 다.
+     */
+    @ParameterizedTest(name = "{0} 은 비로그인으로도 집계된다")
+    @ValueSource(strings = {
+            "/policies/1/apply",
+            "/notifications/1/open"
+    })
+    void conversionLinksAreOpenToAnonymous(String path) throws Exception {
+        assertThat(mockMvc.perform(get(path)).andReturn().getResponse().getStatus())
+                .as("%s 가 401 이면 비로그인 클릭이 집계되지 않는다", path)
+                .isNotIn(401, 403);
+    }
+
     /** 버전 필터가 실제 필터 체인에 걸려 있는지. 단위 테스트만으로는 등록 누락을 모른다. */
     @Test
     @DisplayName("응답에 API 버전 헤더가 붙고, 모르는 버전은 400 이다")

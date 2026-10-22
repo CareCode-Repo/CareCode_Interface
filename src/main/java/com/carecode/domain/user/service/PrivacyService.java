@@ -118,19 +118,8 @@ public class PrivacyService {
     public void deleteMyAccount() {
         User user = currentUserFacade.requireCurrentUser();
 
-        String anonymized = "deleted_" + user.getId();
-        user.setName("탈퇴한 사용자");
-        user.setEmail(anonymized + "@deleted.local");
-        user.setPassword(null);
-        user.setPhoneNumber(null);
-        user.setAddress(null);
-        user.setProfileImageUrl(null);
-        user.setProviderId(null);
-        user.setLatitude(null);
-        user.setLongitude(null);
-        user.setIsActive(false);
-        user.setDeletedAt(LocalDateTime.now());
-
+        // 무엇을 지우는지는 User 엔티티가 안다. 관리자 탈퇴 처리도 같은 메서드를 쓴다.
+        user.withdraw();
         userRepository.save(user);
         log.info("회원 탈퇴 처리 완료 - userId={}", user.getId());
     }

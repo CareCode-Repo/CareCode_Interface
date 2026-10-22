@@ -7062,7 +7062,7 @@
     },
     "/api/admin/users/{id}" : {
       "delete" : {
-        "description" : "물리 삭제 대신 soft delete 로 비활성화",
+        "description" : "물리 삭제하지 않고 개인 식별 정보를 파기한 뒤 비활성화합니다. 본인 탈퇴와 같은 처리입니다",
         "operationId" : "delete",
         "parameters" : [ {
           "in" : "path",

@@ -192,6 +192,16 @@ public class SecurityConfig {
                 // 건강 API: 인증된 사용자만 (소유권은 서비스 계층에서 검증)
                 .requestMatchers("/health/**").authenticated()
                 
+                // 지원금 신청 링크는 비로그인에도 열어야 한다.
+                //
+                // /policies/* 는 한 세그먼트만 잡아서 /policies/{id}/apply 는 매칭되지 않고
+                // anyRequest().authenticated() 에 걸렸다. 컨트롤러는 비로그인 클릭을 집계하도록
+                // 써 있는데(인증 실패를 삼키고 null 로 집계) 필터가 먼저 401 을 돌려주고 있었다.
+                // 정책 상세는 공개이고 프런트가 그 화면에 "신청하기" 를 띄우므로, 로그인하지 않은
+                // 방문자는 그 버튼에서 401 을 만났다. 전환율이 이 서비스의 핵심 지표인데 비로그인
+                // 클릭은 한 건도 집계되지 않았다.
+                .requestMatchers(HttpMethod.GET, "/policies/*/apply").permitAll()
+
                 // 정책 API: 개인화·북마크는 인증 필요, 나머지 조회는 공개 아래 /policies/* 와일드카드보다 먼저 선언해야 적용된다.
                 .requestMatchers("/policies/recommendations").authenticated()
                 .requestMatchers("/policies/missed-benefits").authenticated()
@@ -238,6 +248,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/**").authenticated()
                 .requestMatchers("/facilities/*/bookings/**").authenticated()
                 .requestMatchers("/community/comments/**").authenticated()
+                // 알림 열기는 비로그인에도 열어 둔다. 푸시·메일 링크를 눌렀을 때 로그인이 만료돼
+                // 있으면 딥링크가 통째로 실패한다. 응답은 쿼리 파라미터로 만든 딥링크로의 302 뿐이고
+                // 알림 내용을 돌려주지 않는다. 읽음 표시는 본인 알림일 때만 남긴다.
+                // (알림 ID 의 존재 여부는 404 로 드러난다 — 내용·수신자는 알 수 없다.)
+                .requestMatchers(HttpMethod.GET, "/notifications/*/open").permitAll()
                 .requestMatchers("/notifications/**").authenticated()
                 
                 // 기타 모든 요청은 인증 필요

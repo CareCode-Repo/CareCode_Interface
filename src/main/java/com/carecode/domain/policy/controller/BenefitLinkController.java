@@ -1,12 +1,7 @@
 package com.carecode.domain.policy.controller;
 
-import com.carecode.core.analytics.EventLogger;
-import com.carecode.core.analytics.EventType;
-import com.carecode.core.exception.CareServiceException;
-import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.core.security.CurrentUserFacade;
-import com.carecode.domain.policy.entity.Policy;
-import com.carecode.domain.policy.repository.PolicyRepository;
+import com.carecode.domain.policy.service.BenefitLinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,8 +27,7 @@ import java.net.URI;
 @Tag(name = "육아 정책", description = "육아 정책 정보 및 검색 API")
 public class BenefitLinkController {
 
-    private final PolicyRepository policyRepository;
-    private final EventLogger eventLogger;
+    private final BenefitLinkService benefitLinkService;
     private final CurrentUserFacade currentUserFacade;
 
     @GetMapping("/{policyId}/apply")
@@ -41,19 +35,7 @@ public class BenefitLinkController {
     public ResponseEntity<Void> apply(
             @Parameter(description = "정책 ID", required = true) @PathVariable Long policyId) {
 
-        Policy policy = policyRepository.findById(policyId)
-                .orElseThrow(() -> new ResourceNotFoundException("정책을 찾을 수 없습니다: " + policyId));
-
-        String url = policy.getApplicationUrl();
-        if (url == null || url.isBlank()) {
-            throw new CareServiceException("이 정책은 온라인 신청 경로가 없습니다.");
-        }
-        // 외부 URL 로 리다이렉트하므로 스킴을 확인한다. javascript: 같은 값이 들어오면 XSS 가 된다.
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            throw new CareServiceException("허용되지 않은 신청 링크입니다.");
-        }
-
-        eventLogger.log(EventType.BENEFIT_LINK_CLICKED, currentUserIdOrNull(), String.valueOf(policyId));
+        String url = benefitLinkService.resolveApplyUrl(policyId, currentUserIdOrNull());
 
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }

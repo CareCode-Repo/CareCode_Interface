@@ -111,6 +111,22 @@ class ClientErrorStatusTest {
         verify(alerter, never()).alert(anyString(), anyString(), anyString());
     }
 
+    /**
+     * 데이터가 없는 상태는 404 다.
+     *
+     * <p>온라인 신청 경로가 없는 정책은 정상적인 데이터 상태인데 {@code CareServiceException}
+     * 이라 <b>500</b> 이 나갔다. 모니터링에 서버 장애로 집계되고, 클라이언트는 "이 정책은 온라인
+     * 신청이 없다" 와 "서버가 고장났다" 를 구분할 수 없다.
+     */
+    @Test
+    @DisplayName("없는 정책의 신청 링크는 404 이고 운영 알림을 울리지 않는다")
+    void missingApplyLinkIsNotFound() throws Exception {
+        assertThat(status(get("/policies/{id}/apply", 99_999_999L)))
+                .as("없는 정책의 신청 링크").isEqualTo(404);
+
+        verify(alerter, never()).alert(anyString(), anyString(), anyString());
+    }
+
     private int status(RequestBuilder request) throws Exception {
         MvcResult result = mockMvc.perform(request).andReturn();
         return result.getResponse().getStatus();

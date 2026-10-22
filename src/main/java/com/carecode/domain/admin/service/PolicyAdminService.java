@@ -33,6 +33,21 @@ public class PolicyAdminService {
     private final PolicyCategoryRepository policyCategoryRepository;
     private final ObjectMapper objectMapper;
 
+    public org.springframework.data.domain.Page<AdminPolicyDetailResponse> list(
+            org.springframework.data.domain.Pageable pageable) {
+        return policyRepository.findAll(pageable).map(AdminPolicyDetailResponse::from);
+    }
+
+    public AdminPolicyDetailResponse detail(Long policyId) {
+        return AdminPolicyDetailResponse.from(require(policyId));
+    }
+
+    private Policy require(Long policyId) {
+        return policyRepository.findById(policyId)
+                .orElseThrow(() -> new com.carecode.core.exception.PolicyNotFoundException(
+                        "정책을 찾을 수 없습니다: " + policyId));
+    }
+
     @Transactional
     public AdminPolicyDetailResponse create(AdminPolicyRequest request) {
         assertPolicyCodeAvailable(request.getPolicyCode(), null);
