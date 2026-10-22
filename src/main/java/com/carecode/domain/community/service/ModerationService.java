@@ -141,13 +141,30 @@ public class ModerationService {
         }
     }
 
+    /**
+     * 관리자 조치로 게시글을 숨긴다. 신고 수락과 <b>같은 결과</b>여야 한다.
+     *
+     * <p>한때 어드민 화면은 {@code postRepository.delete()} 로 하드 삭제했다. FK 가 전부
+     * {@code ON DELETE CASCADE} 라 댓글·좋아요·북마크까지 함께 사라지고, 신고 이력이 가리키는
+     * 대상도 없어져 되돌릴 수 없었다. 같은 의도에 두 결과가 있으면 어느 쪽을 쓴 조치인지에 따라
+     * 결과가 갈린다.
+     */
+    @Transactional
+    public void hidePost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다: " + postId));
+        hide(post);
+    }
+
+    private void hide(Post post) {
+        post.setIsActive(false);
+        post.setStatus(PostStatus.HIDDEN);
+        postRepository.save(post);
+    }
+
     private void hideTarget(Report.TargetType targetType, Long targetId) {
         if (targetType == Report.TargetType.POST) {
-            postRepository.findById(targetId).ifPresent(post -> {
-                post.setIsActive(false);
-                post.setStatus(PostStatus.HIDDEN);
-                postRepository.save(post);
-            });
+            postRepository.findById(targetId).ifPresent(this::hide);
         } else {
             commentRepository.findById(targetId).ifPresent(comment -> {
                 comment.updateStatus(Comment.CommentStatus.HIDDEN);
