@@ -245,7 +245,6 @@ jobs:
     # 키는 env 로 넘긴다. run 본문에 ${{ secrets.* }} 를 그대로 쓰면 값이 스크립트 텍스트에 박힌다.
     - name: Set up SSH
       if: steps.secrets.outputs.configured == 'true'
-      if: steps.secrets.outputs.configured == 'true'
       env:
         SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
         KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
@@ -388,6 +387,7 @@ jobs:
     # SSH 개인키를 올리는 스텝이 아예 없어서, 시크릿을 채워도 인증 단계에서 막혔다.
     # 키는 env 로 넘긴다. run 본문에 ${{ secrets.* }} 를 그대로 쓰면 값이 스크립트 텍스트에 박힌다.
     - name: Set up SSH
+      if: steps.secrets.outputs.configured == 'true'
       env:
         SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
         KNOWN_HOSTS: ${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}
