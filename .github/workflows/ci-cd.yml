@@ -272,7 +272,7 @@ jobs:
         IMAGE: ${{ needs.build-docker.outputs.image-tag }}
       run: |
         ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
-          "docker pull $IMAGE && (docker stop carecode-staging || true) && (docker rm carecode-staging || true) && docker run -d --name carecode-staging --memory=640m --memory-swap=640m -p 8082:8082 --env-file /opt/carecode/.env $IMAGE"
+          "mkdir -p /opt/carecode/uploads-staging && docker pull $IMAGE && (docker stop carecode-staging || true) && (docker rm carecode-staging || true) && docker run -d --name carecode-staging --memory=640m --memory-swap=640m -v /opt/carecode/uploads-staging:/app/uploads -p 8082:8082 --env-file /opt/carecode/.env $IMAGE"
 
     - name: Run health check
       if: steps.secrets.outputs.configured == 'true'
@@ -450,8 +450,14 @@ jobs:
         echo "===== pull $IMAGE ====="
         docker pull "$IMAGE"
 
+        # 업로드물은 컨테이너 밖에 둔다. 볼륨이 없으면 교체할 때마다 /app/uploads 가 컨테이너와
+        # 함께 사라진다 — 사용자가 올린 진단서·프로필 이미지가 배포마다 전부 날아간다는 뜻이다.
+        # (여러 인스턴스로 늘릴 때는 S3 구현체로 바꿔야 한다. 이슈 #49)
+        UPLOADS_DIR=/opt/carecode/uploads
+        mkdir -p "$UPLOADS_DIR"
+
         run_app() {
-          docker run -d --name "$APP" --restart unless-stopped             --memory="$APP_MEMORY" --memory-swap="$APP_MEMORY"             -p "$PORT:8082" --env-file "$ENV_FILE" "$1" >/dev/null
+          docker run -d --name "$APP" --restart unless-stopped             --memory="$APP_MEMORY" --memory-swap="$APP_MEMORY"             -v "$UPLOADS_DIR:/app/uploads"             -p "$PORT:8082" --env-file "$ENV_FILE" "$1" >/dev/null
         }
 
         wait_healthy() {
