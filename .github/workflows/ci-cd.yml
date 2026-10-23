@@ -205,27 +205,46 @@ jobs:
       uses: actions/checkout@v4
 
     # 어떤 시크릿이 비어 있는지 먼저 이름으로 알려준다.
-    # 예전에는 `test -n "..."` 하나로 끝나서, 실패해도 무엇이 없는지 로그에 남지 않았다.
-    - name: Check required secrets
+    # 운영 쪽과 같은 규칙이다 — 전부 있으면 배포, 하나도 없으면 건너뜀, 일부만 있으면 실패.
+    # 자세한 이유는 deploy-production 의 같은 스텝에 적어 두었다.
+    - name: Check deploy secrets
+      id: secrets
       env:
         DEPLOY_HOST: ${{ secrets.STAGING_DEPLOY_HOST }}
         DEPLOY_USER: ${{ secrets.STAGING_DEPLOY_USER }}
         SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
         HEALTH_URL: ${{ secrets.STAGING_HEALTH_URL }}
       run: |
+        required="DEPLOY_HOST DEPLOY_USER SSH_KEY HEALTH_URL"
         missing=""
-        for name in DEPLOY_HOST DEPLOY_USER SSH_KEY HEALTH_URL; do
-          if [ -z "${!name}" ]; then missing="$missing STAGING_$name"; fi
+        present=""
+        for name in $required; do
+          if [ -z "${!name}" ]; then missing="$missing STAGING_$name"; else present="$present STAGING_$name"; fi
         done
-        if [ -n "$missing" ]; then
-          echo "::error::스테이징 배포에 필요한 시크릿이 없습니다:$missing"
+
+        if [ -z "$missing" ]; then
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+          echo "스테이징 배포 시크릿이 모두 설정되어 있습니다."
+          exit 0
+        fi
+
+        if [ -n "$present" ]; then
+          echo "::error::스테이징 배포 시크릿이 일부만 설정되어 있습니다. 없는 것:$missing"
           exit 1
         fi
-        echo "필요한 시크릿이 모두 설정되어 있습니다."
+
+        echo "configured=false" >> "$GITHUB_OUTPUT"
+        {
+          echo "### 스테이징 배포를 건너뜀"
+          echo
+          echo "배포 시크릿이 설정되지 않았습니다. 설정 방법: \`docs/operations/deployment-secrets.md\`"
+        } >> "$GITHUB_STEP_SUMMARY"
+        echo "::notice::스테이징 배포 시크릿 미설정 — 배포를 건너뜁니다."
 
     # SSH 개인키를 올리는 스텝이 아예 없어서, 시크릿을 채워도 인증 단계에서 막혔다.
     # 키는 env 로 넘긴다. run 본문에 ${{ secrets.* }} 를 그대로 쓰면 값이 스크립트 텍스트에 박힌다.
     - name: Set up SSH
+      if: steps.secrets.outputs.configured == 'true'
       env:
         SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
         KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
@@ -246,6 +265,7 @@ jobs:
         chmod 600 ~/.ssh/known_hosts
 
     - name: Deploy to staging environment
+      if: steps.secrets.outputs.configured == 'true'
       env:
         DEPLOY_HOST: ${{ secrets.STAGING_DEPLOY_HOST }}
         DEPLOY_USER: ${{ secrets.STAGING_DEPLOY_USER }}
@@ -255,6 +275,7 @@ jobs:
           "docker pull $IMAGE && (docker stop carecode-staging || true) && (docker rm carecode-staging || true) && docker run -d --name carecode-staging --memory=640m --memory-swap=640m -p 8082:8082 --env-file /opt/carecode/.env $IMAGE"
 
     - name: Run health check
+      if: steps.secrets.outputs.configured == 'true'
       env:
         HEALTH_URL: ${{ secrets.STAGING_HEALTH_URL }}
       run: |
@@ -276,6 +297,10 @@ jobs:
         SLACK_WEBHOOK_URL: ${{ secrets.OPS_SLACK_WEBHOOK_URL }}
         STATUS: ${{ job.status }}
       run: |
+        if [ "${{ steps.secrets.outputs.configured }}" != "true" ]; then
+          echo "[staging] 배포 건너뜀 (시크릿 미설정)" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
         line="[staging] 배포 $STATUS - ${{ github.repository }}@${GITHUB_SHA:0:7} (${{ github.run_id }})"
         echo "$line" >> "$GITHUB_STEP_SUMMARY"
         if [ "$STATUS" != "success" ]; then echo "::error::$line"; fi
@@ -308,28 +333,61 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 어떤 시크릿이 비어 있는지 먼저 이름으로 알려준다.
-    # 예전에는 각 스텝의 `test -n "..."` 하나로 끝나서, 실패해도 무엇이 없는지 로그에 남지 않았다.
-    - name: Check required secrets
+    # 시크릿 상태를 세 가지로 나눈다.
+    #
+    #   전부 있음   → 배포한다
+    #   하나도 없음 → 건너뛴다 (실패가 아니다)
+    #   일부만 있음 → 실패한다 (설정 사고다)
+    #
+    # "하나도 없음" 을 실패로 두면 배포 대상이 정해지기 전까지 main 의 모든 머지가 빨간불이 된다.
+    # 그 상태가 다섯 번 연속되면 빨간불이 정상처럼 보이고, 그때부터는 진짜 실패도 눈에 띄지 않는다
+    # (#94 가 적은 그대로다). 그래서 미설정은 잡 요약에 남기고 통과시킨다 — 설정이 없다는 사실은
+    # 조용히 지나가지 않고 모든 실행의 요약에 적힌다.
+    #
+    # 반대로 일부만 채워져 있으면 넘어가면 안 된다. 호스트는 있는데 키가 없는 식이면 누군가
+    # 설정하다 멈춘 것이고, 그건 조용히 건너뛸 일이 아니다.
+    - name: Check deploy secrets
+      id: secrets
       env:
         DEPLOY_HOST: ${{ secrets.PRODUCTION_DEPLOY_HOST }}
         DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
         SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
         HEALTH_URL: ${{ secrets.PRODUCTION_HEALTH_URL }}
       run: |
+        required="DEPLOY_HOST DEPLOY_USER SSH_KEY HEALTH_URL"
         missing=""
-        for name in DEPLOY_HOST DEPLOY_USER SSH_KEY HEALTH_URL; do
-          if [ -z "${!name}" ]; then missing="$missing PRODUCTION_$name"; fi
+        present=""
+        for name in $required; do
+          if [ -z "${!name}" ]; then missing="$missing PRODUCTION_$name"; else present="$present PRODUCTION_$name"; fi
         done
-        if [ -n "$missing" ]; then
-          echo "::error::운영 배포에 필요한 시크릿이 없습니다:$missing"
+
+        if [ -z "$missing" ]; then
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+          echo "운영 배포 시크릿이 모두 설정되어 있습니다."
+          exit 0
+        fi
+
+        if [ -n "$present" ]; then
+          echo "::error::운영 배포 시크릿이 일부만 설정되어 있습니다. 없는 것:$missing"
+          echo "설정된 것:$present" >&2
           exit 1
         fi
-        echo "필요한 시크릿이 모두 설정되어 있습니다."
+
+        echo "configured=false" >> "$GITHUB_OUTPUT"
+        {
+          echo "### 운영 배포를 건너뜀"
+          echo
+          echo "배포 시크릿이 설정되지 않아 이번 커밋은 **운영에 반영되지 않았습니다.**"
+          echo "테스트·빌드·이미지는 정상입니다."
+          echo
+          echo "설정 방법: \`docs/operations/deployment-secrets.md\`"
+        } >> "$GITHUB_STEP_SUMMARY"
+        echo "::notice::운영 배포 시크릿 미설정 — 배포를 건너뜁니다. docs/operations/deployment-secrets.md 참고"
 
     # SSH 개인키를 올리는 스텝이 아예 없어서, 시크릿을 채워도 인증 단계에서 막혔다.
     # 키는 env 로 넘긴다. run 본문에 ${{ secrets.* }} 를 그대로 쓰면 값이 스크립트 텍스트에 박힌다.
     - name: Set up SSH
+      if: steps.secrets.outputs.configured == 'true'
       env:
         SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
         KNOWN_HOSTS: ${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}
@@ -351,6 +409,7 @@ jobs:
 
     # 토큰은 stdin 으로 흘려보낸다. ssh 인자로 넘기면 서버의 프로세스 목록에 그대로 보인다.
     - name: Log in to registry on the server
+      if: steps.secrets.outputs.configured == 'true'
       env:
         DEPLOY_HOST: ${{ secrets.PRODUCTION_DEPLOY_HOST }}
         DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
@@ -360,6 +419,7 @@ jobs:
           "docker login ${{ env.REGISTRY }} -u '${{ github.actor }}' --password-stdin"
 
     - name: Deploy
+      if: steps.secrets.outputs.configured == 'true'
       env:
         DEPLOY_HOST: ${{ secrets.PRODUCTION_DEPLOY_HOST }}
         DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
@@ -447,6 +507,7 @@ jobs:
         REMOTE
 
     - name: Verify from outside
+      if: steps.secrets.outputs.configured == 'true'
       env:
         HEALTH_URL: ${{ secrets.PRODUCTION_HEALTH_URL }}
       run: |
@@ -469,6 +530,10 @@ jobs:
         SLACK_WEBHOOK_URL: ${{ secrets.OPS_SLACK_WEBHOOK_URL }}
         STATUS: ${{ job.status }}
       run: |
+        if [ "${{ steps.secrets.outputs.configured }}" != "true" ]; then
+          echo "[production] 배포 건너뜀 (시크릿 미설정)" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
         line="[production] 배포 $STATUS - ${{ github.repository }}@${GITHUB_SHA:0:7} (${{ github.run_id }})"
         echo "$line" >> "$GITHUB_STEP_SUMMARY"
         if [ "$STATUS" != "success" ]; then echo "::error::$line"; fi
