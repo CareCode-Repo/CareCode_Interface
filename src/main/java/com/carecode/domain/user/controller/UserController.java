@@ -142,7 +142,6 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userFacade.uploadProfileImage(selfDbId(), file));
     }
 
-    @PutMapping("/{userId}/profile-image")
     @LogExecutionTime
     @Operation(summary = "프로필 이미지 변경 (구 경로)",
             description = "본인만 변경할 수 있습니다. 신규 클라이언트는 /users/me/profile-image 를 사용하세요")
@@ -167,7 +166,6 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(userFacade.updateUserLocation(selfDbId(), latitude, longitude));
     }
 
-    @PutMapping("/{userId}/location")
     @LogExecutionTime
     @Operation(summary = "위치 갱신 (구 경로)",
             description = "본인만 변경할 수 있습니다. 신규 클라이언트는 /users/me/location 을 사용하세요")
@@ -191,7 +189,6 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.of("회원 탈퇴가 완료되었습니다."));
     }
 
-    @PutMapping("/{userId}/deactivate")
     @LogExecutionTime
     @Operation(summary = "계정 비활성화 (구 경로)", description = "본인만 요청할 수 있습니다")
     @SecurityRequirement(name = "Bearer Authentication")
@@ -211,7 +208,6 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(ApiSuccess.of("회원 탈퇴가 완료되었습니다. 데이터는 보존되며 필요시 복구 가능합니다."));
     }
 
-    @DeleteMapping("/{userId}")
     @LogExecutionTime
     @Operation(summary = "회원 탈퇴 (구 경로)", description = "본인만 요청할 수 있습니다")
     @SecurityRequirement(name = "Bearer Authentication")
