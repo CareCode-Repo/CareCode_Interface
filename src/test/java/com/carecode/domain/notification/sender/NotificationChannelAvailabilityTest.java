@@ -107,7 +107,9 @@ class NotificationChannelAvailabilityTest {
     @Test
     @DisplayName("푸시 토큰은 알림 유형과 무관하게 찾는다 - 등록은 SYSTEM 행에만 쓰기 때문")
     void 다른_유형에_등록된_토큰으로도_푸시를_보낸다() {
-        User recipient = User.builder().id(1L).userId("u-1").name("보호자").build();
+        // isActive 를 명시한다. 디스패처가 탈퇴·비활성 계정에 발송하지 않으므로, 빼면 이
+        // 테스트의 수신자가 "비활성" 으로 읽힌다. 실제 저장된 사용자는 @PrePersist 가 true 로 채운다.
+        User recipient = User.builder().id(1L).userId("u-1").name("보호자").isActive(true).build();
         // POLICY 설정 행에는 토큰이 없다. 등록 시 SYSTEM 행에만 저장하기 때문이다.
         NotificationPreference policyPreference = NotificationPreference.builder()
                 .user(recipient)

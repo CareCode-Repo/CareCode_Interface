@@ -48,6 +48,11 @@ public class NotificationDispatcher {
             log.warn("알림 발송 건너뜀 - 수신자 없음. notificationId={}", notification.getId());
             return false;
         }
+        if (!canReceive(recipient)) {
+            log.info("알림 발송 건너뜀 - 탈퇴·비활성 계정. notificationId={}, userId={}",
+                    notification.getId(), recipient.getId());
+            return false;
+        }
 
         NotificationPreference preference = preferenceRepository
                 .findByUserAndNotificationType(recipient, notification.getNotificationType())
@@ -130,6 +135,27 @@ public class NotificationDispatcher {
      * {@link #dispatch} 가 채널을 건너뛸 때 보는 조건과 같아야 한다 — 다르면 설정 화면에서
      * 켤 수 있다고 안내한 채널이 실제로는 아무것도 보내지 않는다.
      */
+    /**
+     * 받을 수 있는 계정인지. 탈퇴·비활성 계정에는 외부 발송을 하지 않는다.
+     *
+     * <p>탈퇴는 물리 삭제가 아니라서({@link User#withdraw()}) 행이 남고, <b>그 사용자가 남긴
+     * 대기 등록·알림 설정·푸시 토큰도 함께 남는다.</b> 그래서 대기를 걸어 둔 사람이 탈퇴한 뒤
+     * 그 시설에 자리가 나면, 빈자리 알림이 탈퇴한 계정의 기기로 푸시되고 익명화된 주소
+     * ({@code deleted_<id>@deleted.local})로 메일이 나갔다.
+     *
+     * <p>발송 경로는 넷이지만(리마인더 배치, 빈자리·마감 알림, 사용자 API, 어드민) 전부 이
+     * 디스패처를 거친다. 그래서 막는 자리도 여기 하나다 — 경로마다 검사를 넣으면 다음 경로가
+     * 생길 때 또 빠진다.
+     *
+     * <p>관리자가 비활성화한 계정도 같게 본다. 로그인할 수 없는 계정에 알림을 보낼 이유가 없다.
+     *
+     * <p>인앱 알림 레코드 자체는 막지 않는다. 그건 이미 저장된 뒤라 여기서 되돌릴 수 없고,
+     * 조회 API 가 인증을 요구하므로 탈퇴 계정은 어차피 볼 수 없다.
+     */
+    private boolean canReceive(User recipient) {
+        return recipient.getDeletedAt() == null && Boolean.TRUE.equals(recipient.getIsActive());
+    }
+
     public boolean isChannelAvailable(NotificationChannelType channel) {
         if (channel == NotificationChannelType.IN_APP) {
             return true;
