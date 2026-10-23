@@ -3,6 +3,7 @@ package com.carecode.domain.health.service;
 import com.carecode.domain.user.entity.ConsentType;
 import com.carecode.domain.user.service.ConsentGuard;
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.storage.FileStorageService;
 import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ResourceNotFoundException;
@@ -46,6 +47,7 @@ public class HealthService {
     private final HealthRecordRepository healthRecordRepository;
     private final ConsentGuard consentGuard;
     private final HealthRecordAttachmentRepository healthRecordAttachmentRepository;
+    private final FileStorageService fileStorageService;
     /**
      * 건강 기록을 자녀에 붙이려면 엔티티가 필요해 남겨 둔다. 조회·소유권 판단은
      * {@link ChildDirectory} 가 하고, 여기서는 통과한 뒤 연관을 걸 때만 쓴다.
@@ -168,9 +170,25 @@ public class HealthService {
         HealthRecord record = healthRecordRepository.findById(recordId)
                 .orElseThrow(() -> new HealthRecordNotFoundException(recordId));
         assertHealthRecordOwnedByUser(record, actorUserId);
-        
+
+        // 엔티티의 cascade = ALL, orphanRemoval = true 는 첨부 "행" 만 지운다. 저장된 파일은
+        // 디스크에 남아서, 진단서·처방전 같은 민감정보가 "지웠다" 고 생각한 뒤에도 서버에
+        // 남았다. 행이 사라지면 그 파일을 가리키는 것이 없어 지울 기회도 없어지므로, 지우기
+        // 전에 키를 모아 둔다.
+        List<String> storageKeys = healthRecordAttachmentRepository
+                .findByHealthRecordIdOrderByDisplayOrderAsc(recordId).stream()
+                .map(HealthRecordAttachment::getFileUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .map(fileStorageService::toKey)
+                .toList();
+
         healthRecordRepository.delete(record);
-        log.info("건강 기록이 삭제되었습니다: 기록ID={}", recordId);
+
+        // 행을 먼저 지운다. 파일 삭제가 실패해도 남은 파일을 가리키는 행이 없어 접근 경로가
+        // 없다. 반대 순서라면 파일은 사라졌는데 행이 남아 다운로드가 깨진다.
+        storageKeys.forEach(fileStorageService::delete);
+
+        log.info("건강 기록이 삭제되었습니다: 기록ID={}, 첨부파일={}건", recordId, storageKeys.size());
     }
 
     // ===== 아동 정보 관리 =====

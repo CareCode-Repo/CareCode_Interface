@@ -104,6 +104,12 @@ sudo usermod -aG docker ubuntu   # sudo 없이 docker 를 쓸 수 있어야 한�
 free -h                          # 스왑 확인 — 1GB 인스턴스는 스왑 2GB 가 필요하다
 ```
 
+```bash
+# 업로드물을 담을 디렉터리. 배포가 컨테이너의 /app/uploads 로 마운트한다.
+sudo mkdir -p /opt/carecode/uploads
+sudo chown 1000:1000 /opt/carecode/uploads   # 컨테이너의 carecode 사용자
+```
+
 스왑이 없으면 기동 중 OOM 으로 죽습니다. 설정 명령과 근거(메모리 실측 포함)는
 [`docs/features/operations.md` 의 "1GB 인스턴스(프리티어)에 올리기"](../features/operations.md#1gb-인스턴스프리티어에-올리기)
 를 보세요.

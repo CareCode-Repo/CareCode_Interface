@@ -4,8 +4,11 @@ import com.carecode.core.exception.ChildNotFoundException;
 import com.carecode.core.exception.HealthRecordNotFoundException;
 import com.carecode.domain.health.dto.request.HealthCreateHealthRecordRequest;
 import com.carecode.domain.health.dto.response.HealthRecordResponse;
+import com.carecode.domain.health.entity.HealthRecordAttachment;
+import com.carecode.core.storage.FileStorageService;
 import com.carecode.domain.health.entity.HealthRecord;
 import com.carecode.domain.health.mapper.HealthRecordMapper;
+import com.carecode.domain.health.repository.HealthRecordAttachmentRepository;
 import com.carecode.domain.health.repository.HealthRecordRepository;
 import com.carecode.domain.user.entity.Child;
 import com.carecode.domain.user.entity.User;
@@ -53,6 +56,13 @@ class HealthServiceTest {
     /** 동의 확인은 ConsentGuardTest 에서 검증한다. 여기서는 통과시킨 뒤 기록 로직만 본다. */
     @Mock
     private ConsentGuard consentGuard;
+
+    /** 기록을 지우면 첨부 파일도 지워야 한다. 그 호출을 보기 위한 목이다. */
+    @Mock
+    private HealthRecordAttachmentRepository healthRecordAttachmentRepository;
+
+    @Mock
+    private FileStorageService fileStorageService;
 
     @InjectMocks
     private HealthService healthService;
@@ -174,6 +184,35 @@ class HealthServiceTest {
 
         verify(healthRecordRepository).findById(recordId);
         verify(healthRecordMapper, never()).toResponse(any());
+    }
+
+    /**
+     * 건강기록을 지우면 첨부 파일도 지워야 한다.
+     *
+     * <p>엔티티의 {@code cascade = ALL, orphanRemoval = true} 는 첨부 <b>행</b>만 지운다.
+     * 저장된 파일은 디스크에 남는다. 진단서·처방전 같은 민감정보가 "지웠다" 고 생각한 뒤에도
+     * 서버에 남아 있는 상태다.
+     */
+    @Test
+    @DisplayName("기록을 지우면 첨부 파일도 지운다")
+    void deletingRecordRemovesAttachmentFiles() {
+        Long recordId = 1L;
+        HealthRecord record = HealthRecord.builder().id(recordId).user(testUser).build();
+        HealthRecordAttachment attachment = HealthRecordAttachment.builder()
+                .healthRecord(record)
+                .fileUrl("health-records/2026/10/23/stored.png")
+                .fileName("진단서.png")
+                .build();
+
+        when(healthRecordRepository.findById(recordId)).thenReturn(java.util.Optional.of(record));
+        when(healthRecordAttachmentRepository.findByHealthRecordIdOrderByDisplayOrderAsc(recordId))
+                .thenReturn(java.util.List.of(attachment));
+        when(fileStorageService.toKey(anyString())).thenAnswer(inv -> inv.getArgument(0));
+
+        healthService.deleteHealthRecord(recordId, testUser.getId());
+
+        verify(fileStorageService).delete("health-records/2026/10/23/stored.png");
+        verify(healthRecordRepository).delete(record);
     }
 }
 

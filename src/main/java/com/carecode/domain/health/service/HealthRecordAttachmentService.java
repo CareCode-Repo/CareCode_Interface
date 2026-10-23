@@ -102,6 +102,16 @@ public class HealthRecordAttachmentService {
         }
 
         attachmentRepository.delete(attachment);
+
+        // 저장된 파일도 지운다. FileStorageService.delete 는 처음부터 있었지만 부르는 곳이
+        // 없어서, 첨부를 삭제해도 디스크에 파일이 남았다. 남은 파일은 조회할 길이 없으니 당장
+        // 새어 나가지는 않지만, 진단서·처방전 같은 민감정보가 "지웠다" 고 생각한 뒤에도 서버에
+        // 남는다. 파기 의무를 생각하면 그게 문제다.
+        //
+        // 행을 먼저 지우는 순서다. 파일 삭제가 실패해도 사용자에게는 삭제된 것으로 보이고,
+        // 남은 파일은 가리키는 행이 없어 접근 경로가 없다. 반대 순서라면 파일은 사라졌는데
+        // 행이 남아 다운로드가 깨진다.
+        fileStorageService.delete(fileStorageService.toKey(attachment.getFileUrl()));
     }
 
     /** 건강기록 조회 + 소유권 검증. 건강기록은 민감정보이므로 본인 기록만 접근할 수 있어야 한다. */
