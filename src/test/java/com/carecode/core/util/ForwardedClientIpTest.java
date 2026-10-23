@@ -73,8 +73,8 @@ class ForwardedClientIpTest {
 
         // 두 설정이 같은 결과를 낸다. rate limit 이 "프록시 IP 하나로 집계되는" 상황은
         // forward-headers-strategy 가 꺼져 있을 때만 발생한다.
-        assertThat(new ClientIpResolver(false).resolve(wrapped)).isEqualTo(CLIENT_IP);
-        assertThat(new ClientIpResolver(true).resolve(wrapped)).isEqualTo(CLIENT_IP);
+        assertThat(new ClientIpResolver(false, new io.micrometer.core.instrument.simple.SimpleMeterRegistry()).resolve(wrapped)).isEqualTo(CLIENT_IP);
+        assertThat(new ClientIpResolver(true, new io.micrometer.core.instrument.simple.SimpleMeterRegistry()).resolve(wrapped)).isEqualTo(CLIENT_IP);
     }
 
     @Test
@@ -82,8 +82,8 @@ class ForwardedClientIpTest {
     void withoutForwardedFilterTheFlagMatters() {
         MockHttpServletRequest raw = requestBehindProxy();
 
-        assertThat(new ClientIpResolver(false).resolve(raw)).isEqualTo(PROXY_IP);
-        assertThat(new ClientIpResolver(true).resolve(raw)).isEqualTo(CLIENT_IP);
+        assertThat(new ClientIpResolver(false, new io.micrometer.core.instrument.simple.SimpleMeterRegistry()).resolve(raw)).isEqualTo(PROXY_IP);
+        assertThat(new ClientIpResolver(true, new io.micrometer.core.instrument.simple.SimpleMeterRegistry()).resolve(raw)).isEqualTo(CLIENT_IP);
     }
 
     @Test
