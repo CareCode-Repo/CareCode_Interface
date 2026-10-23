@@ -73,8 +73,9 @@ public class AdmissionCandidateService {
         int horizon = horizonMonths != null && horizonMonths > 0 ? horizonMonths : DEFAULT_HORIZON_MONTHS;
         int size = limit != null && limit > 0 ? Math.min(limit, MAX_LIMIT) : DEFAULT_LIMIT;
 
+        // 연령은 개월 그대로 넘긴다. 이 저장소의 다른 연령 쿼리와 단위를 맞춘다.
         List<CareFacility> facilities = facilityRepository.findAdmissionCandidates(
-                region.trim(), childAgeMonths / 12, PageRequest.of(0, MAX_EVALUATED));
+                region.trim(), childAgeMonths, PageRequest.of(0, MAX_EVALUATED));
 
         AdmissionCandidateResponse.AdmissionCandidateResponseBuilder response =
                 AdmissionCandidateResponse.builder()

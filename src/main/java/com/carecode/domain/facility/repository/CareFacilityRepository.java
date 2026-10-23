@@ -30,16 +30,21 @@ public interface CareFacilityRepository extends JpaRepository<CareFacility, Long
     /**
      * 입소 후보. 지역 안에서 아이 나이를 받아 주는, 운영 중인 시설.
      *
-     * <p>AGE_RANGE_MIN/MAX 는 연 나이다(V1__baseline.sql 의 '최소 나이'). 아직 어떤 동기화도 이 값을
-     * 채우지 않아 대부분 NULL 인데, NULL 은 "연령 제한 없음" 으로 본다. 나중에 값이 들어오면 조건이
-     * 저절로 살아난다.
+     * <p>연령은 <b>개월</b>로 받는다. 이 저장소의 다른 연령 쿼리와 같은 단위여야 호출부가 헷갈리지
+     * 않는다 — 한 곳만 단위가 달랐다가 돌 지난 아이 전부에게 신생아 정책이 추천된 적이 있다
+     * (docs/quality/architecture-rules.md).
+     *
+     * <p>다만 AGE_RANGE_MIN/MAX 의 단위는 <b>확정된 바 없다</b>. V1__baseline.sql 주석은 '최소 나이'
+     * 지만 이 값을 채우는 코드가 아직 없어서(동기화·마이그레이션 모두) 실제 데이터로 확인할 수 없다.
+     * NULL 은 "연령 제한 없음" 으로 보므로 지금은 조건이 사실상 없는 것과 같다. 이 컬럼을 채우는
+     * 사람이 단위를 정하고 호출부를 함께 고쳐야 한다.
      */
     @Query("SELECT cf FROM CareFacility cf WHERE cf.isActive = true "
             + "AND cf.address LIKE CONCAT('%', :region, '%') "
-            + "AND (cf.ageRangeMin IS NULL OR cf.ageRangeMin <= :ageYears) "
-            + "AND (cf.ageRangeMax IS NULL OR cf.ageRangeMax >= :ageYears)")
+            + "AND (cf.ageRangeMin IS NULL OR cf.ageRangeMin <= :ageMonths) "
+            + "AND (cf.ageRangeMax IS NULL OR cf.ageRangeMax >= :ageMonths)")
     List<CareFacility> findAdmissionCandidates(@Param("region") String region,
-                                               @Param("ageYears") int ageYears,
+                                               @Param("ageMonths") int ageMonths,
                                                Pageable pageable);
 
     // 연령 범위에 해당하는 시설 조회

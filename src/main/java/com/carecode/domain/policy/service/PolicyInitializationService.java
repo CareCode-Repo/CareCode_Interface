@@ -15,7 +15,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.List;
 
-/** 정책 관련 초기 데이터를 생성하는 서비스 */
+/**
+ * 정책 관련 초기 데이터를 생성하는 서비스. <b>개발 환경 전용</b>이다.
+ *
+ * <p><b>여기 적힌 금액을 운영으로 그대로 옮기지 말 것.</b> 지원금 금액은 해마다 바뀌고, 상당수가
+ * 조건에 따라 갈린다. 실제로 이 파일의 부모급여는 2023년 값(70/35만원)인 채로 오래 남아 있었다.
+ *
+ * <p>2026-10-22 기준 보건복지부 페이지로 확인한 것만 고쳤다. 확인한 값에는 출처를 달았고,
+ * 확인하지 못한 값은 <b>개발용 임시값</b>이라 믿을 수 없다.
+ *
+ * <p>조건에 따라 갈리는 금액은 {@code benefitAmount} 하나로 담을 수 없다 — 아동수당은 거주지별
+ * (10~13만원), 첫만남이용권은 출생 순위별(200/300만원)로 다르다. 공공데이터 동기화가 금액을
+ * 일부러 추출하지 않는 이유와 같다({@code PolicyUpsertService} 참고). 정확한 금액은 사용자
+ * 제보 합의({@code BenefitAmountReportService})로 채우는 것이 설계다.
+ */
 @Slf4j
 @Service
 @Profile("dev")
@@ -127,6 +140,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMin(0)
                 .targetAgeMax(96)
                 .targetRegion("전국")
+                // 미확인: 개발용 임시값. 공식 출처로 확인하기 전에는 사실로 쓰지 말 것.
                 .benefitAmount(1500000)
                 .maxPaymentMonths(12)
                 .benefitType("월급여")
@@ -146,6 +160,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMin(0)
                 .targetAgeMax(96)
                 .targetRegion("전국")
+                // 미확인: 개발용 임시값. 공식 출처로 확인하기 전에는 사실로 쓰지 말 것.
                 .benefitAmount(2500000)
                 .maxPaymentMonths(3)
                 .benefitType("월급여")
@@ -173,6 +188,8 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMin(0)
                 .targetAgeMax(83)
                 .targetRegion("전국")
+                // 확인: 월 10~13만원(수도권 10만, 비수도권 10.5만, 인구감소지역 11만, 특별 12만).
+                // 거주지로 갈리므로 수도권 기준값만 둔다. mohw.go.kr/menu.es?mid=a10711030100 (2026-10-22)
                 .benefitAmount(100000)
                 .benefitType("월지급")
                 .applicationUrl("https://www.bokjiro.go.kr")
@@ -192,7 +209,9 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMax(11)
                 .exclusionGroup("INFANT_CARE_0")
                 .targetRegion("전국")
-                .benefitAmount(700000)
+                // 확인: 월 100만원. 2023년 값 70만원이 그대로 남아 있었다.
+                // mohw.go.kr/menu.es?mid=a10711030600 (2026-10-22)
+                .benefitAmount(1000000)
                 .benefitType("월지급")
                 .applicationUrl("https://www.bokjiro.go.kr")
                 .contactInfo("보건복지상담센터 129")
@@ -211,7 +230,8 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMax(23)
                 .exclusionGroup("INFANT_CARE_1")
                 .targetRegion("전국")
-                .benefitAmount(350000)
+                // 확인: 월 50만원. 2023년 값 35만원이 그대로 남아 있었다. 출처는 0세와 같다.
+                .benefitAmount(500000)
                 .benefitType("월지급")
                 .applicationUrl("https://www.bokjiro.go.kr")
                 .contactInfo("보건복지상담센터 129")
@@ -230,6 +250,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMax(71)
                 .exclusionGroup("INFANT_CARE_0")
                 .targetRegion("전국")
+                // 미확인: 개발용 임시값. 공식 출처로 확인하기 전에는 사실로 쓰지 말 것.
                 .benefitAmount(514000)
                 .benefitType("월지원")
                 .applicationUrl("https://www.bokjiro.go.kr")
@@ -248,6 +269,8 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMin(0)
                 .targetAgeMax(12)
                 .targetRegion("전국")
+                // 확인: 첫째 200만원, 둘째 이상 300만원('24.1.1 이후 출생아).
+                // 출생 순위로 갈리므로 첫째 기준값만 둔다. mohw.go.kr/menu.es?mid=a10711020100 (2026-10-22)
                 .benefitAmount(2000000)
                 .benefitType("일시지급")
                 .applicationUrl("https://www.bokjiro.go.kr")
@@ -367,6 +390,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMin(0)
                 .targetAgeMax(0)
                 .targetRegion("전국")
+                // 미확인: 개발용 임시값. 공식 출처로 확인하기 전에는 사실로 쓰지 말 것.
                 .benefitAmount(1000000)
                 .benefitType("바우처지원")
                 .applicationUrl("https://www.nhis.or.kr")
@@ -394,6 +418,7 @@ public class PolicyInitializationService implements CommandLineRunner {
                 .targetAgeMax(71)
                 .exclusionGroup("PRESCHOOL_EDU")
                 .targetRegion("전국")
+                // 미확인: 개발용 임시값. 공식 출처로 확인하기 전에는 사실로 쓰지 말 것.
                 .benefitAmount(280000)
                 .benefitType("월지원")
                 .applicationUrl("https://www.childcare.go.kr")
