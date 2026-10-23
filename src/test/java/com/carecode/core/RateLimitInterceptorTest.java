@@ -54,7 +54,7 @@ class RateLimitInterceptorTest {
 
     @BeforeEach
     void setUp() {
-        interceptor = new RateLimitInterceptor(redisTemplate, new ClientIpResolver(false));
+        interceptor = new RateLimitInterceptor(redisTemplate, new ClientIpResolver(false, new io.micrometer.core.instrument.simple.SimpleMeterRegistry()));
         response = new MockHttpServletResponse();
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.getExpire(anyString())).thenReturn(60L);

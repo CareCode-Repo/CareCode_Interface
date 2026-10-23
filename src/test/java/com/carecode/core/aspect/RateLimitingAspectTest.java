@@ -70,7 +70,7 @@ class RateLimitingAspectTest {
 
     @BeforeEach
     void setUp() throws Throwable {
-        aspect = new RateLimitingAspect(redisTemplate, new ClientIpResolver(false));
+        aspect = new RateLimitingAspect(redisTemplate, new ClientIpResolver(false, new io.micrometer.core.instrument.simple.SimpleMeterRegistry()));
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(joinPoint.getSignature()).thenReturn(signature);
         when(signature.toShortString()).thenReturn("AuthController.login(..)");
