@@ -27,6 +27,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -112,6 +113,55 @@ class HealthRecordAttachmentServiceTest {
             service.download(MY_RECORD, 5L);
 
             verify(fileStorageService).toKey("health-records/2026/08/29/stored.png");
+        }
+    }
+
+    @Nested
+    @DisplayName("삭제")
+    class Deletion {
+
+        /**
+         * 첨부를 지우면 저장된 파일도 지워야 한다.
+         *
+         * <p>{@code FileStorageService.delete(key)} 는 처음부터 있었지만 <b>부르는 곳이
+         * 없었다.</b> 그래서 첨부를 삭제해도 디스크에 파일이 남았다. 건강기록을 지울 때도
+         * 같다 — 엔티티의 {@code cascade = ALL, orphanRemoval = true} 가 첨부 <b>행</b>만
+         * 지운다.
+         *
+         * <p>남은 파일은 조회할 길이 없으니 당장 새어 나가지는 않지만, 민감정보(진단서·처방전)가
+         * "지웠다" 고 생각한 뒤에도 서버에 남는다. 열람권·파기 의무를 생각하면 그게 문제다.
+         */
+        @Test
+        @DisplayName("첨부를 지우면 저장된 파일도 지운다")
+        void deletingAttachmentRemovesStoredFile() {
+            when(attachmentRepository.findById(5L)).thenReturn(Optional.of(attachment(5L, MY_RECORD)));
+
+            service.delete(MY_RECORD, 5L);
+
+            verify(attachmentRepository).delete(any(HealthRecordAttachment.class));
+            verify(fileStorageService).delete("health-records/2026/08/29/stored.png");
+        }
+
+        /** 소유권 확인이 먼저다. 남의 첨부로 파일을 지우게 하면 삭제가 공격 수단이 된다. */
+        @Test
+        @DisplayName("남의 기록이면 파일을 지우지 않는다")
+        void foreignRecordDeletesNothing() {
+            assertThatThrownBy(() -> service.delete(OTHERS_RECORD, 5L))
+                    .isInstanceOf(HealthRecordNotFoundException.class);
+
+            verify(fileStorageService, never()).delete(anyString());
+            verify(attachmentRepository, never()).delete(any(HealthRecordAttachment.class));
+        }
+
+        @Test
+        @DisplayName("다른 기록에 달린 첨부 id 로는 지울 수 없다")
+        void crossRecordDeleteIsRejected() {
+            when(attachmentRepository.findById(7L)).thenReturn(Optional.of(attachment(7L, 12345L)));
+
+            assertThatThrownBy(() -> service.delete(MY_RECORD, 7L))
+                    .isInstanceOf(ResourceNotFoundException.class);
+
+            verify(fileStorageService, never()).delete(anyString());
         }
     }
 
