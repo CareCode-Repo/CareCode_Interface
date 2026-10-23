@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -181,7 +182,13 @@ class AccessControlContractTest {
     @ValueSource(strings = {
             "/users/1/role",
             "/users/1/activate",
-            "/users/1/reactivate"
+            "/users/1/reactivate",
+            // 아래 셋은 권한 상승이 아니라 "경로에 남의 ID 를 넣을 수 있는 것처럼 보이던"
+            // 구 경로다(본인 확인은 들어가 있었다). 대체 경로는 /users/me/* 이고
+            // 프런트는 그쪽만 쓴다. 이슈 #91
+            "/users/1/location",
+            "/users/1/profile-image",
+            "/users/1/deactivate"
     })
     @WithMockUser(username = "attacker@example.com", roles = "PARENT")
     void privilegedMappingsRemovedFromUserApi(String path) throws Exception {
@@ -190,6 +197,21 @@ class AccessControlContractTest {
 
         assertThat(result.getResponse().getStatus())
                 .as("%s 는 매핑이 없어야 한다 (404/405)", path)
+                .isIn(404, 405);
+    }
+
+    /**
+     * 회원 탈퇴 구 경로도 사라졌다.
+     *
+     * <p>{@code DELETE /users/{userId}} 는 본인 확인이 들어가 있었지만, 경로에 남의 ID 를 넣을
+     * 수 있는 것처럼 보였다. 탈퇴는 {@code DELETE /users/me} 하나로만 받는다. 이슈 #91
+     */
+    @Test
+    @DisplayName("DELETE /users/{userId} 구 경로는 사라졌다")
+    @WithMockUser(username = "member@example.com", roles = "PARENT")
+    void legacyAccountDeletionPathRemoved() throws Exception {
+        assertThat(mockMvc.perform(delete("/users/1")).andReturn().getResponse().getStatus())
+                .as("구 경로는 매핑이 없어야 한다 (404/405)")
                 .isIn(404, 405);
     }
 
