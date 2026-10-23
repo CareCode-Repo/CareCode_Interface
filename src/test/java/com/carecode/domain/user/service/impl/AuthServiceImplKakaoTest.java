@@ -2,11 +2,11 @@ package com.carecode.domain.user.service.impl;
 
 import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.ErrorCode;
-import com.carecode.core.util.KakaoUtil;
-import com.carecode.domain.user.dto.response.KakaoAccount;
-import com.carecode.domain.user.dto.response.KakaoOAuthToken;
-import com.carecode.domain.user.dto.response.KakaoProfile;
-import com.carecode.domain.user.dto.response.KakaoProfileInfo;
+import com.carecode.external.kakao.KakaoUtil;
+import com.carecode.external.kakao.KakaoAccount;
+import com.carecode.external.kakao.KakaoOAuthToken;
+import com.carecode.external.kakao.KakaoProfile;
+import com.carecode.external.kakao.KakaoProfileInfo;
 import com.carecode.domain.user.dto.response.TokenDto;
 import com.carecode.domain.user.entity.User;
 import com.carecode.domain.user.entity.UserRole;

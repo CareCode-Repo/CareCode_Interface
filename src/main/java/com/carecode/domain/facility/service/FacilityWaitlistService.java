@@ -5,7 +5,7 @@ import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.BusinessException;
 import com.carecode.core.exception.ErrorCode;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.facility.dto.request.WaitlistRequest;
 import com.carecode.domain.facility.dto.response.WaitlistStatsResponse;
 import com.carecode.domain.facility.entity.CareFacility;

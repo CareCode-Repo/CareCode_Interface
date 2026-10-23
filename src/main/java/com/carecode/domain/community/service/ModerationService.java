@@ -3,7 +3,7 @@ package com.carecode.domain.community.service;
 import com.carecode.core.exception.BusinessException;
 import com.carecode.core.exception.ErrorCode;
 import com.carecode.core.exception.ResourceNotFoundException;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.community.dto.request.ReportCreateRequest;
 import com.carecode.domain.community.dto.response.ReportResponse;
 import com.carecode.domain.community.entity.Comment;

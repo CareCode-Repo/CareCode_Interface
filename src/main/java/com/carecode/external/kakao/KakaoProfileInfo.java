@@ -1,4 +1,4 @@
-package com.carecode.domain.user.dto.response;
+package com.carecode.external.kakao;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;

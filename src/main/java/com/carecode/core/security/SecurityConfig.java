@@ -1,6 +1,7 @@
 package com.carecode.core.security;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -30,16 +31,21 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomUserDetailsService customUserDetailsService;
+    /**
+     * 스프링 시큐리티 인터페이스로 받는다. 구현({@code CustomUserDetailsService})은 사용자
+     * 도메인에 있다 — 자격 증명으로 사용자를 찾는 일은 그 도메인의 규칙이다. 여기서 구현
+     * 클래스를 직접 가리키면 보안 설정이 특정 도메인을 알게 된다.
+     */
+    private final UserDetailsService userDetailsService;
     private final List<String> allowedOrigins;
     private final Environment environment;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, 
-                         CustomUserDetailsService customUserDetailsService,
+                         UserDetailsService userDetailsService,
                          Environment environment,
                          @Value("${app.security.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}") String allowedOrigins) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.customUserDetailsService = customUserDetailsService;
+        this.userDetailsService = userDetailsService;
         this.environment = environment;
         this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
@@ -64,7 +70,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .userDetailsService(customUserDetailsService)
+            .userDetailsService(userDetailsService)
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

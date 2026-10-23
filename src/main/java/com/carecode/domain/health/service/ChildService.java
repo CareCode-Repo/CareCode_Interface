@@ -3,7 +3,7 @@ package com.carecode.domain.health.service;
 import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
 import com.carecode.core.exception.ChildNotFoundException;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.health.dto.request.ChildCreateRequest;
 import com.carecode.domain.health.dto.response.ChildInfoResponse;
 import com.carecode.domain.health.mapper.ChildMapper;

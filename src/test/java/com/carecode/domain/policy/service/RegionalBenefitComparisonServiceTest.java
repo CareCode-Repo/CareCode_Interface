@@ -2,7 +2,7 @@ package com.carecode.domain.policy.service;
 
 import com.carecode.domain.policy.benefit.BenefitProjectionCalculator;
 import com.carecode.core.exception.BusinessException;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.policy.dto.response.RegionalBenefitComparisonResponse;
 import com.carecode.domain.policy.dto.response.RegionalBenefitResponse;
 import com.carecode.domain.policy.entity.Policy;

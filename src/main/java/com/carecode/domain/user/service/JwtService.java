@@ -1,6 +1,8 @@
 package com.carecode.domain.user.service;
 
 import com.carecode.core.exception.BusinessException;
+import com.carecode.core.security.AccessTokenClaims;
+import com.carecode.core.security.AccessTokenVerifier;
 import com.carecode.core.exception.ErrorCode;
 import com.carecode.domain.user.dto.response.TokenDto;
 import com.carecode.domain.user.dto.response.TokenValidationResponse;
@@ -21,7 +23,7 @@ import java.util.UUID;
 /** JWT 토큰 서비스 */
 @Slf4j
 @Service
-public class JwtService {
+public class JwtService implements AccessTokenVerifier {
 
     /** 토큰 종류를 구분하는 클레임. Access Token 을 Refresh 로, 혹은 그 반대로 쓰는 것을 막습니다. */
     public static final String CLAIM_TOKEN_TYPE = "typ";
@@ -180,6 +182,21 @@ public class JwtService {
     }
 
     // Access Token 전용 검증 - typ=access 인 토큰만 통과시킵니다.
+    /**
+     * {@link AccessTokenVerifier} 구현. 인증 필터는 이 메서드만 쓴다.
+     *
+     * <p>유효성 확인과 값 꺼내기를 한 번에 하는 이유: 필터가 따로 부르면 그 사이에 네 번
+     * 파싱하게 되고, 유효성 확인 뒤에 값을 꺼내는 순서를 호출자가 지켜야 한다.
+     */
+    @Override
+    public java.util.Optional<AccessTokenClaims> verifyAccessToken(String token) {
+        if (!validateAccessToken(token)) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(new AccessTokenClaims(
+                getUserIdFromToken(token), getEmailFromToken(token), getRoleFromToken(token)));
+    }
+
     public boolean validateAccessToken(String token) {
         return validateTokenOfType(token, TOKEN_TYPE_ACCESS);
     }

@@ -4,7 +4,7 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.ValidateLocation;
 import com.carecode.core.annotation.ValidateChildAge;
 import com.carecode.core.web.BaseController;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.core.util.PageRequestUtil;
 import com.carecode.domain.facility.dto.request.CareFacilitySearchRequest;
 import com.carecode.domain.facility.dto.request.CareFacilityAdvancedSearchRequest;

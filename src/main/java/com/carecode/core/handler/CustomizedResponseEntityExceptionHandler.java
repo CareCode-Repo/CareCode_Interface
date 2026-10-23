@@ -2,7 +2,7 @@ package com.carecode.core.handler;
 
 import com.carecode.core.exception.*;
 import com.carecode.core.ops.OperationalAlerter;
-import com.carecode.domain.user.service.ConsentGuard;
+import com.carecode.core.exception.ConsentRequiredException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -103,16 +103,16 @@ public class CustomizedResponseEntityExceptionHandler {
     }
 
     /** 동의가 없어 막힌 경우. 클라이언트가 어떤 동의를 받아야 하는지 알아야 화면을 띄울 수 있다. */
-    @ExceptionHandler(ConsentGuard.ConsentRequiredException.class)
+    @ExceptionHandler(ConsentRequiredException.class)
     public ResponseEntity<Map<String, Object>> handleConsentRequired(
-            ConsentGuard.ConsentRequiredException ex, WebRequest request) {
+            ConsentRequiredException ex, WebRequest request) {
         log.info("동의 미완료로 접근 차단: {}", ex.getConsentType());
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("error", "CONSENT_REQUIRED");
-        body.put("consentType", ex.getConsentType().name());
-        body.put("displayName", ex.getConsentType().getDisplayName());
-        body.put("sensitive", ex.getConsentType().isSensitive());
+        body.put("consentType", ex.getConsentType());
+        body.put("displayName", ex.getDisplayName());
+        body.put("sensitive", ex.isSensitive());
         body.put("message", ex.getMessage());
         body.put("path", request.getDescription(false));
 

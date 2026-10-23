@@ -3,7 +3,7 @@ package com.carecode.integration;
 import com.carecode.CareCodeApplication;
 import com.carecode.devtools.SampleFacilitySeeder;
 import com.carecode.devtools.SamplePolicySeeder;
-import com.carecode.core.security.CurrentUserFacade;
+import com.carecode.domain.user.app.CurrentUserFacade;
 import com.carecode.domain.facility.dto.response.AdmissionForecastResponse;
 import com.carecode.domain.facility.dto.response.FacilityPopularityResponse;
 import com.carecode.domain.facility.entity.CareFacility;

@@ -1,4 +1,4 @@
-package com.carecode.core.security;
+package com.carecode.domain.user.app;
 
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.domain.user.entity.User;
