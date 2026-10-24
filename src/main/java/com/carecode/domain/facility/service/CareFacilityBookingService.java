@@ -2,7 +2,6 @@ package com.carecode.domain.facility.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.exception.BusinessException;
-import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ErrorCode;
 import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.facility.dto.response.BookingResponse;
@@ -155,11 +154,11 @@ public class CareFacilityBookingService {
 
         if (booking.getStatus() == CareFacilityBooking.BookingStatus.CANCELLED
                 || booking.getStatus() == CareFacilityBooking.BookingStatus.REJECTED) {
-            throw new CareServiceException("이미 취소되었거나 반려된 예약입니다.");
+            throw new BusinessException(ErrorCode.BOOKING_STATE_CONFLICT, "이미 취소되었거나 반려된 예약입니다.");
         }
 
         if (booking.getStatus() == CareFacilityBooking.BookingStatus.COMPLETED) {
-            throw new CareServiceException("이미 완료된 예약은 취소할 수 없습니다.");
+            throw new BusinessException(ErrorCode.BOOKING_STATE_CONFLICT, "이미 완료된 예약은 취소할 수 없습니다.");
         }
 
         booking.cancel("사용자에 의해 취소됨");
@@ -178,11 +177,11 @@ public class CareFacilityBookingService {
 
         if (booking.getStatus() == CareFacilityBooking.BookingStatus.CANCELLED
                 || booking.getStatus() == CareFacilityBooking.BookingStatus.REJECTED) {
-            throw new CareServiceException("취소되었거나 반려된 예약은 수정할 수 없습니다.");
+            throw new BusinessException(ErrorCode.BOOKING_STATE_CONFLICT, "취소되었거나 반려된 예약은 수정할 수 없습니다.");
         }
 
         if (booking.getStatus() == CareFacilityBooking.BookingStatus.COMPLETED) {
-            throw new CareServiceException("완료된 예약은 수정할 수 없습니다.");
+            throw new BusinessException(ErrorCode.BOOKING_STATE_CONFLICT, "완료된 예약은 수정할 수 없습니다.");
         }
 
         // 예약 시간이 바뀌면 다시 검증한다. 종료 시각만 바뀌어도 겹침 여부가 달라지므로 둘 다 비교한다.
@@ -235,13 +234,13 @@ public class CareFacilityBookingService {
                                      LocalDateTime endTime,
                                      Long excludeBookingId) {
         if (startTime == null || endTime == null) {
-            throw new CareServiceException("예약 시작/종료 시간은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "예약 시작/종료 시간은 필수입니다.");
         }
         if (!endTime.isAfter(startTime)) {
-            throw new CareServiceException("예약 종료 시간은 시작 시간보다 뒤여야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "예약 종료 시간은 시작 시간보다 뒤여야 합니다.");
         }
         if (startTime.isBefore(LocalDateTime.now())) {
-            throw new CareServiceException("과거 시간으로는 예약할 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "과거 시간으로는 예약할 수 없습니다.");
         }
 
         long overlapping = bookingRepository.countOverlappingBookings(
@@ -252,7 +251,8 @@ public class CareFacilityBookingService {
                 : DEFAULT_CONCURRENT_BOOKING_LIMIT;
 
         if (overlapping >= capacity) {
-            throw new CareServiceException("해당 시간에 예약 가능한 자리가 없습니다. 다른 시간을 선택해주세요.");
+            throw new BusinessException(ErrorCode.BOOKING_ALREADY_EXISTS,
+                    "해당 시간에 예약 가능한 자리가 없습니다. 다른 시간을 선택해주세요.");
         }
     }
 

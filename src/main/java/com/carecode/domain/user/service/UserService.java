@@ -4,6 +4,8 @@ import com.carecode.core.analytics.EventLogger;
 import com.carecode.core.analytics.EventType;
 import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RequireAuthentication;
+import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.UserNotFoundException;
 import com.carecode.domain.user.dto.request.PasswordChangeRequestDto;
 import com.carecode.domain.user.dto.request.SignUpRequest;
@@ -161,6 +163,9 @@ public class UserService {
             } else {
                 throw new RuntimeException("카카오 API 호출 중 오류가 발생했습니다: " + e.getMessage(), e);
             }
+        } catch (CareCodeException | CareServiceException e) {
+            // 누구의 잘못인지 이미 정해진 예외다. 감싸면 전부 500 이 된다.
+            throw e;
         } catch (Exception e) {
             log.error("카카오 사용자 정보 조회 실패: {}", e.getMessage(), e);
             throw new RuntimeException("카카오 사용자 정보를 가져올 수 없습니다.", e);

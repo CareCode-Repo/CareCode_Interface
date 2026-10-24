@@ -1,6 +1,7 @@
 package com.carecode.domain.chatbot.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.chatbot.dto.request.ChatbotMessageRequest;
@@ -140,6 +141,9 @@ public class ChatbotService {
                     .timestamp(LocalDateTime.now())
                     .build();
                     
+        } catch (CareCodeException | CareServiceException e) {
+            // 누구의 잘못인지 이미 정해진 예외다. 감싸면 전부 500 이 된다.
+            throw e;
         } catch (Exception e) {
             log.error("챗봇 메시지 처리 중 오류 발생: {}", e.getMessage(), e);
             // 상세한 오류 정보 로깅
@@ -171,6 +175,8 @@ public class ChatbotService {
                     .map(this::convertToHistoryResponse)
                     .toList();
                     
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("대화 기록 조회 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("대화 기록 조회 중 오류가 발생했습니다.", e);
@@ -192,6 +198,8 @@ public class ChatbotService {
                     .map(this::convertToSessionResponse)
                     .toList();
                     
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("세션 목록 조회 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("세션 목록 조회 중 오류가 발생했습니다.", e);
@@ -211,6 +219,8 @@ public class ChatbotService {
             message.setIsHelpful(isHelpful);
             chatMessageRepository.save(message);
             
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("메시지 피드백 처리 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("메시지 피드백 처리 중 오류가 발생했습니다.", e);
@@ -230,6 +240,8 @@ public class ChatbotService {
             return messages.stream()
                     .map(this::convertToHistoryResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("의도 타입별 메시지 조회 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("의도 타입별 메시지 조회 중 오류가 발생했습니다.", e);
@@ -249,6 +261,8 @@ public class ChatbotService {
             return messages.stream()
                     .map(this::convertToHistoryResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("기간별 메시지 조회 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("기간별 메시지 조회 중 오류가 발생했습니다.", e);
@@ -268,6 +282,8 @@ public class ChatbotService {
             return messages.stream()
                     .map(this::convertToHistoryResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("도움됨 여부별 메시지 조회 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("도움됨 여부별 메시지 조회 중 오류가 발생했습니다.", e);
@@ -287,6 +303,8 @@ public class ChatbotService {
             return messages.stream()
                     .map(this::convertToHistoryResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("키워드로 메시지 검색 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("키워드로 메시지 검색 중 오류가 발생했습니다.", e);
@@ -306,6 +324,8 @@ public class ChatbotService {
             return sessions.stream()
                     .map(this::convertToSessionResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("상태별 세션 조회 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("상태별 세션 조회 중 오류가 발생했습니다.", e);
@@ -325,6 +345,8 @@ public class ChatbotService {
             return sessions.stream()
                     .map(this::convertToSessionResponse)
                     .collect(Collectors.toList());
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("기간별 세션 조회 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("기간별 세션 조회 중 오류가 발생했습니다.", e);
@@ -340,6 +362,8 @@ public class ChatbotService {
             User user = resolveUser(userId);
             
             return chatSessionRepository.countByUser(user);
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("사용자별 세션 수 조회 중 오류 발생: {}", e.getMessage(), e);
             throw new CareServiceException("사용자별 세션 수 조회 중 오류가 발생했습니다.", e);
