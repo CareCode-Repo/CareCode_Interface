@@ -22,8 +22,10 @@ class LocalFileStorageServiceSecurityTest {
 
     @TempDir Path root;
 
+    /** 검사는 UploadPolicy 가 한다. 저장소 구현이 늘어도 같은 기준이 적용되도록 분리했다. */
     private LocalFileStorageService storage(FileScanner scanner) {
-        return new LocalFileStorageService(root.toString(), "/files", 10 * 1024 * 1024, scanner);
+        return new LocalFileStorageService(root.toString(), "/files",
+                new UploadPolicy(10 * 1024 * 1024, scanner));
     }
 
     @Test
