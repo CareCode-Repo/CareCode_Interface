@@ -4,6 +4,7 @@ import com.carecode.core.annotation.LogExecutionTime;
 import com.carecode.core.annotation.RateLimit;
 import com.carecode.core.web.BaseController;
 import com.carecode.domain.user.app.CurrentUserFacade;
+import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.domain.chatbot.dto.request.ChatbotMessageRequest;
 import com.carecode.domain.chatbot.dto.response.ChatbotMessageResponse;
@@ -55,6 +56,10 @@ public class ChatbotController extends BaseController {
             return ResponseEntity.ok(response);
         } catch (CareServiceException e) {
             log.error("챗봇 처리 오류: {}", e.getMessage());
+            throw e;
+        } catch (CareCodeException e) {
+            // 누구의 잘못인지 이미 정해진 예외다. 감싸면 전부 500 이 된다.
+            // (CareServiceException 은 바로 위에서 이미 다시 던진다.)
             throw e;
         } catch (Exception e) {
             log.error("챗봇 처리 중 예상치 못한 오류: {}", e.getMessage(), e);

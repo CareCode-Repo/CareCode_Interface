@@ -1,6 +1,7 @@
 package com.carecode.domain.notification.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.BusinessException;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ResourceNotFoundException;
@@ -55,13 +56,16 @@ public class NotificationService {
         
         try {
             User user = userRepository.findByUserId(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
-            
+                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+
             List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
-            
+
             return notifications.stream()
                     .map(this::convertToResponseDto)
                     .collect(Collectors.toList());
+        } catch (CareCodeException | CareServiceException e) {
+            // 누구의 잘못인지 이미 정해진 예외다. 여기서 감싸면 전부 500 이 된다.
+            throw e;
         } catch (Exception e) {
             log.error("사용자별 알림 목록 조회 실패: {}", e.getMessage());
             throw new CareServiceException("사용자별 알림 목록 조회 중 오류가 발생했습니다.", e);
@@ -75,10 +79,13 @@ public class NotificationService {
         
         try {
             Notification notification = notificationRepository.findById(notificationId)
-                    .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다: " + notificationId));
+                    .orElseThrow(() -> new ResourceNotFoundException("알림을 찾을 수 없습니다: " + notificationId));
             assertNotificationOwnedByUser(notification, actorUserId);
-            
+
             return convertToResponseDto(notification);
+        } catch (CareCodeException | CareServiceException e) {
+            // 소유권 검사가 던지는 403 이 여기를 지난다. 감싸면 권한 탐색이 장애로 보인다.
+            throw e;
         } catch (Exception e) {
             log.error("알림 상세 조회 실패: {}", e.getMessage());
             throw new CareServiceException("알림 상세 조회 중 오류가 발생했습니다.", e);
@@ -96,7 +103,7 @@ public class NotificationService {
                 throw new BusinessException(ErrorCode.FORBIDDEN, "다른 사용자를 대상으로 알림을 생성할 수 없습니다.");
             }
             User user = userRepository.findByUserId(request.getUserId())
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + request.getUserId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + request.getUserId()));
             
             // 전략 패턴을 사용하여 알림 생성
             NotificationStrategy strategy = strategyFactory.getStrategy(request.getNotificationType());
@@ -117,6 +124,9 @@ public class NotificationService {
             notificationDispatcher.dispatchAsync(savedNotification);
 
             return convertToResponseDto(savedNotification);
+        } catch (CareCodeException | CareServiceException e) {
+            // "남을 대상으로 알림을 만들 수 없다"(403)가 여기를 지난다.
+            throw e;
         } catch (Exception e) {
             log.error("알림 생성 실패: {}", e.getMessage());
             throw new CareServiceException("알림 생성 중 오류가 발생했습니다.", e);

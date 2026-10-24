@@ -43,6 +43,8 @@ public enum ErrorCode {
     BOOKING_NOT_FOUND("F002", "예약을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
     BOOKING_ALREADY_EXISTS("F003", "이미 예약된 시간입니다", HttpStatus.CONFLICT),
     BOOKING_ACCESS_DENIED("F004", "예약에 대한 권한이 없습니다", HttpStatus.FORBIDDEN),
+    /** 요청 자체는 멀쩡한데 예약의 현재 상태가 맞지 않다(이미 취소됨, 이미 완료됨). 409. */
+    BOOKING_STATE_CONFLICT("F005", "예약 상태가 맞지 않아 처리할 수 없습니다", HttpStatus.CONFLICT),
     
     // ===== 정책 관련 에러 (P000) =====
     POLICY_NOT_FOUND("P001", "정책을 찾을 수 없습니다", HttpStatus.NOT_FOUND),

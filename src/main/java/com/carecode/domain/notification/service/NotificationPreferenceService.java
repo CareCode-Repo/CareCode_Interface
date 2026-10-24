@@ -1,6 +1,7 @@
 package com.carecode.domain.notification.service;
 
 import com.carecode.core.annotation.LogExecutionTime;
+import com.carecode.core.exception.CareCodeException;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.ResourceNotFoundException;
 import com.carecode.domain.notification.dto.request.NotificationRegisterPushTokenRequest;
@@ -49,6 +50,9 @@ public class NotificationPreferenceService {
             return preferences.stream()
                     .map(this::convertToDto)
                     .collect(Collectors.toList());
+        } catch (CareCodeException | CareServiceException e) {
+            // 누구의 잘못인지 이미 정해진 예외다. 감싸면 전부 500 이 된다.
+            throw e;
         } catch (Exception e) {
             log.error("사용자별 알림 설정 조회 실패: {}", e.getMessage(), e);
             throw new CareServiceException("알림 설정 조회 중 오류가 발생했습니다.", e);
@@ -68,6 +72,8 @@ public class NotificationPreferenceService {
             
             return preference.map(this::convertToDto)
                     .orElseGet(() -> convertToDto(createDefaultPreference(user, notificationType)));
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("알림 타입별 설정 조회 실패: {}", e.getMessage(), e);
             throw new CareServiceException("알림 설정 조회 중 오류가 발생했습니다.", e);
@@ -93,6 +99,8 @@ public class NotificationPreferenceService {
             
             NotificationPreference savedPreference = preferenceRepository.save(preference);
             return convertToDto(savedPreference);
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("알림 설정 저장 실패: {}", e.getMessage(), e);
             throw new CareServiceException("알림 설정 저장 중 오류가 발생했습니다.", e);
@@ -118,6 +126,8 @@ public class NotificationPreferenceService {
             
             NotificationPreference savedPreference = preferenceRepository.save(preference);
             return convertToDto(savedPreference);
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("채널별 설정 업데이트 실패: {}", e.getMessage(), e);
             throw new CareServiceException("채널별 설정 업데이트 중 오류가 발생했습니다.", e);
@@ -154,6 +164,8 @@ public class NotificationPreferenceService {
                 preference.setInAppEnabled(false);
                 preferenceRepository.save(preference);
             }
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("모든 알림 설정 비활성화 실패: {}", e.getMessage(), e);
             throw new CareServiceException("알림 설정 비활성화 중 오류가 발생했습니다.", e);
@@ -178,6 +190,8 @@ public class NotificationPreferenceService {
             for (Notification.NotificationType type : Notification.NotificationType.values()) {
                 createDefaultPreference(user, type);
             }
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("알림 설정 초기화 실패: {}", e.getMessage(), e);
             throw new CareServiceException("알림 설정 초기화 중 오류가 발생했습니다.", e);
@@ -195,6 +209,8 @@ public class NotificationPreferenceService {
             return preferences.stream()
                     .map(this::convertToDto)
                     .collect(Collectors.toList());
+        } catch (CareCodeException | CareServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("알림 타입별 활성화된 설정 조회 실패: {}", e.getMessage(), e);
             throw new CareServiceException("활성화된 설정 조회 중 오류가 발생했습니다.", e);

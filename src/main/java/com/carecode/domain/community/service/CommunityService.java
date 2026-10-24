@@ -1,5 +1,7 @@
 package com.carecode.domain.community.service;
 
+import com.carecode.core.exception.BusinessException;
+import com.carecode.core.exception.ErrorCode;
 import com.carecode.core.exception.CareServiceException;
 import com.carecode.core.exception.CommentAccessDeniedException;
 import com.carecode.core.exception.PostAccessDeniedException;
@@ -366,7 +368,7 @@ public class CommunityService {
         // 이메일 형식 검증
         if (userEmail == null || !userEmail.contains("@")) {
             log.error("getCurrentUser() - 유효하지 않은 이메일 형식: {}", userEmail);
-            throw new CareServiceException("유효하지 않은 사용자 정보입니다.");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "유효하지 않은 사용자 정보입니다.");
         }
 
         return userRepository.findByEmailAndDeletedAtIsNull(userEmail)

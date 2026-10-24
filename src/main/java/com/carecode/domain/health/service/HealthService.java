@@ -84,7 +84,8 @@ public class HealthService {
             return healthRecordMapper.toResponse(savedRecord);
         } catch (NumberFormatException e) {
             log.error("잘못된 아동 ID 형식: {}", request.getChildId());
-            throw new CareServiceException("잘못된 아동 ID 형식입니다: " + request.getChildId(), e);
+            throw new BusinessException(ErrorCode.INVALID_CHILD_ID,
+                    "잘못된 아동 ID 형식입니다: " + request.getChildId());
         } catch (CareCodeException e) {
             throw e;
         } catch (CareServiceException e) {
@@ -216,6 +217,9 @@ public class HealthService {
             // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
             // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
             throw e;
+        } catch (CareServiceException e) {
+            // CareCodeException 은 바로 위에서 이미 다시 던진다. 이쪽 체계도 같이 통과시킨다.
+            throw e;
         } catch (Exception e) {
             log.error("기간별 건강 기록 조회 실패: {}", e.getMessage(), e);
             throw new CareServiceException("기간별 건강 기록 조회 중 오류가 발생했습니다.", e);
@@ -239,6 +243,8 @@ public class HealthService {
         } catch (CareCodeException e) {
             // 우리가 던진 예외는 자기 상태 코드를 들고 있다. 아래 catch 에 걸리면 404·403 이
             // 전부 500 으로 덮이고, 남의 자녀 접근 거부가 서버 오류로 보고된다.
+            throw e;
+        } catch (CareServiceException e) {
             throw e;
         } catch (Exception e) {
             log.error("타입별 건강 기록 조회 실패: {}", e.getMessage(), e);

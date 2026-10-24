@@ -1,6 +1,7 @@
 package com.carecode.domain.facility.service;
 
-import com.carecode.core.exception.CareServiceException;
+import com.carecode.core.exception.BusinessException;
+import com.carecode.core.exception.ErrorCode;
 import com.carecode.domain.facility.dto.request.CreateBookingRequest;
 import com.carecode.domain.facility.entity.CareFacility;
 import com.carecode.domain.facility.entity.CareFacilityBooking;
@@ -17,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
@@ -24,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -84,8 +87,11 @@ class CareFacilityBookingServiceTest {
                 .thenReturn(2L); // 정원 2 모두 사용
 
         assertThatThrownBy(() -> bookingService.createBooking(FACILITY_ID, futureRequest(), USER_ID))
-                .isInstanceOf(CareServiceException.class)
-                .hasMessageContaining("예약 가능한 자리가 없습니다");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("예약 가능한 자리가 없습니다")
+                // 자리가 없는 것은 정상적인 거절이다. 500 이면 장애 지표가 오염된다.
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.BOOKING_ALREADY_EXISTS));
 
         verify(bookingRepository, never()).save(any(CareFacilityBooking.class));
     }
@@ -116,8 +122,10 @@ class CareFacilityBookingServiceTest {
         request.setEndTime(request.getStartTime().minusHours(1));
 
         assertThatThrownBy(() -> bookingService.createBooking(FACILITY_ID, request, USER_ID))
-                .isInstanceOf(CareServiceException.class)
-                .hasMessageContaining("종료 시간은 시작 시간보다");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("종료 시간은 시작 시간보다")
+                .satisfies(e -> assertThat(((BusinessException) e).getHttpStatus())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     @Test
@@ -128,8 +136,10 @@ class CareFacilityBookingServiceTest {
         request.setEndTime(LocalDateTime.now().minusDays(1).plusHours(2));
 
         assertThatThrownBy(() -> bookingService.createBooking(FACILITY_ID, request, USER_ID))
-                .isInstanceOf(CareServiceException.class)
-                .hasMessageContaining("과거 시간");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("과거 시간")
+                .satisfies(e -> assertThat(((BusinessException) e).getHttpStatus())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     private CreateBookingRequest futureRequest() {
