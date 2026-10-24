@@ -114,6 +114,11 @@ public class SecurityConfig {
                 // 인증을 거치는 별도 다운로드 경로가 필요하다.
                 .requestMatchers("/files/profile-images/**").permitAll()
                 .requestMatchers("/static/**").permitAll()
+
+                // 관제 화면(정적 HTML/JS). 껍데기만 공개다 — 데이터는 전부 관리자 토큰으로
+                // /api/admin/** 을 부르며, 그쪽이 ADMIN 을 요구한다. 로그인 전에는 아무 수치도
+                // 담고 있지 않아 공개해도 노출되는 것이 없다.
+                .requestMatchers("/control-plane", "/control-plane/**").permitAll()
                 
                 // 통합 인증 관련 엔드포인트 (공개 접근)
                 .requestMatchers("/auth/login", "/auth/register").permitAll() // 일반 로그인/회원가입
