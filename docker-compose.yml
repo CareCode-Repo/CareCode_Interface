@@ -102,6 +102,16 @@ services:
       REFRESH_COOKIE_SAME_SITE: ${REFRESH_COOKIE_SAME_SITE:-Lax}
 
       STORAGE_ROOT: /app/uploads
+      # 저장소 종류. local 이 기본이고, `STORAGE_TYPE=s3 docker compose --profile s3 up` 으로
+      # MinIO 를 함께 띄워 S3 경로를 그대로 써 볼 수 있다.
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT:-http://minio:9000}
+      STORAGE_S3_BUCKET: ${STORAGE_S3_BUCKET:-carecode-uploads}
+      STORAGE_S3_ACCESS_KEY: ${MINIO_ROOT_USER:-carecode}
+      STORAGE_S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-carecode-local-dev}
+      # MinIO 는 버킷을 서브도메인으로 쓰려면 DNS 가 필요해서 켠다.
+      STORAGE_S3_PATH_STYLE: "true"
+      STORAGE_S3_REGION: ${STORAGE_S3_REGION:-ap-northeast-2}
 
       # `SEED_SAMPLE_DATA=true docker compose up` 처럼 셸에서 넘긴 값이 컨테이너까지 가도록 명시한다.
       SEED_SAMPLE_DATA: ${SEED_SAMPLE_DATA:-false}
@@ -116,6 +126,46 @@ services:
     # 512m 에서도 뜨지만(측정 464MB) 여유가 없어 640m 로 둔다.
     mem_limit: ${APP_MEMORY:-640m}
 
+  # 선택: S3 호환 오브젝트 스토리지. 로컬에서 S3 경로를 AWS 자격증명 없이 써 보기 위한 것이다.
+  #
+  #   STORAGE_TYPE=s3 docker compose --profile s3 up
+  #
+  # 콘솔은 http://localhost:9001 (기본 계정 carecode / carecode-local-dev).
+  # 실측 메모리: 유휴 54MB, 100MB 업로드 후 66MB.
+  minio:
+    image: minio/minio:RELEASE.2024-08-29T01-40-52Z
+    profiles: ["s3"]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-carecode}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-carecode-local-dev}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    mem_limit: ${MINIO_MEMORY:-256m}
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # 버킷을 한 번 만들어 주고 끝난다. 앱이 버킷을 만들지 않는 이유: 운영에서는 버킷 생성 권한을
+  # 주지 않는 편이 안전하고, 그러면 앱이 기동할 때마다 권한 오류를 만난다.
+  minio-init:
+    image: minio/minio:RELEASE.2024-08-29T01-40-52Z
+    profiles: ["s3"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-carecode} ${MINIO_ROOT_PASSWORD:-carecode-local-dev} &&
+      mc mb --ignore-existing local/${STORAGE_S3_BUCKET:-carecode-uploads} &&
+      echo '버킷 준비 완료'
+      "
+
   # 선택: 업로드 악성코드 검사기. 시그니처 DB 를 받느라 첫 기동에 몇 분 걸리고 메모리를 1GB 넘게 쓴다.
   clamav:
     image: clamav/clamav:1.4
@@ -126,3 +176,4 @@ services:
 volumes:
   mariadb-data:
   uploads:
+  minio-data:
