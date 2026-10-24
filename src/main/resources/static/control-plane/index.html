@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CareCode 관제</title>
+<style>
+  /* ----------------------------------------------------------------------
+     CareCode 관제 (control plane)
+
+     이 화면이 답해야 하는 질문은 하나다 — "지금 기계가 제 일을 하고 있나".
+     그리고 이 서비스에서 기계의 일은 공공데이터를 쓸 만큼 새로 유지하는 것이다.
+     입소 예측·지원금 추천·빈자리 알림은 모두 마지막 동기화만큼만 참이다.
+     그래서 맨 위가 KPI 숫자 줄이 아니라 "신선도"다.
+
+     서체는 제품과 같은 Pretendard 를 먼저 찾고, 없으면 시스템 한글 산세리프로
+     떨어진다. 2MB 짜리 woff2 를 백엔드 이미지에 넣지 않기 위한 선택이다.
+     ---------------------------------------------------------------------- */
+
+  :root {
+    /* 유리는 뒤에 있는 것을 굴절시킨다. 그래서 바탕이 색을 갖는다.
+       제품의 green-900(#007300)을 어둡게 내린 초록-검정이다. 중성 먹색이 아니다. */
+    --ground: #050807;
+    --ground-2: #0a1410;
+
+    /* 제품 자체 색. 장식이 아니라 데이터의 색으로만 쓴다. */
+    --brand: #4fbe27;
+    --brand-dim: #007300;
+
+    --warn: #e9a63c;
+    --alert: #e0556b;
+
+    --ink: #eaf3ea;
+    --ink-2: #9fb6a4;
+    --ink-3: #6a8471;
+
+    --glass: rgba(255, 255, 255, .055);
+    --glass-2: rgba(255, 255, 255, .09);
+    --edge: rgba(255, 255, 255, .11);
+    --edge-bright: rgba(255, 255, 255, .22);
+
+    --r-lg: 22px;
+    --r-md: 14px;
+    --r-sm: 9px;
+
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui,
+                 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+    background: var(--ground);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 유리 뒤의 빛. 고정 배경이라 스크롤해도 굴절이 흔들리지 않는다. */
+  .field {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    /* 빛이 두 군데서만 든다. 바탕 전체가 브랜드색이면 유리가 굴절할 것이 없어지고,
+       초록은 데이터의 색이 아니라 벽지가 된다. */
+    background:
+      radial-gradient(46% 38% at 16% 4%, rgba(90, 170, 255, .10) 0%, transparent 70%),
+      radial-gradient(52% 44% at 86% 18%, rgba(79, 190, 39, .17) 0%, transparent 72%),
+      radial-gradient(60% 50% at 62% 104%, rgba(0, 115, 0, .13) 0%, transparent 70%),
+      linear-gradient(168deg, var(--ground-2) 0%, var(--ground) 62%);
+  }
+
+  .wrap {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 0 20px 72px;
+  }
+
+  /* ---------- 상단 바 ---------- */
+
+  .bar {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0 -20px 26px;
+    padding: 14px 20px;
+    background: rgba(4, 20, 10, .62);
+    border-bottom: 1px solid var(--edge);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+  }
+
+  .mark {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+  }
+
+  .mark span { color: var(--ink-2); font-weight: 600; font-size: 14px; }
+
+  .bar .spacer { flex: 1; }
+
+  .who {
+    font-size: 13px;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- 유리판 ---------- */
+
+  .panel {
+    position: relative;
+    background: var(--glass);
+    border: 1px solid var(--edge);
+    border-radius: var(--r-lg);
+    backdrop-filter: blur(26px) saturate(160%);
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
+    overflow: hidden;
+  }
+
+  /* 유리의 윗면에 닿는 빛. 실제 유리는 테두리 전체가 아니라 위쪽이 밝다. */
+  .panel::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--edge-bright) 22%, var(--edge-bright) 78%, transparent);
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 20px 22px 0;
+  }
+
+  .panel-head h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+  }
+
+  .panel-head .note {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .panel-body { padding: 18px 22px 22px; }
+
+  /* ---------- 신선도 레일 (이 화면의 중심) ---------- */
+
+  .freshness { margin-bottom: 20px; }
+
+  .rail {
+    display: grid;
+    grid-template-columns: 148px 1fr 92px;
+    align-items: center;
+    gap: 16px;
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+  }
+
+  .rail:last-child { border-bottom: 0; }
+
+  .rail-name { font-size: 14px; color: var(--ink); }
+
+  .rail-name em {
+    display: block;
+    font-style: normal;
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  /* 트랙: 기준 시간까지가 100%. 기준을 넘으면 그 뒤로 넘침이 보인다. */
+  .track {
+    position: relative;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .055);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .4);
+  }
+
+  /* 채움은 트랙 안에서 잘리고, 기준선은 그 위에 선다. 안에 두면 채움에 묻혀 안 보인다. */
+  .track-clip {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--brand-dim), var(--brand));
+  }
+
+  .fill.warn { background: linear-gradient(90deg, #a8761f, var(--warn)); }
+  .fill.alert { background: linear-gradient(90deg, #8e2437, var(--alert)); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .fill { transition: width .7s cubic-bezier(.22, .85, .2, 1); }
+  }
+
+  /* 기준선. 여기를 넘으면 낡은 것으로 본다. */
+  /* 기준선. 여기를 넘으면 낡은 것으로 본다. 어두운 테두리를 둬서 어떤 채움 위에서도 보인다. */
+  .tick {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    background: #eaf3ea;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .55);
+  }
+
+  .rail-age {
+    text-align: right;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+
+  .rail-age b { color: var(--ink); font-weight: 600; }
+  .rail-age.alert b { color: var(--alert); }
+  .rail-age.warn b { color: var(--warn); }
+
+  /* ---------- 아래 3단 ---------- */
+
+  .grid3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* 세 패널은 높이를 맞춘다. 남는 공간은 각 패널이 알아서 메운다 - 추이선은 늘어나고,
+     설명은 바닥에 붙는다. 그러지 않으면 가장 짧은 패널 아래가 통째로 빈다. */
+  .grid3 .panel { display: flex; flex-direction: column; }
+  .grid3 .panel-body { flex: 1; display: flex; flex-direction: column; }
+  .grid3 .panel-body > .empty:last-child { margin-top: auto; margin-bottom: 0; }
+
+  .stat {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat b {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1.1;
+  }
+
+  .stat span { font-size: 13px; color: var(--ink-2); }
+
+  .rows { display: grid; gap: 9px; }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, auto) 1fr;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 13.5px;
+  }
+
+  .row > :first-child { white-space: nowrap; }
+
+  .row .v {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+  .row .v b { color: var(--ink); font-weight: 600; }
+
+  /* 가입 추이. 선 하나로 6개월을 본다. 축 라벨은 처음과 끝만 둔다. */
+  .spark { display: block; width: 100%; height: 64px; }
+  .grid3 .spark { flex: 1; height: auto; min-height: 64px; }
+  .spark-foot {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 지역 검증률. 막대 하나에 비율과 건수를 같이 담는다. */
+  .meter {
+    position: relative;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .07);
+    overflow: hidden;
+  }
+
+  .meter i {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--brand);
+    border-radius: 999px;
+  }
+
+  /* ---------- 활동 ---------- */
+
+  .feed { display: grid; gap: 0; }
+
+  .feed li {
+    display: grid;
+    grid-template-columns: 62px 1fr auto;
+    gap: 12px;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    font-size: 13.5px;
+  }
+
+  .feed li:last-child { border-bottom: 0; }
+
+  .kind {
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  .when {
+    font-size: 12.5px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  ul { margin: 0; padding: 0; list-style: none; }
+
+  /* ---------- 로그인 ---------- */
+
+  .gate {
+    max-width: 380px;
+    margin: 10vh auto 0;
+  }
+
+  .gate p {
+    margin: 0 0 18px;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+
+  label {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  input {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 11px 13px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: rgba(0, 0, 0, .25);
+    border: 1px solid var(--edge);
+    border-radius: var(--r-md);
+  }
+
+  input:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  button {
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: #06230a;
+    background: linear-gradient(180deg, #6ad73f, var(--brand));
+    border: 0;
+    border-radius: var(--r-md);
+    padding: 11px 18px;
+    cursor: pointer;
+  }
+
+  button.quiet {
+    color: var(--ink-2);
+    background: var(--glass-2);
+    border: 1px solid var(--edge);
+    font-weight: 500;
+  }
+
+  .msg {
+    margin: 14px 0 0;
+    font-size: 13px;
+    color: var(--alert);
+  }
+
+  .empty {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink-3);
+  }
+
+  [hidden] { display: none !important; }
+
+  /* ---------- 좁은 화면 ---------- */
+
+  @media (max-width: 880px) {
+    .grid3 { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 560px) {
+    .rail {
+      grid-template-columns: 1fr auto;
+      gap: 6px 12px;
+    }
+    .track { grid-column: 1 / -1; order: 3; }
+    .rail-age { order: 2; }
+    .feed li { grid-template-columns: 1fr auto; }
+    .feed .kind { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="field" aria-hidden="true"></div>
+
+<div class="wrap">
+
+  <header class="bar">
+    <div class="mark">CareCode <span>관제</span></div>
+    <div class="spacer"></div>
+    <div class="who" id="who"></div>
+    <button class="quiet" id="signout" hidden>로그아웃</button>
+  </header>
+
+  <!-- 로그인 -->
+  <section class="panel gate" id="gate">
+    <div class="panel-head"><h2>관리자 로그인</h2></div>
+    <div class="panel-body">
+      <p>운영 지표는 관리자 계정으로만 볼 수 있습니다.</p>
+      <form id="login">
+        <label>이메일
+          <input type="email" id="email" autocomplete="username" required>
+        </label>
+        <label>비밀번호
+          <input type="password" id="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">로그인</button>
+        <p class="msg" id="loginMsg" hidden></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- 관제 화면 -->
+  <main id="console" hidden>
+
+    <!-- 이 화면의 중심. 모든 예측·추천은 마지막 동기화만큼만 참이다. -->
+    <section class="panel freshness">
+      <div class="panel-head">
+        <h2>데이터 신선도</h2>
+        <div class="note" id="staleNote"></div>
+      </div>
+      <div class="panel-body" id="rails"></div>
+    </section>
+
+    <div class="grid3">
+      <section class="panel">
+        <div class="panel-head"><h2>입소 예측 정확도</h2></div>
+        <div class="panel-body" id="accuracy"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>가입 추이</h2></div>
+        <div class="panel-body" id="trend"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>정책 금액 검증</h2></div>
+        <div class="panel-body" id="verification"></div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>최근 활동</h2>
+        <div class="note" id="counts"></div>
+      </div>
+      <div class="panel-body" id="activity"></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // 토큰은 sessionStorage 에 둔다. 탭을 닫으면 사라지고, 다른 탭과도 공유되지 않는다.
+  const TOKEN_KEY = 'carecode.control-plane.token';
+
+  const $ = (id) => document.getElementById(id);
+
+  const state = {
+    token: sessionStorage.getItem(TOKEN_KEY) || null,
+    email: sessionStorage.getItem(TOKEN_KEY + '.email') || '',
+  };
+
+  // ---- API ---------------------------------------------------------------
+
+  async function api(path) {
+    const res = await fetch(path, {
+      headers: state.token ? { Authorization: 'Bearer ' + state.token } : {},
+    });
+    if (res.status === 401 || res.status === 403) {
+      const err = new Error('권한이 없습니다');
+      err.unauthorized = true;
+      throw err;
+    }
+    if (!res.ok) {
+      throw new Error(path + ' 응답 ' + res.status);
+    }
+    return res.json();
+  }
+
+  async function login(email, password) {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      throw new Error(res.status === 401 ? '이메일 또는 비밀번호가 맞지 않습니다.'
+                                         : '로그인에 실패했습니다. 잠시 후 다시 시도하세요.');
+    }
+    const body = await res.json();
+    if (body.role !== 'ADMIN') {
+      throw new Error('관리자 계정이 아닙니다.');
+    }
+    return body;
+  }
+
+  // ---- 표시 도우미 -------------------------------------------------------
+
+  const text = (v) => String(v == null ? '' : v);
+
+  function el(tag, cls, content) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (content != null) node.textContent = String(content);
+    return node;
+  }
+
+  /** 시간을 사람이 읽는 단위로. 관제 화면에서 "73시간" 은 환산이 필요하다. */
+  function age(hours) {
+    if (hours == null) return null;
+    if (hours < 1) return '1시간 미만';
+    if (hours < 48) return Math.round(hours) + '시간';
+    return Math.round(hours / 24) + '일';
+  }
+
+  function stamp(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return text(iso);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  // ---- 신선도 ------------------------------------------------------------
+
+  function renderFreshness(data) {
+    const host = $('rails');
+    host.replaceChildren();
+
+    const jobs = Array.isArray(data.jobs) ? data.jobs : [];
+    if (!jobs.length) {
+      host.append(el('p', 'empty', '등록된 주기 작업이 없습니다.'));
+      $('staleNote').textContent = '';
+      return;
+    }
+
+    // 낡은 것을 위로. 관제 화면에서 눈이 먼저 가는 자리에 문제가 있어야 한다.
+    const sorted = jobs.slice().sort((a, b) => {
+      const ratio = (j) => (j.ageHours == null ? -1 : j.ageHours / Math.max(1, j.staleAfterHours));
+      return ratio(b) - ratio(a);
+    });
+
+    for (const job of sorted) {
+      const rail = el('div', 'rail');
+
+      const threshold = Math.max(1, job.staleAfterHours || 24);
+
+      const name = el('div', 'rail-name', job.label || job.job);
+      // 막대 길이는 "기준 대비 얼마나 지났는가" 다. 기준이 작업마다 다르므로 적어 주지
+      // 않으면 길이를 읽을 수 없다 - 3시간 막대가 6시간 막대보다 길어 보이는 이유다.
+      name.append(el('em', null,
+        (job.dataFreshness ? '' : '마지막 실행 · ') + `기준 ${threshold}시간`));
+      rail.append(name);
+
+      const track = el('div', 'track');
+      const fill = el('div', 'fill');
+
+      // 트랙의 75% 지점을 기준선으로 둔다. 기준을 넘긴 작업도 넘침이 보여야 한다.
+      const tickAt = 75;
+      const tick = el('div', 'tick');
+      tick.style.left = tickAt + '%';
+
+      let ratio = job.ageHours == null ? 0 : job.ageHours / threshold;
+      let width = Math.min(100, ratio * tickAt);
+
+      if (job.stale) fill.classList.add('alert');
+      else if (ratio >= 0.7) fill.classList.add('warn');
+
+      track.title = job.ageHours == null
+        ? `기록 없음 (기준 ${threshold}시간)`
+        : `${age(job.ageHours)} 지남 / 기준 ${threshold}시간`;
+
+      const clip = el('div', 'track-clip');
+      clip.append(fill);
+      track.append(clip, tick);
+      rail.append(track);
+
+      const ageText = age(job.ageHours);
+      const cell = el('div', 'rail-age' + (job.stale ? ' alert' : ratio >= 0.7 ? ' warn' : ''));
+      if (ageText == null) {
+        cell.append(el('span', null, '기록 없음'));
+      } else {
+        cell.append(el('b', null, ageText));
+      }
+      rail.append(cell);
+
+      host.append(rail);
+
+      // 페이지가 뜰 때 한 번만 채운다. 값이 0 에서 올라오는 동안 비교가 눈에 남는다.
+      requestAnimationFrame(() => { fill.style.width = width + '%'; });
+    }
+
+    const stale = Number(data.staleCount || 0);
+    $('staleNote').textContent = stale > 0
+      ? `${jobs.length}개 중 ${stale}개가 기준을 넘겼습니다`
+      : `${jobs.length}개 모두 기준 안입니다`;
+  }
+
+  // ---- 예측 정확도 -------------------------------------------------------
+
+  function renderAccuracy(list) {
+    const host = $('accuracy');
+    host.replaceChildren();
+
+    if (!Array.isArray(list) || !list.length) {
+      host.append(el('p', 'empty', '표본이 모일 때까지 정확도를 내지 않습니다. 없는 정확도를 만들지 않기 위해서입니다.'));
+      return;
+    }
+
+    const rows = el('div', 'rows');
+    for (const r of list) {
+      const row = el('div', 'row');
+      row.append(el('div', null, `${r.horizonMonths}개월`));
+
+      const v = el('div', 'v');
+      // 브라이어 점수는 낮을수록 좋고, 혼자서는 좋은지 알 수 없다. 기준선과 함께 본다.
+      v.append(el('b', null, r.brierScore.toFixed(3)));
+      v.append(document.createTextNode(' / 기준선 ' + r.baselineBrierScore.toFixed(3)));
+      if (!r.betterThanBaseline) {
+        const flag = el('span', null, ' 기준선 이하');
+        flag.style.color = 'var(--warn)';
+        v.append(flag);
+      }
+      row.append(v);
+      rows.append(row);
+    }
+    host.append(rows);
+
+    const worse = list.filter((r) => !r.betterThanBaseline).length;
+    if (worse > 0) {
+      host.append(el('p', 'empty',
+        `${worse}개 기간이 기준선보다 못합니다. 그 기간은 예측을 보여주지 않는 쪽이 맞습니다.`));
+    }
+  }
+
+  // ---- 가입 추이 ---------------------------------------------------------
+
+  function renderTrend(dashboard) {
+    const host = $('trend');
+    host.replaceChildren();
+
+    const labels = dashboard.userTrendLabels || [];
+    const values = (dashboard.userTrendData || []).map(Number);
+
+    if (!values.length) {
+      host.append(el('p', 'empty', '가입 기록이 아직 없습니다.'));
+      return;
+    }
+
+    const total = values.reduce((a, b) => a + b, 0);
+    const stat = el('div', 'stat');
+    stat.append(el('b', null, total.toLocaleString('ko-KR')));
+    stat.append(el('span', null, `최근 ${values.length}개월 가입`));
+    host.append(stat);
+
+    const w = 280, h = 64, pad = 4;
+    const max = Math.max(1, ...values);
+    const step = values.length > 1 ? (w - pad * 2) / (values.length - 1) : 0;
+    const pts = values.map((v, i) => [
+      pad + i * step,
+      h - pad - (v / max) * (h - pad * 2),
+    ]);
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'spark');
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label',
+      labels.map((l, i) => `${l} ${values[i]}명`).join(', '));
+
+    const line = document.createElementNS(svg.namespaceURI, 'polyline');
+    line.setAttribute('fill', 'none');
+    line.setAttribute('stroke', 'var(--brand)');
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-linejoin', 'round');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('points', pts.map((p) => p.join(',')).join(' '));
+    svg.append(line);
+
+    const last = pts[pts.length - 1];
+    const dot = document.createElementNS(svg.namespaceURI, 'circle');
+    dot.setAttribute('cx', last[0]);
+    dot.setAttribute('cy', last[1]);
+    dot.setAttribute('r', '2.8');
+    dot.setAttribute('fill', 'var(--brand)');
+    svg.append(dot);
+
+    host.append(svg);
+
+    const foot = el('div', 'spark-foot');
+    foot.append(el('span', null, labels[0] || ''));
+    foot.append(el('span', null, labels[labels.length - 1] || ''));
+    host.append(foot);
+  }
+
+  // ---- 정책 검증 ---------------------------------------------------------
+
+  function renderVerification(list) {
+    const host = $('verification');
+    host.replaceChildren();
+
+    if (!Array.isArray(list) || !list.length) {
+      host.append(el('p', 'empty', '지역이 지정된 활성 정책이 없습니다.'));
+      return;
+    }
+
+    // 검증률이 낮은 지역부터. 손볼 곳이 위에 있어야 한다.
+    const rows = el('div', 'rows');
+    for (const r of list.slice(0, 6)) {
+      const row = el('div', 'row');
+      row.append(el('div', null, r.region));
+
+      const v = el('div', 'v');
+      v.append(el('b', null, r.verifiedRate + '%'));
+      v.append(document.createTextNode(` (${r.verified}/${r.total})`));
+      row.append(v);
+      rows.append(row);
+
+      const meter = el('div', 'meter');
+      const bar = el('i');
+      bar.style.width = Math.max(1, r.verifiedRate) + '%';
+      meter.append(bar);
+      rows.append(meter);
+    }
+    host.append(rows);
+  }
+
+  // ---- 활동 --------------------------------------------------------------
+
+  function renderActivity(dashboard) {
+    const host = $('activity');
+    host.replaceChildren();
+
+    $('counts').textContent =
+      `회원 ${Number(dashboard.userCount || 0).toLocaleString('ko-KR')}` +
+      ` · 병원 ${Number(dashboard.hospitalCount || 0).toLocaleString('ko-KR')}` +
+      ` · 정책 ${Number(dashboard.policyCount || 0).toLocaleString('ko-KR')}`;
+
+    const items = dashboard.recentActivities || [];
+    if (!items.length) {
+      host.append(el('p', 'empty', '최근 활동이 없습니다.'));
+      return;
+    }
+
+    const kinds = { user: '회원', hospital: '병원', policy: '정책' };
+    const list = el('ul', 'feed');
+    for (const a of items) {
+      const li = document.createElement('li');
+      li.append(el('span', 'kind', kinds[a.type] || a.type));
+      li.append(el('span', null, a.desc));
+      li.append(el('span', 'when', a.time));
+      list.append(li);
+    }
+    host.append(list);
+  }
+
+  // ---- 화면 전환 ---------------------------------------------------------
+
+  function showGate(message) {
+    $('gate').hidden = false;
+    $('console').hidden = true;
+    $('signout').hidden = true;
+    $('who').textContent = '';
+    const msg = $('loginMsg');
+    msg.hidden = !message;
+    msg.textContent = message || '';
+  }
+
+  function showConsole() {
+    $('gate').hidden = true;
+    $('console').hidden = false;
+    $('signout').hidden = false;
+    $('who').textContent = state.email;
+  }
+
+  function signOut() {
+    state.token = null;
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY + '.email');
+    showGate();
+  }
+
+  /** 한 패널이 실패해도 나머지는 보여준다. 전부 비는 관제 화면이 가장 쓸모없다. */
+  async function section(render, path, hostId) {
+    try {
+      render(await api(path));
+    } catch (e) {
+      if (e.unauthorized) throw e;
+      const host = $(hostId);
+      host.replaceChildren(el('p', 'empty', '불러오지 못했습니다 — ' + e.message));
+    }
+  }
+
+  async function load() {
+    try {
+      const dashboard = await api('/api/admin/dashboard');
+      renderTrend(dashboard);
+      renderActivity(dashboard);
+    } catch (e) {
+      if (e.unauthorized) { signOut(); showGate('다시 로그인해 주세요.'); return; }
+      $('trend').replaceChildren(el('p', 'empty', '불러오지 못했습니다 — ' + e.message));
+    }
+
+    try {
+      await section(renderFreshness, '/api/admin/sync/status', 'rails');
+      await section(renderAccuracy, '/facilities/forecast-accuracy', 'accuracy');
+      await section(renderVerification, '/api/admin/policies/verification-status', 'verification');
+    } catch (e) {
+      if (e.unauthorized) { signOut(); showGate('다시 로그인해 주세요.'); }
+    }
+  }
+
+  // ---- 시작 --------------------------------------------------------------
+
+  $('login').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = event.target.querySelector('button');
+    button.disabled = true;
+    try {
+      const body = await login($('email').value.trim(), $('password').value);
+      state.token = body.accessToken;
+      state.email = body.email || $('email').value.trim();
+      sessionStorage.setItem(TOKEN_KEY, state.token);
+      sessionStorage.setItem(TOKEN_KEY + '.email', state.email);
+      $('password').value = '';
+      showConsole();
+      await load();
+    } catch (e) {
+      showGate(e.message);
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  $('signout').addEventListener('click', signOut);
+
+  if (state.token) {
+    showConsole();
+    load();
+  } else {
+    showGate();
+  }
+})();
+</script>
+</body>
+</html>
