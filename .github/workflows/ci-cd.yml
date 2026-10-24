@@ -452,12 +452,51 @@ jobs:
 
         # 업로드물은 컨테이너 밖에 둔다. 볼륨이 없으면 교체할 때마다 /app/uploads 가 컨테이너와
         # 함께 사라진다 — 사용자가 올린 진단서·프로필 이미지가 배포마다 전부 날아간다는 뜻이다.
-        # (여러 인스턴스로 늘릴 때는 S3 구현체로 바꿔야 한다. 이슈 #49)
+        # (STORAGE_TYPE=s3 로 MinIO·S3 를 쓰면 이 볼륨은 쓰이지 않지만, 되돌릴 때를 위해 둔다.)
         UPLOADS_DIR=/opt/carecode/uploads
         mkdir -p "$UPLOADS_DIR"
 
+        # 오브젝트 스토리지(MinIO)를 쓰는 배포라면 그 컨테이너는 앱과 생애주기가 다르다.
+        # 앱만 교체하고 MinIO 는 건드리지 않는다 — 데이터가 그 안에 있다.
+        #
+        # 서버 .env 에 STORAGE_TYPE=s3 와 MINIO_ROOT_USER/PASSWORD 를 두면 아래가 한 번
+        # 띄우고, 이미 떠 있으면 그대로 둔다. 실측 메모리는 유휴 54MB, 100MB 업로드 후 66MB 다.
+        # 엔드포인트가 이 호스트를 가리킬 때만 MinIO 를 띄운다. 외부 S3·원격 MinIO 를 쓰는
+        # 배포에서는 띄우지 않는다. (grep -E 는 부정 전방탐색을 지원하지 않아 case 로 쓴다.)
+        S3_ENDPOINT="$(grep -E '^STORAGE_S3_ENDPOINT=' "$ENV_FILE" 2>/dev/null | tail -1 | cut -d= -f2-)"
+        LOCAL_OBJECT_STORE=no
+        if grep -qE '^STORAGE_TYPE=s3$' "$ENV_FILE" 2>/dev/null; then
+          case "$S3_ENDPOINT" in
+            ""|*127.0.0.1*|*localhost*|*host.docker.internal*) LOCAL_OBJECT_STORE=yes ;;
+          esac
+        fi
+
+        if [ "$LOCAL_OBJECT_STORE" = yes ]; then
+          MINIO_MEMORY="$(grep -E '^MINIO_MEMORY=' "$ENV_FILE" 2>/dev/null | tail -1 | cut -d= -f2)"
+          MINIO_MEMORY="${MINIO_MEMORY:-192m}"
+
+          if ! docker ps --format '{{.Names}}' | grep -qx carecode-minio; then
+            echo "===== MinIO 기동 (메모리 $MINIO_MEMORY) ====="
+            mkdir -p /opt/carecode/minio
+            # 127.0.0.1 에만 바인딩한다. 오브젝트 스토리지를 외부에 열 이유가 없고,
+            # 앱은 같은 호스트에서 붙는다.
+            docker run -d --name carecode-minio --restart unless-stopped               --memory="$MINIO_MEMORY" --memory-swap="$MINIO_MEMORY"               -p 127.0.0.1:9000:9000               --env-file "$ENV_FILE"               -v /opt/carecode/minio:/data               minio/minio:RELEASE.2024-08-29T01-40-52Z server /data || {
+                echo "::error::MinIO 기동 실패. STORAGE_TYPE=s3 인데 저장소가 없으면 업로드가 전부 실패합니다."
+                exit 1
+              }
+          else
+            echo "MinIO 가 이미 떠 있습니다 (앱만 교체합니다)."
+          fi
+        fi
+
+        # host.docker.internal 을 호스트로 매핑한다.
+        #
+        # 앱은 브리지 네트워크에서 돌고, MariaDB·Redis·MinIO 는 호스트의 127.0.0.1 에 묶여 있다.
+        # 컨테이너 안에서 127.0.0.1 은 "그 컨테이너 자신" 이라 그 주소로는 닿지 않는다.
+        # 그래서 서버 .env 의 접속 주소는 host.docker.internal 이어야 한다
+        # (예: jdbc:mariadb://host.docker.internal:3306/carecode).
         run_app() {
-          docker run -d --name "$APP" --restart unless-stopped             --memory="$APP_MEMORY" --memory-swap="$APP_MEMORY"             -v "$UPLOADS_DIR:/app/uploads"             -p "$PORT:8082" --env-file "$ENV_FILE" "$1" >/dev/null
+          docker run -d --name "$APP" --restart unless-stopped             --memory="$APP_MEMORY" --memory-swap="$APP_MEMORY"             --add-host=host.docker.internal:host-gateway             -v "$UPLOADS_DIR:/app/uploads"             -p "$PORT:8082" --env-file "$ENV_FILE" "$1" >/dev/null
         }
 
         wait_healthy() {

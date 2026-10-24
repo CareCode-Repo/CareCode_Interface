@@ -308,6 +308,12 @@ ssh 인자로 넘기면 서버의 프로세스 목록에 그대로 보입니다.
   기동 단계에서 실패합니다(의도된 fail-fast). 검증 단계에서 걸리므로 **운영은 무사합니다**. 이슈 #90
 - 컨테이너 이름은 `carecode` 로 통일합니다. 예전 워크플로가 만들던
   `carecode-blue` / `carecode-green` 은 교체 단계에서 함께 정리합니다
+- **오브젝트 스토리지(MinIO)를 쓰려면** 서버 `.env` 에 `STORAGE_TYPE=s3` 와
+  `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD` 를 둡니다. 배포가 `carecode-minio` 를 한 번
+  띄우고(메모리 기본 192m, 실측 유휴 54MB·100MB 업로드 후 66MB), 이후 배포는 **앱만
+  교체합니다** — 데이터가 그 컨테이너 안에 있습니다. 엔드포인트는
+  `STORAGE_S3_ENDPOINT=http://host.docker.internal:9000`, `STORAGE_S3_PATH_STYLE=true` 입니다.
+  외부 S3·원격 MinIO 를 쓰면 배포는 MinIO 를 띄우지 않습니다
 - **업로드물은 `/opt/carecode/uploads` 에 둡니다.** 배포가 그 디렉터리를 컨테이너의
   `/app/uploads` 로 마운트합니다. 볼륨이 없으면 교체할 때마다 업로드물이 컨테이너와 함께
   사라집니다 — 사용자가 올린 진단서·프로필 이미지가 **배포마다 전부 날아갑니다.**
@@ -354,7 +360,21 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
 ### DB·Redis 준비
 
-배포는 앱만 교체하므로 이 둘은 미리 띄워 둡니다. 앱은 같은 호스트의 `127.0.0.1` 로 붙습니다.
+배포는 앱만 교체하므로 이 둘은 미리 띄워 둡니다.
+
+> **접속 주소는 `host.docker.internal` 입니다.** 아래 명령은 DB·Redis 를 호스트의
+> `127.0.0.1` 에만 묶는데, 앱은 브리지 네트워크에서 돌기 때문에 **컨테이너 안의
+> `127.0.0.1` 은 그 컨테이너 자신**입니다. 그 주소로는 닿지 않습니다.
+> 배포가 `--add-host=host.docker.internal:host-gateway` 를 붙이므로 서버 `.env` 에는
+> 이렇게 적습니다.
+>
+> ```
+> SPRING_DATASOURCE_URL=jdbc:mariadb://host.docker.internal:3306/carecode
+> SPRING_DATA_REDIS_HOST=host.docker.internal
+> ```
+>
+> (`127.0.0.1` 로 적혀 있으면 첫 배포가 기동 단계에서 DB 연결 실패로 멈춥니다. 운영 배포가
+> 아직 한 번도 성공하지 못해 드러나지 않은 항목입니다 — 이슈 #94)
 
 ```bash
 docker run -d --name carecode-mariadb --restart unless-stopped   --memory=320m -p 127.0.0.1:3306:3306   -e MARIADB_DATABASE=carecode -e MARIADB_USER=carecode   -e MARIADB_PASSWORD=... -e MARIADB_ROOT_PASSWORD=... -e TZ=Asia/Seoul   -v carecode-db:/var/lib/mysql mariadb:10.11   --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci   --lower-case-table-names=0 --innodb-buffer-pool-size=96M   --performance-schema=OFF --max-connections=30
